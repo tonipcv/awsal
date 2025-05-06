@@ -313,13 +313,16 @@ Tasks in the Eisenhower Matrix are organized by importance:
 3. Urgent not Important
 4. Neither Urgent nor Important
 
-## Endpoints Específicos para React Native
+## Mobile API Endpoints
 
-Para facilitar a integração com aplicativos React Native, foram criados endpoints específicos que utilizam autenticação via token JWT.
+A API fornece endpoints específicos para clientes mobile, que usam autenticação JWT para maior segurança e melhor experiência em dispositivos móveis.
 
 ### Autenticação Mobile
 
+A autenticação mobile usa JWT (JSON Web Tokens) para gerenciar sessões.
+
 #### Login Mobile
+
 - **Endpoint**: `/api/auth/mobile/login`
 - **Method**: POST
 - **Description**: Autentica um usuário e retorna um token JWT
@@ -330,7 +333,7 @@ Para facilitar a integração com aplicativos React Native, foram criados endpoi
     "password": "string"
   }
   ```
-- **Response**: Dados do usuário e token JWT
+- **Response**: Usuário e token JWT
   ```json
   {
     "user": {
@@ -344,6 +347,7 @@ Para facilitar a integração com aplicativos React Native, foram criados endpoi
   ```
 
 #### Registro Mobile
+
 - **Endpoint**: `/api/auth/mobile/register`
 - **Method**: POST
 - **Description**: Registra um novo usuário e retorna um token JWT
@@ -355,273 +359,269 @@ Para facilitar a integração com aplicativos React Native, foram criados endpoi
     "password": "string"
   }
   ```
-- **Response**: Mensagem de sucesso, ID do usuário e token JWT
+- **Response**: Usuário e token JWT
   ```json
   {
-    "message": "Usuário criado com sucesso. Verifique seu email para confirmar o cadastro.",
-    "userId": "string",
-    "token": "string",
-    "verificationCode": "string" // Somente para testes
+    "user": {
+      "id": "string",
+      "email": "string",
+      "name": "string",
+      "image": "string"
+    },
+    "token": "string"
   }
   ```
 
-### Tarefas Mobile
+### Como usar a autenticação JWT
 
-#### Obter Todas as Tarefas (Mobile)
-- **Endpoint**: `/api/mobile/tasks`
-- **Method**: GET
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Response**: Lista de objetos de tarefa
+Para todas as requisições aos endpoints mobile, inclua o token JWT no cabeçalho `Authorization`:
 
-#### Criar Tarefa (Mobile)
-- **Endpoint**: `/api/mobile/tasks`
-- **Method**: POST
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Request Body**:
-  ```json
-  {
-    "title": "string",
-    "dueDate": "string (YYYY-MM-DD)",
-    "importance": "number (1-4)"
-  }
-  ```
-- **Response**: Objeto da tarefa criada
-
-#### Obter Tarefa Específica (Mobile)
-- **Endpoint**: `/api/mobile/tasks/[taskId]`
-- **Method**: GET
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Response**: Objeto da tarefa
-
-#### Atualizar Tarefa (Mobile)
-- **Endpoint**: `/api/mobile/tasks/[taskId]`
-- **Method**: PUT
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Request Body**:
-  ```json
-  {
-    "title": "string",
-    "dueDate": "string (YYYY-MM-DD)",
-    "importance": "number (1-4)"
-  }
-  ```
-- **Response**: Objeto da tarefa atualizada
-
-#### Excluir Tarefa (Mobile)
-- **Endpoint**: `/api/mobile/tasks/[taskId]`
-- **Method**: DELETE
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Response**: 204 No Content
-
-#### Alternar Status de Conclusão (Mobile)
-- **Endpoint**: `/api/mobile/tasks/[taskId]/toggle`
-- **Method**: PUT
-- **Headers**: 
-  ```
-  Authorization: Bearer ${token}
-  ```
-- **Response**: Objeto da tarefa atualizada
-
-## Implementação no React Native
-
-Para utilizar esses endpoints no React Native, siga as orientações abaixo:
-
-### Setup Inicial
-
-1. Instale as dependências necessárias:
-```bash
-npm install @react-native-async-storage/async-storage axios
+```
+Authorization: Bearer ${token}
 ```
 
-2. Crie um arquivo para configuração do cliente API:
+Por exemplo, em Axios:
 
 ```javascript
-// api.js
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://seu-backend.com'; // Substitua pelo URL do seu backend
-
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: 'https://seu-app.com/api',
 });
 
-// Interceptor para adicionar token em todas as requisições
-api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('token');
+// Configure o interceptor para adicionar o token em todas as requisições
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
-
-export default api;
 ```
 
-### Autenticação
+### Pomodoro Stars (Mobile)
 
-```javascript
-// auth.js
-import api from './api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export const login = async (email, password) => {
-  try {
-    const response = await api.post('/api/auth/mobile/login', {
-      email,
-      password
-    });
-    
-    const { token, user } = response.data;
-    
-    // Armazenar token e dados do usuário
-    await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('user', JSON.stringify(user));
-    
-    return { success: true, user };
-  } catch (error) {
-    console.error('Erro no login:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha na autenticação'
-    };
+#### Listar Estrelas Pomodoro
+- **Endpoint**: `/api/mobile/pomodoro-stars`
+- **Method**: GET
+- **Description**: Retorna as estrelas do usuário agrupadas por data
+- **Authentication**: Required (JWT)
+- **Response**: Objeto com datas e contagem de estrelas
+  ```json
+  {
+    "2023-06-01": 3,
+    "2023-06-02": 2
   }
-};
+  ```
 
-export const register = async (name, email, password) => {
-  try {
-    const response = await api.post('/api/auth/mobile/register', {
-      name,
-      email,
-      password
-    });
-    
-    const { token, userId, verificationCode } = response.data;
-    
-    // Armazenar token e ID do usuário
-    await AsyncStorage.setItem('token', token);
-    await AsyncStorage.setItem('userId', userId);
-    
-    return { 
-      success: true, 
-      userId,
-      verificationCode // Somente para testes
-    };
-  } catch (error) {
-    console.error('Erro no registro:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha no registro'
-    };
+#### Adicionar Estrela Pomodoro
+- **Endpoint**: `/api/mobile/pomodoro-stars`
+- **Method**: POST
+- **Description**: Adiciona uma nova estrela para uma data específica
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "date": "string (YYYY-MM-DD)"
   }
-};
-
-export const logout = async () => {
-  try {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao fazer logout:', error);
-    return { success: false, error: error.message };
+  ```
+- **Response**: Detalhes da estrela criada e total do dia
+  ```json
+  {
+    "star": {
+      "id": "string",
+      "userId": "string",
+      "date": "string",
+      "createdAt": "string"
+    },
+    "totalStars": "number"
   }
-};
-```
+  ```
 
-### Gerenciamento de Tarefas
+### Hábitos (Mobile)
 
-```javascript
-// tasks.js
-import api from './api';
+#### Listar Hábitos
+- **Endpoint**: `/api/mobile/habits`
+- **Method**: GET
+- **Description**: Retorna todos os hábitos do usuário com progresso
+- **Authentication**: Required (JWT)
+- **Query Parameters**:
+  - `month`: opcional, filtra por mês (YYYY-MM-DD)
+- **Response**: Lista de hábitos com progresso
+  ```json
+  [
+    {
+      "id": "number",
+      "title": "string",
+      "category": "string",
+      "progress": [
+        {
+          "date": "string (YYYY-MM-DD)",
+          "isChecked": "boolean"
+        }
+      ]
+    }
+  ]
+  ```
 
-export const getTasks = async () => {
-  try {
-    const response = await api.get('/api/mobile/tasks');
-    return { success: true, tasks: response.data };
-  } catch (error) {
-    console.error('Erro ao buscar tarefas:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha ao buscar tarefas'
-    };
+#### Criar Hábito
+- **Endpoint**: `/api/mobile/habits`
+- **Method**: POST
+- **Description**: Cria um novo hábito
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "title": "string",
+    "category": "string"
   }
-};
-
-export const createTask = async (title, dueDate, importance) => {
-  try {
-    const response = await api.post('/api/mobile/tasks', {
-      title,
-      dueDate,
-      importance
-    });
-    return { success: true, task: response.data };
-  } catch (error) {
-    console.error('Erro ao criar tarefa:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha ao criar tarefa'
-    };
+  ```
+- **Response**: O hábito criado
+  ```json
+  {
+    "id": "number",
+    "title": "string",
+    "category": "string",
+    "progress": []
   }
-};
+  ```
 
-export const updateTask = async (taskId, title, dueDate, importance) => {
-  try {
-    const response = await api.put(`/api/mobile/tasks/${taskId}`, {
-      title,
-      dueDate,
-      importance
-    });
-    return { success: true, task: response.data };
-  } catch (error) {
-    console.error('Erro ao atualizar tarefa:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha ao atualizar tarefa'
-    };
-  }
-};
+#### Gerenciar Hábito
+- **Endpoint**: `/api/mobile/habits/[id]`
+- **Method**: GET/PUT/DELETE
+- **Description**: Obtém, atualiza ou deleta um hábito
+- **Authentication**: Required (JWT)
+- **Parameters**: `id` - ID numérico do hábito
 
-export const deleteTask = async (taskId) => {
-  try {
-    await api.delete(`/api/mobile/tasks/${taskId}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao excluir tarefa:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha ao excluir tarefa'
-    };
+#### Registrar Progresso do Hábito
+- **Endpoint**: `/api/mobile/habits/progress`
+- **Method**: POST
+- **Description**: Registra ou alterna o progresso de um hábito
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "habitId": "number",
+    "date": "string (YYYY-MM-DD)"
   }
-};
+  ```
 
-export const toggleTask = async (taskId) => {
-  try {
-    const response = await api.put(`/api/mobile/tasks/${taskId}/toggle`);
-    return { success: true, task: response.data };
-  } catch (error) {
-    console.error('Erro ao alternar tarefa:', error.response?.data || error.message);
-    return { 
-      success: false, 
-      error: error.response?.data?.error || 'Falha ao alternar tarefa'
-    };
+### Círculos (Mobile)
+
+#### Listar Círculos
+- **Endpoint**: `/api/mobile/circles`
+- **Method**: GET
+- **Description**: Retorna todos os círculos do usuário
+- **Authentication**: Required (JWT)
+- **Response**: Lista de círculos
+  ```json
+  [
+    {
+      "id": "number",
+      "title": "string",
+      "maxClicks": "number",
+      "clicks": "number",
+      "userId": "string",
+      "createdAt": "string"
+    }
+  ]
+  ```
+
+#### Criar Círculo
+- **Endpoint**: `/api/mobile/circles`
+- **Method**: POST
+- **Description**: Cria um novo círculo
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "title": "string",
+    "maxClicks": "number"
   }
-};
-``` 
+  ```
+
+#### Gerenciar Círculo
+- **Endpoint**: `/api/mobile/circles/[id]`
+- **Method**: GET/PUT/DELETE
+- **Description**: Obtém, atualiza ou deleta um círculo
+- **Authentication**: Required (JWT)
+- **Parameters**: `id` - ID numérico do círculo
+
+### Pensamentos (Mobile)
+
+#### Listar Pensamentos
+- **Endpoint**: `/api/mobile/thoughts`
+- **Method**: GET
+- **Description**: Retorna todos os pensamentos do usuário
+- **Authentication**: Required (JWT)
+- **Response**: Lista de pensamentos ordenados por data de criação
+
+#### Criar Pensamento
+- **Endpoint**: `/api/mobile/thoughts`
+- **Method**: POST
+- **Description**: Registra um novo pensamento
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "content": "string"
+  }
+  ```
+
+#### Gerenciar Pensamento
+- **Endpoint**: `/api/mobile/thoughts/[id]`
+- **Method**: GET/PUT/DELETE
+- **Description**: Obtém, atualiza ou deleta um pensamento
+- **Authentication**: Required (JWT)
+- **Parameters**: `id` - ID do pensamento
+
+### Checkpoints (Mobile)
+
+#### Listar Checkpoints
+- **Endpoint**: `/api/mobile/checkpoints`
+- **Method**: GET
+- **Description**: Retorna todos os checkpoints do usuário
+- **Authentication**: Required (JWT)
+- **Response**: Lista de checkpoints ordenados por data
+
+#### Registrar/Atualizar Checkpoint
+- **Endpoint**: `/api/mobile/checkpoints`
+- **Method**: POST
+- **Description**: Cria ou atualiza um checkpoint para uma data específica
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "date": "string (YYYY-MM-DD)",
+    "emotion": "string (opcional)",
+    "isCompleted": "boolean (opcional)"
+  }
+  ```
+
+### Ciclos (Mobile)
+
+#### Listar Ciclos
+- **Endpoint**: `/api/mobile/cycles`
+- **Method**: GET
+- **Description**: Retorna todos os ciclos do usuário com semanas, metas, resultados e tarefas
+- **Authentication**: Required (JWT)
+- **Response**: Lista completa de ciclos com todos os dados relacionados
+
+#### Criar Ciclo
+- **Endpoint**: `/api/mobile/cycles`
+- **Method**: POST
+- **Description**: Cria um novo ciclo
+- **Authentication**: Required (JWT)
+- **Request Body**:
+  ```json
+  {
+    "startDate": "string (YYYY-MM-DD)",
+    "endDate": "string (YYYY-MM-DD)",
+    "vision": "string (opcional)"
+  }
+  ```
+
+#### Gerenciar Ciclo
+- **Endpoint**: `/api/mobile/cycles/[id]`
+- **Method**: GET/PUT/DELETE
+- **Description**: Obtém, atualiza ou deleta um ciclo
+- **Authentication**: Required (JWT)
+- **Parameters**: `id` - ID numérico do ciclo 
