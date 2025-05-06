@@ -504,6 +504,19 @@ api.interceptors.request.use(config => {
   }
   ```
 
+#### Registrar Progresso de um Hábito Específico
+- **Endpoint**: `/api/mobile/habits/[id]/progress`
+- **Method**: POST
+- **Description**: Registra ou alterna o progresso de um hábito específico
+- **Authentication**: Required (JWT)
+- **Parameters**: `id` - ID numérico do hábito
+- **Request Body**:
+  ```json
+  {
+    "date": "string (YYYY-MM-DD)"
+  }
+  ```
+
 ### Círculos (Mobile)
 
 #### Listar Círculos
