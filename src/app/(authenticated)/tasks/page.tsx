@@ -19,6 +19,11 @@ import {
 import { cn } from "@/lib/utils";
 import Pomodoro from '@/components/Pomodoro';
 
+const fontStyles = {
+  primary: 'font-satoshi tracking-[-0.03em]',
+  secondary: 'font-satoshi tracking-[-0.02em] font-light'
+};
+
 interface Task {
   id: string;
   userId: string;
@@ -312,7 +317,7 @@ export default function TasksPage() {
       <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
         <CardHeader className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0 pb-2 lg:pb-4 sticky top-0 bg-background z-20 pt-[72px] lg:pt-4 border-b border-white/10">
           <div className="flex items-center gap-4">
-            <CardTitle className="text-xs font-normal text-white/70">
+            <CardTitle className={`text-xs font-normal text-white/70 ${fontStyles.secondary}`}>
               {isMobile ? format(selectedDate, 'EEEE, MMM d') : 'Eisenhower Matrix'}
             </CardTitle>
             {isMobile && (
@@ -330,7 +335,7 @@ export default function TasksPage() {
                   className="border-white/20 bg-transparent hover:bg-white/5 h-8 px-3"
                   onClick={() => setSelectedDate(new Date())}
                 >
-                  <span className="text-xs">Today</span>
+                  <span className={`text-xs ${fontStyles.secondary}`}>Today</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -364,36 +369,36 @@ export default function TasksPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle className="text-base font-medium">
+                  <DialogTitle className={`text-base font-medium ${fontStyles.primary}`}>
                     {editingTask ? 'Edit Task' : 'New Task'}
                   </DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground">
+                  <DialogDescription className={`text-sm text-muted-foreground ${fontStyles.secondary}`}>
                     {editingTask ? 'Edit your task details' : 'Add a new task to your Eisenhower matrix'}
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-6 pt-6">
                   <div className="space-y-2">
-                    <Label htmlFor="title" className="text-sm">Task title</Label>
+                    <Label htmlFor="title" className={`text-sm ${fontStyles.secondary}`}>Task title</Label>
                     <Input
                       id="title"
                       value={newTask.title}
                       onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                       placeholder="Ex: Prepare presentation"
-                      className="text-sm"
+                      className={`text-sm ${fontStyles.secondary}`}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dueDate" className="text-sm">Due date</Label>
+                    <Label htmlFor="dueDate" className={`text-sm ${fontStyles.secondary}`}>Due date</Label>
                     <Input
                       id="dueDate"
                       type="date"
                       value={newTask.dueDate}
                       onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                      className="text-sm"
+                      className={`text-sm ${fontStyles.secondary}`}
                     />
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-sm">Quadrant</Label>
+                    <Label className={`text-sm ${fontStyles.secondary}`}>Quadrant</Label>
                     <div className="grid grid-cols-1 gap-2">
                       {[1, 2, 3, 4].map((level) => (
                         <Button
@@ -466,8 +471,8 @@ export default function TasksPage() {
                 </Button>
               </div>
               <div className="text-xs text-white/70 flex items-center gap-2">
-                <span>Weekly progress</span>
-                <span className="text-turquoise font-medium">
+                <span className={fontStyles.secondary}>Weekly progress</span>
+                <span className={`text-turquoise font-medium ${fontStyles.primary}`}>
                   {calculateWeekProgress()}%
                 </span>
               </div>
@@ -479,11 +484,11 @@ export default function TasksPage() {
         <CardContent className="pb-24 lg:pb-8 px-0">
           {isLoading ? (
             <div className="text-center py-8">
-              <span className="text-xs text-muted-foreground">Loading...</span>
+              <span className={`text-xs text-muted-foreground ${fontStyles.secondary}`}>Loading...</span>
             </div>
           ) : sortedTasks.length === 0 ? (
             <div className="text-center py-8">
-              <span className="text-xs text-muted-foreground">No tasks registered</span>
+              <span className={`text-xs text-muted-foreground ${fontStyles.secondary}`}>No tasks registered</span>
             </div>
           ) : (
             <div className="overflow-x-auto scrollbar-hide" ref={containerRef}>
@@ -501,7 +506,7 @@ export default function TasksPage() {
                       <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
                         <div className="flex items-center gap-2">
                           <h2 className={cn(
-                            "text-sm font-medium capitalize",
+                            `text-sm font-medium capitalize ${fontStyles.primary}`,
                             format(selectedDate, 'yyyy-MM-dd') === currentDateKey ? "text-turquoise" : "text-white/90"
                           )}>
                             {format(selectedDate, 'EEEE')}
@@ -510,7 +515,7 @@ export default function TasksPage() {
                             {dayStars[format(selectedDate, 'yyyy-MM-dd')] > 0 && (
                               <>
                                 <StarIcon className="w-3 h-3 text-yellow-400" />
-                                <span className="text-xs text-yellow-400">
+                                <span className={`text-xs text-yellow-400 ${fontStyles.secondary}`}>
                                   {dayStars[format(selectedDate, 'yyyy-MM-dd')]}
                                 </span>
                               </>
@@ -518,7 +523,7 @@ export default function TasksPage() {
                           </div>
                         </div>
                         <span className={cn(
-                          "text-xs",
+                          `text-xs ${fontStyles.secondary}`,
                           format(selectedDate, 'yyyy-MM-dd') === currentDateKey ? "text-turquoise" : "text-white/50"
                         )}>
                           {format(selectedDate, 'MMM d')}
@@ -551,12 +556,12 @@ export default function TasksPage() {
                                     <div className="space-y-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <p className={cn(
-                                          "text-sm font-light break-words flex-1",
+                                          `text-sm font-light break-words flex-1 ${fontStyles.secondary}`,
                                           task.isCompleted && "line-through text-white/50"
                                         )}>
                                           {task.title}
                                         </p>
-                                        <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                        <span className={`text-base font-mono text-turquoise/90 shrink-0 ${fontStyles.primary}`}>
                                           {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
                                         </span>
                                       </div>
@@ -606,7 +611,7 @@ export default function TasksPage() {
                           <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
                             <div className="flex items-center gap-2">
                               <h2 className={cn(
-                                "text-sm font-medium capitalize",
+                                `text-sm font-medium capitalize ${fontStyles.primary}`,
                                 isToday ? "text-turquoise" : "text-white/90"
                               )}>
                                 {format(dayDate, 'EEEE')}
@@ -615,13 +620,13 @@ export default function TasksPage() {
                                 {stars > 0 && (
                                   <>
                                     <StarIcon className="w-3 h-3 text-yellow-400" />
-                                    <span className="text-xs text-yellow-400">{stars}</span>
+                                    <span className={`text-xs text-yellow-400 ${fontStyles.secondary}`}>{stars}</span>
                                   </>
                                 )}
                               </div>
                             </div>
                             <span className={cn(
-                              "text-xs",
+                              `text-xs ${fontStyles.secondary}`,
                               isToday ? "text-turquoise" : "text-white/50"
                             )}>
                               {formattedDate}
@@ -652,12 +657,12 @@ export default function TasksPage() {
                                       <div className="space-y-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                           <p className={cn(
-                                            "text-sm font-light break-words flex-1",
+                                            `text-sm font-light break-words flex-1 ${fontStyles.secondary}`,
                                             task.isCompleted && "line-through text-white/50"
                                           )}>
                                             {task.title}
                                           </p>
-                                          <span className="text-base font-mono text-turquoise/90 shrink-0">
+                                          <span className={`text-base font-mono text-turquoise/90 shrink-0 ${fontStyles.primary}`}>
                                             {importanceEmojis[task.importance as keyof typeof importanceEmojis]}
                                           </span>
                                         </div>

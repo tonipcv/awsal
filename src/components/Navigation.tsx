@@ -8,6 +8,7 @@ import {
   CheckIcon,
   CalendarDaysIcon,
   ChatBubbleLeftIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export default function Navigation() {
     '/tasks',
     '/thoughts',
     '/checkpoints',
+    '/timeblocking',
     '/profile'
   ];
 
@@ -68,6 +70,12 @@ export default function Navigation() {
           label: 'Tarefas',
           icon: CalendarDaysIcon,
           description: 'Matriz de Eisenhower'
+        },
+        {
+          href: '/timeblocking',
+          label: 'Time Blocking',
+          icon: ClockIcon,
+          description: 'Blocos de tempo'
         },
         {
           href: '/thoughts',
