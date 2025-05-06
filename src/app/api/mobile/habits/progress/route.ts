@@ -9,7 +9,30 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const { habitId: habitIdRaw, date } = await request.json();
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    
+    let habitIdRaw: string | null = null;
+    let habitIdFromUrl = false;
+    
+    // Verificar se o ID está na URL
+    if (pathParts.length >= 5 && pathParts[3] !== 'progress') {
+      habitIdRaw = pathParts[3];
+      habitIdFromUrl = true;
+    }
+    
+    let date: string;
+    
+    if (habitIdFromUrl) {
+      // Se o ID está na URL, só precisamos da data no corpo
+      const body = await request.json();
+      date = body.date;
+    } else {
+      // Se não, esperamos ID e data no corpo
+      const { habitId, date: bodyDate } = await request.json();
+      habitIdRaw = habitId;
+      date = bodyDate;
+    }
     
     // Validação de campos obrigatórios
     if (!habitIdRaw || !date) {
