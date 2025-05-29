@@ -31,9 +31,19 @@ export async function GET() {
         name: true,
         email: true,
         emailVerified: true,
-        image: true,
-        assignedProtocols: {
+        image: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    // Buscar protocolos ativos para cada paciente separadamente
+    const patientsWithProtocols = await Promise.all(
+      patients.map(async (patient) => {
+        const activeProtocols = await prisma.userProtocol.findMany({
           where: {
+            userId: patient.id,
             isActive: true
           },
           include: {
@@ -45,14 +55,16 @@ export async function GET() {
               }
             }
           }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
+        });
 
-    return NextResponse.json(patients);
+        return {
+          ...patient,
+          assignedProtocols: activeProtocols
+        };
+      })
+    );
+
+    return NextResponse.json(patientsWithProtocols);
   } catch (error) {
     console.error('Error fetching patients:', error);
     return NextResponse.json({ error: 'Erro ao buscar pacientes' }, { status: 500 });
