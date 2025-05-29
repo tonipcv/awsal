@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getUserClinic } from '@/lib/clinic-utils';
+import { getUserClinic, ensureDoctorHasClinic } from '@/lib/clinic-utils';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,16 +15,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const clinic = await getUserClinic(session.user.id);
+    // Verificar se é médico
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
 
-    if (!clinic) {
+    if (!user || user.role !== 'DOCTOR') {
       return NextResponse.json(
-        { error: 'Clínica não encontrada' },
-        { status: 404 }
+        { error: 'Acesso negado. Apenas médicos podem acessar clínicas.' },
+        { status: 403 }
       );
     }
 
-    return NextResponse.json({ clinic });
+    // Garantir que o médico tenha clínica (criar automaticamente se necessário)
+    const result = await ensureDoctorHasClinic(session.user.id);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ clinic: result.clinic });
 
   } catch (error) {
     console.error('Erro ao buscar clínica:', error);

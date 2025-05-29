@@ -17,7 +17,7 @@ export default function NewDoctorPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subscriptionType: 'TRIAL' // TRIAL ou ACTIVE
+    subscriptionType: 'TRIAL' // Padrão é TRIAL
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,7 +70,7 @@ export default function NewDoctorPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-light text-slate-800">Adicionar Novo Médico</h1>
-            <p className="text-sm text-slate-600">Crie uma nova conta de médico com plano Starter</p>
+            <p className="text-sm text-slate-600">Crie uma nova conta de médico (padrão: trial gratuito)</p>
           </div>
           <Button 
             asChild
@@ -125,18 +125,18 @@ export default function NewDoctorPage() {
                     <Info className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-green-800 mb-1">Plano Starter Incluído</h4>
+                    <h4 className="text-sm font-medium text-green-800 mb-1">Plano Básico Incluído</h4>
                     <p className="text-xs text-green-700 mb-2">
-                      Todos os novos médicos começam com o plano Starter que inclui:
+                      Todos os novos médicos começam com o plano Básico que inclui:
                     </p>
                     <div className="grid grid-cols-2 gap-1 text-xs text-green-700">
-                      <div>• Até 100 pacientes</div>
-                      <div>• 10 protocolos</div>
-                      <div>• 5 cursos</div>
-                      <div>• 50 produtos</div>
+                      <div>• Até 50 pacientes</div>
+                      <div>• Até 10 protocolos</div>
+                      <div>• Até 5 cursos</div>
+                      <div>• Até 30 produtos</div>
                     </div>
                     <div className="mt-2 text-xs text-blue-700">
-                      ✓ 14 dias de trial gratuito
+                      ✓ Padrão: 7 dias de trial gratuito
                     </div>
                   </div>
                 </div>
@@ -188,12 +188,12 @@ export default function NewDoctorPage() {
                       onChange={(e) => handleInputChange('subscriptionType', e.target.value)}
                       className="mt-1 w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="TRIAL">Trial Gratuito (Recomendado)</option>
+                      <option value="TRIAL">Trial Gratuito (Padrão)</option>
                       <option value="ACTIVE">Subscription Ativa</option>
                     </select>
                     <p className="text-xs text-slate-500 mt-1">
                       {formData.subscriptionType === 'TRIAL' 
-                        ? 'O médico terá 14 dias para testar todas as funcionalidades gratuitamente.'
+                        ? 'O médico terá 7 dias para testar todas as funcionalidades gratuitamente.'
                         : 'O médico começará com subscription ativa e será cobrado imediatamente.'
                       }
                     </p>

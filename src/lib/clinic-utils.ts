@@ -304,6 +304,81 @@ export async function isClinicAdmin(userId: string, clinicId?: string): Promise<
 }
 
 /**
+ * Garantir que médico tenha clínica - criar automaticamente se necessário
+ */
+export async function ensureDoctorHasClinic(doctorId: string): Promise<{ success: boolean; clinic?: any; message: string }> {
+  try {
+    // Verificar se é médico
+    const doctor = await prisma.user.findUnique({
+      where: { id: doctorId },
+      select: { id: true, name: true, email: true, role: true }
+    });
+
+    if (!doctor || doctor.role !== 'DOCTOR') {
+      return { success: false, message: 'Usuário não é um médico' };
+    }
+
+    // Verificar se já possui clínica (como owner OU como membro)
+    const existingClinic = await getUserClinic(doctorId);
+    if (existingClinic) {
+      return { success: true, clinic: existingClinic, message: 'Médico já possui clínica' };
+    }
+
+    // Buscar plano padrão
+    const defaultPlan = await prisma.subscriptionPlan.findFirst({
+      where: { isDefault: true }
+    });
+
+    if (!defaultPlan) {
+      return { success: false, message: 'Plano padrão não encontrado' };
+    }
+
+    // Criar clínica automática APENAS se não for membro de nenhuma clínica
+    const clinic = await prisma.clinic.create({
+      data: {
+        name: `Clínica ${doctor.name}`,
+        description: `Clínica pessoal do Dr(a). ${doctor.name}`,
+        ownerId: doctorId
+      }
+    });
+
+    // Criar subscription trial para a clínica
+    const now = new Date();
+    await prisma.clinicSubscription.create({
+      data: {
+        clinicId: clinic.id,
+        planId: defaultPlan.id,
+        status: 'TRIAL',
+        maxDoctors: 3,
+        trialEndDate: new Date(now.getTime() + defaultPlan.trialDays * 24 * 60 * 60 * 1000)
+      }
+    });
+
+    // Adicionar o médico como membro da própria clínica
+    await prisma.clinicMember.create({
+      data: {
+        clinicId: clinic.id,
+        userId: doctorId,
+        role: 'ADMIN'
+      }
+    });
+
+    // Buscar clínica completa para retornar
+    const fullClinic = await getUserClinic(doctorId);
+
+    return { 
+      success: true, 
+      clinic: fullClinic, 
+      message: 'Clínica criada automaticamente com sucesso' 
+    };
+
+  } catch (error) {
+    console.error('Erro ao garantir clínica para médico:', error);
+    return { success: false, message: 'Erro interno do servidor' };
+  }
+}
+
+/**
  * Obter estatísticas da clínica
  */
 export async function getClinicStats(clinicId: string) {

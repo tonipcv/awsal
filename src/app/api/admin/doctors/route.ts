@@ -39,14 +39,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, subscriptionType } = body;
+    const { name, email, subscriptionType = 'TRIAL' } = body;
 
     // Validações
     if (!name || !email) {
       return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
     }
 
-    if (!subscriptionType || !['TRIAL', 'ACTIVE'].includes(subscriptionType)) {
+    // Validar tipo de subscription (padrão é TRIAL)
+    if (!['TRIAL', 'ACTIVE'].includes(subscriptionType)) {
       return NextResponse.json({ error: 'Tipo de subscription inválido' }, { status: 400 });
     }
 
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Este email já está em uso' }, { status: 400 });
     }
 
-    // Buscar o plano padrão (Starter)
+    // Buscar o plano padrão (Básico)
     const defaultPlan = await prisma.subscriptionPlan.findFirst({
       where: { isDefault: true }
     });
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Criar subscription
+    // Criar subscription baseada na seleção (padrão TRIAL)
     const now = new Date();
     const subscriptionData: any = {
       doctorId: doctor.id,
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
     } else {
       subscriptionData.endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias
     }
-
+    
     await prisma.doctorSubscription.create({
       data: subscriptionData
     });
@@ -145,16 +146,16 @@ export async function POST(request: NextRequest) {
             </div>
             
             <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #059669; margin: 0 0 10px 0;">🎉 Seu Plano Starter</h3>
+              <h3 style="color: #059669; margin: 0 0 10px 0;">🎉 ${subscriptionType === 'TRIAL' ? 'Seu Trial Gratuito' : 'Sua Subscription Ativa'}</h3>
               <p style="color: #475569; margin: 0; font-size: 14px;">
-                Sua conta já está configurada com o plano Starter que inclui:
+                Sua conta já está configurada com o plano Básico ${subscriptionType === 'TRIAL' ? 'em período de trial' : 'ativo'} que inclui:
               </p>
               <ul style="color: #475569; font-size: 14px; margin: 10px 0;">
-                <li>Até 100 pacientes</li>
-                <li>10 protocolos</li>
-                <li>5 cursos</li>
-                <li>50 produtos</li>
-                <li>14 dias de trial gratuito</li>
+                <li>Até 50 pacientes</li>
+                <li>Até 10 protocolos</li>
+                <li>Até 5 cursos</li>
+                <li>Até 30 produtos</li>
+                ${subscriptionType === 'TRIAL' ? `<li>${defaultPlan.trialDays} dias de trial gratuito</li>` : '<li>Subscription ativa imediatamente</li>'}
               </ul>
             </div>
             
