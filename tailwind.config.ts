@@ -37,7 +37,10 @@ export default {
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
+  				foreground: 'hsl(var(--secondary-foreground))',
+  				custom: '#4e51e1',
+  				light: '#6366f1',
+  				dark: '#3730a3',
   			},
   			muted: {
   				DEFAULT: 'hsl(var(--muted))',
@@ -62,9 +65,14 @@ export default {
   				'5': 'hsl(var(--chart-5))'
   			},
   			turquoise: {
-  				DEFAULT: '#40E0D0',
-  				light: '#48F0E0',
-  			}
+  				DEFAULT: '#76e1d8',
+  				light: '#8ae8df',
+  			},
+  			highlight: {
+  				DEFAULT: '#76e1d8',
+  				light: '#8ae8df',
+  				dark: '#5dd4c8',
+  			},
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

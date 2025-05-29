@@ -29,8 +29,8 @@ export default function AuthLayout({
       />
       
       {/* Background gradient */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-turquoise/10 via-transparent to-transparent blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-turquoise/10 via-transparent to-transparent blur-3xl pointer-events-none" />
       </div>
 
       {children}

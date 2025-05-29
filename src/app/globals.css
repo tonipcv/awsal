@@ -55,7 +55,9 @@
 
     --radius: 0.5rem;
 
-    --turquoise: 171 77% 64%;
+    --turquoise: 174 71% 68%;
+    --highlight: 174 71% 68%;
+    --secondary-custom: 238 77% 59%;
   }
 
   .dark {
@@ -87,7 +89,9 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
 
-    --turquoise: 171 77% 64%;
+    --turquoise: 174 71% 68%;
+    --highlight: 174 71% 68%;
+    --secondary-custom: 238 77% 59%;
   }
 }
 

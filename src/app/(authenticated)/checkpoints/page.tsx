@@ -251,7 +251,7 @@ export default function CheckpointDaysPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
                 {months.map((month) => {
                   const daysInMonth = getDaysInMonth(month);
-                  const monthProgress = progress.filter(p => p.date.startsWith(format(month, 'yyyy-MM')));
+                  const monthProgress = progress.filter(p => p.date && p.date.startsWith(format(month, 'yyyy-MM')));
                   const completedDays = monthProgress.filter(p => p.isCompleted).length;
                   
                   return (

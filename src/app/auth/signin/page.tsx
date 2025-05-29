@@ -1,145 +1,133 @@
 'use client';
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, FormEvent } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { signIn } from "next-auth/react"
+import { ArrowRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/ui/logo";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
-export default function SignIn() {
+export default function Login() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     try {
-      const result = await signIn("credentials", {
+      console.log('Tentando fazer login...', { email });
+      const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
 
+      console.log('Resultado do login:', result);
+
       if (result?.error) {
-        setError("Email ou senha inválidos");
-      } else {
-        router.refresh();
-        router.push("/checklist");
+        setError(result.error);
+        return;
+      }
+
+      if (result?.ok) {
+        console.log('Login bem sucedido, redirecionando...');
+        
+        // Redireciona para a página inicial que fará o redirecionamento baseado no role
+        router.push('/');
         router.refresh();
       }
-    } catch (
-      /* eslint-disable @typescript-eslint/no-unused-vars */
-      _err
-      /* eslint-enable @typescript-eslint/no-unused-vars */
-    ) {
-      setError("Ocorreu um erro ao fazer login");
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    signIn("google", { callbackUrl: "/checklist" });
-  };
-
   return (
-    <div className="fixed inset-0 min-h-screen w-full grid place-items-center">
-      <Card className="w-full max-w-[400px] mx-4 bg-black/20 border border-white/10 backdrop-blur-sm">
-        <CardHeader className="space-y-6 pb-6">
-          <div className="flex justify-center">
-            <Logo className="text-center" />
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center items-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={13}
+                className="object-contain"
+                priority
+              />
+            </div>
           </div>
-          <div className="space-y-2 text-center">
-            <h2 className="text-2xl font-light tracking-wide">Welcome back</h2>
-            <p className="text-sm text-zinc-400 font-light">Sign in to continue to your account</p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-400 font-light">Email</Label>
-              <Input
-                id="email"
+
+          {/* Mensagem de erro */}
+          {error && (
+            <div className="mb-6 text-red-400 text-center text-sm">{error}</div>
+          )}
+          
+          {/* Formulário */}
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
                 type="email"
+                id="email"
+                name="email"
+                required
+                autoComplete="off"
+                className="w-full px-4 py-2.5 text-sm bg-[#1a1a1a] border border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-600/20 focus:border-gray-500 transition-all duration-200 text-gray-200"
                 placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-400 font-light">Password</Label>
-              <Input
-                id="password"
+            
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
+              <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="password"
+                name="password"
                 required
-                className="bg-white/5 border-white/10 focus:border-turquoise/50 focus:ring-turquoise/10 font-light"
+                autoComplete="new-password"
+                className="w-full px-4 py-2.5 text-sm bg-[#1a1a1a] border border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-600/20 focus:border-gray-500 transition-all duration-200 text-gray-200"
+                placeholder="Enter your password"
               />
             </div>
-            {error && (
-              <div className="text-red-500 text-sm font-light">{error}</div>
-            )}
-            <Button 
+
+            <button 
               type="submit" 
-              className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white"
-              disabled={isLoading}
+              className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
+              disabled={isSubmitting}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
-              <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
-            </Button>
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </form>
 
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-zinc-400 font-light">Or continue with</span>
-            </div>
+          {/* Links */}
+          <div className="mt-4 text-center">
+            <Link 
+              href="/forgot-password" 
+              className="text-sm text-gray-400 hover:text-gray-200 transition-colors duration-200"
+            >
+              Forgot your password?
+            </Link>
           </div>
-
-          <Button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full relative group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300 text-white flex items-center justify-center gap-2"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="currentColor"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="currentColor"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="currentColor"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            Entrar com Google
-            <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 } 

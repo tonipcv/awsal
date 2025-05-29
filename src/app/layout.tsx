@@ -7,8 +7,8 @@ import { NextAuthProvider } from '@/components/NextAuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'BOOP | Unlock Your Potential',
-  description: 'Track your habits, achieve your goals, and unlock your full potential with BOOP.',
+  title: 'Lovu - User Experience in Another Level',
+  description: 'AwLov is a platform that provides a user experience in another level.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'BOOP',
+    title: 'AwLov',
   },
   viewport: {
     width: 'device-width',

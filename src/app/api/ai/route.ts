@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Thought, Habit, Checkpoint } from '@prisma/client'
 
-const DEEPSEEK_API_KEY = 'sk-d9cd6f11a382429a8146cf4b74d09866'
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY
 const API_URL = 'https://api.deepseek.com/v1/chat/completions'
 
 interface FormattedThought {

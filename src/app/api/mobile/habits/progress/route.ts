@@ -12,30 +12,49 @@ export async function POST(request: NextRequest) {
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/');
     
-    let habitIdRaw: string | null = null;
+    let habitIdRaw: string | number | null = null;
     let habitIdFromUrl = false;
+    
+    console.log("Processando requisição:", {
+      url: url.pathname,
+      pathParts,
+      method: request.method
+    });
     
     // Verificar se o ID está na URL
     if (pathParts.length >= 5 && pathParts[3] !== 'progress') {
       habitIdRaw = pathParts[3];
       habitIdFromUrl = true;
+      console.log("ID encontrado na URL:", habitIdRaw);
     }
     
     let date: string;
+    let requestBody;
+    
+    try {
+      requestBody = await request.json();
+      console.log("Corpo da requisição:", requestBody);
+    } catch (error) {
+      console.error("Erro ao analisar o corpo da requisição:", error);
+      return NextResponse.json(
+        { error: 'Corpo da requisição inválido' },
+        { status: 400 }
+      );
+    }
     
     if (habitIdFromUrl) {
       // Se o ID está na URL, só precisamos da data no corpo
-      const body = await request.json();
-      date = body.date;
+      date = requestBody.date;
     } else {
       // Se não, esperamos ID e data no corpo
-      const { habitId, date: bodyDate } = await request.json();
-      habitIdRaw = habitId;
-      date = bodyDate;
+      habitIdRaw = requestBody.habitId;
+      date = requestBody.date;
+      console.log("ID encontrado no corpo:", habitIdRaw);
     }
     
     // Validação de campos obrigatórios
     if (!habitIdRaw || !date) {
+      console.error("Campos obrigatórios faltando:", { habitIdRaw, date });
       return NextResponse.json(
         { error: 'ID do hábito e data são obrigatórios' },
         { status: 400 }
@@ -43,13 +62,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Converter ID do hábito para número
-    const habitId = parseInt(habitIdRaw, 10);
+    let habitId: number;
+    if (typeof habitIdRaw === 'number') {
+      habitId = habitIdRaw;
+    } else {
+      habitId = parseInt(String(habitIdRaw), 10);
+    }
+    
     if (isNaN(habitId)) {
+      console.error("ID do hábito inválido:", habitIdRaw);
       return NextResponse.json(
         { error: 'ID do hábito inválido' },
         { status: 400 }
       );
     }
+    
+    console.log("ID do hábito convertido:", habitId);
 
     // Verificar se o hábito pertence ao usuário
     const habit = await prisma.habit.findUnique({
@@ -58,10 +86,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!habit) {
+      console.error("Hábito não encontrado:", habitId);
       return NextResponse.json({ error: 'Hábito não encontrado' }, { status: 404 });
     }
 
     if (habit.userId !== user.id) {
+      console.error("Usuário não autorizado:", { habitUserId: habit.userId, requestUserId: user.id });
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 
@@ -77,6 +107,7 @@ export async function POST(request: NextRequest) {
         where: { id: existingProgress.id },
         data: { isChecked: !existingProgress.isChecked }
       });
+      console.log("Progresso atualizado:", progress);
       return NextResponse.json({ data: progress });
     } else {
       const progress = await prisma.dayProgress.create({
@@ -86,6 +117,7 @@ export async function POST(request: NextRequest) {
           isChecked: true
         }
       });
+      console.log("Novo progresso criado:", progress);
       return NextResponse.json({ data: progress });
     }
   } catch (error) {
