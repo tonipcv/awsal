@@ -12,7 +12,11 @@ export async function PUT(request: NextRequest) {
 
     // Extrair o ID da URL
     const segments = request.nextUrl.pathname.split('/');
-    const habitId = parseInt(segments[segments.length - 1], 10);
+    const habitId = segments[segments.length - 1];
+
+    if (!habitId || habitId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
+    }
 
     const { title, category } = await request.json();
 
@@ -51,7 +55,7 @@ export async function PUT(request: NextRequest) {
       id: updatedHabit.id,
       title: updatedHabit.title,
       category: updatedHabit.category,
-      progress: updatedHabit.progress.map(p => ({
+      progress: updatedHabit.progress.map((p: any) => ({
         date: p.date.toISOString().split('T')[0],
         isChecked: p.isChecked
       }))
@@ -74,22 +78,29 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Extrair o ID da URL
-    const segments = request.nextUrl.pathname.split('/');
-    const habitId = parseInt(segments[segments.length - 1], 10);
+    const { pathname } = new URL(request.url);
+    const segments = pathname.split('/');
+    const habitId = segments[segments.length - 1];
+
+    if (!habitId || habitId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
+    }
 
     // Verificar se o hábito pertence ao usuário
-    const habit = await prisma.habit.findFirst({
-      where: {
-        id: habitId,
-        userId: session.user.id
-      }
+    const habit = await prisma.habit.findUnique({
+      where: { id: habitId },
+      select: { userId: true }
     });
 
     if (!habit) {
       return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
     }
 
+    if (habit.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Deletar o hábito
     await prisma.habit.delete({
       where: { id: habitId }
     });
@@ -98,7 +109,58 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('Error deleting habit:', error);
     return NextResponse.json(
-      { error: 'Error deleting habit' },
+      { error: 'Failed to delete habit' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { pathname } = new URL(request.url);
+    const segments = pathname.split('/');
+    const habitId = segments[segments.length - 1];
+
+    if (!habitId || habitId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
+    }
+
+    // Verificar se o hábito pertence ao usuário
+    const habit = await prisma.habit.findUnique({
+      where: { id: habitId },
+      select: { userId: true }
+    });
+
+    if (!habit) {
+      return NextResponse.json({ error: 'Habit not found' }, { status: 404 });
+    }
+
+    if (habit.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { title, category } = body;
+
+    // Atualizar o hábito
+    const updatedHabit = await prisma.habit.update({
+      where: { id: habitId },
+      data: {
+        title,
+        category
+      }
+    });
+
+    return NextResponse.json({ data: updatedHabit });
+  } catch (error) {
+    console.error('Error updating habit:', error);
+    return NextResponse.json(
+      { error: 'Failed to update habit' },
       { status: 500 }
     );
   }

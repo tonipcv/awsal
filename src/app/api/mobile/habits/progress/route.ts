@@ -61,20 +61,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Converter ID do hábito para número
-    let habitId: number;
-    if (typeof habitIdRaw === 'number') {
-      habitId = habitIdRaw;
-    } else {
-      habitId = parseInt(String(habitIdRaw), 10);
-    }
+    let habitId: string;
     
-    if (isNaN(habitId)) {
-      console.error("ID do hábito inválido:", habitIdRaw);
-      return NextResponse.json(
-        { error: 'ID do hábito inválido' },
-        { status: 400 }
-      );
+    if (typeof habitIdRaw === 'string') {
+      habitId = habitIdRaw;
+    } else if (Array.isArray(habitIdRaw)) {
+      habitId = habitIdRaw[0];
+    } else {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
+    }
+
+    if (!habitId || habitId === 'undefined') {
+      return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
     
     console.log("ID do hábito convertido:", habitId);

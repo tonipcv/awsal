@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Cycle {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   startDate DateTime
   endDate   DateTime
   vision    String?
@@ -20,12 +20,12 @@ model Cycle {
 }
 
 model Week {
-  id         Int         @id @default(autoincrement())
+  id         String      @id @default(cuid())
   weekNumber Int
   vision     String?
   reflection String?
   isExpanded Boolean     @default(true)
-  cycleId    Int
+  cycleId    String
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   days       Day[]
@@ -37,30 +37,30 @@ model Week {
 }
 
 model Goal {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   title     String
-  weekId    Int
+  weekId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
 }
 
 model KeyResult {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   title     String
   target    Float
   current   Float    @default(0)
-  weekId    Int
+  weekId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
 }
 
 model Day {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   date      DateTime
   notes     String?
-  weekId    Int
+  weekId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   week      Week     @relation(fields: [weekId], references: [id], onDelete: Cascade)
@@ -70,12 +70,12 @@ model Day {
 }
 
 model Task {
-  id            Int      @id @default(autoincrement())
+  id            String   @id @default(cuid())
   title         String
   completed     Boolean  @default(false)
   timeBlock     String
   scheduledTime String?
-  dayId         Int
+  dayId         String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   day           Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
@@ -98,7 +98,7 @@ model EisenhowerTask {
 }
 
 model Habit {
-  id        Int           @id @default(autoincrement())
+  id        String        @id @default(cuid())
   title     String
   category  String        @default("personal")
   createdAt DateTime      @default(now())
@@ -109,10 +109,10 @@ model Habit {
 }
 
 model DayProgress {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   date      DateTime
   isChecked Boolean  @default(false)
-  habitId   Int
+  habitId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   habit     Habit    @relation(fields: [habitId], references: [id])
@@ -121,7 +121,7 @@ model DayProgress {
 }
 
 model Circle {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   title     String
   maxClicks Int      @default(5)
   clicks    Int      @default(0)

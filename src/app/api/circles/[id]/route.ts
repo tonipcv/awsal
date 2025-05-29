@@ -14,11 +14,9 @@ export async function PATCH(request: NextRequest) {
     const { pathname } = new URL(request.url);
     const segments = pathname.split('/');
     // O ID será o último segmento da rota "/api/circles/[id]"
-    const idString = segments[segments.length - 1];
+    const id = segments[segments.length - 1];
 
-    const id = parseInt(idString, 10);
-
-    if (isNaN(id)) {
+    if (!id || id === 'undefined') {
       return NextResponse.json({ error: 'Invalid ID format' }, { status: 400 });
     }
 
