@@ -30,6 +30,16 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        phone: true,
+        birthDate: true,
+        gender: true,
+        address: true,
+        emergencyContact: true,
+        emergencyPhone: true,
+        medicalHistory: true,
+        allergies: true,
+        medications: true,
+        notes: true,
         emailVerified: true,
         image: true
       },
@@ -88,10 +98,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem criar pacientes.' }, { status: 403 });
     }
 
-    const { name, email, password, sendCredentials } = await request.json();
+    const { 
+      name, 
+      email, 
+      password, 
+      sendCredentials,
+      phone,
+      birthDate,
+      gender,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      medicalHistory,
+      allergies,
+      medications,
+      notes
+    } = await request.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
+    }
+
+    // Validações adicionais
+    if (phone && !/^[\d\s\(\)\-\+]+$/.test(phone)) {
+      return NextResponse.json({ error: 'Formato de telefone inválido' }, { status: 400 });
+    }
+
+    if (emergencyPhone && !/^[\d\s\(\)\-\+]+$/.test(emergencyPhone)) {
+      return NextResponse.json({ error: 'Formato de telefone de emergência inválido' }, { status: 400 });
+    }
+
+    if (gender && !['M', 'F', 'Outro'].includes(gender)) {
+      return NextResponse.json({ error: 'Gênero deve ser M, F ou Outro' }, { status: 400 });
     }
 
     // Verificar se o email já está em uso
@@ -107,20 +145,41 @@ export async function POST(request: Request) {
     const tempPassword = password || Math.random().toString(36).slice(-8);
     const hashedPassword = await hash(tempPassword, 12);
 
+    // Preparar dados do paciente
+    const patientData: any = {
+      name,
+      email,
+      password: hashedPassword,
+      role: 'PATIENT',
+      doctorId: session.user.id,
+      emailVerified: new Date() // Auto-verificar para pacientes criados pelo médico
+    };
+
+    // Adicionar campos opcionais se fornecidos
+    if (phone) patientData.phone = phone;
+    if (birthDate) patientData.birthDate = new Date(birthDate);
+    if (gender) patientData.gender = gender;
+    if (address) patientData.address = address;
+    if (emergencyContact) patientData.emergencyContact = emergencyContact;
+    if (emergencyPhone) patientData.emergencyPhone = emergencyPhone;
+    if (medicalHistory) patientData.medicalHistory = medicalHistory;
+    if (allergies) patientData.allergies = allergies;
+    if (medications) patientData.medications = medications;
+    if (notes) patientData.notes = notes;
+
     // Criar paciente
     const patient = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: 'PATIENT',
-        doctorId: session.user.id,
-        emailVerified: new Date() // Auto-verificar para pacientes criados pelo médico
-      },
+      data: patientData,
       select: {
         id: true,
         name: true,
         email: true,
+        phone: true,
+        birthDate: true,
+        gender: true,
+        address: true,
+        emergencyContact: true,
+        emergencyPhone: true,
         emailVerified: true,
         image: true
       }

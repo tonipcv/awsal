@@ -171,6 +171,19 @@ model User {
   role                   String                @default("PATIENT")
   doctorId               String?
   referralCode           String?               @unique
+  
+  // CAMPOS ESPECÍFICOS PARA PACIENTES
+  phone                  String?
+  birthDate              DateTime?
+  gender                 String?
+  address                String?
+  emergencyContact       String?
+  emergencyPhone         String?
+  medicalHistory         String?
+  allergies              String?
+  medications            String?
+  notes                  String?
+  
   accounts               Account[]
   checkpoints            Checkpoint[]
   circles                Circle[]

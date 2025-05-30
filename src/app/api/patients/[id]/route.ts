@@ -72,4 +72,58 @@ export async function GET(
     console.error('Error fetching patient:', String(error));
     return NextResponse.json({ error: 'Erro ao buscar paciente' }, { status: 500 });
   }
+}
+
+// DELETE /api/patients/[id] - Excluir um paciente
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    // Verificar se é médico
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!user || user.role !== 'DOCTOR') {
+      return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem excluir pacientes.' }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    // Verificar se o paciente existe e pertence ao médico
+    const patient = await prisma.user.findFirst({
+      where: {
+        id: id,
+        role: 'PATIENT',
+        doctorId: session.user.id
+      }
+    });
+
+    if (!patient) {
+      return NextResponse.json({ error: 'Paciente não encontrado ou não pertence a este médico' }, { status: 404 });
+    }
+
+    // Excluir o paciente (o Prisma irá automaticamente excluir registros relacionados devido ao onDelete: Cascade)
+    await prisma.user.delete({
+      where: { id: id }
+    });
+
+    return NextResponse.json({ 
+      message: 'Paciente excluído com sucesso',
+      deletedPatient: {
+        id: patient.id,
+        name: patient.name,
+        email: patient.email
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting patient:', String(error));
+    return NextResponse.json({ error: 'Erro ao excluir paciente' }, { status: 500 });
+  }
 } 
