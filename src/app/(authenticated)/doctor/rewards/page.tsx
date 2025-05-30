@@ -66,7 +66,7 @@ export default function DoctorRewardsPage() {
     maxRedemptions: ''
   });
 
-  // Carregar recompensas
+  // Load rewards
   const loadRewards = async () => {
     try {
       const response = await fetch('/api/referrals/rewards');
@@ -76,7 +76,7 @@ export default function DoctorRewardsPage() {
         setRewards(data.rewards);
       }
     } catch (error) {
-      console.error('Erro ao carregar recompensas:', error);
+      console.error('Error loading rewards:', error);
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function DoctorRewardsPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Erro ao criar recompensa:', error);
+      console.error('Error creating reward:', error);
     } finally {
       setSubmitting(false);
     }
@@ -153,7 +153,7 @@ export default function DoctorRewardsPage() {
         resetForm();
       }
     } catch (error) {
-      console.error('Erro ao editar recompensa:', error);
+      console.error('Error editing reward:', error);
     } finally {
       setSubmitting(false);
     }
@@ -174,12 +174,12 @@ export default function DoctorRewardsPage() {
         await loadRewards();
       }
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
+      console.error('Error changing status:', error);
     }
   };
 
   const handleDelete = async (reward: Reward) => {
-    if (!confirm('Tem certeza que deseja deletar esta recompensa?')) {
+    if (!confirm('Are you sure you want to delete this reward?')) {
       return;
     }
 
@@ -192,10 +192,10 @@ export default function DoctorRewardsPage() {
         await loadRewards();
       } else {
         const data = await response.json();
-        alert(data.error || 'Erro ao deletar recompensa');
+        alert(data.error || 'Error deleting reward');
       }
     } catch (error) {
-      console.error('Erro ao deletar recompensa:', error);
+      console.error('Error deleting reward:', error);
     }
   };
 
@@ -217,39 +217,43 @@ export default function DoctorRewardsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-slate-700">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span>Carregando...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="lg:ml-64">
+          <div className="flex items-center space-x-3 text-gray-700">
+            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
+            <span className="font-medium">Loading...</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-start mb-6">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Recompensas</h1>
-              <p className="text-slate-600 mt-2">Configure recompensas para o sistema de indicações</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Rewards</h1>
+              <p className="text-gray-600 font-medium">Configure rewards for the referral system</p>
             </div>
-            <Button onClick={openCreateDialog} className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={openCreateDialog} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
               <Plus className="h-4 w-4" />
-              <span>Nova Recompensa</span>
+              <span>New Reward</span>
             </Button>
           </div>
 
-          {/* Lista de Recompensas */}
+          {/* Rewards List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rewards.map((reward) => (
-              <Card key={reward.id} className={`relative bg-white border-slate-200 ${!reward.isActive ? 'opacity-60' : ''}`}>
-                <CardHeader>
+              <Card key={reward.id} className={`relative bg-white border-gray-200 shadow-lg rounded-2xl ${!reward.isActive ? 'opacity-60' : ''}`}>
+                <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-2">
-                      <Gift className="h-5 w-5 text-purple-600" />
-                      <CardTitle className="text-lg text-slate-900">{reward.title}</CardTitle>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-purple-100 rounded-xl">
+                        <Gift className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <CardTitle className="text-lg font-bold text-gray-900">{reward.title}</CardTitle>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -258,13 +262,13 @@ export default function DoctorRewardsPage() {
                       />
                     </div>
                   </div>
-                  <CardDescription className="text-slate-600">{reward.description}</CardDescription>
+                  <CardDescription className="text-gray-600 font-medium">{reward.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Créditos necessários:</span>
-                      <Badge variant="secondary" className="flex items-center space-x-1">
+                      <span className="text-sm font-semibold text-gray-600">Credits required:</span>
+                      <Badge variant="secondary" className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 rounded-lg px-3 py-1 font-medium">
                         <Star className="h-3 w-3" />
                         <span>{reward.creditsRequired}</span>
                       </Badge>
@@ -272,25 +276,25 @@ export default function DoctorRewardsPage() {
 
                     {reward.maxRedemptions && (
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-600">Limite de resgates:</span>
-                        <span className="text-sm font-medium text-slate-900">
+                        <span className="text-sm font-semibold text-gray-600">Redemption limit:</span>
+                        <span className="text-sm font-semibold text-gray-900">
                           {reward.currentRedemptions} / {reward.maxRedemptions}
                         </span>
                       </div>
                     )}
 
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Total resgatado:</span>
+                      <span className="text-sm font-semibold text-gray-600">Total redeemed:</span>
                       <div className="flex items-center space-x-1">
-                        <Users className="h-3 w-3 text-slate-500" />
-                        <span className="text-sm font-medium text-slate-900">{reward.currentRedemptions}</span>
+                        <Users className="h-3 w-3 text-gray-500" />
+                        <span className="text-sm font-semibold text-gray-900">{reward.currentRedemptions}</span>
                       </div>
                     </div>
 
                     {reward.maxRedemptions && reward.currentRedemptions >= reward.maxRedemptions && (
-                      <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                      <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-3 rounded-xl border border-orange-200">
                         <AlertTriangle className="h-4 w-4" />
-                        <span className="text-sm">Limite atingido</span>
+                        <span className="text-sm font-medium">Limit reached</span>
                       </div>
                     )}
 
@@ -299,16 +303,16 @@ export default function DoctorRewardsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => openEditDialog(reward)}
-                        className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-50"
+                        className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-9 font-semibold"
                       >
                         <Edit className="h-3 w-3 mr-1" />
-                        Editar
+                        Edit
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(reward)}
-                        className="text-red-600 hover:text-red-700 border-red-300 hover:bg-red-50"
+                        className="text-red-600 hover:text-red-700 border-red-300 hover:bg-red-50 rounded-xl h-9 px-3 font-semibold"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -320,60 +324,62 @@ export default function DoctorRewardsPage() {
           </div>
 
           {rewards.length === 0 && (
-            <Card className="bg-white border-slate-200">
-              <CardContent className="pt-6">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-8">
                 <div className="text-center py-8">
-                  <Gift className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Nenhuma recompensa criada</h3>
-                  <p className="text-slate-500 mb-4">
-                    Crie recompensas para incentivar indicações dos seus pacientes
+                  <div className="p-4 bg-gray-100 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <Gift className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No rewards created</h3>
+                  <p className="text-gray-500 font-medium mb-6">
+                    Create rewards to incentivize referrals from your patients
                   </p>
-                  <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button onClick={openCreateDialog} className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
                     <Plus className="h-4 w-4 mr-2" />
-                    Criar Primeira Recompensa
+                    Create First Reward
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Dialog Criar Recompensa */}
+          {/* Create Reward Dialog */}
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogContent className="bg-white">
+            <DialogContent className="bg-white rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-slate-900">Nova Recompensa</DialogTitle>
-                <DialogDescription className="text-slate-600">
-                  Crie uma nova recompensa para o sistema de indicações
+                <DialogTitle className="text-xl font-bold text-gray-900">New Reward</DialogTitle>
+                <DialogDescription className="text-gray-600 font-medium">
+                  Create a new reward for the referral system
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <Label htmlFor="title" className="text-slate-700">Título *</Label>
+                  <Label htmlFor="title" className="text-gray-900 font-semibold">Title *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Ex: Consulta gratuita"
-                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                    placeholder="e.g., Free consultation"
+                    className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="text-slate-700">Descrição *</Label>
+                  <Label htmlFor="description" className="text-gray-900 font-semibold">Description *</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descreva os detalhes da recompensa..."
+                    placeholder="Describe the reward details..."
                     rows={3}
-                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                    className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="creditsRequired" className="text-slate-700">Créditos necessários *</Label>
+                    <Label htmlFor="creditsRequired" className="text-gray-900 font-semibold">Credits required *</Label>
                     <Input
                       id="creditsRequired"
                       type="number"
@@ -381,84 +387,84 @@ export default function DoctorRewardsPage() {
                       value={formData.creditsRequired}
                       onChange={(e) => setFormData(prev => ({ ...prev, creditsRequired: e.target.value }))}
                       placeholder="1"
-                      className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="maxRedemptions" className="text-slate-700">Limite de resgates</Label>
+                    <Label htmlFor="maxRedemptions" className="text-gray-900 font-semibold">Redemption limit</Label>
                     <Input
                       id="maxRedemptions"
                       type="number"
                       min="1"
                       value={formData.maxRedemptions}
                       onChange={(e) => setFormData(prev => ({ ...prev, maxRedemptions: e.target.value }))}
-                      placeholder="Ilimitado"
-                      className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      placeholder="Unlimited"
+                      className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                     />
                   </div>
                 </div>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="border-slate-300 text-slate-700 hover:bg-slate-50">
-                  Cancelar
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold">
+                  Cancel
                 </Button>
                 <Button 
                   onClick={handleCreate}
                   disabled={submitting || !formData.title || !formData.description || !formData.creditsRequired}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-6 font-semibold"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Criando...
+                      Creating...
                     </>
                   ) : (
-                    'Criar Recompensa'
+                    'Create Reward'
                   )}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          {/* Dialog Editar Recompensa */}
+          {/* Edit Reward Dialog */}
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="bg-white">
+            <DialogContent className="bg-white rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-slate-900">Editar Recompensa</DialogTitle>
-                <DialogDescription className="text-slate-600">
-                  Atualize os dados da recompensa
+                <DialogTitle className="text-xl font-bold text-gray-900">Edit Reward</DialogTitle>
+                <DialogDescription className="text-gray-600 font-medium">
+                  Update the reward information
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <Label htmlFor="edit-title" className="text-slate-700">Título *</Label>
+                  <Label htmlFor="edit-title" className="text-gray-900 font-semibold">Title *</Label>
                   <Input
                     id="edit-title"
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Ex: Consulta gratuita"
-                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                    placeholder="e.g., Free consultation"
+                    className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-description" className="text-slate-700">Descrição *</Label>
+                  <Label htmlFor="edit-description" className="text-gray-900 font-semibold">Description *</Label>
                   <Textarea
                     id="edit-description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descreva os detalhes da recompensa..."
+                    placeholder="Describe the reward details..."
                     rows={3}
-                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                    className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="edit-creditsRequired" className="text-slate-700">Créditos necessários *</Label>
+                    <Label htmlFor="edit-creditsRequired" className="text-gray-900 font-semibold">Credits required *</Label>
                     <Input
                       id="edit-creditsRequired"
                       type="number"
@@ -466,41 +472,41 @@ export default function DoctorRewardsPage() {
                       value={formData.creditsRequired}
                       onChange={(e) => setFormData(prev => ({ ...prev, creditsRequired: e.target.value }))}
                       placeholder="1"
-                      className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="edit-maxRedemptions" className="text-slate-700">Limite de resgates</Label>
+                    <Label htmlFor="edit-maxRedemptions" className="text-gray-900 font-semibold">Redemption limit</Label>
                     <Input
                       id="edit-maxRedemptions"
                       type="number"
                       min="1"
                       value={formData.maxRedemptions}
                       onChange={(e) => setFormData(prev => ({ ...prev, maxRedemptions: e.target.value }))}
-                      placeholder="Ilimitado"
-                      className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                      placeholder="Unlimited"
+                      className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                     />
                   </div>
                 </div>
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowEditDialog(false)} className="border-slate-300 text-slate-700 hover:bg-slate-50">
-                  Cancelar
+                <Button variant="outline" onClick={() => setShowEditDialog(false)} className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold">
+                  Cancel
                 </Button>
                 <Button 
                   onClick={handleEdit}
                   disabled={submitting || !formData.title || !formData.description || !formData.creditsRequired}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-6 font-semibold"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
+                      Saving...
                     </>
                   ) : (
-                    'Salvar Alterações'
+                    'Save Changes'
                   )}
                 </Button>
               </DialogFooter>

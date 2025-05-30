@@ -142,20 +142,33 @@ export default function ProtocolDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando protocolo...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            className="w-16 h-16 mx-auto mb-6"
+          />
+          <p className="text-gray-600 font-medium">Carregando...</p>
+        </div>
       </div>
     );
   }
 
   if (!protocol) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-medium text-slate-800 mb-2">Protocolo não encontrado</h2>
-          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Link href="/doctor/protocols">Voltar aos protocolos</Link>
-          </Button>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Protocolo não encontrado</h2>
+                <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                  <Link href="/doctor/protocols">Voltar aos protocolos</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -164,301 +177,307 @@ export default function ProtocolDetailPage() {
   const activeAssignments = getActiveAssignments();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
         
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-            <Link href="/doctor/protocols">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Voltar
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-light text-slate-800">
-                {protocol.name}
-              </h1>
-              {protocol.isTemplate && (
-                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 text-blue-700 border border-blue-200">
-                  Template
-                </span>
-              )}
+          {/* Header */}
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
+              <Link href="/doctor/protocols">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Voltar
+              </Link>
+            </Button>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {protocol.name}
+                </h1>
+                {protocol.isTemplate && (
+                  <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                    Template
+                  </Badge>
+                )}
+              </div>
+              <p className="text-gray-600 font-medium">
+                {protocol.description || 'Sem descrição'}
+              </p>
             </div>
-            <p className="text-sm text-slate-600">
-              {protocol.description || 'Sem descrição'}
-            </p>
+            <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+              <Link href={`/doctor/protocols/${protocol.id}/edit`}>
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Editar
+              </Link>
+            </Button>
           </div>
-          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-            <Link href={`/doctor/protocols/${protocol.id}/edit`}>
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Editar
-            </Link>
-          </Button>
-        </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          
-          {/* Protocol Info */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="grid lg:grid-cols-3 gap-8">
             
-            {/* Stats */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-normal text-slate-800">Estatísticas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <CalendarDaysIcon className="h-4 w-4 text-blue-600" />
+            {/* Protocol Info */}
+            <div className="lg:col-span-1 space-y-8">
+              
+              {/* Stats */}
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-bold text-gray-900">Estatísticas</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-teal-100 rounded-xl">
+                      <CalendarDaysIcon className="h-5 w-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Duração</p>
+                      <p className="text-lg font-bold text-gray-900">{protocol.duration} dias</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Duração</p>
-                    <p className="text-sm font-medium text-slate-800">{protocol.duration} dias</p>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-100 rounded-xl">
+                      <UsersIcon className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Pacientes Ativos</p>
+                      <p className="text-lg font-bold text-gray-900">{activeAssignments.length}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <UsersIcon className="h-4 w-4 text-green-600" />
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-[#5154e7] bg-opacity-10 rounded-xl">
+                      <CheckCircleIcon className="h-5 w-5 text-[#5154e7]" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Total de Tarefas</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Pacientes Ativos</p>
-                    <p className="text-sm font-medium text-slate-800">{activeAssignments.length}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <CheckCircleIcon className="h-4 w-4 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Total de Tarefas</p>
-                    <p className="text-sm font-medium text-slate-800">
-                      {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)}
+                  
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600 font-medium">
+                      Criado em {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   </div>
-                </div>
-                
-                <div className="pt-2 border-t border-slate-200">
-                  <p className="text-xs text-slate-500">
-                    Criado em {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Protocol Products */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-sm font-normal text-slate-800 flex items-center gap-2">
-                  <ShoppingBagIcon className="h-4 w-4" />
-                  Produtos Recomendados
-                  {protocol.products && protocol.products.length > 0 && (
-                    <Badge variant="secondary" className="text-xs ml-auto bg-blue-100 text-blue-700 border-blue-200">
-                      {protocol.products.length}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!protocol.products || protocol.products.length === 0 ? (
-                  <div className="text-center py-4">
-                    <ShoppingBagIcon className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">
-                      Nenhum produto configurado
-                    </p>
+              {/* Protocol Products */}
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
+                      <ShoppingBagIcon className="h-5 w-5" />
+                      Produtos Recomendados
+                    </CardTitle>
+                    {protocol.products && protocol.products.length > 0 && (
+                      <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                        {protocol.products.length}
+                      </Badge>
+                    )}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {protocol.products
-                      .sort((a, b) => a.order - b.order)
-                      .map((protocolProduct) => (
-                        <div key={protocolProduct.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-start gap-3">
-                            {/* Product Image */}
-                            <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {protocolProduct.product.imageUrl ? (
-                                <img 
-                                  src={protocolProduct.product.imageUrl} 
-                                  alt={protocolProduct.product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <ShoppingBagIcon className="h-4 w-4 text-slate-400" />
-                              )}
-                            </div>
-
-                            {/* Product Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-medium text-slate-800 truncate">
-                                    {protocolProduct.product.name}
-                                  </h4>
-                                  {protocolProduct.product.brand && (
-                                    <p className="text-xs text-blue-600">{protocolProduct.product.brand}</p>
-                                  )}
-                                </div>
-                                
-                                {/* Price and Required Badge */}
-                                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                  {(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice) && (
-                                    <div className="text-right">
-                                      {protocolProduct.product.discountPrice && protocolProduct.product.originalPrice ? (
-                                        <>
-                                          <div className="text-xs font-medium text-blue-600">
-                                            {formatPrice(protocolProduct.product.discountPrice)}
-                                          </div>
-                                          <div className="text-xs text-slate-400 line-through">
-                                            {formatPrice(protocolProduct.product.originalPrice)}
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div className="text-xs font-medium text-slate-800">
-                                          {formatPrice(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice)}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {protocolProduct.isRequired && (
-                                    <Badge variant="destructive" className="text-xs px-1 py-0 bg-red-100 text-red-700 border-red-200">
-                                      Obrigatório
-                                    </Badge>
-                                  )}
-                                </div>
+                </CardHeader>
+                <CardContent>
+                  {!protocol.products || protocol.products.length === 0 ? (
+                    <div className="text-center py-8">
+                      <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">
+                        Nenhum produto configurado
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {protocol.products
+                        .sort((a, b) => a.order - b.order)
+                        .map((protocolProduct) => (
+                          <div key={protocolProduct.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="flex items-start gap-4">
+                              {/* Product Image */}
+                              <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {protocolProduct.product.imageUrl ? (
+                                  <img 
+                                    src={protocolProduct.product.imageUrl} 
+                                    alt={protocolProduct.product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <ShoppingBagIcon className="h-5 w-5 text-gray-400" />
+                                )}
                               </div>
 
-                              {/* Notes */}
-                              {protocolProduct.notes && (
-                                <p className="text-xs text-slate-600 mt-2">{protocolProduct.notes}</p>
-                              )}
-
-                              {/* Purchase Link */}
-                              {protocolProduct.product.purchaseUrl && (
-                                <div className="mt-2">
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-7 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                                    asChild
-                                  >
-                                    <a 
-                                      href={protocolProduct.product.purchaseUrl} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                    >
-                                      <LinkIcon className="h-3 w-3 mr-1" />
-                                      Comprar
-                                    </a>
-                                  </Button>
+                              {/* Product Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-bold text-gray-900 truncate">
+                                      {protocolProduct.product.name}
+                                    </h4>
+                                    {protocolProduct.product.brand && (
+                                      <p className="text-sm text-[#5154e7] font-semibold">{protocolProduct.product.brand}</p>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Price and Required Badge */}
+                                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                    {(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice) && (
+                                      <div className="text-right">
+                                        {protocolProduct.product.discountPrice && protocolProduct.product.originalPrice ? (
+                                          <>
+                                            <div className="text-sm font-bold text-[#5154e7]">
+                                              {formatPrice(protocolProduct.product.discountPrice)}
+                                            </div>
+                                            <div className="text-sm text-gray-400 line-through">
+                                              {formatPrice(protocolProduct.product.originalPrice)}
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="text-sm font-bold text-gray-900">
+                                            {formatPrice(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {protocolProduct.isRequired && (
+                                      <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-200 font-semibold">
+                                        Obrigatório
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
+
+                                {/* Notes */}
+                                {protocolProduct.notes && (
+                                  <p className="text-sm text-gray-600 mt-3 font-medium">{protocolProduct.notes}</p>
+                                )}
+
+                                {/* Purchase Link */}
+                                {protocolProduct.product.purchaseUrl && (
+                                  <div className="mt-3">
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 text-sm border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-semibold"
+                                      asChild
+                                    >
+                                      <a 
+                                        href={protocolProduct.product.purchaseUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                      >
+                                        <LinkIcon className="h-4 w-4 mr-2" />
+                                        Comprar
+                                      </a>
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Assigned Patients */}
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-gray-900">Pacientes Ativos</CardTitle>
+                    <Button size="sm" variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold">
+                      <Link href={`/doctor/protocols/${protocol.id}/assign`}>
+                        <UserPlusIcon className="h-4 w-4 mr-2" />
+                        Atribuir
+                      </Link>
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {activeAssignments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">
+                        Nenhum paciente ativo
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {activeAssignments.map((assignment) => (
+                        <div key={assignment.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <div className="h-10 w-10 rounded-full bg-[#5154e7] flex items-center justify-center text-sm font-bold text-white">
+                            {getPatientInitials(assignment.user.name)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-bold text-gray-900">{assignment.user.name || 'Sem nome'}</p>
+                            <p className="text-sm text-gray-600 font-medium">
+                              Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                            </p>
                           </div>
                         </div>
                       ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Assigned Patients */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-normal text-slate-800">Pacientes Ativos</CardTitle>
-                <Button size="sm" variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                  <Link href={`/doctor/protocols/${protocol.id}/assign`}>
-                    <UserPlusIcon className="h-3 w-3 mr-1" />
-                    Atribuir
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {activeAssignments.length === 0 ? (
-                  <div className="text-center py-4">
-                    <UsersIcon className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">
-                      Nenhum paciente ativo
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {activeAssignments.map((assignment) => (
-                      <div key={assignment.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600">
-                          {getPatientInitials(assignment.user.name)}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-slate-800">{assignment.user.name || 'Sem nome'}</p>
-                          <p className="text-xs text-slate-500">
-                            Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Protocol Days */}
-          <div className="lg:col-span-2">
-            <div className="space-y-4">
-              {protocol.days.length === 0 ? (
-                <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                  <CardContent className="p-8">
-                    <div className="text-center">
-                      <CalendarDaysIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-slate-800 mb-2">Nenhum dia configurado</h3>
-                      <p className="text-sm text-slate-600 mb-4">
-                        Este protocolo ainda não possui dias ou tarefas configuradas.
-                      </p>
-                      <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <Link href={`/doctor/protocols/${protocol.id}/edit`}>
-                          <PencilIcon className="h-4 w-4 mr-2" />
-                          Editar Protocolo
-                        </Link>
-                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                protocol.days
-                  .sort((a, b) => a.dayNumber - b.dayNumber)
-                  .map((day) => (
-                    <Card key={day.id} className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                      <CardHeader>
-                        <CardTitle className="text-sm font-normal text-blue-600">
-                          Dia {day.dayNumber}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {day.tasks.length === 0 ? (
-                          <p className="text-sm text-slate-500 text-center py-4">
-                            Nenhuma tarefa configurada para este dia
-                          </p>
-                        ) : (
-                          <div className="space-y-3">
-                            {day.tasks
-                              .sort((a, b) => a.order - b.order)
-                              .map((task) => (
-                                <div key={task.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                  <h4 className="text-sm font-medium text-slate-800 mb-1">{task.title}</h4>
-                                  {task.description && (
-                                    <p className="text-xs text-slate-600">{task.description}</p>
-                                  )}
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
-              )}
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Protocol Days */}
+            <div className="lg:col-span-2">
+              <div className="space-y-6">
+                {protocol.days.length === 0 ? (
+                  <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-8">
+                      <div className="text-center">
+                        <CalendarDaysIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">Nenhum dia configurado</h3>
+                        <p className="text-gray-600 font-medium mb-6">
+                          Este protocolo ainda não possui dias ou tarefas configuradas.
+                        </p>
+                        <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                          <Link href={`/doctor/protocols/${protocol.id}/edit`}>
+                            <PencilIcon className="h-4 w-4 mr-2" />
+                            Editar Protocolo
+                          </Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  protocol.days
+                    .sort((a, b) => a.dayNumber - b.dayNumber)
+                    .map((day) => (
+                      <Card key={day.id} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="text-lg font-bold text-[#5154e7]">
+                            Dia {day.dayNumber}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {day.tasks.length === 0 ? (
+                            <p className="text-gray-600 font-medium text-center py-8">
+                              Nenhuma tarefa configurada para este dia
+                            </p>
+                          ) : (
+                            <div className="space-y-4">
+                              {day.tasks
+                                .sort((a, b) => a.order - b.order)
+                                .map((task) => (
+                                  <div key={task.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
+                                    {task.description && (
+                                      <p className="text-gray-600 font-medium">{task.description}</p>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
+                )}
+              </div>
             </div>
           </div>
         </div>

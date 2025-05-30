@@ -78,22 +78,22 @@ export default function DoctorDashboard() {
       try {
         setIsLoading(true);
 
-        // Carregar pacientes
+        // Load clients
         const patientsResponse = await fetch('/api/patients');
         if (!patientsResponse.ok) {
-          console.error('Error loading patients:', patientsResponse.status);
+          console.error('Error loading clients:', patientsResponse.status);
           return;
         }
         const patientsData = await patientsResponse.json();
         
-        // Carregar protocolos
+        // Load protocols
         const protocolsResponse = await fetch('/api/protocols');
         const protocolsData = await protocolsResponse.json();
 
         setPatients(Array.isArray(patientsData) ? patientsData : []);
         setProtocols(Array.isArray(protocolsData) ? protocolsData : []);
 
-        // Calcular estatísticas
+        // Calculate statistics
         const totalPatients = patientsData.length || 0;
         const activeProtocols = patientsData.reduce((acc: number, patient: Patient) => {
           return acc + patient.assignedProtocols.filter(p => p.isActive).length;
@@ -104,7 +104,7 @@ export default function DoctorDashboard() {
           totalPatients,
           activeProtocols,
           totalProtocols,
-          completedToday: 0 // TODO: Implementar estatística de conclusões diárias
+          completedToday: 0 // TODO: Implement daily completion statistics
         });
 
       } catch (error) {
@@ -120,7 +120,7 @@ export default function DoctorDashboard() {
   }, [session]);
 
   const getPatientInitials = (name?: string) => {
-    if (!name) return 'P';
+    if (!name) return 'C';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
@@ -131,7 +131,7 @@ export default function DoctorDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando dashboard...</span>
+        <span className="text-xs text-slate-600">Loading dashboard...</span>
       </div>
     );
   }
@@ -145,10 +145,10 @@ export default function DoctorDashboard() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard Médico
+                Dashboard
               </h1>
               <p className="text-gray-500 font-medium">
-                Bem-vindo, Dr. {session?.user?.name}
+                Welcome, {session?.user?.name}
               </p>
             </div>
             
@@ -159,7 +159,7 @@ export default function DoctorDashboard() {
               >
                 <Link href="/doctor/patients">
                   <UserPlusIcon className="h-4 w-4 mr-2" />
-                  Novo Paciente
+                  New Client
                 </Link>
               </Button>
               <Button 
@@ -169,7 +169,7 @@ export default function DoctorDashboard() {
               >
                 <Link href="/doctor/protocols">
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Novo Protocolo
+                  New Protocol
                 </Link>
               </Button>
             </div>
@@ -184,7 +184,7 @@ export default function DoctorDashboard() {
                     <UsersIcon className="h-6 w-6 text-[#5154e7]" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 font-semibold">Pacientes</p>
+                    <p className="text-sm text-gray-500 font-semibold">Clients</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.totalPatients}</p>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function DoctorDashboard() {
                     <ClockIcon className="h-6 w-6 text-teal-600" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 font-semibold">Protocolos Ativos</p>
+                    <p className="text-sm text-gray-500 font-semibold">Active Protocols</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.activeProtocols}</p>
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function DoctorDashboard() {
                     <DocumentTextIcon className="h-6 w-6 text-cyan-600" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 font-semibold">Total Protocolos</p>
+                    <p className="text-sm text-gray-500 font-semibold">Total Protocols</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.totalProtocols}</p>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export default function DoctorDashboard() {
                     <CheckCircleIcon className="h-6 w-6 text-emerald-600" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500 font-semibold">Concluídos Hoje</p>
+                    <p className="text-sm text-gray-500 font-semibold">Completed Today</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.completedToday}</p>
                   </div>
                 </div>
@@ -236,21 +236,21 @@ export default function DoctorDashboard() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             
-            {/* Pacientes Recentes */}
+            {/* Active Clients */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Pacientes Ativos</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900">Active Clients</CardTitle>
                 <Button variant="ghost" size="sm" asChild className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl font-semibold">
-                  <Link href="/doctor/patients">Ver todos</Link>
+                  <Link href="/doctor/patients">View all</Link>
                 </Button>
               </CardHeader>
               <CardContent className="p-6 pt-0">
                 {patients.length === 0 ? (
                   <div className="text-center py-12">
                     <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4 font-medium">Nenhum paciente cadastrado</p>
+                    <p className="text-gray-500 mb-4 font-medium">No clients registered</p>
                     <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm" asChild>
-                      <Link href="/doctor/patients">Adicionar primeiro paciente</Link>
+                      <Link href="/doctor/patients">Add first client</Link>
                     </Button>
                   </div>
                 ) : (
@@ -266,7 +266,7 @@ export default function DoctorDashboard() {
                               {getPatientInitials(patient.name)}
                             </div>
                             <div className="space-y-1">
-                              <p className="font-bold text-gray-900">{patient.name || 'Sem nome'}</p>
+                              <p className="font-bold text-gray-900">{patient.name || 'No name'}</p>
                               <p className="text-sm text-gray-500 font-medium">{patient.email}</p>
                             </div>
                           </div>
@@ -277,7 +277,7 @@ export default function DoctorDashboard() {
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-sm bg-gray-100 text-gray-600 border border-gray-200 font-medium">
-                                Sem protocolo
+                                No protocol
                               </span>
                             )}
                           </div>
@@ -289,21 +289,21 @@ export default function DoctorDashboard() {
               </CardContent>
             </Card>
 
-            {/* Protocolos Recentes */}
+            {/* Created Protocols */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Protocolos Criados</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900">Created Protocols</CardTitle>
                 <Button variant="ghost" size="sm" asChild className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl font-semibold">
-                  <Link href="/doctor/protocols">Ver todos</Link>
+                  <Link href="/doctor/protocols">View all</Link>
                 </Button>
               </CardHeader>
               <CardContent className="p-6 pt-0">
                 {protocols.length === 0 ? (
                   <div className="text-center py-12">
                     <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4 font-medium">Nenhum protocolo criado</p>
+                    <p className="text-gray-500 mb-4 font-medium">No protocols created</p>
                     <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm" asChild>
-                      <Link href="/doctor/protocols">Criar primeiro protocolo</Link>
+                      <Link href="/doctor/protocols">Create first protocol</Link>
                     </Button>
                   </div>
                 ) : (
@@ -326,12 +326,12 @@ export default function DoctorDashboard() {
                               <div className="flex items-center gap-1">
                                 <CalendarDaysIcon className="h-4 w-4 text-gray-400" />
                                 <span className="text-sm text-gray-500 font-medium">
-                                  {protocol.duration} dias
+                                  {protocol.duration} days
                                 </span>
                               </div>
                               {activeAssignments > 0 && (
                                 <span className="text-sm text-teal-600 font-semibold">
-                                  {activeAssignments} ativo{activeAssignments > 1 ? 's' : ''}
+                                  {activeAssignments} active
                                 </span>
                               )}
                             </div>
@@ -348,7 +348,7 @@ export default function DoctorDashboard() {
           {/* Quick Actions */}
           <Card className="mt-8 bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardHeader className="p-6 pb-4">
-              <CardTitle className="text-lg font-bold text-gray-900">Ações Rápidas</CardTitle>
+              <CardTitle className="text-lg font-bold text-gray-900">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -359,7 +359,7 @@ export default function DoctorDashboard() {
                 >
                   <Link href="/doctor/patients">
                     <UserPlusIcon className="h-8 w-8" />
-                    <span className="text-sm">Adicionar Paciente</span>
+                    <span className="text-sm">Add Client</span>
                   </Link>
                 </Button>
                 
@@ -370,7 +370,7 @@ export default function DoctorDashboard() {
                 >
                   <Link href="/doctor/protocols">
                     <PlusIcon className="h-8 w-8" />
-                    <span className="text-sm">Criar Protocolo</span>
+                    <span className="text-sm">Create Protocol</span>
                   </Link>
                 </Button>
                 
@@ -392,7 +392,7 @@ export default function DoctorDashboard() {
                 >
                   <Link href="/doctor/patients">
                     <UsersIcon className="h-8 w-8" />
-                    <span className="text-sm">Ver Pacientes</span>
+                    <span className="text-sm">View Clients</span>
                   </Link>
                 </Button>
               </div>

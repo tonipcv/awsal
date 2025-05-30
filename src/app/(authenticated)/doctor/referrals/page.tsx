@@ -81,11 +81,11 @@ interface ReferralStats {
 }
 
 const statusConfig = {
-  PENDING: { label: 'Pendente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  CONTACTED: { label: 'Contatado', color: 'bg-blue-100 text-blue-800', icon: UserPlus },
-  CONVERTED: { label: 'Convertido', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  REJECTED: { label: 'Rejeitado', color: 'bg-red-100 text-red-800', icon: XCircle },
-  EXPIRED: { label: 'Expirado', color: 'bg-gray-100 text-gray-800', icon: Clock }
+  PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  CONTACTED: { label: 'Contacted', color: 'bg-blue-100 text-blue-800', icon: UserPlus },
+  CONVERTED: { label: 'Converted', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: XCircle },
+  EXPIRED: { label: 'Expired', color: 'bg-gray-100 text-gray-800', icon: Clock }
 };
 
 export default function DoctorReferralsPage() {
@@ -104,7 +104,7 @@ export default function DoctorReferralsPage() {
     notes: ''
   });
 
-  // Carregar dados
+  // Load data
   const loadData = async () => {
     try {
       const params = new URLSearchParams({
@@ -122,7 +122,7 @@ export default function DoctorReferralsPage() {
         setTotalPages(data.pagination.pages);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ export default function DoctorReferralsPage() {
         setUpdateForm({ status: '', notes: '' });
       }
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      console.error('Error updating status:', error);
     } finally {
       setUpdating(null);
     }
@@ -176,93 +176,105 @@ export default function DoctorReferralsPage() {
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(generateReferralLink());
-    // Aqui você poderia adicionar um toast de sucesso
+    // Here you could add a success toast
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-slate-700">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span>Carregando...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="lg:ml-64">
+          <div className="flex items-center space-x-3 text-gray-700">
+            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
+            <span className="font-medium">Loading...</span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex justify-between items-start mb-6">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Sistema de Indicações</h1>
-              <p className="text-slate-600 mt-2">Gerencie suas indicações e acompanhe conversões</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Referral System</h1>
+              <p className="text-gray-600 font-medium">Manage your referrals and track conversions</p>
             </div>
-            <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
               <Share2 className="h-4 w-4" />
-              <span>Copiar Link de Indicação</span>
+              <span>Copy Referral Link</span>
             </Button>
           </div>
 
-          {/* Estatísticas */}
+          {/* Statistics */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-              <Card className="bg-white border-slate-200">
-                <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center">
-                    <Users className="h-8 w-8 text-blue-600" />
+                    <div className="p-3 bg-blue-100 rounded-xl">
+                      <Users className="h-6 w-6 text-blue-600" />
+                    </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-slate-600">Total</p>
-                      <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+                      <p className="text-sm font-semibold text-gray-600">Total</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-slate-200">
-                <CardContent className="pt-6">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center">
-                    <Clock className="h-8 w-8 text-yellow-600" />
+                    <div className="p-3 bg-yellow-100 rounded-xl">
+                      <Clock className="h-6 w-6 text-yellow-600" />
+                    </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-slate-600">Pendentes</p>
-                      <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
+                      <p className="text-sm font-semibold text-gray-600">Pending</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-slate-200">
-                <CardContent className="pt-6">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center">
-                    <UserPlus className="h-8 w-8 text-blue-600" />
+                    <div className="p-3 bg-blue-100 rounded-xl">
+                      <UserPlus className="h-6 w-6 text-blue-600" />
+                    </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-slate-600">Contatados</p>
-                      <p className="text-2xl font-bold text-slate-900">{stats.contacted}</p>
+                      <p className="text-sm font-semibold text-gray-600">Contacted</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.contacted}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-slate-200">
-                <CardContent className="pt-6">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+                    <div className="p-3 bg-green-100 rounded-xl">
+                      <CheckCircle className="h-6 w-6 text-green-600" />
+                    </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-slate-600">Convertidos</p>
-                      <p className="text-2xl font-bold text-slate-900">{stats.converted}</p>
+                      <p className="text-sm font-semibold text-gray-600">Converted</p>
+                      <p className="text-2xl font-bold text-gray-900">{stats.converted}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-slate-200">
-                <CardContent className="pt-6">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center">
-                    <TrendingUp className="h-8 w-8 text-purple-600" />
+                    <div className="p-3 bg-purple-100 rounded-xl">
+                      <TrendingUp className="h-6 w-6 text-purple-600" />
+                    </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-slate-600">Taxa Conversão</p>
-                      <p className="text-2xl font-bold text-slate-900">
+                      <p className="text-sm font-semibold text-gray-600">Conversion Rate</p>
+                      <p className="text-2xl font-bold text-gray-900">
                         {stats.total > 0 ? Math.round((stats.converted / stats.total) * 100) : 0}%
                       </p>
                     </div>
@@ -272,22 +284,22 @@ export default function DoctorReferralsPage() {
             </div>
           )}
 
-          {/* Filtros */}
-          <Card className="mb-6 bg-white border-slate-200">
-            <CardContent className="pt-6">
+          {/* Filters */}
+          <Card className="mb-8 bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div>
-                  <Label htmlFor="status-filter" className="text-slate-700">Filtrar por Status</Label>
+                  <Label htmlFor="status-filter" className="text-gray-900 font-semibold">Filter by Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48 bg-white border-slate-300 text-slate-900">
-                      <SelectValue placeholder="Todos os status" />
+                    <SelectTrigger className="w-48 mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 rounded-xl h-10 font-medium">
+                      <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">Todos</SelectItem>
-                      <SelectItem value="PENDING">Pendentes</SelectItem>
-                      <SelectItem value="CONTACTED">Contatados</SelectItem>
-                      <SelectItem value="CONVERTED">Convertidos</SelectItem>
-                      <SelectItem value="REJECTED">Rejeitados</SelectItem>
+                      <SelectItem value="ALL">All</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="CONTACTED">Contacted</SelectItem>
+                      <SelectItem value="CONVERTED">Converted</SelectItem>
+                      <SelectItem value="REJECTED">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -295,24 +307,24 @@ export default function DoctorReferralsPage() {
             </CardContent>
           </Card>
 
-          {/* Tabela de Indicações */}
-          <Card className="bg-white border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-slate-900">Indicações Recebidas</CardTitle>
-              <CardDescription className="text-slate-600">
-                Lista de todas as indicações recebidas e seus status
+          {/* Referrals Table */}
+          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-bold text-gray-900">Received Referrals</CardTitle>
+              <CardDescription className="text-gray-600 font-medium">
+                List of all received referrals and their status
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-slate-700">Nome</TableHead>
-                    <TableHead className="text-slate-700">Email</TableHead>
-                    <TableHead className="text-slate-700">Indicado por</TableHead>
-                    <TableHead className="text-slate-700">Status</TableHead>
-                    <TableHead className="text-slate-700">Data</TableHead>
-                    <TableHead className="text-slate-700">Ações</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Name</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Email</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Referred by</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Status</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Date</TableHead>
+                    <TableHead className="text-gray-900 font-semibold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -320,22 +332,22 @@ export default function DoctorReferralsPage() {
                     const StatusIcon = statusConfig[lead.status as keyof typeof statusConfig]?.icon || Clock;
                     return (
                       <TableRow key={lead.id}>
-                        <TableCell className="font-medium text-slate-900">{lead.name}</TableCell>
-                        <TableCell className="text-slate-700">{lead.email}</TableCell>
+                        <TableCell className="font-semibold text-gray-900">{lead.name}</TableCell>
+                        <TableCell className="text-gray-700 font-medium">{lead.email}</TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-slate-900">{lead.referrer.name}</p>
-                            <p className="text-sm text-slate-500">{lead.referrer.email}</p>
+                            <p className="font-semibold text-gray-900">{lead.referrer.name}</p>
+                            <p className="text-sm text-gray-500 font-medium">{lead.referrer.email}</p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusConfig[lead.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'}>
+                          <Badge className={`${statusConfig[lead.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'} rounded-lg px-3 py-1 font-medium`}>
                             <StatusIcon className="h-3 w-3 mr-1" />
                             {statusConfig[lead.status as keyof typeof statusConfig]?.label || lead.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-slate-700">
-                          {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
+                        <TableCell className="text-gray-700 font-medium">
+                          {new Date(lead.createdAt).toLocaleDateString('en-US')}
                         </TableCell>
                         <TableCell>
                           <Dialog>
@@ -344,55 +356,55 @@ export default function DoctorReferralsPage() {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => openUpdateDialog(lead)}
-                                className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-9 px-3 font-semibold"
                               >
                                 <Edit className="h-4 w-4 mr-1" />
-                                Gerenciar
+                                Manage
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-white">
+                            <DialogContent className="bg-white rounded-2xl">
                               <DialogHeader>
-                                <DialogTitle className="text-slate-900">Gerenciar Indicação</DialogTitle>
-                                <DialogDescription className="text-slate-600">
-                                  Atualize o status e adicione observações sobre esta indicação
+                                <DialogTitle className="text-xl font-bold text-gray-900">Manage Referral</DialogTitle>
+                                <DialogDescription className="text-gray-600 font-medium">
+                                  Update the status and add notes about this referral
                                 </DialogDescription>
                               </DialogHeader>
                               
-                              <div className="space-y-4">
+                              <div className="space-y-6">
                                 <div>
-                                  <Label className="text-slate-700">Dados da Indicação</Label>
-                                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    <p className="text-slate-900"><strong>Nome:</strong> {selectedLead?.name}</p>
-                                    <p className="text-slate-900"><strong>Email:</strong> {selectedLead?.email}</p>
-                                    <p className="text-slate-900"><strong>Telefone:</strong> {selectedLead?.phone || 'Não informado'}</p>
-                                    <p className="text-slate-900"><strong>Indicado por:</strong> {selectedLead?.referrer.name}</p>
+                                  <Label className="text-gray-900 font-semibold">Referral Data</Label>
+                                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-2">
+                                    <p className="text-gray-900 font-medium"><strong>Name:</strong> {selectedLead?.name}</p>
+                                    <p className="text-gray-900 font-medium"><strong>Email:</strong> {selectedLead?.email}</p>
+                                    <p className="text-gray-900 font-medium"><strong>Phone:</strong> {selectedLead?.phone || 'Not provided'}</p>
+                                    <p className="text-gray-900 font-medium"><strong>Referred by:</strong> {selectedLead?.referrer.name}</p>
                                   </div>
                                 </div>
 
                                 <div>
-                                  <Label htmlFor="status" className="text-slate-700">Status</Label>
+                                  <Label htmlFor="status" className="text-gray-900 font-semibold">Status</Label>
                                   <Select value={updateForm.status} onValueChange={(value) => setUpdateForm(prev => ({ ...prev, status: value }))}>
-                                    <SelectTrigger className="bg-white border-slate-300 text-slate-900">
-                                      <SelectValue placeholder="Selecione o status" />
+                                    <SelectTrigger className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 rounded-xl h-10 font-medium">
+                                      <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="PENDING">Pendente</SelectItem>
-                                      <SelectItem value="CONTACTED">Contatado</SelectItem>
-                                      <SelectItem value="CONVERTED">Convertido</SelectItem>
-                                      <SelectItem value="REJECTED">Rejeitado</SelectItem>
+                                      <SelectItem value="PENDING">Pending</SelectItem>
+                                      <SelectItem value="CONTACTED">Contacted</SelectItem>
+                                      <SelectItem value="CONVERTED">Converted</SelectItem>
+                                      <SelectItem value="REJECTED">Rejected</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
 
                                 <div>
-                                  <Label htmlFor="notes" className="text-slate-700">Observações</Label>
+                                  <Label htmlFor="notes" className="text-gray-900 font-semibold">Notes</Label>
                                   <Textarea
                                     id="notes"
                                     value={updateForm.notes}
                                     onChange={(e) => setUpdateForm(prev => ({ ...prev, notes: e.target.value }))}
-                                    placeholder="Adicione observações sobre o contato..."
+                                    placeholder="Add notes about the contact..."
                                     rows={3}
-                                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-500"
+                                    className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
                                   />
                                 </div>
                               </div>
@@ -401,15 +413,15 @@ export default function DoctorReferralsPage() {
                                 <Button 
                                   onClick={handleStatusUpdate}
                                   disabled={updating === selectedLead?.id}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-6 font-semibold"
                                 >
                                   {updating === selectedLead?.id ? (
                                     <>
                                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Atualizando...
+                                      Updating...
                                     </>
                                   ) : (
-                                    'Atualizar'
+                                    'Update'
                                   )}
                                 </Button>
                               </DialogFooter>
@@ -423,39 +435,41 @@ export default function DoctorReferralsPage() {
               </Table>
 
               {leads.length === 0 && (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Nenhuma indicação encontrada</h3>
-                  <p className="text-slate-500">
+                <div className="text-center py-12">
+                  <div className="p-4 bg-gray-100 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <Users className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No referrals found</h3>
+                  <p className="text-gray-500 font-medium">
                     {statusFilter === 'ALL' 
-                      ? 'Você ainda não recebeu indicações. Compartilhe seu link de indicação!'
-                      : 'Nenhuma indicação encontrada com este filtro.'
+                      ? 'You haven\'t received any referrals yet. Share your referral link!'
+                      : 'No referrals found with this filter.'
                     }
                   </p>
                 </div>
               )}
 
-              {/* Paginação */}
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center mt-6 space-x-2">
+                <div className="flex justify-center mt-8 space-x-3">
                   <Button
                     variant="outline"
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                   >
-                    Anterior
+                    Previous
                   </Button>
-                  <span className="flex items-center px-4 text-slate-700">
-                    Página {page} de {totalPages}
+                  <span className="flex items-center px-4 text-gray-700 font-medium">
+                    Page {page} of {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                   >
-                    Próxima
+                    Next
                   </Button>
                 </div>
               )}

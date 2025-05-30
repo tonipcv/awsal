@@ -264,28 +264,28 @@ export default function PatientsPage() {
       <div className="lg:ml-64">
         <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
         
-          {/* Header */}
+        {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
               <h1 className="text-3xl font-light text-gray-900">
-                Pacientes
-              </h1>
+              Pacientes
+            </h1>
               <p className="text-gray-500">
-                Gerencie seus pacientes e protocolos atribuídos
-              </p>
-            </div>
-            
-            <Button 
-              onClick={() => setShowAddPatient(true)}
-              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Adicionar Paciente
-            </Button>
+              Gerencie seus pacientes e protocolos atribuídos
+            </p>
           </div>
+          
+          <Button 
+            onClick={() => setShowAddPatient(true)}
+              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Adicionar Paciente
+          </Button>
+        </div>
 
-          {/* Add Patient Modal */}
-          {showAddPatient && (
+        {/* Add Patient Modal */}
+        {showAddPatient && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -424,7 +424,7 @@ export default function PatientsPage() {
                         <Label htmlFor="emergencyPhone" className="text-sm font-medium text-gray-700">
                           Telefone de Emergência
                         </Label>
-                        <Input
+                  <Input
                           id="emergencyPhone"
                           value={newPatient.emergencyPhone}
                           onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
@@ -521,10 +521,10 @@ export default function PatientsPage() {
                 </div>
                 
                 <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowAddPatient(false);
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddPatient(false);
                       resetForm();
                     }}
                     disabled={isAddingPatient}
@@ -577,9 +577,9 @@ export default function PatientsPage() {
                       onClick={handleDeleteCancel}
                       disabled={deletingPatientId === patientToDelete.id}
                       className="flex-1 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 rounded-xl"
-                    >
-                      Cancelar
-                    </Button>
+                >
+                  Cancelar
+                </Button>
                     <Button
                       onClick={handleDeleteConfirm}
                       disabled={deletingPatientId === patientToDelete.id}
@@ -663,79 +663,79 @@ export default function PatientsPage() {
                 </div>
               </div>
             </div>
-          )}
+        )}
 
-          {/* Search */}
+        {/* Search */}
           <Card className="mb-6 bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardContent className="p-6">
-              <div className="relative">
+            <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar pacientes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+              <Input
+                placeholder="Buscar pacientes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 border-gray-300 bg-white text-gray-700 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                />
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Patients List */}
+        {filteredPatients.length === 0 ? (
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardContent className="p-8">
+              <div className="text-center">
+                  <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2 text-gray-900">
+                  {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
+                </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                  {searchTerm 
+                    ? 'Tente ajustar o termo de busca'
+                    : 'Comece adicionando seu primeiro paciente'
+                  }
+                </p>
+                {!searchTerm && (
+                  <Button 
+                    onClick={() => setShowAddPatient(true)}
+                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Primeiro Paciente
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
-
-          {/* Patients List */}
-          {filteredPatients.length === 0 ? (
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2 text-gray-900">
-                    {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {searchTerm 
-                      ? 'Tente ajustar o termo de busca'
-                      : 'Comece adicionando seu primeiro paciente'
-                    }
-                  </p>
-                  {!searchTerm && (
-                    <Button 
-                      onClick={() => setShowAddPatient(true)}
-                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                      Adicionar Primeiro Paciente
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
+        ) : (
             <div className="grid gap-6">
-              {filteredPatients.map((patient) => {
-                const activeProtocol = getActiveProtocol(patient);
-                const totalProtocols = patient.assignedProtocols.length;
-                
-                return (
+            {filteredPatients.map((patient) => {
+              const activeProtocol = getActiveProtocol(patient);
+              const totalProtocols = patient.assignedProtocols.length;
+              
+              return (
                   <Card key={patient.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-4">
-                          {/* Avatar */}
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        {/* Avatar */}
                           <div className="h-12 w-12 rounded-xl bg-[#5154e7] flex items-center justify-center text-sm font-medium text-white">
-                            {getPatientInitials(patient.name)}
+                          {getPatientInitials(patient.name)}
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-medium text-gray-900">
+                              {patient.name || 'Nome não informado'}
+                            </h3>
+                            {activeProtocol && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs bg-green-100 text-green-700 border border-green-200">
+                                Protocolo Ativo
+                              </span>
+                            )}
                           </div>
                           
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-medium text-gray-900">
-                                {patient.name || 'Nome não informado'}
-                              </h3>
-                              {activeProtocol && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs bg-green-100 text-green-700 border border-green-200">
-                                  Protocolo Ativo
-                                </span>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-1 mb-3">
+                          <div className="flex items-center gap-1 mb-3">
                               <EnvelopeIcon className="h-3 w-3 text-gray-400" />
                               <span className="text-sm text-gray-500">{patient.email}</span>
                               {patient.phone && (
@@ -744,57 +744,57 @@ export default function PatientsPage() {
                                   <span className="text-sm text-gray-500">{patient.phone}</span>
                                 </>
                               )}
-                            </div>
-                            
-                            {activeProtocol ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
+                          </div>
+                          
+                          {activeProtocol ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
                                   <DocumentTextIcon className="h-3 w-3 text-gray-400" />
                                   <span className="text-sm font-medium text-gray-700">{activeProtocol.protocol.name}</span>
-                                </div>
+                              </div>
                                 <div className="flex items-center gap-4 text-xs text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <CalendarDaysIcon className="h-3 w-3" />
-                                    <span>{activeProtocol.protocol.duration} dias</span>
-                                  </div>
-                                  <span>
-                                    Iniciado em {format(new Date(activeProtocol.startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                  </span>
+                                <div className="flex items-center gap-1">
+                                  <CalendarDaysIcon className="h-3 w-3" />
+                                  <span>{activeProtocol.protocol.duration} dias</span>
                                 </div>
+                                <span>
+                                  Iniciado em {format(new Date(activeProtocol.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                </span>
                               </div>
-                            ) : (
+                            </div>
+                          ) : (
                               <div className="text-sm text-gray-500">
-                                {totalProtocols > 0 
-                                  ? `${totalProtocols} protocolo${totalProtocols > 1 ? 's' : ''} concluído${totalProtocols > 1 ? 's' : ''}`
-                                  : 'Nenhum protocolo atribuído'
-                                }
-                              </div>
-                            )}
-                          </div>
+                              {totalProtocols > 0 
+                                ? `${totalProtocols} protocolo${totalProtocols > 1 ? 's' : ''} concluído${totalProtocols > 1 ? 's' : ''}`
+                                : 'Nenhum protocolo atribuído'
+                              }
+                            </div>
+                          )}
                         </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
                             className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
-                          >
-                            <Link href={`/doctor/patients/${patient.id}`}>
-                              <EyeIcon className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
+                        >
+                          <Link href={`/doctor/patients/${patient.id}`}>
+                            <EyeIcon className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
                             className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-[#4145d1] hover:border-[#5154e7] rounded-xl"
-                          >
-                            <Link href={`/doctor/patients/${patient.id}/assign`}>
-                              <DocumentTextIcon className="h-4 w-4 mr-1" />
-                              Protocolo
-                            </Link>
-                          </Button>
+                        >
+                          <Link href={`/doctor/patients/${patient.id}/assign`}>
+                            <DocumentTextIcon className="h-4 w-4 mr-1" />
+                            Protocolo
+                          </Link>
+                        </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -812,13 +812,13 @@ export default function PatientsPage() {
                             )}
                           </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
         </div>
       </div>
     </div>

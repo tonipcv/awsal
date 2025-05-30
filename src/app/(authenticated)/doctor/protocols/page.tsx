@@ -99,33 +99,36 @@ export default function ProtocolsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando protocolos...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7] mb-4"></div>
+          <span className="text-xs text-gray-600 font-medium">Carregando protocolos...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 pb-24 lg:pb-6">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
         
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h1 className="text-2xl font-light text-slate-800">
+              <h1 className="text-3xl font-bold text-gray-900">
                 Protocolos
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-gray-600 mt-2 font-medium">
                 Gerencie seus protocolos e templates
               </p>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 asChild
                 variant="outline"
-                className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-4 font-semibold"
               >
                 <Link href="/doctor/templates">
                   <DocumentTextIcon className="h-4 w-4 mr-2" />
@@ -134,7 +137,7 @@ export default function ProtocolsPage() {
               </Button>
               <Button 
                 asChild
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-4 font-semibold"
               >
                 <Link href="/doctor/protocols/new">
                   <PlusIcon className="h-4 w-4 mr-2" />
@@ -145,28 +148,28 @@ export default function ProtocolsPage() {
           </div>
 
           {/* Filters and Search */}
-          <Card className="mb-6 bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
+          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                     <Input
                       placeholder="Buscar protocolos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                      className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('all')}
                     className={filter === 'all' 
-                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                     }
                   >
                     Todos
@@ -176,8 +179,8 @@ export default function ProtocolsPage() {
                     size="sm"
                     onClick={() => setFilter('active')}
                     className={filter === 'active' 
-                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                     }
                   >
                     Ativos
@@ -187,8 +190,8 @@ export default function ProtocolsPage() {
                     size="sm"
                     onClick={() => setFilter('templates')}
                     className={filter === 'templates' 
-                      ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
+                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                     }
                   >
                     Templates
@@ -200,28 +203,30 @@ export default function ProtocolsPage() {
 
           {/* Protocols List */}
           {filteredProtocols.length === 0 ? (
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardContent className="p-8">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-12">
                 <div className="text-center">
-                  <DocumentTextIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2 text-slate-800">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <DocumentTextIcon className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">
                     {searchTerm ? 'Nenhum protocolo encontrado' : 'Nenhum protocolo criado'}
                   </h3>
-                  <p className="text-sm text-slate-600 mb-4">
+                  <p className="text-gray-600 mb-8 font-medium">
                     {searchTerm 
                       ? 'Tente ajustar os filtros ou termo de busca'
                       : 'Comece criando seu primeiro protocolo ou usando um template'
                     }
                   </p>
                   {!searchTerm && (
-                    <div className="flex gap-2 justify-center">
-                      <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <div className="flex gap-3 justify-center">
+                      <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
                         <Link href="/doctor/protocols/new">
                           <PlusIcon className="h-4 w-4 mr-2" />
                           Criar Protocolo
                         </Link>
                       </Button>
-                      <Button variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+                      <Button variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold">
                         <Link href="/doctor/templates">
                           <DocumentTextIcon className="h-4 w-4 mr-2" />
                           Ver Templates
@@ -233,56 +238,56 @@ export default function ProtocolsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-6">
               {filteredProtocols.map((protocol) => {
                 const activeAssignments = getActiveAssignments(protocol);
                 
                 return (
-                  <Card key={protocol.id} className="bg-white/80 border-slate-200/50 backdrop-blur-sm hover:bg-slate-50/80 transition-colors">
-                    <CardContent className="p-6">
+                  <Card key={protocol.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+                    <CardContent className="p-8">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-medium text-slate-800">{protocol.name}</h3>
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="text-xl font-bold text-gray-900">{protocol.name}</h3>
                             {protocol.isTemplate && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-purple-100 text-purple-700 border border-purple-200">
+                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm bg-[#5154e7] text-white font-semibold">
                                 Template
                               </span>
                             )}
                             {activeAssignments > 0 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 text-blue-700 border border-blue-200">
+                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
                                 {activeAssignments} ativo{activeAssignments > 1 ? 's' : ''}
                               </span>
                             )}
                           </div>
                           
                           {protocol.description && (
-                            <p className="text-sm text-slate-600 mb-3">
+                            <p className="text-gray-600 mb-4 font-medium">
                               {protocol.description}
                             </p>
                           )}
                           
-                          <div className="flex items-center gap-4 text-xs text-slate-600">
-                            <div className="flex items-center gap-1">
-                              <CalendarDaysIcon className="h-3 w-3" />
-                              <span>{protocol.duration} dias</span>
+                          <div className="flex items-center gap-6 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <CalendarDaysIcon className="h-4 w-4" />
+                              <span className="font-medium">{protocol.duration} dias</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <UsersIcon className="h-3 w-3" />
-                              <span>{protocol.assignments.length} atribuição{protocol.assignments.length !== 1 ? 'ões' : ''}</span>
+                            <div className="flex items-center gap-2">
+                              <UsersIcon className="h-4 w-4" />
+                              <span className="font-medium">{protocol.assignments.length} atribuição{protocol.assignments.length !== 1 ? 'ões' : ''}</span>
                             </div>
-                            <span>
+                            <span className="font-medium">
                               Criado em {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                             </span>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 ml-4">
+                        <div className="flex items-center gap-2 ml-6">
                           <Button
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 w-10 p-0"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}`}>
                               <EyeIcon className="h-4 w-4" />
@@ -292,7 +297,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 w-10 p-0"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}/edit`}>
                               <PencilIcon className="h-4 w-4" />
@@ -302,7 +307,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteProtocol(protocol.id)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-10 w-10 p-0"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </Button>

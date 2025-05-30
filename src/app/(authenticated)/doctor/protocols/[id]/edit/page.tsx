@@ -18,7 +18,10 @@ import {
   ClockIcon,
   DocumentTextIcon,
   ShoppingBagIcon,
-  XMarkIcon
+  XMarkIcon,
+  InformationCircleIcon,
+  PlayIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
@@ -583,595 +586,560 @@ export default function EditProtocolPage() {
 
   if (isLoadingProtocol) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando protocolo...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7]"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const totalTasks = protocol.days.reduce((acc, day) => acc + day.tasks.length, 0);
-  const availableProductsToAdd = availableProducts.filter(
-    product => !protocol.products.some(pp => pp.productId === product.id)
+  // Calculated variables
+  const totalTasks = protocol.days.reduce((total, day) => {
+    return total + day.tasks.length + day.sessions.reduce((sessionTotal, session) => sessionTotal + session.tasks.length, 0);
+  }, 0);
+
+  const availableProductsToAdd = availableProducts.filter(product => 
+    !protocol.products.some(pp => pp.productId === product.id)
   );
 
+  const updateProductRequired = (protocolProductId: string, isRequired: boolean) => {
+    updateProtocolProduct(protocolProductId, 'isRequired', isRequired);
+  };
+
+  const updateProductOrder = (protocolProductId: string, order: number) => {
+    updateProtocolProduct(protocolProductId, 'order', order);
+  };
+
+  const updateProductNotes = (protocolProductId: string, notes: string) => {
+    updateProtocolProduct(protocolProductId, 'notes', notes);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
         
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+          {/* Header */}
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href={`/doctor/protocols/${params.id}`}>
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Voltar
               </Link>
             </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-light text-slate-800">
-              Editar Protocolo
-            </h1>
-            <div className="flex items-center gap-2 text-xs text-slate-600 mt-1">
-                <ClockIcon className="h-3 w-3" />
-                <span>{protocol.duration} dias</span>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Editar Protocolo
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-gray-600 mt-2 font-medium">
+                <div className="flex items-center gap-2">
+                  <ClockIcon className="h-4 w-4" />
+                  <span>{protocol.duration} dias</span>
+                </div>
                 <span>•</span>
-                <DocumentTextIcon className="h-3 w-3" />
-                <span>{totalTasks} tarefas</span>
+                <div className="flex items-center gap-2">
+                  <DocumentTextIcon className="h-4 w-4" />
+                  <span>{totalTasks} tarefas</span>
+                </div>
                 <span>•</span>
-                <ShoppingBagIcon className="h-3 w-3" />
-                <span>{protocol.products.length} produtos</span>
+                <div className="flex items-center gap-2">
+                  <ShoppingBagIcon className="h-4 w-4" />
+                  <span>{protocol.products.length} produtos</span>
+                </div>
+              </div>
             </div>
+            <Button 
+              onClick={saveProtocol} 
+              disabled={isLoading}
+              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckIcon className="h-4 w-4 mr-2" />
+                  Salvar
+                </>
+              )}
+            </Button>
           </div>
-          <Button 
-            onClick={saveProtocol} 
-            disabled={isLoading}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Salvando...
-              </>
-            ) : (
-              <>
-                <CheckIcon className="h-4 w-4 mr-2" />
-                Salvar
-              </>
-            )}
-          </Button>
-        </div>
 
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="space-y-8">
             
             {/* Protocol Basic Info */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-800">Nome do Protocolo</Label>
-                  <Input
-                    id="name"
-                    value={protocol.name}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Ex: Pós-Preenchimento Facial"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Informações Básicas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Protocolo</Label>
+                      <Input
+                        id="name"
+                        value={protocol.name}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Ex: Pós-Preenchimento Facial"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="duration" className="text-slate-800">Duração (dias)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={protocol.duration}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                      className="border-slate-300 bg-white text-slate-700"
-                  />
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="duration" className="text-gray-900 font-semibold">Duração (dias)</Label>
+                      <Input
+                        id="duration"
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={protocol.duration}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="description" className="text-slate-800">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={protocol.description}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Descreva o protocolo..."
-                      className="min-h-[80px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                      <Textarea
+                        id="description"
+                        value={protocol.description}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descreva o protocolo..."
+                        className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                      />
+                    </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isTemplate"
-                    checked={protocol.isTemplate}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
-                      className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
-                  />
-                    <Label htmlFor="isTemplate" className="text-slate-800">
-                    Salvar como template
-                  </Label>
-                </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="isTemplate"
+                          checked={protocol.isTemplate}
+                          onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
+                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                        />
+                        <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
+                          Salvar como template
+                        </Label>
+                      </div>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="showDoctorInfo"
-                    checked={protocol.showDoctorInfo}
-                    onChange={(e) => setProtocol(prev => ({ ...prev, showDoctorInfo: e.target.checked }))}
-                    className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
-                  />
-                  <Label htmlFor="showDoctorInfo" className="text-slate-800">
-                    Mostrar médico responsável
-                  </Label>
-                  <span className="text-xs text-slate-500 ml-2">
-                    (Exibe sua foto e nome na tela do paciente)
-                  </span>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="showDoctorInfo"
+                          checked={protocol.showDoctorInfo}
+                          onChange={(e) => setProtocol(prev => ({ ...prev, showDoctorInfo: e.target.checked }))}
+                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                        />
+                        <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
+                          Mostrar médico responsável
+                        </Label>
+                        <span className="text-xs text-gray-500">
+                          (Exibe sua foto e nome na tela do paciente)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
             {/* Modal Configuration for Unavailable Protocol */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Modal para Protocolo Indisponível</CardTitle>
-              <p className="text-sm text-slate-600">
-                Configure o modal que será exibido quando este protocolo estiver indisponível para um paciente específico.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="modalTitle" className="text-slate-800">Título do Modal</Label>
-                    <Input
-                      id="modalTitle"
-                      value={protocol.modalTitle}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, modalTitle: e.target.value }))}
-                      placeholder="Ex: Protocolo em Desenvolvimento"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="modalVideoUrl" className="text-slate-800">URL do Vídeo (opcional)</Label>
-                    <Input
-                      id="modalVideoUrl"
-                      value={protocol.modalVideoUrl}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, modalVideoUrl: e.target.value }))}
-                      placeholder="Ex: https://www.youtube.com/embed/..."
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="modalDescription" className="text-slate-800">Descrição do Modal</Label>
-                    <Textarea
-                      id="modalDescription"
-                      value={protocol.modalDescription}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, modalDescription: e.target.value }))}
-                      placeholder="Descreva o que será mostrado no modal..."
-                      className="min-h-[80px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Modal para Protocolo Indisponível</CardTitle>
+                <p className="text-gray-600 font-medium">
+                  Configure o modal que será exibido quando este protocolo estiver indisponível para um paciente específico.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="modalButtonText" className="text-slate-800">Texto do Botão</Label>
+                      <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
                       <Input
-                        id="modalButtonText"
-                        value={protocol.modalButtonText}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonText: e.target.value }))}
-                        placeholder="Ex: Saber mais"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        id="modalTitle"
+                        value={protocol.modalTitle}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, modalTitle: e.target.value }))}
+                        placeholder="Ex: Protocolo em Desenvolvimento"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="modalButtonUrl" className="text-slate-800">URL do Botão (opcional)</Label>
+                      <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
                       <Input
-                        id="modalButtonUrl"
-                        value={protocol.modalButtonUrl}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonUrl: e.target.value }))}
-                        placeholder="Ex: https://..."
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        id="modalVideoUrl"
+                        value={protocol.modalVideoUrl}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, modalVideoUrl: e.target.value }))}
+                        placeholder="Ex: https://www.youtube.com/embed/..."
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
+                      <Textarea
+                        id="modalDescription"
+                        value={protocol.modalDescription}
+                        onChange={(e) => setProtocol(prev => ({ ...prev, modalDescription: e.target.value }))}
+                        placeholder="Descreva o que será mostrado no modal..."
+                        className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
+                        <Input
+                          id="modalButtonText"
+                          value={protocol.modalButtonText}
+                          onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonText: e.target.value }))}
+                          placeholder="Ex: Saber mais"
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão (opcional)</Label>
+                        <Input
+                          id="modalButtonUrl"
+                          value={protocol.modalButtonUrl}
+                          onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonUrl: e.target.value }))}
+                          placeholder="Ex: https://..."
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
             {/* Products Section */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg text-slate-800">Produtos do Protocolo</CardTitle>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Adicione produtos que serão recomendados aos pacientes neste protocolo.
-                  </p>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
-                  {protocol.products.length} produtos
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-
-              {/* Add Product */}
-              {availableProductsToAdd.length > 0 ? (
-                <div className="space-y-3">
-                  <Label className="text-slate-800">Adicionar Produto</Label>
-                  <div className="flex gap-3">
-                    <Select onValueChange={addProduct}>
-                      <SelectTrigger className="flex-1 border-slate-300 bg-white text-slate-700">
-                        <SelectValue placeholder="Selecione um produto..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableProductsToAdd.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{product.name}</span>
-                              {product.brand && (
-                                <span className="text-xs text-slate-500">({product.brand})</span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-bold text-gray-900">Produtos do Protocolo</CardTitle>
+                    <p className="text-gray-600 font-medium mt-1">
+                      Adicione produtos que serão recomendados aos pacientes neste protocolo.
+                    </p>
                   </div>
+                  <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                    {protocol.products.length} produtos
+                  </Badge>
                 </div>
-              ) : (
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                  <p className="text-xs text-slate-600 text-center">
-                    {availableProducts.length === 0 
-                      ? 'Carregando produtos...' 
-                      : 'Todos os produtos disponíveis já foram adicionados ao protocolo.'
-                    }
-                  </p>
-                </div>
-              )}
+              </CardHeader>
+              <CardContent className="space-y-6">
 
-              {/* Products List */}
-              {protocol.products.length === 0 ? (
-                <div className="p-8 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="text-center">
-                    <ShoppingBagIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-sm font-medium text-slate-800 mb-2">Nenhum produto adicionado</h3>
-                    <p className="text-xs text-slate-600">
-                        Produtos ajudam os pacientes a seguir o protocolo corretamente.
-                      </p>
-                    </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {protocol.products.map((protocolProduct, index) => (
-                    <div key={protocolProduct.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="flex items-start gap-4">
-                          {/* Product Image */}
-                        <div className="w-16 h-16 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                            {protocolProduct.product.imageUrl ? (
-                              <img 
-                                src={protocolProduct.product.imageUrl} 
-                                alt={protocolProduct.product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                            <ShoppingBagIcon className="h-6 w-6 text-slate-400" />
-                            )}
-                          </div>
-
-                          {/* Product Info */}
-                          <div className="flex-1 space-y-3">
-                            <div>
-                            <h4 className="text-sm font-medium text-slate-800">
-                                {protocolProduct.product.name}
-                              </h4>
-                              {protocolProduct.product.brand && (
-                              <p className="text-xs text-blue-600">{protocolProduct.product.brand}</p>
-                              )}
-                              {protocolProduct.product.description && (
-                              <p className="text-xs text-slate-600 mt-1 line-clamp-2">
-                                  {protocolProduct.product.description}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Price */}
-                            {(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice) && (
+                {/* Add Product */}
+                {availableProductsToAdd.length > 0 ? (
+                  <div className="space-y-3">
+                    <Label className="text-gray-900 font-semibold">Adicionar Produto</Label>
+                    <div className="flex gap-3">
+                      <Select onValueChange={addProduct}>
+                        <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
+                          <SelectValue placeholder="Selecione um produto..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableProductsToAdd.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
                               <div className="flex items-center gap-2">
-                                {protocolProduct.product.discountPrice && protocolProduct.product.originalPrice ? (
-                                  <>
-                                  <span className="text-xs font-medium text-blue-600">
-                                      {formatPrice(protocolProduct.product.discountPrice)}
-                                    </span>
-                                  <span className="text-xs text-slate-400 line-through">
-                                      {formatPrice(protocolProduct.product.originalPrice)}
-                                    </span>
-                                  </>
-                                ) : (
-                                <span className="text-xs font-medium text-slate-800">
-                                    {formatPrice(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice)}
-                                  </span>
+                                <span>{product.name}</span>
+                                {product.brand && (
+                                  <span className="text-xs text-gray-500">({product.brand})</span>
                                 )}
                               </div>
-                            )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                    <p className="text-sm text-gray-600 text-center font-medium">
+                      {availableProducts.length === 0 
+                        ? 'Carregando produtos...' 
+                        : 'Todos os produtos disponíveis já foram adicionados ao protocolo.'
+                      }
+                    </p>
+                  </div>
+                )}
 
-                            {/* Product Options */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                              <div className="space-y-1">
-                              <Label className="text-slate-800">Obrigatório?</Label>
-                                <div className="flex items-center space-x-2">
+                {/* Products List */}
+                {protocol.products.length > 0 && (
+                  <div className="space-y-4">
+                    {protocol.products.map((protocolProduct, index) => (
+                      <div key={protocolProduct.id} className="border border-gray-200 rounded-xl bg-gray-50">
+                        <div className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-bold text-gray-900">{protocolProduct.product.name}</h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeProduct(protocolProduct.id)}
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              {protocolProduct.product.description && (
+                                <p className="text-gray-600 text-sm">{protocolProduct.product.description}</p>
+                              )}
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex items-center space-x-3">
                                   <input
                                     type="checkbox"
                                     id={`required-${protocolProduct.id}`}
                                     checked={protocolProduct.isRequired}
-                                    onChange={(e) => updateProtocolProduct(protocolProduct.id, 'isRequired', e.target.checked)}
-                                  className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
+                                    onChange={(e) => updateProductRequired(protocolProduct.id, e.target.checked)}
+                                    className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                                   />
-                                <Label htmlFor={`required-${protocolProduct.id}`} className="text-slate-800">
+                                  <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
                                     Produto obrigatório
                                   </Label>
                                 </div>
+                                
+                                <div className="space-y-2">
+                                  <Label className="text-gray-900 font-semibold">Ordem</Label>
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={protocolProduct.order}
+                                    onChange={(e) => updateProductOrder(protocolProduct.id, parseInt(e.target.value) || 1)}
+                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10"
+                                  />
+                                </div>
                               </div>
-
-                              <div className="lg:col-span-2 space-y-1">
-                              <Label className="text-slate-800">Observações (opcional)</Label>
-                                <Input
+                              
+                              <div className="space-y-2">
+                                <Label className="text-gray-900 font-semibold">Observações (opcional)</Label>
+                                <Textarea
                                   value={protocolProduct.notes || ''}
-                                  onChange={(e) => updateProtocolProduct(protocolProduct.id, 'notes', e.target.value)}
-                                  placeholder="Ex: Usar 2x ao dia..."
-                                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                  onChange={(e) => updateProductNotes(protocolProduct.id, e.target.value)}
+                                  placeholder="Observações sobre o uso deste produto..."
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                  rows={2}
                                 />
                               </div>
                             </div>
                           </div>
-
-                          {/* Remove Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeProduct(protocolProduct.id)}
-                          className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 flex-shrink-0"
-                          >
-                            <XMarkIcon className="h-4 w-4" />
-                          </Button>
                         </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Protocol Days */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Dias do Protocolo</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6">
-                {protocol.days.map(day => (
-                  <div key={day.id} className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-medium text-blue-600">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Dias do Protocolo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {protocol.days.map((day) => (
+                  <div key={day.id} className="border border-gray-200 rounded-xl bg-gray-50">
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-gray-900">
                           Dia {day.dayNumber}
-                      </h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500">
-                          {day.sessions.length} {day.sessions.length === 1 ? 'sessão' : 'sessões'} • {day.tasks.length} {day.tasks.length === 1 ? 'tarefa' : 'tarefas'} diretas
-                        </span>
+                        </h3>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => addSession(day.dayNumber)}
-                          className="border-blue-300 bg-white text-blue-600 hover:bg-blue-50 hover:border-blue-400"
+                          className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                         >
-                          <PlusIcon className="h-3 w-3 mr-1" />
-                          Sessão
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Adicionar Sessão
                         </Button>
                       </div>
-                    </div>
 
-                    <div className="space-y-6">
-                      {/* Sessões */}
-                      {day.sessions.map(session => (
-                        <div key={session.id} className="p-4 bg-white border border-blue-200 rounded-lg">
-                          <div className="flex items-start gap-3 mb-4">
-                            <div className="flex-1 space-y-3">
+                      {/* Sessions */}
+                      {day.sessions.map((session) => (
+                        <div key={session.id} className="mb-6 border border-gray-200 rounded-xl bg-white">
+                          {/* Session Header */}
+                          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
+                            <div className="flex-1 space-y-2">
                               <Input
                                 value={session.name}
                                 onChange={(e) => updateSession(day.dayNumber, session.id, 'name', e.target.value)}
-                                placeholder="Nome da sessão (ex: Manhã, Exercícios, Medicação)"
-                                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 font-medium"
+                                placeholder="Nome da sessão"
+                                className="border-0 bg-transparent text-gray-900 font-semibold p-0 h-auto focus:ring-0 focus:border-0"
                               />
                               <Input
                                 value={session.description || ''}
                                 onChange={(e) => updateSession(day.dayNumber, session.id, 'description', e.target.value)}
                                 placeholder="Descrição da sessão (opcional)"
-                                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                className="border-0 bg-transparent text-gray-600 p-0 h-auto focus:ring-0 focus:border-0 text-sm"
                               />
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => removeSession(day.dayNumber, session.id)}
-                              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
                             >
                               <TrashIcon className="h-4 w-4" />
                             </Button>
                           </div>
 
-                          {/* Tarefas da Sessão */}
-                          <div className="space-y-4">
-                            {session.tasks.map(task => (
-                              <div key={task.id} className="group">
-                                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 hover:border-blue-300 transition-colors">
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex-1 space-y-3">
-                                      <Input
-                                        value={task.title}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value, session.id)}
-                                        placeholder="Título da tarefa"
-                                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                      />
-                                      <Textarea
-                                        value={task.description}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value, session.id)}
-                                        placeholder="Descrição da tarefa (opcional)"
-                                        className="min-h-[60px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                      />
+                          {/* Session Tasks */}
+                          <div className="p-4 space-y-4">
+                            {session.tasks.map((task) => (
+                              <div key={task.id} className="border border-gray-200 rounded-xl bg-gray-50">
+                                <div className="p-4">
+                                  <div className="flex items-start gap-4">
+                                    <div className="flex-1 space-y-4">
+                                      {/* Basic Fields */}
+                                      <div className="space-y-3">
+                                        <Input
+                                          placeholder="Título da tarefa"
+                                          value={task.title}
+                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value, session.id)}
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
+                                        />
+                                        <Textarea
+                                          placeholder="Descrição básica"
+                                          value={task.description}
+                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value, session.id)}
+                                          rows={2}
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                        />
+                                      </div>
+
+                                      {/* Toggle for More Info */}
+                                      <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
+                                        <input
+                                          type="checkbox"
+                                          id={`hasMoreInfo-session-${task.id}`}
+                                          checked={task.hasMoreInfo || false}
+                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked, session.id)}
+                                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                                        />
+                                        <Label htmlFor={`hasMoreInfo-session-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
+                                          <InformationCircleIcon className="h-4 w-4" />
+                                          Adicionar conteúdo extra
+                                        </Label>
+                                      </div>
+
+                                      {/* Extra Fields */}
+                                      {task.hasMoreInfo && (
+                                        <div className="space-y-4 p-4 bg-white rounded-xl border border-gray-200">
+                                          <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                                                <PlayIcon className="h-4 w-4" />
+                                                URL do Vídeo
+                                              </Label>
+                                              <Input
+                                                placeholder="https://youtube.com/watch?v=..."
+                                                value={task.videoUrl || ''}
+                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value, session.id)}
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                              />
+                                            </div>
+                                            
+                                            <div>
+                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                                                <InformationCircleIcon className="h-4 w-4" />
+                                                Explicação Completa
+                                              </Label>
+                                              <Textarea
+                                                placeholder="Explicação detalhada da tarefa..."
+                                                value={task.fullExplanation || ''}
+                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value, session.id)}
+                                                rows={3}
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                              />
+                                            </div>
+
+                                            <div>
+                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                                                <ShoppingBagIcon className="h-4 w-4" />
+                                                Produto Relacionado (opcional)
+                                              </Label>
+                                              <Select 
+                                                value={task.productId || 'none'} 
+                                                onValueChange={(value) => updateTask(day.dayNumber, task.id, 'productId', value === 'none' ? '' : value, session.id)}
+                                              >
+                                                <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
+                                                  <SelectValue placeholder="Selecione um produto..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="none">Nenhum produto</SelectItem>
+                                                  {availableProducts.map((product) => (
+                                                    <SelectItem key={product.id} value={product.id}>
+                                                      <div className="flex items-center gap-2">
+                                                        <span>{product.name}</span>
+                                                        {product.brand && (
+                                                          <span className="text-xs text-gray-500">({product.brand})</span>
+                                                        )}
+                                                      </div>
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                              <div>
+                                                <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                                                  <EyeIcon className="h-4 w-4" />
+                                                  Título do Modal
+                                                </Label>
+                                                <Input
+                                                  placeholder="Título personalizado"
+                                                  value={task.modalTitle || ''}
+                                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'modalTitle', e.target.value, session.id)}
+                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                />
+                                              </div>
+                                              
+                                              <div>
+                                                <Label className="text-gray-900 font-semibold mb-2 block">
+                                                  Texto do Botão
+                                                </Label>
+                                                <Input
+                                                  placeholder="Saber mais"
+                                                  value={task.modalButtonText || ''}
+                                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonText', e.target.value, session.id)}
+                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => removeTask(day.dayNumber, task.id, session.id)}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
                                     >
                                       <TrashIcon className="h-4 w-4" />
                                     </Button>
                                   </div>
-
-                                  {/* Informações Adicionais */}
-                                  <div className="border-t border-slate-200 pt-4">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <input
-                                        type="checkbox"
-                                        id={`hasMoreInfo-${task.id}`}
-                                        checked={task.hasMoreInfo || false}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked, session.id)}
-                                        className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
-                                      />
-                                      <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-sm text-slate-800">
-                                        Esta tarefa tem informações adicionais (vídeo, explicação ou produto)
-                                      </Label>
-                                    </div>
-
-                                    {task.hasMoreInfo && (
-                                      <div className="space-y-4 pl-6 border-l-2 border-blue-200">
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                          <div className="space-y-2">
-                                            <Label className="text-sm text-slate-800">Título do Modal (opcional)</Label>
-                                            <Input
-                                              value={task.modalTitle || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'modalTitle', e.target.value, session.id)}
-                                              placeholder="Ex: Como fazer este exercício"
-                                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                            />
-                                          </div>
-
-                                          <div className="space-y-2">
-                                            <Label className="text-sm text-slate-800">Texto do Botão (opcional)</Label>
-                                            <Input
-                                              value={task.modalButtonText || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonText', e.target.value, session.id)}
-                                              placeholder="Ex: Ver mais"
-                                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                            />
-                                          </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">URL do Vídeo (opcional)</Label>
-                                          <Input
-                                            value={task.videoUrl || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value, session.id)}
-                                            placeholder="Ex: https://youtube.com/embed/..."
-                                            className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                          />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">Explicação Completa (opcional)</Label>
-                                          <Textarea
-                                            value={task.fullExplanation || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value, session.id)}
-                                            placeholder="Explicação detalhada sobre como realizar esta tarefa..."
-                                            className="min-h-[80px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                          />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">Produto Relacionado (opcional)</Label>
-                                          <Select 
-                                            value={task.productId || 'none'} 
-                                            onValueChange={(value) => updateTask(day.dayNumber, task.id, 'productId', value === 'none' ? '' : value, session.id)}
-                                          >
-                                            <SelectTrigger className="border-slate-300 bg-white text-slate-700">
-                                              <SelectValue placeholder="Selecione um produto..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">Nenhum produto</SelectItem>
-                                              {availableProducts.map((product) => (
-                                                <SelectItem key={product.id} value={product.id}>
-                                                  <div className="flex items-center gap-2">
-                                                    <span>{product.name}</span>
-                                                    {product.brand && (
-                                                      <span className="text-xs text-slate-500">({product.brand})</span>
-                                                    )}
-                                                  </div>
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Mover para Sessão */}
-                                  {day.sessions.length > 0 && (
-                                    <div className="border-t border-slate-200 pt-4">
-                                      <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                          <Label className="text-sm font-medium text-slate-800">Mover para Sessão</Label>
-                                          <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 text-xs">
-                                            {day.sessions.length} {day.sessions.length === 1 ? 'sessão disponível' : 'sessões disponíveis'}
-                                          </Badge>
-                                        </div>
-                                        <p className="text-xs text-slate-600">
-                                          Clique em uma sessão para mover esta tarefa
-                                        </p>
-                                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                                          {day.sessions.map((sessionOption) => (
-                                            <div
-                                              key={sessionOption.id}
-                                              onClick={() => moveTaskToSession(day.dayNumber, task.id, sessionOption.id)}
-                                              className="p-2 bg-slate-50 border border-slate-200 rounded cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors"
-                                            >
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                  <p className="text-sm font-medium text-slate-800 truncate">
-                                                    {sessionOption.name || `Sessão ${sessionOption.order + 1}`}
-                                                  </p>
-                                                  {sessionOption.description && (
-                                                    <p className="text-xs text-slate-600 truncate">
-                                                      {sessionOption.description}
-                                                    </p>
-                                                  )}
-                                                </div>
-                                                <ArrowLeftIcon className="h-4 w-4 text-slate-500 flex-shrink-0 ml-2 rotate-180" />
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             ))}
@@ -1180,23 +1148,23 @@ export default function EditProtocolPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => addTask(day.dayNumber, session.id)}
-                              className="w-full border-dashed !border-blue-300 !bg-white !text-blue-600 hover:!bg-blue-50 hover:!border-blue-400 hover:!text-blue-700"
+                              className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
                             >
                               <PlusIcon className="h-4 w-4 mr-2" />
-                              Adicionar Tarefa à {session.name || 'Sessão'}
+                              Adicionar Tarefa
                             </Button>
 
-                            {/* Vincular Tarefas Existentes */}
+                            {/* Move Direct Tasks to Session */}
                             {day.tasks.length > 0 && (
-                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="border-t border-gray-200 pt-4">
                                 <div className="space-y-3">
                                   <div className="flex items-center gap-2">
-                                    <Label className="text-sm font-medium text-blue-800">Vincular Tarefas Existentes</Label>
-                                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                                    <Label className="text-gray-900 font-semibold">Mover Tarefas Diretas</Label>
+                                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs font-medium">
                                       {day.tasks.length} {day.tasks.length === 1 ? 'tarefa disponível' : 'tarefas disponíveis'}
                                     </Badge>
                                   </div>
-                                  <p className="text-xs text-blue-600">
+                                  <p className="text-xs text-gray-600 font-medium">
                                     Clique em uma tarefa direta para movê-la para esta sessão
                                   </p>
                                   <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -1204,20 +1172,20 @@ export default function EditProtocolPage() {
                                       <div
                                         key={task.id}
                                         onClick={() => moveTaskToSession(day.dayNumber, task.id, session.id)}
-                                        className="p-2 bg-white border border-blue-200 rounded cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                                        className="p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-gray-300 transition-colors"
                                       >
                                         <div className="flex items-center justify-between">
                                           <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-800 truncate">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">
                                               {task.title || 'Tarefa sem título'}
                                             </p>
                                             {task.description && (
-                                              <p className="text-xs text-slate-600 truncate">
+                                              <p className="text-xs text-gray-600 truncate">
                                                 {task.description}
                                               </p>
                                             )}
                                           </div>
-                                          <ArrowLeftIcon className="h-4 w-4 text-blue-500 flex-shrink-0 ml-2 rotate-180" />
+                                          <ArrowLeftIcon className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2 rotate-180" />
                                         </div>
                                       </div>
                                     ))}
@@ -1229,105 +1197,105 @@ export default function EditProtocolPage() {
                         </div>
                       ))}
 
-                      {/* Tarefas Diretas do Dia (sem sessão) */}
+                      {/* Direct Tasks */}
                       {day.tasks.length > 0 && (
-                        <div className="p-4 bg-white border border-slate-200 rounded-lg">
-                          <h5 className="text-sm font-medium text-slate-700 mb-4">Tarefas Diretas</h5>
+                        <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                          <h5 className="text-sm font-bold text-gray-900 mb-4">Tarefas Diretas</h5>
                           <div className="space-y-4">
-                      {day.tasks.map(task => (
-                        <div key={task.id} className="group">
-                                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 hover:border-blue-300 transition-colors">
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1 space-y-3">
-                                <Input
-                                  value={task.title}
-                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value)}
-                                  placeholder="Título da tarefa"
-                                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                />
-                                <Textarea
-                                  value={task.description}
-                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value)}
-                                  placeholder="Descrição da tarefa (opcional)"
-                                        className="min-h-[60px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                                />
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeTask(day.dayNumber, task.id)}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-slate-800 hover:bg-slate-100"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            {day.tasks.map(task => (
+                              <div key={task.id} className="group">
+                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4 hover:border-[#5154e7] transition-colors">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex-1 space-y-3">
+                                      <Input
+                                        value={task.title}
+                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value)}
+                                        placeholder="Título da tarefa"
+                                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
+                                      />
+                                      <Textarea
+                                        value={task.description}
+                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value)}
+                                        placeholder="Descrição da tarefa (opcional)"
+                                        className="min-h-[60px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                      />
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeTask(day.dayNumber, task.id)}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                    </Button>
+                                  </div>
 
-                                  {/* Informações Adicionais */}
-                                  <div className="border-t border-slate-200 pt-4">
+                                  {/* Additional Information */}
+                                  <div className="border-t border-gray-200 pt-4">
                                     <div className="flex items-center gap-2 mb-3">
                                       <input
                                         type="checkbox"
                                         id={`hasMoreInfo-${task.id}`}
                                         checked={task.hasMoreInfo || false}
                                         onChange={(e) => updateTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked)}
-                                        className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
+                                        className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                                       />
-                                      <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-sm text-slate-800">
+                                      <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-900 font-medium">
                                         Esta tarefa tem informações adicionais (vídeo, explicação ou produto)
                                       </Label>
-                          </div>
+                                    </div>
 
                                     {task.hasMoreInfo && (
-                                      <div className="space-y-4 pl-6 border-l-2 border-blue-200">
+                                      <div className="space-y-4 pl-6 border-l-2 border-[#5154e7]">
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                           <div className="space-y-2">
-                                            <Label className="text-sm text-slate-800">Título do Modal (opcional)</Label>
+                                            <Label className="text-gray-900 font-semibold">Título do Modal (opcional)</Label>
                                             <Input
                                               value={task.modalTitle || ''}
                                               onChange={(e) => updateTask(day.dayNumber, task.id, 'modalTitle', e.target.value)}
                                               placeholder="Ex: Como fazer este exercício"
-                                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                                             />
-                        </div>
+                                          </div>
 
                                           <div className="space-y-2">
-                                            <Label className="text-sm text-slate-800">Texto do Botão (opcional)</Label>
+                                            <Label className="text-gray-900 font-semibold">Texto do Botão (opcional)</Label>
                                             <Input
                                               value={task.modalButtonText || ''}
                                               onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonText', e.target.value)}
                                               placeholder="Ex: Ver mais"
-                                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                                             />
                                           </div>
                                         </div>
 
                                         <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">URL do Vídeo (opcional)</Label>
+                                          <Label className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
                                           <Input
                                             value={task.videoUrl || ''}
                                             onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
                                             placeholder="Ex: https://youtube.com/embed/..."
-                                            className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                                           />
                                         </div>
 
                                         <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">Explicação Completa (opcional)</Label>
+                                          <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
                                           <Textarea
                                             value={task.fullExplanation || ''}
                                             onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
                                             placeholder="Explicação detalhada sobre como realizar esta tarefa..."
-                                            className="min-h-[80px] border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                                           />
                                         </div>
 
                                         <div className="space-y-2">
-                                          <Label className="text-sm text-slate-800">Produto Relacionado (opcional)</Label>
+                                          <Label className="text-gray-900 font-semibold">Produto Relacionado (opcional)</Label>
                                           <Select 
                                             value={task.productId || 'none'} 
                                             onValueChange={(value) => updateTask(day.dayNumber, task.id, 'productId', value === 'none' ? '' : value)}
                                           >
-                                            <SelectTrigger className="border-slate-300 bg-white text-slate-700">
+                                            <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
                                               <SelectValue placeholder="Selecione um produto..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -1337,7 +1305,7 @@ export default function EditProtocolPage() {
                                                   <div className="flex items-center gap-2">
                                                     <span>{product.name}</span>
                                                     {product.brand && (
-                                                      <span className="text-xs text-slate-500">({product.brand})</span>
+                                                      <span className="text-xs text-gray-500">({product.brand})</span>
                                                     )}
                                                   </div>
                                                 </SelectItem>
@@ -1349,17 +1317,17 @@ export default function EditProtocolPage() {
                                     )}
                                   </div>
 
-                                  {/* Mover para Sessão */}
+                                  {/* Move to Session */}
                                   {day.sessions.length > 0 && (
-                                    <div className="border-t border-slate-200 pt-4">
+                                    <div className="border-t border-gray-200 pt-4">
                                       <div className="space-y-3">
                                         <div className="flex items-center gap-2">
-                                          <Label className="text-sm font-medium text-slate-800">Mover para Sessão</Label>
-                                          <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 text-xs">
+                                          <Label className="text-gray-900 font-semibold">Mover para Sessão</Label>
+                                          <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs font-medium">
                                             {day.sessions.length} {day.sessions.length === 1 ? 'sessão disponível' : 'sessões disponíveis'}
                                           </Badge>
                                         </div>
-                                        <p className="text-xs text-slate-600">
+                                        <p className="text-xs text-gray-600 font-medium">
                                           Clique em uma sessão para mover esta tarefa
                                         </p>
                                         <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -1367,20 +1335,20 @@ export default function EditProtocolPage() {
                                             <div
                                               key={sessionOption.id}
                                               onClick={() => moveTaskToSession(day.dayNumber, task.id, sessionOption.id)}
-                                              className="p-2 bg-slate-50 border border-slate-200 rounded cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition-colors"
+                                              className="p-2 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors"
                                             >
                                               <div className="flex items-center justify-between">
                                                 <div className="flex-1 min-w-0">
-                                                  <p className="text-sm font-medium text-slate-800 truncate">
+                                                  <p className="text-sm font-semibold text-gray-900 truncate">
                                                     {sessionOption.name || `Sessão ${sessionOption.order + 1}`}
                                                   </p>
                                                   {sessionOption.description && (
-                                                    <p className="text-xs text-slate-600 truncate">
+                                                    <p className="text-xs text-gray-600 truncate">
                                                       {sessionOption.description}
                                                     </p>
                                                   )}
                                                 </div>
-                                                <ArrowLeftIcon className="h-4 w-4 text-slate-500 flex-shrink-0 ml-2 rotate-180" />
+                                                <ArrowLeftIcon className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2 rotate-180" />
                                               </div>
                                             </div>
                                           ))}
@@ -1399,17 +1367,17 @@ export default function EditProtocolPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => addTask(day.dayNumber)}
-                        className="w-full border-dashed !border-slate-300 !bg-white !text-slate-600 hover:!bg-slate-50 hover:!border-slate-400 hover:!text-slate-700"
+                        className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
                       >
                         <PlusIcon className="h-4 w-4 mr-2" />
                         Adicionar Tarefa Direta ao Dia {day.dayNumber}
                       </Button>
-              </div>
-            </div>
+                    </div>
+                  </div>
                 ))}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
         </div>
       </div>
     </div>

@@ -108,302 +108,305 @@ export default function CreateProductPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
         
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-            <Link href="/doctor/products">
-              <ArrowLeftIcon className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-light text-slate-800">
-              Novo Produto
-            </h1>
-            <p className="text-sm text-slate-600">
-              Adicione um novo produto para recomendar aos pacientes
-            </p>
+          {/* Header */}
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
+              <Link href="/doctor/products">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Voltar
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Novo Produto
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Adicione um novo produto para recomendar aos pacientes
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* Basic Information */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Informações Básicas</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="name" className="text-slate-800">Nome do Produto *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Ex: Protetor Solar Ultra Light"
-                      required
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="brand" className="text-slate-800">Marca</Label>
-                    <Input
-                      id="brand"
-                      value={formData.brand}
-                      onChange={(e) => handleInputChange('brand', e.target.value)}
-                      placeholder="Ex: La Roche-Posay"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description" className="text-slate-800">Descrição</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Descreva o produto e seus benefícios..."
-                      rows={3}
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="imageUrl" className="text-slate-800">URL da Imagem</Label>
-                    <Input
-                      id="imageUrl"
-                      value={formData.imageUrl}
-                      onChange={(e) => handleInputChange('imageUrl', e.target.value)}
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      type="url"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pricing */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Preços</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Form */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                
+                {/* Basic Information */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold text-gray-900">Informações Básicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                     <div>
-                      <Label htmlFor="originalPrice" className="text-slate-800">Preço Original</Label>
+                      <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Produto *</Label>
                       <Input
-                        id="originalPrice"
-                        value={formData.originalPrice}
-                        onChange={(e) => handleInputChange('originalPrice', e.target.value)}
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        placeholder="Ex: Protetor Solar Ultra Light"
+                        required
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="discountPrice" className="text-slate-800">Preço com Desconto</Label>
+                      <Label htmlFor="brand" className="text-gray-900 font-semibold">Marca</Label>
                       <Input
-                        id="discountPrice"
-                        value={formData.discountPrice}
-                        onChange={(e) => handleInputChange('discountPrice', e.target.value)}
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        id="brand"
+                        value={formData.brand}
+                        onChange={(e) => handleInputChange('brand', e.target.value)}
+                        placeholder="Ex: La Roche-Posay"
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                       />
                     </div>
-                  </div>
 
-                  {getDiscountPercentage() > 0 && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-600">
-                        Desconto calculado: {getDiscountPercentage()}%
+                    <div>
+                      <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Descreva o produto e seus benefícios..."
+                        rows={4}
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="imageUrl" className="text-gray-900 font-semibold">URL da Imagem</Label>
+                      <Input
+                        id="imageUrl"
+                        value={formData.imageUrl}
+                        onChange={(e) => handleInputChange('imageUrl', e.target.value)}
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        type="url"
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pricing */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold text-gray-900">Preços</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="originalPrice" className="text-gray-900 font-semibold">Preço Original</Label>
+                        <Input
+                          id="originalPrice"
+                          value={formData.originalPrice}
+                          onChange={(e) => handleInputChange('originalPrice', e.target.value)}
+                          placeholder="0.00"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="discountPrice" className="text-gray-900 font-semibold">Preço com Desconto</Label>
+                        <Input
+                          id="discountPrice"
+                          value={formData.discountPrice}
+                          onChange={(e) => handleInputChange('discountPrice', e.target.value)}
+                          placeholder="0.00"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {getDiscountPercentage() > 0 && (
+                      <div className="p-4 bg-[#5154e7] bg-opacity-10 rounded-xl border border-[#5154e7] border-opacity-20">
+                        <p className="text-[#5154e7] font-semibold">
+                          Desconto calculado: {getDiscountPercentage()}%
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Purchase Details */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold text-gray-900">Detalhes de Compra</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <Label htmlFor="purchaseUrl" className="text-gray-900 font-semibold">Link de Compra</Label>
+                      <Input
+                        id="purchaseUrl"
+                        value={formData.purchaseUrl}
+                        onChange={(e) => handleInputChange('purchaseUrl', e.target.value)}
+                        placeholder="https://loja.com/produto"
+                        type="url"
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="usageStats" className="text-gray-900 font-semibold">Estatísticas de Uso (%)</Label>
+                      <Input
+                        id="usageStats"
+                        value={formData.usageStats}
+                        onChange={(e) => handleInputChange('usageStats', e.target.value)}
+                        placeholder="0"
+                        type="number"
+                        min="0"
+                        max="100"
+                        className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                      />
+                      <p className="text-sm text-gray-600 font-medium mt-2">
+                        Porcentagem de pacientes que usam este produto
                       </p>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Purchase Details */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Detalhes de Compra</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="purchaseUrl" className="text-slate-800">Link de Compra</Label>
-                    <Input
-                      id="purchaseUrl"
-                      value={formData.purchaseUrl}
-                      onChange={(e) => handleInputChange('purchaseUrl', e.target.value)}
-                      placeholder="https://loja.com/produto"
-                      type="url"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
+                {/* Status */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl font-bold text-gray-900">Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="isActive" className="text-gray-900 font-semibold">Produto Ativo</Label>
+                        <p className="text-gray-600 font-medium mt-1">
+                          Produtos ativos podem ser recomendados em protocolos
+                        </p>
+                      </div>
+                      <Switch
+                        id="isActive"
+                        checked={formData.isActive}
+                        onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  <div>
-                    <Label htmlFor="usageStats" className="text-slate-800">Estatísticas de Uso (%)</Label>
-                    <Input
-                      id="usageStats"
-                      value={formData.usageStats}
-                      onChange={(e) => handleInputChange('usageStats', e.target.value)}
-                      placeholder="0"
-                      type="number"
-                      min="0"
-                      max="100"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Porcentagem de pacientes que usam este produto
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Actions */}
+                <div className="flex gap-4">
+                  <Button type="submit" disabled={isLoading} className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold">
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon className="h-4 w-4 mr-2" />
+                        Criar Produto
+                      </>
+                    )}
+                  </Button>
+                  <Button type="button" variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold">
+                    <Link href="/doctor/products">
+                      <XMarkIcon className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Link>
+                  </Button>
+                </div>
+              </form>
+            </div>
 
-              {/* Status */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Status</CardTitle>
+            {/* Preview */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-6 bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold text-gray-900">Preview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="isActive" className="text-slate-800">Produto Ativo</Label>
-                      <p className="text-sm text-slate-600">
-                        Produtos ativos podem ser recomendados em protocolos
-                      </p>
-                    </div>
-                    <Switch
-                      id="isActive"
-                      checked={formData.isActive}
-                      onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Actions */}
-              <div className="flex gap-4">
-                <Button type="submit" disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Criando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckIcon className="h-4 w-4 mr-2" />
-                      Criar Produto
-                    </>
-                  )}
-                </Button>
-                <Button type="button" variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                  <Link href="/doctor/products">
-                    <XMarkIcon className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </Link>
-                </Button>
-              </div>
-            </form>
-          </div>
-
-          {/* Preview */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6 bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Preview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Product Image */}
-                  <div className="w-full h-32 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
-                    {formData.imageUrl ? (
-                      <img 
-                        src={formData.imageUrl} 
-                        alt={formData.name || 'Produto'}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <ShoppingBagIcon className="h-8 w-8 text-slate-400" />
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div>
-                    <h3 className="font-medium text-slate-800">
-                      {formData.name || 'Nome do Produto'}
-                    </h3>
-                    {formData.brand && (
-                      <p className="text-sm text-blue-600">{formData.brand}</p>
-                    )}
-                  </div>
-
-                  {formData.description && (
-                    <p className="text-sm text-slate-600 line-clamp-3">
-                      {formData.description}
-                    </p>
-                  )}
-
-                  {/* Price */}
-                  {(formData.originalPrice || formData.discountPrice) && (
-                    <div className="flex items-center gap-2">
-                      {formData.discountPrice && formData.originalPrice ? (
-                        <>
-                          <span className="text-sm font-medium text-blue-600">
-                            {formatPrice(formData.discountPrice)}
-                          </span>
-                          <span className="text-sm text-slate-400 line-through">
-                            {formatPrice(formData.originalPrice)}
-                          </span>
-                          {getDiscountPercentage() > 0 && (
-                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                              -{getDiscountPercentage()}%
-                            </Badge>
-                          )}
-                        </>
+                  <div className="space-y-6">
+                    {/* Product Image */}
+                    <div className="w-full h-40 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {formData.imageUrl ? (
+                        <img 
+                          src={formData.imageUrl} 
+                          alt={formData.name || 'Produto'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
                       ) : (
-                        <span className="text-sm font-medium text-slate-800">
-                          {formatPrice(formData.originalPrice || formData.discountPrice)}
+                        <ShoppingBagIcon className="h-10 w-10 text-gray-400" />
+                      )}
+                    </div>
+
+                    {/* Product Info */}
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {formData.name || 'Nome do Produto'}
+                      </h3>
+                      {formData.brand && (
+                        <p className="text-[#5154e7] font-semibold mt-1">{formData.brand}</p>
+                      )}
+                    </div>
+
+                    {formData.description && (
+                      <p className="text-gray-600 font-medium line-clamp-3">
+                        {formData.description}
+                      </p>
+                    )}
+
+                    {/* Price */}
+                    {(formData.originalPrice || formData.discountPrice) && (
+                      <div className="flex items-center gap-3">
+                        {formData.discountPrice && formData.originalPrice ? (
+                          <>
+                            <span className="text-lg font-bold text-[#5154e7]">
+                              {formatPrice(formData.discountPrice)}
+                            </span>
+                            <span className="text-sm text-gray-400 line-through">
+                              {formatPrice(formData.originalPrice)}
+                            </span>
+                            {getDiscountPercentage() > 0 && (
+                              <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                                -{getDiscountPercentage()}%
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-lg font-bold text-gray-900">
+                            {formatPrice(formData.originalPrice || formData.discountPrice)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Status */}
+                    <div className="flex items-center gap-3">
+                      {formData.isActive ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold">
+                          Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 font-semibold">
+                          Inativo
+                        </Badge>
+                      )}
+                      {formData.usageStats && parseInt(formData.usageStats) > 0 && (
+                        <span className="text-sm text-gray-600 font-medium">
+                          {formData.usageStats}% dos pacientes
                         </span>
                       )}
                     </div>
-                  )}
-
-                  {/* Status */}
-                  <div className="flex items-center gap-2">
-                    {formData.isActive ? (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                        Ativo
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600 border-slate-200">
-                        Inativo
-                      </Badge>
-                    )}
-                    {formData.usageStats && parseInt(formData.usageStats) > 0 && (
-                      <span className="text-xs text-slate-500">
-                        {formData.usageStats}% dos pacientes
-                      </span>
-                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

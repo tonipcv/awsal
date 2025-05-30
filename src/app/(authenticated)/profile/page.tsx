@@ -4,46 +4,96 @@ import { useSession, signOut } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useState, useCallback, useEffect } from "react";
-import { ArrowRightOnRectangleIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { 
+  ArrowRightOnRectangleIcon, 
+  CameraIcon,
+  UserIcon,
+  EnvelopeIcon,
+  CalendarIcon,
+  ClockIcon,
+  ChartBarIcon,
+  UsersIcon,
+  DocumentTextIcon,
+  StarIcon,
+  ShieldCheckIcon
+} from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+
+interface UserStats {
+  totalPatients?: number;
+  totalProtocols?: number;
+  totalTemplates?: number;
+  completedProtocols?: number;
+  activeProtocols?: number;
+  joinedDate?: string;
+  lastLogin?: string;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
   const { data: session, update } = useSession();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(session?.user?.name || '');
-  const [email] = useState(session?.user?.email || '');
-  const [image, setImage] = useState(session?.user?.image || '');
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [image, setImage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
+  const [userStats, setUserStats] = useState<UserStats>({});
 
-  // Detectar role do usuário
+  // Load user data and stats
   useEffect(() => {
-    const detectUserRole = async () => {
+    const loadUserData = async () => {
       if (session?.user?.id) {
         try {
-          const response = await fetch('/api/auth/role');
-          if (response.ok) {
-            const data = await response.json();
-            setUserRole(data.role);
+          setLoading(true);
+          
+          // Set basic data from session
+          setName(session.user.name || '');
+          setEmail(session.user.email || '');
+          setImage(session.user.image || '');
+
+          // Detect user role
+          const roleResponse = await fetch('/api/auth/role');
+          if (roleResponse.ok) {
+            const roleData = await roleResponse.json();
+            setUserRole(roleData.role);
+
+            // Load stats based on role
+            if (roleData.role === 'DOCTOR') {
+              const statsResponse = await fetch('/api/doctor/stats');
+              if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                setUserStats(stats);
+              }
+            } else if (roleData.role === 'PATIENT') {
+              const statsResponse = await fetch('/api/patient/stats');
+              if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                setUserStats(stats);
+              }
+            }
           } else {
-            console.error('Error detecting user role:', response.status);
-            setUserRole('PATIENT'); // Default to patient
+            setUserRole('PATIENT');
           }
         } catch (error) {
-          console.error('Error detecting user role:', error);
-          setUserRole('PATIENT'); // Default to patient
+          console.error('Error loading user data:', error);
+          setUserRole('PATIENT');
+        } finally {
+          setLoading(false);
         }
       }
     };
 
-    detectUserRole();
+    loadUserData();
   }, [session]);
 
-  // Determinar se deve usar tema claro (médicos/admins) ou escuro (pacientes)
+  // Determine if should use light theme (doctors/admins) or dark theme (patients)
   const isLightTheme = userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN';
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +110,7 @@ export default function ProfilePage() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Falha ao fazer upload da imagem');
+      if (!response.ok) throw new Error('Failed to upload image');
 
       const data = await response.json();
       setImage(data.url);
@@ -71,7 +121,7 @@ export default function ProfilePage() {
       // Force refresh to update navigation
       router.refresh();
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
+      console.error('Upload error:', error);
     } finally {
       setIsUploading(false);
     }
@@ -88,7 +138,7 @@ export default function ProfilePage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Falha ao atualizar perfil');
+      if (!response.ok) throw new Error('Failed to update profile');
 
       // Update session
       await update({
@@ -102,172 +152,488 @@ export default function ProfilePage() {
 
       setIsEditing(false);
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('Save error:', error);
     }
   };
+
+  const getRoleDisplay = () => {
+    switch (userRole) {
+      case 'DOCTOR':
+        return { label: 'Doctor', color: 'bg-blue-100 text-blue-800', icon: UserIcon };
+      case 'SUPER_ADMIN':
+        return { label: 'Super Admin', color: 'bg-purple-100 text-purple-800', icon: ShieldCheckIcon };
+      case 'PATIENT':
+        return { label: 'Patient', color: 'bg-green-100 text-green-800', icon: UsersIcon };
+      default:
+        return { label: 'User', color: 'bg-gray-100 text-gray-800', icon: UserIcon };
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center",
+        isLightTheme ? "bg-white" : "bg-zinc-950"
+      )}>
+        <div className={cn(
+          "lg:ml-64",
+          isLightTheme && "lg:ml-64"
+        )}>
+          <div className="flex items-center space-x-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
+            <span className={cn(
+              "font-medium",
+              isLightTheme ? "text-gray-700" : "text-white"
+            )}>
+              Loading profile...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const roleInfo = getRoleDisplay();
+  const RoleIcon = roleInfo.icon;
 
   return (
     <div className={cn(
       "min-h-screen", 
-      isLightTheme ? "bg-slate-50" : "bg-zinc-950"
+      isLightTheme ? "bg-white" : "bg-zinc-950"
     )}>
-      <div className="container max-w-2xl mx-auto p-4 pt-[88px] lg:pt-6">
-        <Card className={cn(
-          "backdrop-blur-sm",
-          isLightTheme 
-            ? "bg-white/80 border-slate-200/50" 
-            : "bg-zinc-900 border-zinc-800"
-        )}>
-          <CardHeader>
-            <CardTitle className={cn(
-              isLightTheme ? "text-slate-800" : "text-white"
+      <div className={cn(
+        "container max-w-6xl mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8",
+        isLightTheme && "lg:ml-64"
+      )}>
+        <div className="space-y-8">
+          {/* Header */}
+          <div>
+            <h1 className={cn(
+              "text-3xl font-bold mb-2",
+              isLightTheme ? "text-gray-900" : "text-white"
             )}>
-              Perfil
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Profile Image */}
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <div className={cn(
-                  "relative w-32 h-32 rounded-full overflow-hidden border-2",
-                  isLightTheme 
-                    ? "border-slate-200 bg-slate-100" 
-                    : "border-zinc-700 bg-zinc-800"
-                )}>
-                  {image ? (
-                    <Image
-                      src={image}
-                      alt="Profile"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <CameraIcon className={cn(
-                        "h-12 w-12",
-                        isLightTheme ? "text-slate-400" : "text-zinc-500"
-                      )} />
+              Profile
+            </h1>
+            <p className={cn(
+              "font-medium",
+              isLightTheme ? "text-gray-600" : "text-zinc-400"
+            )}>
+              Manage your account settings and preferences
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Profile Card */}
+            <div className="lg:col-span-2">
+              <Card className={cn(
+                "shadow-lg rounded-2xl",
+                isLightTheme 
+                  ? "bg-white border-gray-200" 
+                  : "bg-zinc-900 border-zinc-800"
+              )}>
+                <CardHeader className="p-8">
+                  <CardTitle className={cn(
+                    "text-xl font-bold",
+                    isLightTheme ? "text-gray-900" : "text-white"
+                  )}>
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 pt-0 space-y-8">
+                  {/* Profile Image */}
+                  <div className="flex flex-col items-center space-y-6">
+                    <div className="relative group">
+                      <div className={cn(
+                        "relative w-32 h-32 rounded-2xl overflow-hidden border-4",
+                        isLightTheme 
+                          ? "border-gray-200 bg-gray-100" 
+                          : "border-zinc-700 bg-zinc-800"
+                      )}>
+                        {image ? (
+                          <Image
+                            src={image}
+                            alt="Profile"
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <CameraIcon className={cn(
+                              "h-12 w-12",
+                              isLightTheme ? "text-gray-400" : "text-zinc-500"
+                            )} />
+                          </div>
+                        )}
+                      </div>
+                      <label 
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl"
+                        htmlFor="image-upload"
+                      >
+                        <CameraIcon className="h-8 w-8 text-white" />
+                      </label>
+                      <input
+                        type="file"
+                        id="image-upload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                      />
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7]"></div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <label 
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
-                  htmlFor="image-upload"
-                >
-                  <CameraIcon className="h-8 w-8 text-white" />
-                </label>
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                />
-                {isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="text-center space-y-2">
+                      <p className={cn(
+                        "text-sm font-medium",
+                        isLightTheme ? "text-gray-600" : "text-zinc-400"
+                      )}>
+                        Click on the image to change your profile picture
+                      </p>
+                      <Badge className={cn("rounded-lg px-3 py-1", roleInfo.color)}>
+                        <RoleIcon className="h-3 w-3 mr-1" />
+                        {roleInfo.label}
+                      </Badge>
+                    </div>
                   </div>
-                )}
-              </div>
-              <p className={cn(
-                "text-sm",
-                isLightTheme ? "text-slate-600" : "text-zinc-400"
-              )}>
-                Clique na imagem para alterar sua foto de perfil
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <label className={cn(
-                "text-sm font-medium",
-                isLightTheme ? "text-slate-700" : "text-zinc-300"
-              )}>
-                Nome
-              </label>
-              {isEditing ? (
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={cn(
-                    "focus:border-blue-500",
-                    isLightTheme 
-                      ? "border-slate-300 bg-white text-slate-900 placeholder:text-slate-500" 
-                      : "border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-400"
-                  )}
-                />
-              ) : (
-                <p className={cn(
-                  "text-lg",
-                  isLightTheme ? "text-slate-800" : "text-white"
-                )}>
-                  {name}
-                </p>
-              )}
-            </div>
+                  {/* Form Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <label className={cn(
+                        "text-sm font-semibold flex items-center space-x-2",
+                        isLightTheme ? "text-gray-900" : "text-zinc-300"
+                      )}>
+                        <UserIcon className="h-4 w-4" />
+                        <span>Name</span>
+                      </label>
+                      {isEditing ? (
+                        <Input
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className={cn(
+                            "h-12 rounded-xl font-medium",
+                            isLightTheme 
+                              ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]" 
+                              : "border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-400 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          )}
+                        />
+                      ) : (
+                        <p className={cn(
+                          "text-lg font-semibold p-3 rounded-xl border",
+                          isLightTheme 
+                            ? "text-gray-900 bg-gray-50 border-gray-200" 
+                            : "text-white bg-zinc-800 border-zinc-700"
+                        )}>
+                          {name || 'Not provided'}
+                        </p>
+                      )}
+                    </div>
 
-            <div className="space-y-2">
-              <label className={cn(
-                "text-sm font-medium",
-                isLightTheme ? "text-slate-700" : "text-zinc-300"
-              )}>
-                Email
-              </label>
-              <p className={cn(
-                "text-lg",
-                isLightTheme ? "text-slate-800" : "text-white"
-              )}>
-                {email}
-              </p>
-            </div>
+                    <div className="space-y-4">
+                      <label className={cn(
+                        "text-sm font-semibold flex items-center space-x-2",
+                        isLightTheme ? "text-gray-900" : "text-zinc-300"
+                      )}>
+                        <EnvelopeIcon className="h-4 w-4" />
+                        <span>Email</span>
+                      </label>
+                      <p className={cn(
+                        "text-lg font-semibold p-3 rounded-xl border",
+                        isLightTheme 
+                          ? "text-gray-900 bg-gray-50 border-gray-200" 
+                          : "text-white bg-zinc-800 border-zinc-700"
+                      )}>
+                        {email || 'Not provided'}
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="pt-4 space-y-4">
-              {isEditing ? (
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleSave()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Salvar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsEditing(false)}
-                    className={cn(
-                      isLightTheme 
-                        ? "border-slate-300 text-slate-700 hover:bg-slate-50 bg-white" 
-                        : "border-zinc-700 text-zinc-300 hover:bg-zinc-800 bg-zinc-900"
+                  {/* Action Buttons */}
+                  <div className="pt-6 space-y-4">
+                    {isEditing ? (
+                      <div className="flex gap-4">
+                        <Button 
+                          onClick={() => handleSave()}
+                          className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+                        >
+                          Save Changes
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsEditing(false)}
+                          className={cn(
+                            "rounded-xl h-12 px-6 font-semibold",
+                            isLightTheme 
+                              ? "border-gray-300 text-gray-700 hover:bg-gray-50 bg-white" 
+                              : "border-zinc-700 text-zinc-300 hover:bg-zinc-800 bg-zinc-900"
+                          )}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={() => setIsEditing(true)}
+                        className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+                      >
+                        Edit Profile
+                      </Button>
                     )}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Editar Perfil
-                </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      className={cn(
+                        "w-full rounded-xl h-12 font-semibold",
+                        isLightTheme 
+                          ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100" 
+                          : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                      )}
+                      onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    >
+                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Stats Sidebar */}
+            <div className="space-y-6">
+              {/* Account Info */}
+              <Card className={cn(
+                "shadow-lg rounded-2xl",
+                isLightTheme 
+                  ? "bg-white border-gray-200" 
+                  : "bg-zinc-900 border-zinc-800"
+              )}>
+                <CardHeader className="p-6">
+                  <CardTitle className={cn(
+                    "text-lg font-bold flex items-center space-x-2",
+                    isLightTheme ? "text-gray-900" : "text-white"
+                  )}>
+                    <CalendarIcon className="h-5 w-5" />
+                    <span>Account Info</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0 space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className={cn(
+                        "text-sm font-medium",
+                        isLightTheme ? "text-gray-600" : "text-zinc-400"
+                      )}>
+                        Member since
+                      </span>
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        isLightTheme ? "text-gray-900" : "text-white"
+                      )}>
+                        {formatDate(userStats.joinedDate)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className={cn(
+                        "text-sm font-medium",
+                        isLightTheme ? "text-gray-600" : "text-zinc-400"
+                      )}>
+                        Last login
+                      </span>
+                      <span className={cn(
+                        "text-sm font-semibold",
+                        isLightTheme ? "text-gray-900" : "text-white"
+                      )}>
+                        {formatDate(userStats.lastLogin)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Stats */}
+              {userRole === 'DOCTOR' && (
+                <Card className={cn(
+                  "shadow-lg rounded-2xl",
+                  isLightTheme 
+                    ? "bg-white border-gray-200" 
+                    : "bg-zinc-900 border-zinc-800"
+                )}>
+                  <CardHeader className="p-6">
+                    <CardTitle className={cn(
+                      "text-lg font-bold flex items-center space-x-2",
+                      isLightTheme ? "text-gray-900" : "text-white"
+                    )}>
+                      <ChartBarIcon className="h-5 w-5" />
+                      <span>Statistics</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className={cn(
+                        "p-4 rounded-xl border",
+                        isLightTheme 
+                          ? "bg-blue-50 border-blue-200" 
+                          : "bg-blue-900/20 border-blue-800"
+                      )}>
+                        <div className="flex items-center space-x-3">
+                          <UsersIcon className="h-6 w-6 text-blue-600" />
+                          <div>
+                            <p className={cn(
+                              "text-2xl font-bold",
+                              isLightTheme ? "text-gray-900" : "text-white"
+                            )}>
+                              {userStats.totalPatients || 0}
+                            </p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              isLightTheme ? "text-gray-600" : "text-zinc-400"
+                            )}>
+                              Patients
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={cn(
+                        "p-4 rounded-xl border",
+                        isLightTheme 
+                          ? "bg-green-50 border-green-200" 
+                          : "bg-green-900/20 border-green-800"
+                      )}>
+                        <div className="flex items-center space-x-3">
+                          <DocumentTextIcon className="h-6 w-6 text-green-600" />
+                          <div>
+                            <p className={cn(
+                              "text-2xl font-bold",
+                              isLightTheme ? "text-gray-900" : "text-white"
+                            )}>
+                              {userStats.totalProtocols || 0}
+                            </p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              isLightTheme ? "text-gray-600" : "text-zinc-400"
+                            )}>
+                              Protocols
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={cn(
+                        "p-4 rounded-xl border",
+                        isLightTheme 
+                          ? "bg-purple-50 border-purple-200" 
+                          : "bg-purple-900/20 border-purple-800"
+                      )}>
+                        <div className="flex items-center space-x-3">
+                          <StarIcon className="h-6 w-6 text-purple-600" />
+                          <div>
+                            <p className={cn(
+                              "text-2xl font-bold",
+                              isLightTheme ? "text-gray-900" : "text-white"
+                            )}>
+                              {userStats.totalTemplates || 0}
+                            </p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              isLightTheme ? "text-gray-600" : "text-zinc-400"
+                            )}>
+                              Templates
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
-              <Button 
-                variant="ghost" 
-                className={cn(
-                  "w-full",
+              {userRole === 'PATIENT' && (
+                <Card className={cn(
+                  "shadow-lg rounded-2xl",
                   isLightTheme 
-                    ? "text-slate-600 hover:text-slate-800 hover:bg-slate-100" 
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
-                )}
-                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-              >
-                <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
+                    ? "bg-white border-gray-200" 
+                    : "bg-zinc-900 border-zinc-800"
+                )}>
+                  <CardHeader className="p-6">
+                    <CardTitle className={cn(
+                      "text-lg font-bold flex items-center space-x-2",
+                      isLightTheme ? "text-gray-900" : "text-white"
+                    )}>
+                      <ChartBarIcon className="h-5 w-5" />
+                      <span>My Progress</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className={cn(
+                        "p-4 rounded-xl border",
+                        isLightTheme 
+                          ? "bg-green-50 border-green-200" 
+                          : "bg-green-900/20 border-green-800"
+                      )}>
+                        <div className="flex items-center space-x-3">
+                          <DocumentTextIcon className="h-6 w-6 text-green-600" />
+                          <div>
+                            <p className={cn(
+                              "text-2xl font-bold",
+                              isLightTheme ? "text-gray-900" : "text-white"
+                            )}>
+                              {userStats.completedProtocols || 0}
+                            </p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              isLightTheme ? "text-gray-600" : "text-zinc-400"
+                            )}>
+                              Completed
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={cn(
+                        "p-4 rounded-xl border",
+                        isLightTheme 
+                          ? "bg-blue-50 border-blue-200" 
+                          : "bg-blue-900/20 border-blue-800"
+                      )}>
+                        <div className="flex items-center space-x-3">
+                          <ClockIcon className="h-6 w-6 text-blue-600" />
+                          <div>
+                            <p className={cn(
+                              "text-2xl font-bold",
+                              isLightTheme ? "text-gray-900" : "text-white"
+                            )}>
+                              {userStats.activeProtocols || 0}
+                            </p>
+                            <p className={cn(
+                              "text-sm font-medium",
+                              isLightTheme ? "text-gray-600" : "text-zinc-400"
+                            )}>
+                              Active
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -175,361 +175,365 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-            <Link href="/doctor/courses">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Voltar
-            </Link>
-          </Button>
-          <div className="flex items-center gap-3">
-            <BookOpenIcon className="h-5 w-5 text-blue-600" />
-            <h1 className="text-2xl font-light text-slate-800">
-              Criar Novo Curso
-            </h1>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
-          
-          {/* Basic Information */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-slate-800">
-                Informações Básicas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-800">Nome do Curso *</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Curso de Mindfulness"
-                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-slate-800">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descreva o curso..."
-                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 min-h-[100px]"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Modal Configuration */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-slate-800">
-                Configuração do Modal (Opcional)
-              </CardTitle>
-              <p className="text-sm text-slate-600">
-                Configure um modal informativo que será exibido quando o curso estiver indisponível para um paciente.
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+          {/* Header */}
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
+              <Link href="/doctor/courses">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Voltar
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Criar Novo Curso
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Configure módulos, aulas e conteúdo educacional
               </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="modalTitle" className="text-slate-800">Título do Modal</Label>
-                  <Input
-                    id="modalTitle"
-                    value={modalTitle}
-                    onChange={(e) => setModalTitle(e.target.value)}
-                    placeholder="Ex: Curso em Breve"
-                    className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="modalVideoUrl" className="text-slate-800">URL do Vídeo</Label>
-                  <Input
-                    id="modalVideoUrl"
-                    value={modalVideoUrl}
-                    onChange={(e) => setModalVideoUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/embed/..."
-                    className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="modalDescription" className="text-slate-800">Descrição do Modal</Label>
-                <Textarea
-                  id="modalDescription"
-                  value={modalDescription}
-                  onChange={(e) => setModalDescription(e.target.value)}
-                  placeholder="Mensagem para o paciente..."
-                  className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="modalButtonText" className="text-slate-800">Texto do Botão</Label>
-                  <Input
-                    id="modalButtonText"
-                    value={modalButtonText}
-                    onChange={(e) => setModalButtonText(e.target.value)}
-                    placeholder="Saber mais"
-                    className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="modalButtonUrl" className="text-slate-800">URL do Botão</Label>
-                  <Input
-                    id="modalButtonUrl"
-                    value={modalButtonUrl}
-                    onChange={(e) => setModalButtonUrl(e.target.value)}
-                    placeholder="https://exemplo.com"
-                    className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Modules */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-slate-800">
-                  Módulos
+          <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+            
+            {/* Basic Information */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-gray-900">
+                  Informações Básicas
                 </CardTitle>
-                <Button
-                  type="button"
-                  onClick={addModule}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Adicionar Módulo
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {modules.map((module, moduleIndex) => (
-                <Card key={moduleIndex} className="bg-slate-50 border-slate-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm text-slate-800">Módulo {moduleIndex + 1}</CardTitle>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeModule(moduleIndex)}
-                        className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="text-slate-800">Nome do Módulo</Label>
-                        <Input
-                          value={module.name}
-                          onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
-                          placeholder="Ex: Fundamentos"
-                          className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-slate-800">Descrição</Label>
-                        <Input
-                          value={module.description}
-                          onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
-                          placeholder="Descrição do módulo"
-                          className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                        />
-                      </div>
-                    </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Curso *</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex: Curso de Mindfulness"
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    required
+                  />
+                </div>
 
-                    {/* Module Lessons */}
-                    <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Descreva o curso..."
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium min-h-[100px]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Modal Configuration */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-gray-900">
+                  Configuração do Modal (Opcional)
+                </CardTitle>
+                <p className="text-gray-600 font-medium">
+                  Configure um modal informativo que será exibido quando o curso estiver indisponível para um paciente.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
+                    <Input
+                      id="modalTitle"
+                      value={modalTitle}
+                      onChange={(e) => setModalTitle(e.target.value)}
+                      placeholder="Ex: Curso em Breve"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo</Label>
+                    <Input
+                      id="modalVideoUrl"
+                      value={modalVideoUrl}
+                      onChange={(e) => setModalVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/embed/..."
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
+                  <Textarea
+                    id="modalDescription"
+                    value={modalDescription}
+                    onChange={(e) => setModalDescription(e.target.value)}
+                    placeholder="Mensagem para o paciente..."
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
+                    <Input
+                      id="modalButtonText"
+                      value={modalButtonText}
+                      onChange={(e) => setModalButtonText(e.target.value)}
+                      placeholder="Saber mais"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão</Label>
+                    <Input
+                      id="modalButtonUrl"
+                      value={modalButtonUrl}
+                      onChange={(e) => setModalButtonUrl(e.target.value)}
+                      placeholder="https://exemplo.com"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Modules */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-bold text-gray-900">
+                    Módulos
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    onClick={addModule}
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Módulo
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {modules.map((module, moduleIndex) => (
+                  <Card key={moduleIndex} className="bg-gray-50 border-gray-200 rounded-xl">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-slate-700">Aulas do Módulo</h4>
+                        <CardTitle className="text-lg font-bold text-gray-900">Módulo {moduleIndex + 1}</CardTitle>
                         <Button
                           type="button"
+                          variant="outline"
                           size="sm"
-                          onClick={() => addLessonToModule(moduleIndex)}
-                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                          onClick={() => removeModule(moduleIndex)}
+                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0"
                         >
-                          <PlusIcon className="h-3 w-3 mr-1" />
-                          Aula
+                          <TrashIcon className="h-4 w-4" />
                         </Button>
                       </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Nome do Módulo</Label>
+                          <Input
+                            value={module.name}
+                            onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
+                            placeholder="Ex: Fundamentos"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Descrição</Label>
+                          <Input
+                            value={module.description}
+                            onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
+                            placeholder="Descrição do módulo"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
+                          />
+                        </div>
+                      </div>
 
-                      {module.lessons.map((lesson, lessonIndex) => (
-                        <Card key={lessonIndex} className="bg-white border-slate-200">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-slate-500">Aula {lessonIndex + 1}</span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
-                                className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 h-6 w-6 p-0"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            
-                            <div className="grid gap-3 md:grid-cols-2">
+                      {/* Module Lessons */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-bold text-gray-900">Aulas do Módulo</h4>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addLessonToModule(moduleIndex)}
+                            className="bg-teal-100 hover:bg-teal-200 text-teal-700 border-teal-300 rounded-xl h-8 px-3 font-semibold"
+                          >
+                            <PlusIcon className="h-3 w-3 mr-1" />
+                            Aula
+                          </Button>
+                        </div>
+
+                        {module.lessons.map((lesson, lessonIndex) => (
+                          <Card key={lessonIndex} className="bg-white border-gray-200 rounded-xl">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-700">Aula {lessonIndex + 1}</span>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
+                                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 h-6 w-6 p-0 rounded-lg"
+                                >
+                                  <TrashIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Input
+                                  value={lesson.title}
+                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
+                                  placeholder="Título da aula"
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
+                                />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={lesson.duration}
+                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
+                                  placeholder="Duração (min)"
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
+                                />
+                              </div>
+                              
                               <Input
-                                value={lesson.title}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
-                                placeholder="Título da aula"
-                                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 text-sm"
+                                value={lesson.description}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
+                                placeholder="Descrição da aula"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                               />
+                              
                               <Input
-                                type="number"
-                                min="0"
-                                value={lesson.duration}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
-                                placeholder="Duração (min)"
-                                className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 text-sm"
+                                value={lesson.videoUrl}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
+                                placeholder="URL do vídeo"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                               />
-                            </div>
-                            
-                            <Input
-                              value={lesson.description}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
-                              placeholder="Descrição da aula"
-                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 text-sm"
-                            />
-                            
-                            <Input
-                              value={lesson.videoUrl}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
-                              placeholder="URL do vídeo"
-                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 text-sm"
-                            />
-                            
-                            <Textarea
-                              value={lesson.content}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
-                              placeholder="Conteúdo da aula"
-                              className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 text-sm min-h-[60px]"
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+                              
+                              <Textarea
+                                value={lesson.content}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
+                                placeholder="Conteúdo da aula"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg text-sm font-medium min-h-[60px]"
+                              />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </CardContent>
+            </Card>
 
-          {/* Direct Lessons */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-slate-800">
-                  Aulas Diretas (sem módulo)
-                </CardTitle>
-                <Button
-                  type="button"
-                  onClick={addDirectLesson}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Adicionar Aula
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {directLessons.map((lesson, index) => (
-                <Card key={index} className="bg-slate-50 border-slate-200">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-700">Aula {index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeDirectLesson(index)}
-                        className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid gap-4 md:grid-cols-2">
+            {/* Direct Lessons */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-bold text-gray-900">
+                    Aulas Diretas (sem módulo)
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    onClick={addDirectLesson}
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Aula
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {directLessons.map((lesson, index) => (
+                  <Card key={index} className="bg-gray-50 border-gray-200 rounded-xl">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-gray-900">Aula {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeDirectLesson(index)}
+                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Input
+                          value={lesson.title}
+                          onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
+                          placeholder="Título da aula"
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          value={lesson.duration}
+                          onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
+                          placeholder="Duração (min)"
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
+                        />
+                      </div>
+                      
                       <Input
-                        value={lesson.title}
-                        onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
-                        placeholder="Título da aula"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        value={lesson.description}
+                        onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
+                        placeholder="Descrição da aula"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                       />
+                      
                       <Input
-                        type="number"
-                        min="0"
-                        value={lesson.duration}
-                        onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
-                        placeholder="Duração (min)"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                        value={lesson.videoUrl}
+                        onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
+                        placeholder="URL do vídeo"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                       />
-                    </div>
-                    
-                    <Input
-                      value={lesson.description}
-                      onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
-                      placeholder="Descrição da aula"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                    
-                    <Input
-                      value={lesson.videoUrl}
-                      onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
-                      placeholder="URL do vídeo"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                    
-                    <Textarea
-                      value={lesson.content}
-                      onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
-                      placeholder="Conteúdo da aula"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500 min-h-[80px]"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+                      
+                      <Textarea
+                        value={lesson.content}
+                        onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
+                        placeholder="Conteúdo da aula"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium min-h-[80px]"
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </CardContent>
+            </Card>
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-4 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              asChild
-              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-            >
-              <Link href="/doctor/courses">Cancelar</Link>
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isLoading ? 'Criando...' : 'Criar Curso'}
-            </Button>
-          </div>
-        </form>
+            {/* Submit Button */}
+            <div className="flex justify-end gap-4 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                asChild
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold"
+              >
+                <Link href="/doctor/courses">Cancelar</Link>
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+              >
+                {isLoading ? 'Criando...' : 'Criar Curso'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

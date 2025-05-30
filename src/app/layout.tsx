@@ -7,8 +7,8 @@ import { NextAuthProvider } from '@/components/NextAuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Lovu - User Experience in Another Level',
-  description: 'AwLov is a platform that provides a user experience in another level.',
+  title: 'CXLUS - User Experience in Another Level',
+  description: 'CXLUS is a platform that provides a user experience in another level.',
   manifest: '/manifest.json',
   icons: {
     icon: [

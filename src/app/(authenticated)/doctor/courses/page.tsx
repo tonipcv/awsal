@@ -88,140 +88,144 @@ export default function DoctorCoursesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando cursos...</span>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="lg:ml-64">
+          <span className="text-sm text-gray-600 font-medium">Carregando cursos...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72 lg:pl-72">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
         
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-light text-slate-800">
-              Cursos
-            </h1>
-            <p className="text-sm text-slate-600">
-              Gerencie seus cursos e conteúdos educacionais
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <span>{courses.length} {courses.length === 1 ? 'curso' : 'cursos'}</span>
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Cursos
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Gerencie seus cursos e conteúdos educacionais
+              </p>
             </div>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Link href="/doctor/courses/create">
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Novo Curso
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Courses Grid */}
-        {courses.length === 0 ? (
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <div className="text-center">
-                <BookOpenIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2 text-slate-800">
-                  Nenhum curso encontrado
-                </h3>
-                <p className="text-sm text-slate-600 mb-6">
-                  Comece criando seu primeiro curso educacional.
-                </p>
-                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Link href="/doctor/courses/create">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Criar Primeiro Curso
-                  </Link>
-                </Button>
+            
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3 text-gray-600 font-medium">
+                <span>{courses.length} {courses.length === 1 ? 'curso' : 'cursos'}</span>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => {
-              const totalLessons = getTotalLessons(course);
-              const totalDuration = getTotalDuration(course);
-
-              return (
-                <Card key={course.id} className="bg-white/80 border-slate-200/50 backdrop-blur-sm hover:bg-slate-50/80 transition-colors">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base font-medium text-slate-800 truncate mb-1">
-                          {course.name}
-                        </CardTitle>
-                        {course.description && (
-                          <p className="text-sm text-slate-600 mt-1 line-clamp-2">
-                            {course.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3 text-xs">
-                      <div className="flex items-center gap-1 text-slate-500">
-                        <BookOpenIcon className="h-3 w-3" />
-                        <span>{course._count.modules} módulos</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-slate-500">
-                        <PlayIcon className="h-3 w-3" />
-                        <span>{totalLessons} aulas</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-slate-500">
-                        <UsersIcon className="h-3 w-3" />
-                        <span>{course._count.assignments} alunos</span>
-                      </div>
-                    </div>
-
-                    {totalDuration > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <ClockIcon className="h-3 w-3" />
-                        <span>Duração: {formatDuration(totalDuration)}</span>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="flex-1 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        <Link href={`/doctor/courses/${course.id}`}>
-                          <EyeIcon className="h-3 w-3 mr-1" />
-                          Ver
-                        </Link>
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="flex-1 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        <Link href={`/doctor/courses/${course.id}/edit`}>
-                          <PencilIcon className="h-3 w-3 mr-1" />
-                          Editar
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+              <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                <Link href="/doctor/courses/create">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Novo Curso
+                </Link>
+              </Button>
+            </div>
           </div>
-        )}
+
+          {/* Courses Grid */}
+          {courses.length === 0 ? (
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+                  <h3 className="text-xl font-bold mb-3 text-gray-900">
+                    Nenhum curso encontrado
+                  </h3>
+                  <p className="text-gray-600 font-medium mb-8">
+                    Comece criando seu primeiro curso educacional.
+                  </p>
+                  <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                    <Link href="/doctor/courses/create">
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Criar Primeiro Curso
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {courses.map((course) => {
+                const totalLessons = getTotalLessons(course);
+                const totalDuration = getTotalDuration(course);
+
+                return (
+                  <Card key={course.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg font-bold text-gray-900 truncate mb-2">
+                            {course.name}
+                          </CardTitle>
+                          {course.description && (
+                            <p className="text-gray-600 font-medium line-clamp-2">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6">
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="flex items-center gap-2 text-gray-600 font-medium">
+                          <BookOpenIcon className="h-4 w-4 text-teal-500" />
+                          <span className="text-sm">{course._count.modules}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600 font-medium">
+                          <PlayIcon className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm">{totalLessons}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600 font-medium">
+                          <UsersIcon className="h-4 w-4 text-orange-500" />
+                          <span className="text-sm">{course._count.assignments}</span>
+                        </div>
+                      </div>
+
+                      {totalDuration > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600 font-medium">
+                          <ClockIcon className="h-4 w-4 text-emerald-500" />
+                          <span className="text-sm">Duração: {formatDuration(totalDuration)}</span>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
+                        >
+                          <Link href={`/doctor/courses/${course.id}`}>
+                            <EyeIcon className="h-4 w-4 mr-2" />
+                            Ver
+                          </Link>
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
+                        >
+                          <Link href={`/doctor/courses/${course.id}/edit`}>
+                            <PencilIcon className="h-4 w-4 mr-2" />
+                            Editar
+                          </Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

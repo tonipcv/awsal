@@ -96,30 +96,30 @@ export default function Navigation() {
   // Navegação para pacientes
   const patientNavSections: NavSection[] = [
     {
-      title: "Planejamento",
+      title: "Planning",
       items: [
         {
           href: '/protocols',
-          label: 'Protocolos',
+          label: 'Protocols',
           icon: CheckCircleIcon,
-          description: 'Meus protocolos médicos'
+          description: 'My medical protocols'
         },
         {
           href: '/courses',
-          label: 'Cursos',
+          label: 'Courses',
           icon: BookOpenIcon,
-          description: 'Meus cursos'
+          description: 'My courses'
         }
       ]
     },
     {
-      title: "Indicações",
+      title: "Referrals",
       items: [
         {
           href: '/patient/referrals',
-          label: 'Minhas Indicações',
+          label: 'My Referrals',
           icon: UserPlusIcon,
-          description: 'Meus créditos e recompensas'
+          description: 'My credits and rewards'
         }
       ]
     }
@@ -128,72 +128,72 @@ export default function Navigation() {
   // Navegação para médicos
   const doctorNavSections: NavSection[] = [
     {
-      title: "Gestão",
+      title: "Management",
       items: [
         {
           href: '/doctor/dashboard',
           label: 'Dashboard',
           icon: PresentationChartBarIcon,
-          description: 'Visão geral'
+          description: 'Overview'
         },
         {
           href: '/clinic',
-          label: 'Minha Clínica',
+          label: 'My Clinic',
           icon: BuildingOfficeIcon,
-          description: 'Gerenciar clínica e equipe'
+          description: 'Manage clinic and team'
         },
         {
           href: '/doctor/patients',
-          label: 'Pacientes',
+          label: 'Clients',
           icon: UsersIcon,
-          description: 'Gerenciar pacientes'
+          description: 'Manage clients'
         },
         {
           href: '/doctor/protocols',
-          label: 'Protocolos',
+          label: 'Protocols',
           icon: DocumentTextIcon,
-          description: 'Criar e gerenciar protocolos'
+          description: 'Create and manage protocols'
         },
         {
           href: '/doctor/products',
-          label: 'Produtos',
+          label: 'Products',
           icon: CheckCircleIcon,
-          description: 'Gerenciar produtos recomendados'
+          description: 'Manage recommended products'
         },
         {
           href: '/doctor/courses',
-          label: 'Cursos',
+          label: 'Courses',
           icon: BookOpenIcon,
-          description: 'Criar e gerenciar cursos'
+          description: 'Create and manage courses'
         },
         {
           href: '/doctor/consultation-form',
-          label: 'Formulário',
+          label: 'Form',
           icon: DocumentTextIcon,
-          description: 'Personalizar formulário de consulta'
+          description: 'Customize consultation form'
         },
         {
           href: '/doctor/templates',
           label: 'Templates',
           icon: CogIcon,
-          description: 'Templates de protocolos'
+          description: 'Protocol templates'
         }
       ]
     },
     {
-      title: "Indicações",
+      title: "Referrals",
       items: [
         {
           href: '/doctor/referrals',
-          label: 'Indicações',
+          label: 'Referrals',
           icon: UserPlusIcon,
-          description: 'Gerenciar indicações recebidas'
+          description: 'Manage received referrals'
         },
         {
           href: '/doctor/rewards',
-          label: 'Recompensas',
+          label: 'Rewards',
           icon: GiftIcon,
-          description: 'Configurar recompensas'
+          description: 'Configure rewards'
         }
       ]
     }
@@ -202,25 +202,25 @@ export default function Navigation() {
   // Navegação para Super Admin
   const superAdminNavSections: NavSection[] = [
     {
-      title: "Administração",
+      title: "Administration",
       items: [
         {
           href: '/admin',
           label: 'Dashboard',
           icon: PresentationChartBarIcon,
-          description: 'Painel administrativo'
+          description: 'Administrative panel'
         },
         {
           href: '/admin/doctors',
-          label: 'Médicos',
+          label: 'Doctors',
           icon: UsersIcon,
-          description: 'Gerenciar médicos'
+          description: 'Manage doctors'
         },
         {
           href: '/admin/subscriptions',
           label: 'Subscriptions',
           icon: ShieldCheckIcon,
-          description: 'Gerenciar subscriptions'
+          description: 'Manage subscriptions'
         }
       ]
     }
@@ -237,7 +237,7 @@ export default function Navigation() {
       className={cn(
         "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
         shouldUseLightTheme
-          ? "text-gray-700 hover:bg-gray-100" // Doctor/Admin pages: clean light theme
+          ? "text-gray-700 hover:bg-gray-100 hover:text-gray-900" // Doctor/Admin pages: clean light theme with better hover contrast
           : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
         pathname === item.href 
           ? shouldUseLightTheme
@@ -285,7 +285,7 @@ export default function Navigation() {
             "p-6 border-b",
             shouldUseLightTheme ? "border-gray-200" : "border-white/10"
           )}>
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center justify-center">
               <div className="relative w-8 h-8">
                 <Image
                   src="/logo.png"
@@ -294,9 +294,6 @@ export default function Navigation() {
                   className="object-contain"
                 />
               </div>
-              {shouldUseLightTheme && (
-                <span className="text-xl font-bold text-gray-900">MedFlow</span>
-              )}
             </Link>
           </div>
 
@@ -341,7 +338,7 @@ export default function Navigation() {
                 {shouldUseLightTheme && (
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {session?.user?.name || 'Usuário'}
+                      {session?.user?.name || 'User'}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       {session?.user?.email}
@@ -373,9 +370,6 @@ export default function Navigation() {
                   className="object-contain"
                 />
               </div>
-              {shouldUseLightTheme && (
-                <span className="text-lg font-bold text-gray-900">MedFlow</span>
-              )}
             </Link>
             <Link href="/profile">
               <div className={cn(
@@ -406,7 +400,7 @@ export default function Navigation() {
                     className={cn(
                       "w-full h-16 flex flex-col items-center justify-center gap-1 rounded-lg",
                       shouldUseLightTheme
-                        ? "text-gray-600 hover:bg-gray-100" // Doctor/Admin pages: clean light theme
+                        ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900" // Doctor/Admin pages: clean light theme with better hover contrast
                         : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
                       pathname === item.href 
                         ? shouldUseLightTheme
