@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Cxlus',
   description: 'CXLUS is a platform that provides a user experience in another level.',
-  manifest: '/manifest.json',
+  manifest: '/site.webmanifest',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'AwLov',
+    title: 'CXLUS',
   },
 }
 
@@ -48,9 +48,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="text-size-adjust" content="none" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
       </head>
       <body className={`${inter.className} antialiased h-full`}>
         <ThemeProvider
