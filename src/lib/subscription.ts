@@ -52,10 +52,10 @@ export async function getDoctorSubscriptionStatus(doctorId: string): Promise<Sub
       isExpired,
       daysRemaining,
       limits: {
-        maxPatients: subscription.plan.maxPatients,
-        maxProtocols: subscription.plan.maxProtocols,
-        maxCourses: subscription.plan.maxCourses,
-        maxProducts: subscription.plan.maxProducts,
+        maxPatients: subscription.plan.maxPatients ?? 0,
+        maxProtocols: subscription.plan.maxProtocols ?? 0,
+        maxCourses: subscription.plan.maxCourses ?? 0,
+        maxProducts: subscription.plan.maxProducts ?? 0,
         features
       }
     };
@@ -186,6 +186,7 @@ export async function updateSystemMetrics(): Promise<void> {
     
     const totalDoctors = await prisma.user.count({ where: { role: 'DOCTOR' } });
     const totalPatients = await prisma.user.count({ where: { role: 'PATIENT' } });
+    const totalReferrals = await prisma.referralLead.count();
     const totalProtocols = await prisma.protocol.count();
     const totalCourses = await prisma.course.count();
     
@@ -202,6 +203,7 @@ export async function updateSystemMetrics(): Promise<void> {
       update: {
         totalDoctors,
         totalPatients,
+        totalReferrals,
         totalProtocols,
         totalCourses,
         activeSubscriptions,
@@ -212,6 +214,7 @@ export async function updateSystemMetrics(): Promise<void> {
         date: new Date(today),
         totalDoctors,
         totalPatients,
+        totalReferrals,
         totalProtocols,
         totalCourses,
         activeSubscriptions,

@@ -34,9 +34,9 @@ export interface ClinicWithDetails {
     endDate: Date | null;
     plan: {
       name: string;
-      maxPatients: number;
-      maxProtocols: number;
-      maxCourses: number;
+      maxPatients: number | null;
+      maxProtocols: number | null;
+      maxCourses: number | null;
     };
   } | null;
 }
@@ -144,7 +144,8 @@ export async function canCreateProtocol(userId: string): Promise<boolean> {
     }
   });
 
-  return protocolCount < clinic.subscription.plan.maxProtocols;
+  const maxProtocols = clinic.subscription.plan.maxProtocols ?? 0;
+  return protocolCount < maxProtocols;
 }
 
 /**
@@ -163,7 +164,8 @@ export async function canAddPatient(userId: string): Promise<boolean> {
     }
   });
 
-  return patientCount < clinic.subscription.plan.maxPatients;
+  const maxPatients = clinic.subscription.plan.maxPatients ?? 0;
+  return patientCount < maxPatients;
 }
 
 /**
@@ -344,13 +346,14 @@ export async function ensureDoctorHasClinic(doctorId: string): Promise<{ success
 
     // Criar subscription trial para a clínica
     const now = new Date();
+    const trialDays = defaultPlan.trialDays ?? 30; // Default to 30 days if null
     await prisma.clinicSubscription.create({
       data: {
         clinicId: clinic.id,
         planId: defaultPlan.id,
         status: 'TRIAL',
         maxDoctors: 3,
-        trialEndDate: new Date(now.getTime() + defaultPlan.trialDays * 24 * 60 * 60 * 1000)
+        trialEndDate: new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000)
       }
     });
 

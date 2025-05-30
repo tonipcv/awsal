@@ -36,8 +36,11 @@ export async function GET(request: Request) {
     }
 
     try {
-      // Buscar todos os produtos (já que não há doctorId na tabela)
+      // Buscar produtos do médico atual
       const products = await prisma.products.findMany({
+        where: {
+          doctorId: session.user.id
+        },
         include: {
           _count: {
             select: {
@@ -118,7 +121,8 @@ export async function POST(request: Request) {
         description,
         price: originalPrice ? parseFloat(originalPrice) : 0,
         category,
-        isActive: true
+        isActive: true,
+        doctorId: session.user.id
       }
     });
 

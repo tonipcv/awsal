@@ -21,20 +21,6 @@ export async function POST(request: Request) {
     const task = await prisma.protocolTask.findUnique({
       where: { id: protocolTaskId },
       include: {
-        protocolDay: {
-          include: {
-            protocol: {
-              include: {
-                assignments: {
-                  where: {
-                    userId: session.user.id,
-                    isActive: true
-                  }
-                }
-              }
-            }
-          }
-        },
         protocolSession: {
           include: {
             protocolDay: {
@@ -62,7 +48,7 @@ export async function POST(request: Request) {
 
     // Verificar se o usuário tem acesso a esta tarefa
     // A tarefa pode estar diretamente no dia ou em uma sessão
-    const protocol = task.protocolDay?.protocol || task.protocolSession?.protocolDay?.protocol;
+    const protocol = task.protocolSession?.protocolDay?.protocol;
     
     if (!protocol) {
       return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
@@ -97,7 +83,6 @@ export async function POST(request: Request) {
         include: {
           protocolTask: {
             include: {
-              protocolDay: true,
               protocolSession: {
                 include: {
                   protocolDay: true
@@ -108,10 +93,32 @@ export async function POST(request: Request) {
         }
       });
     } else {
+      // Buscar informações da tarefa para obter protocolId e dayNumber
+      const taskInfo = await prisma.protocolTask.findUnique({
+        where: { id: protocolTaskId },
+        include: {
+          protocolSession: {
+            include: {
+              protocolDay: {
+                include: {
+                  protocol: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!taskInfo) {
+        return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 });
+      }
+
       // Criar novo progresso
       progress = await prisma.protocolDayProgress.create({
         data: {
           userId: session.user.id,
+          protocolId: taskInfo.protocolSession.protocolDay.protocol.id,
+          dayNumber: taskInfo.protocolSession.protocolDay.dayNumber,
           protocolTaskId: protocolTaskId,
           date: new Date(date),
           isCompleted: isCompleted ?? true,
@@ -120,7 +127,6 @@ export async function POST(request: Request) {
         include: {
           protocolTask: {
             include: {
-              protocolDay: true,
               protocolSession: {
                 include: {
                   protocolDay: true
@@ -251,17 +257,6 @@ export async function GET(request: Request) {
       include: {
         protocolTask: {
           include: {
-            protocolDay: {
-              include: {
-                protocol: {
-                  select: {
-                    id: true,
-                    name: true,
-                    duration: true
-                  }
-                }
-              }
-            },
             protocolSession: {
               include: {
                 protocolDay: {
@@ -289,8 +284,8 @@ export async function GET(request: Request) {
       },
       orderBy: [
         { date: 'desc' },
-        { protocolTask: { protocolDay: { dayNumber: 'asc' } } },
-        { protocolTask: { order: 'asc' } }
+        { dayNumber: 'asc' },
+        { createdAt: 'asc' }
       ]
     });
 

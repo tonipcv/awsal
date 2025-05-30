@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         referralCode: leadReferralCode!,
         status: REFERRAL_STATUS.PENDING,
         doctorId,
-        referrerCode: referrer?.referralCode || '',
+        referrerId: referrer?.id || null,
         source: 'referral_form'
       }
     });
@@ -141,8 +141,7 @@ export async function POST(request: NextRequest) {
           userId: referrer.id,
           amount: 1,
           type: CREDIT_TYPE.SUCCESSFUL_REFERRAL,
-          status: CREDIT_STATUS.PENDING,
-          leadId: referralLead.id
+          referralLeadId: referralLead.id
         }
       });
     }

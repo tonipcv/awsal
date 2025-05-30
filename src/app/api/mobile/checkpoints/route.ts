@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         userId: user.id
       },
       orderBy: {
-        date: 'desc'
+        createdAt: 'desc'
       }
     });
 
@@ -40,32 +40,29 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const { date, emotion, isCompleted } = await request.json();
+    const { title, completed } = await request.json();
     
-    if (!date) {
+    if (!title) {
       return NextResponse.json(
-        { error: 'Data é obrigatória' },
+        { error: 'Título é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Verificar se já existe um checkpoint para esta data
+    // Verificar se já existe um checkpoint com este título para este usuário
     const existingCheckpoint = await prisma.checkpoint.findFirst({
       where: {
-        date,
+        title,
         userId: user.id
       }
     });
-
-    const newIsCompleted = emotion ? true : (isCompleted ?? !existingCheckpoint?.isCompleted);
 
     if (existingCheckpoint) {
       // Atualizar checkpoint existente
       const updatedCheckpoint = await prisma.checkpoint.update({
         where: { id: existingCheckpoint.id },
         data: {
-          isCompleted: newIsCompleted,
-          emotion: emotion || null
+          completed: completed ?? !existingCheckpoint.completed
         }
       });
       return NextResponse.json(updatedCheckpoint);
@@ -73,9 +70,8 @@ export async function POST(request: NextRequest) {
       // Criar novo checkpoint
       const checkpoint = await prisma.checkpoint.create({
         data: {
-          date,
-          isCompleted: newIsCompleted,
-          emotion: emotion || null,
+          title,
+          completed: completed ?? false,
           userId: user.id
         }
       });

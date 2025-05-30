@@ -72,7 +72,8 @@ export async function POST(req: Request) {
         doctorId: session.user.id,
         title,
         description,
-        creditsRequired: parseInt(creditsRequired),
+        value: parseInt(creditsRequired),
+        costInCredits: parseInt(creditsRequired),
         maxRedemptions: maxRedemptions ? parseInt(maxRedemptions) : null,
         isActive: true
       }
@@ -128,7 +129,10 @@ export async function PUT(req: Request) {
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (creditsRequired !== undefined) updateData.creditsRequired = parseInt(creditsRequired);
+    if (creditsRequired !== undefined) {
+      updateData.value = parseInt(creditsRequired);
+      updateData.costInCredits = parseInt(creditsRequired);
+    }
     if (maxRedemptions !== undefined) updateData.maxRedemptions = maxRedemptions ? parseInt(maxRedemptions) : null;
     if (isActive !== undefined) updateData.isActive = isActive;
 

@@ -20,14 +20,22 @@ export async function sendReferralNotification(leadId: string) {
     const lead = await prisma.referralLead.findUnique({
       where: { id: leadId },
       include: {
-        referrer: { select: { name: true, email: true } },
         doctor: { select: { name: true, email: true } }
       }
     });
 
-    if (!lead || !lead.doctor.email || !lead.referrer.email) {
-      console.error('Lead não encontrado ou emails inválidos:', leadId);
+    if (!lead || !lead.doctor?.email) {
+      console.error('Lead não encontrado ou email do médico inválido:', leadId);
       return;
+    }
+
+    // Buscar referrer separadamente se existir
+    let referrer = null;
+    if (lead.referrerId) {
+      referrer = await prisma.user.findUnique({
+        where: { id: lead.referrerId },
+        select: { name: true, email: true }
+      });
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -49,7 +57,7 @@ export async function sendReferralNotification(leadId: string) {
             <p><strong>Nome:</strong> ${lead.name}</p>
             <p><strong>Email:</strong> ${lead.email}</p>
             <p><strong>Telefone:</strong> ${lead.phone || 'Não informado'}</p>
-            <p><strong>Indicado por:</strong> ${lead.referrer.name} (${lead.referrer.email})</p>
+            <p><strong>Indicado por:</strong> ${referrer ? referrer.name : 'Não informado'} (${referrer ? referrer.email : 'Não informado'})</p>
             <p><strong>Status:</strong> ${lead.status === 'CONVERTED' ? 'Já é paciente' : 'Aguardando contato'}</p>
           </div>
           
@@ -74,14 +82,14 @@ export async function sendReferralNotification(leadId: string) {
       `
     });
 
-    // Email para quem indicou
-    if (lead.status === 'PENDING') {
+    // Email para quem indicou (só se tiver referrer e email)
+    if (referrer?.email && lead.status === 'PENDING') {
       await transporter.sendMail({
         from: {
           name: 'BOOP',
           address: process.env.SMTP_FROM as string
         },
-        to: lead.referrer.email,
+        to: referrer.email,
         subject: 'Sua indicação foi recebida!',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -113,14 +121,14 @@ export async function sendReferralNotification(leadId: string) {
           </div>
         `
       });
-    } else if (lead.status === 'CONVERTED') {
+    } else if (referrer?.email && lead.status === 'CONVERTED') {
       // Se já convertido, enviar email de parabéns
       await transporter.sendMail({
         from: {
           name: 'BOOP',
           address: process.env.SMTP_FROM as string
         },
-        to: lead.referrer.email,
+        to: referrer.email,
         subject: 'Sua indicação já era paciente! Você ganhou créditos! 🎉',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -150,15 +158,6 @@ export async function sendReferralNotification(leadId: string) {
       });
     }
 
-    // Marcar email como enviado
-    await prisma.referralLead.update({
-      where: { id: leadId },
-      data: {
-        emailSent: true,
-        emailSentAt: new Date()
-      }
-    });
-
     console.log('Notificações de indicação enviadas com sucesso para lead:', leadId);
   } catch (error) {
     console.error('Erro ao enviar notificação de indicação:', error);
@@ -170,17 +169,34 @@ export async function sendReferralNotification(leadId: string) {
  */
 export async function sendCreditNotification(creditId: string) {
   try {
+    // Buscar crédito e usuário separadamente
     const credit = await prisma.referralCredit.findUnique({
-      where: { id: creditId },
-      include: {
-        user: { select: { name: true, email: true } },
-        lead: { select: { name: true } }
-      }
+      where: { id: creditId }
     });
 
-    if (!credit || !credit.user.email) {
-      console.error('Crédito não encontrado ou email inválido:', creditId);
+    if (!credit) {
+      console.error('Crédito não encontrado:', creditId);
       return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: credit.userId },
+      select: { name: true, email: true }
+    });
+
+    if (!user?.email) {
+      console.error('Usuário não encontrado ou email inválido:', credit.userId);
+      return;
+    }
+
+    // Buscar lead se existir
+    let leadName = null;
+    if (credit.referralLeadId) {
+      const lead = await prisma.referralLead.findUnique({
+        where: { id: credit.referralLeadId },
+        select: { name: true }
+      });
+      leadName = lead?.name;
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -190,15 +206,15 @@ export async function sendCreditNotification(creditId: string) {
         name: 'BOOP',
         address: process.env.SMTP_FROM as string
       },
-      to: credit.user.email,
+      to: user.email,
       subject: `Você ganhou ${credit.amount} crédito(s)! 🎉`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #1e293b;">Parabéns! Você ganhou créditos! 🎉</h2>
           
           <p style="color: #374151; font-size: 16px;">
-            ${credit.lead ? 
-              `Sua indicação de <strong>${credit.lead.name}</strong> se tornou paciente!` :
+            ${leadName ? 
+              `Sua indicação de <strong>${leadName}</strong> se tornou paciente!` :
               'Você recebeu créditos!'
             }
           </p>
@@ -228,7 +244,7 @@ export async function sendCreditNotification(creditId: string) {
       `
     });
 
-    console.log('Notificação de crédito enviada com sucesso para:', credit.user.email);
+    console.log('Notificação de crédito enviada com sucesso para:', user.email);
   } catch (error) {
     console.error('Erro ao enviar notificação de crédito:', error);
   }

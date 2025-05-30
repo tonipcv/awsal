@@ -6,8 +6,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 interface PomodoroStar {
   id: string;
   userId: string;
-  date: Date;
-  createdAt: Date;
+  earnedAt: Date;
 }
 
 // GET /api/mobile/pomodoro-stars - Retorna as estrelas do usuário agrupadas por data
@@ -23,13 +22,13 @@ export async function GET(request: NextRequest) {
         userId: user.id
       },
       orderBy: {
-        date: 'desc'
+        earnedAt: 'desc'
       }
     });
 
     // Agrupar estrelas por data
     const groupedStars = stars.reduce((acc: Record<string, number>, star: PomodoroStar) => {
-      const date = star.date.toISOString().split('T')[0];
+      const date = star.earnedAt.toISOString().split('T')[0];
       if (!acc[date]) {
         acc[date] = 0;
       }
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
     const star = await prisma.pomodoroStar.create({
       data: {
         userId: user.id,
-        date: starDate
+        earnedAt: starDate
       }
     });
 
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
     const dayStars = await prisma.pomodoroStar.count({
       where: {
         userId: user.id,
-        date: {
+        earnedAt: {
           gte: startOfDay(starDate),
           lte: endOfDay(starDate)
         }

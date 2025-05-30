@@ -48,7 +48,7 @@ export async function GET(
         products: true
       },
       orderBy: {
-        order: 'asc'
+        createdAt: 'asc'
       }
     });
 
@@ -89,7 +89,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { productId, order, isRequired, notes } = body;
+    const { productId, quantity, instructions } = body;
 
     // Verificar se o protocolo pertence ao médico
     const protocol = await prisma.protocol.findFirst({
@@ -107,7 +107,8 @@ export async function POST(
     const product = await prisma.products.findFirst({
       where: {
         id: productId,
-        doctorId: session.user.id
+        doctorId: session.user.id,
+        isActive: true
       }
     });
 
@@ -137,9 +138,8 @@ export async function POST(
         id: createId(),
         protocolId: protocolId,
         productId: productId,
-        order: order || 0,
-        isRequired: isRequired || false,
-        notes: notes || null
+        quantity: quantity || 1,
+        instructions: instructions || null
       },
       include: {
         products: true
@@ -217,9 +217,8 @@ export async function PUT(
             id: createId(),
             protocolId: protocolId,
             productId: productData.productId,
-            order: productData.order || 0,
-            isRequired: productData.isRequired || false,
-            notes: productData.notes || null
+            quantity: productData.quantity || 1,
+            instructions: productData.instructions || null
           },
           include: {
             products: true

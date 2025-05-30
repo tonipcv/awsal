@@ -49,13 +49,11 @@ export async function getUserCreditsBalance(userId: string): Promise<number> {
   const credits = await prisma.referralCredit.findMany({
     where: {
       userId,
-      status: 'APPROVED'
+      isUsed: false // Apenas créditos não utilizados
     }
   });
 
-  const totalEarned = credits
-    .filter(credit => credit.usedAt === null)
-    .reduce((sum, credit) => sum + credit.amount, 0);
+  const totalEarned = credits.reduce((sum, credit) => sum + Number(credit.amount), 0);
 
   return totalEarned;
 }

@@ -203,6 +203,7 @@ model User {
   consultation_submissions_consultation_submissions_doctorIdToUser ConsultationSubmission[] @relation("consultation_submissions_doctorIdToUser")
   convertedConsultations                                           ConsultationSubmission[] @relation("ConvertedConsultations")
   createdCourses                                                   Course[]                 @relation("DoctorCourses")
+  createdProducts                                                  products[]               @relation("DoctorProducts")
   subscription                                                     DoctorSubscription?      @relation("DoctorSubscription")
   leads                                                            leads[]
   createdProtocols                                                 Protocol[]               @relation("DoctorProtocols")
@@ -271,17 +272,18 @@ model ProtocolSession {
 }
 
 model ProtocolTask {
-  id                String            @id @default(cuid())
+  id                String                @id @default(cuid())
   protocolSessionId String
   title             String
   description       String?
-  type              String            @default("task")
+  type              String                @default("task")
   duration          Int?
-  orderIndex        Int               @default(0)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @default(now()) @updatedAt
+  orderIndex        Int                   @default(0)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @default(now()) @updatedAt
   ProtocolContent   ProtocolContent[]
-  protocolSession   ProtocolSession   @relation(fields: [protocolSessionId], references: [id], onDelete: Cascade)
+  progress          ProtocolDayProgress[]
+  protocolSession   ProtocolSession       @relation(fields: [protocolSessionId], references: [id], onDelete: Cascade)
 }
 
 model ProtocolContent {
@@ -313,18 +315,24 @@ model UserProtocol {
 }
 
 model ProtocolDayProgress {
-  id          String    @id @default(cuid())
-  userId      String
-  protocolId  String
-  dayNumber   Int
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
-  protocols   Protocol  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String        @id @default(cuid())
+  userId          String
+  protocolId      String
+  dayNumber       Int
+  completed       Boolean       @default(false)
+  completedAt     DateTime?
+  protocolTaskId  String?
+  date            DateTime?
+  isCompleted     Boolean       @default(false)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+  protocols       Protocol      @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  protocolTask    ProtocolTask? @relation(fields: [protocolTaskId], references: [id], onDelete: Cascade)
 
   @@unique([userId, protocolId, dayNumber])
+  @@unique([userId, protocolTaskId, date])
 }
 
 model VerificationToken {
@@ -443,9 +451,13 @@ model products {
   price             Decimal             @db.Decimal(10, 2)
   category          String
   isActive          Boolean             @default(true)
+  doctorId          String
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now())
+  doctor            User                @relation("DoctorProducts", fields: [doctorId], references: [id], onDelete: Cascade)
   protocol_products protocol_products[]
+
+  @@index([doctorId])
 }
 
 model protocol_products {
@@ -505,16 +517,20 @@ model DoctorSubscription {
 }
 
 model SystemMetrics {
-  id             String   @id(map: "SystemMetrics_pkey") @default(cuid())
-  date           DateTime @unique(map: "SystemMetrics_date_key")
-  totalUsers     Int      @default(0)
-  activeUsers    Int      @default(0)
-  totalDoctors   Int      @default(0)
-  totalPatients  Int      @default(0)
-  totalReferrals Int      @default(0)
-  totalRevenue   Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  id                  String   @id(map: "SystemMetrics_pkey") @default(cuid())
+  date                DateTime @unique(map: "SystemMetrics_date_key")
+  totalUsers          Int      @default(0)
+  activeUsers         Int      @default(0)
+  totalDoctors        Int      @default(0)
+  totalPatients       Int      @default(0)
+  totalReferrals      Int      @default(0)
+  totalProtocols      Int      @default(0)
+  totalCourses        Int      @default(0)
+  activeSubscriptions Int      @default(0)
+  trialSubscriptions  Int      @default(0)
+  totalRevenue        Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
 
   @@map("system_metrics")
 }
@@ -596,6 +612,7 @@ model ReferralLead {
   priority                             String           @default("MEDIUM")
   tags                                 String[]
   customFields                         Json?
+  referralCode                         String?          @unique
   createdAt                            DateTime         @default(now())
   updatedAt                            DateTime         @default(now()) @updatedAt
   referral_credits                     ReferralCredit[]
