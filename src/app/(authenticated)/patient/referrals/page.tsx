@@ -251,7 +251,7 @@ export default function PatientReferralsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 pt-20 pb-24 px-4 sm:px-6 space-y-6 sm:space-y-8">
+    <div className="min-h-screen bg-zinc-950 pt-[88px] lg:pt-[120px] pb-24 px-4 sm:px-6 space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

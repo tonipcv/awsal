@@ -188,7 +188,7 @@ export default function ProtocolsPage() {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/20 via-zinc-800/10 to-zinc-900/20" />
-        <div className="relative pt-[88px] lg:pt-16 pb-12 lg:pb-16">
+        <div className="relative pt-[88px] lg:pt-[120px] pb-12 lg:pb-16">
           <div className="max-w-6xl mx-auto px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto">
               <div className="mb-8">

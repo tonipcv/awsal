@@ -99,7 +99,8 @@ export async function POST(request: NextRequest) {
     };
 
     if (subscriptionType === 'TRIAL') {
-      subscriptionData.trialEndDate = new Date(now.getTime() + defaultPlan.trialDays * 24 * 60 * 60 * 1000);
+      const trialDays = defaultPlan.trialDays || 7; // Default to 7 days if null
+      subscriptionData.trialEndDate = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
     } else {
       subscriptionData.endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias
     }
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
                    'http://localhost:3000';
     
     const inviteUrl = `${baseUrl}/auth/set-password?token=${inviteToken}`;
+    const trialDays = defaultPlan.trialDays || 7; // For email template
 
     try {
       await transporter.verify();
@@ -155,7 +157,7 @@ export async function POST(request: NextRequest) {
                 <li>Até 10 protocolos</li>
                 <li>Até 5 cursos</li>
                 <li>Até 30 produtos</li>
-                ${subscriptionType === 'TRIAL' ? `<li>${defaultPlan.trialDays} dias de trial gratuito</li>` : '<li>Subscription ativa imediatamente</li>'}
+                ${subscriptionType === 'TRIAL' ? `<li>${trialDays} dias de trial gratuito</li>` : '<li>Subscription ativa imediatamente</li>'}
               </ul>
             </div>
             

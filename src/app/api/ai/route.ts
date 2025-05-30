@@ -51,7 +51,7 @@ async function getUserContext(): Promise<UserContext | null> {
 
     // Buscar checkpoints
     const checkpoints = await prisma.checkpoint.findMany({
-      orderBy: { date: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 10 // Últimos 10 checkpoints
     });
 
@@ -69,13 +69,11 @@ async function getUserContext(): Promise<UserContext | null> {
         : '0%'
     }));
 
-    const formattedCheckpoints = checkpoints
-      .filter((c): c is Checkpoint & { emotion: string } => c.emotion !== null)
-      .map((c) => ({
-        emotion: c.emotion,
-        description: c.isCompleted ? 'Concluído' : 'Pendente',
-        date: format(c.date, "d 'de' MMMM", { locale: ptBR })
-      }));
+    const formattedCheckpoints = checkpoints.map((c) => ({
+      emotion: c.title, // Use title as emotion/description
+      description: c.completed ? 'Concluído' : 'Pendente',
+      date: format(c.createdAt, "d 'de' MMMM", { locale: ptBR })
+    }));
 
     return {
       thoughts: formattedThoughts,

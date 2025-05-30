@@ -40,9 +40,16 @@ export async function GET() {
         },
         days: {
           include: {
-            tasks: {
+            sessions: {
+              include: {
+                tasks: {
+                  orderBy: {
+                    orderIndex: 'asc'
+                  }
+                }
+              },
               orderBy: {
-                order: 'asc'
+                sessionNumber: 'asc'
               }
             }
           },

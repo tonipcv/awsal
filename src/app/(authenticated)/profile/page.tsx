@@ -371,8 +371,10 @@ export default function ProfilePage() {
       isLightTheme ? "bg-white" : "bg-zinc-950"
     )}>
       <div className={cn(
-        "container max-w-6xl mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8",
-        isLightTheme && "lg:ml-64"
+        "container max-w-6xl mx-auto p-6 lg:p-8 pb-24 lg:pb-8",
+        isLightTheme 
+          ? "pt-[88px] lg:pt-8 lg:ml-64"
+          : "pt-[88px] lg:pt-[120px]"
       )}>
         <div className="space-y-8">
           {/* Header */}

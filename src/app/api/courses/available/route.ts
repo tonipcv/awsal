@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get user's assigned courses with their status
+    // Get user's assigned courses
     const userCourses = await prisma.userCourse.findMany({
       where: { userId: session.user.id },
       include: {
@@ -60,51 +60,32 @@ export async function GET(request: NextRequest) {
                 }
               },
               orderBy: {
-                order: 'asc'
-              }
-            },
-            lessons: {
-              where: {
-                moduleId: null
-              },
-              select: {
-                id: true,
-                title: true,
-                duration: true
-              },
-              orderBy: {
-                order: 'asc'
+                orderIndex: 'asc'
               }
             },
             _count: {
               select: {
-                modules: true,
-                lessons: true
+                modules: true
               }
             }
           }
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        enrolledAt: 'desc'
       }
     });
 
-    // Separate courses by their assignment status
-    const activeCourses = userCourses
-      .filter(uc => uc.status === 'active')
-      .map(uc => uc.course);
-
-    const unavailableCourses = userCourses
-      .filter(uc => uc.status === 'unavailable')
-      .map(uc => uc.course);
+    // For now, treat all assigned courses as active
+    // In the future, you might want to add a status field to UserCourse
+    const activeCourses = userCourses.map(uc => uc.course);
 
     return NextResponse.json({
       active: activeCourses,
-      unavailable: unavailableCourses
+      unavailable: []
     });
   } catch (error) {
-    console.error('Error fetching available courses:', error);
+    console.error('Error fetching available courses:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

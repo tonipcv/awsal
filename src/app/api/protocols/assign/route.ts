@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
     // Calcular data de fim
     const start = new Date(startDate);
-    const end = addDays(start, protocol.duration - 1);
+    const end = addDays(start, (protocol.duration || 30) - 1);
 
     // Criar atribuição
     const assignment = await prisma.userProtocol.create({
@@ -100,49 +100,15 @@ export async function POST(request: Request) {
                 sessions: {
                   include: {
                     tasks: {
-                      include: {
-                        product: {
-                          select: {
-                            id: true,
-                            name: true,
-                            description: true,
-                            brand: true,
-                            imageUrl: true,
-                            originalPrice: true,
-                            discountPrice: true,
-                            purchaseUrl: true
-                          }
-                        }
-                      },
                       orderBy: {
-                        order: 'asc'
+                        orderIndex: 'asc'
                       }
                     }
                   },
                   orderBy: {
-                    order: 'asc'
+                    sessionNumber: 'asc'
                   }
-                },
-                tasks: {
-                  include: {
-                    product: {
-                      select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        brand: true,
-                        imageUrl: true,
-                        originalPrice: true,
-                        discountPrice: true,
-                        purchaseUrl: true
-                      }
-                    }
-                  },
-                  orderBy: {
-                    order: 'asc'
-                  }
-                },
-                contents: true
+                }
               },
               orderBy: {
                 dayNumber: 'asc'
@@ -219,49 +185,15 @@ export async function GET(request: Request) {
                   sessions: {
                     include: {
                       tasks: {
-                        include: {
-                          product: {
-                            select: {
-                              id: true,
-                              name: true,
-                              description: true,
-                              brand: true,
-                              imageUrl: true,
-                              originalPrice: true,
-                              discountPrice: true,
-                              purchaseUrl: true
-                            }
-                          }
-                        },
                         orderBy: {
-                          order: 'asc'
+                          orderIndex: 'asc'
                         }
                       }
                     },
                     orderBy: {
-                      order: 'asc'
+                      sessionNumber: 'asc'
                     }
-                  },
-                  tasks: {
-                    include: {
-                      product: {
-                        select: {
-                          id: true,
-                          name: true,
-                          description: true,
-                          brand: true,
-                          imageUrl: true,
-                          originalPrice: true,
-                          discountPrice: true,
-                          purchaseUrl: true
-                        }
-                      }
-                    },
-                    orderBy: {
-                      order: 'asc'
-                    }
-                  },
-                  contents: true
+                  }
                 },
                 orderBy: {
                   dayNumber: 'asc'
@@ -288,49 +220,15 @@ export async function GET(request: Request) {
                   sessions: {
                     include: {
                       tasks: {
-                        include: {
-                          product: {
-                            select: {
-                              id: true,
-                              name: true,
-                              description: true,
-                              brand: true,
-                              imageUrl: true,
-                              originalPrice: true,
-                              discountPrice: true,
-                              purchaseUrl: true
-                            }
-                          }
-                        },
                         orderBy: {
-                          order: 'asc'
+                          orderIndex: 'asc'
                         }
                       }
                     },
                     orderBy: {
-                      order: 'asc'
+                      sessionNumber: 'asc'
                     }
-                  },
-                  tasks: {
-                    include: {
-                      product: {
-                        select: {
-                          id: true,
-                          name: true,
-                          description: true,
-                          brand: true,
-                          imageUrl: true,
-                          originalPrice: true,
-                          discountPrice: true,
-                          purchaseUrl: true
-                        }
-                      }
-                    },
-                    orderBy: {
-                      order: 'asc'
-                    }
-                  },
-                  contents: true
+                  }
                 },
                 orderBy: {
                   dayNumber: 'asc'

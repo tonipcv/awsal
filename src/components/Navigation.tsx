@@ -265,77 +265,61 @@ export default function Navigation() {
     ) : (
       <UserCircleIcon className={cn(
         "h-5 w-5",
-        shouldUseLightTheme ? "text-gray-600" : "text-white"
+        shouldUseLightTheme ? "text-gray-600" : "text-gray-300"
       )} />
     )
   );
 
   return (
     <>
-      {/* Desktop Navigation */}
-      <nav className={cn(
-        "fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40",
-        shouldUseLightTheme
-          ? "border-gray-200 bg-white" // Doctor/Admin pages: clean white background
-          : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages: dark theme
-      )}>
-        <div className="flex flex-col h-full">
-          {/* Logo Section */}
-          <div className={cn(
-            "p-6 border-b",
-            shouldUseLightTheme ? "border-gray-200" : "border-white/10"
-          )}>
-            <Link href="/" className="flex items-center justify-center">
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/logo.png"
-                  alt="Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </Link>
-          </div>
+      {/* Desktop Navigation - Only for Doctors and Admins */}
+      {(userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN') && (
+        <nav className={cn(
+          "fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40",
+          "border-gray-200 bg-white" // Always light theme for doctors/admins
+        )}>
+          <div className="flex flex-col h-full">
+            {/* Logo Section */}
+            <div className="p-6 border-b border-gray-200">
+              <Link href="/" className="flex items-center justify-center">
+                <div className="relative w-8 h-8">
+                  <Image
+                    src="/logo.png"
+                    alt="Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </Link>
+            </div>
 
-          {/* Navigation Sections */}
-          <div className="flex-1 py-6 px-4 overflow-y-auto">
-            <nav className="space-y-8">
-              {navSections.map((section) => (
-                <div key={section.title} className="space-y-2">
-                  <h3 className={cn(
-                    "text-xs font-semibold uppercase tracking-wider px-3",
-                    shouldUseLightTheme ? "text-gray-500" : "text-white/50"
-                  )}>
-                    {section.title}
-                  </h3>
-                  <div className="space-y-1">
-                    {section.items.map((item) => (
-                      <Link key={item.href} href={item.href} className="block">
-                        <NavButton item={item} />
-                      </Link>
-                    ))}
+            {/* Navigation Sections */}
+            <div className="flex-1 py-6 px-4 overflow-y-auto">
+              <nav className="space-y-8">
+                {navSections.map((section) => (
+                  <div key={section.title} className="space-y-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider px-3 text-gray-500">
+                      {section.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {section.items.map((item) => (
+                        <Link key={item.href} href={item.href} className="block">
+                          <NavButton item={item} />
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </nav>
-          </div>
+                ))}
+              </nav>
+            </div>
 
-          {/* User Profile Section */}
-          <div className={cn(
-            "p-4 border-t",
-            shouldUseLightTheme ? "border-gray-200" : "border-white/10"
-          )}>
-            <Link href="/profile">
-              <div className={cn(
-                "flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer",
-                shouldUseLightTheme
-                  ? "hover:bg-gray-100" // Doctor/Admin pages
-                  : "hover:bg-white/5" // Patient pages
-              )}>
-                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
-                  <UserAvatar />
-                </div>
-                {shouldUseLightTheme && (
+            {/* User Profile Section */}
+            <div className="p-4 border-t border-gray-200">
+              <Link href="/profile">
+                <div className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-gray-100">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
+                    <UserAvatar />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {session?.user?.name || 'User'}
@@ -344,12 +328,12 @@ export default function Navigation() {
                       {session?.user?.email}
                     </p>
                   </div>
-                )}
-              </div>
-            </Link>
+                </div>
+              </Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Mobile Navigation */}
       <div className="lg:hidden">
@@ -358,66 +342,237 @@ export default function Navigation() {
           "fixed top-0 left-0 right-0 border-b backdrop-blur z-40",
           shouldUseLightTheme
             ? "border-gray-200 bg-white" // Doctor/Admin pages - clean white
-            : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages
+            : "border-gray-800 bg-[#111111]/95 supports-[backdrop-filter]:bg-[#111111]/90" // Patient pages - dark theme
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative w-6 h-6">
-                <Image
-                  src="/logo.png"
-                  alt="Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </Link>
-            <Link href="/profile">
-              <div className={cn(
-                "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
-                shouldUseLightTheme
-                  ? "bg-gray-100 hover:bg-gray-200" // Doctor/Admin pages - clean
-                  : "border border-white/10 hover:border-white/20" // Patient pages
-              )}>
-                <UserAvatar />
-              </div>
-            </Link>
+            {userRole === 'PATIENT' ? (
+              // Patient Header - Simple with centered avatar
+              <>
+                <div></div> {/* Empty div for spacing */}
+                <Link href="/profile">
+                  <div className="h-8 w-8 flex items-center justify-center cursor-pointer rounded-full border border-gray-700 hover:border-gray-600 transition-colors">
+                    <UserAvatar />
+                  </div>
+                </Link>
+                <div></div> {/* Empty div for spacing */}
+              </>
+            ) : (
+              // Doctor/Admin Header - Full header with logo and avatar
+              <>
+                <Link href="/" className="flex items-center gap-2">
+                  <div className="relative w-6 h-6">
+                    <Image
+                      src="/logo.png"
+                      alt="Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </Link>
+                <Link href="/profile">
+                  <div className={cn(
+                    "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
+                    "bg-gray-100 hover:bg-gray-200"
+                  )}>
+                    <UserAvatar />
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Mobile Navigation Bar */}
-        <nav className={cn(
-          "fixed bottom-0 left-0 right-0 border-t backdrop-blur z-40",
-          shouldUseLightTheme
-            ? "border-gray-200 bg-white" // Doctor/Admin pages - clean white
-            : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages
-        )}>
-          <div className="py-2 px-2">
-            <div className="flex items-center justify-around gap-1">
-              {navSections.flatMap(section => section.items).slice(0, 5).map((item) => (
-                <Link key={item.href} href={item.href} className="flex-1">
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "w-full h-16 flex flex-col items-center justify-center gap-1 rounded-lg",
-                      shouldUseLightTheme
-                        ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900" // Doctor/Admin pages: clean light theme with better hover contrast
-                        : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
-                      pathname === item.href 
-                        ? shouldUseLightTheme
-                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" // Doctor/Admin pages active - brand color
-                          : "bg-white/10 text-white" // Patient pages active
-                        : ""
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 stroke-current" />
-                    <span className="text-xs font-medium">{item.label}</span>
-                  </Button>
-                </Link>
-              ))}
+        {/* Mobile Navigation Bar - Different styles for patients vs doctors/admins */}
+        {userRole === 'PATIENT' ? (
+          // Patient Bottom Navigation - App Style (Mobile Only)
+          <nav className="fixed bottom-0 left-0 right-0 z-40">
+            <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
+              <div className="px-6 py-3">
+                <div className="flex items-center justify-around">
+                  {patientNavSections.flatMap(section => section.items).map((item) => (
+                    <Link key={item.href} href={item.href} className="flex-1 max-w-[60px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-full h-12 flex items-center justify-center rounded-full transition-all duration-300",
+                          pathname === item.href 
+                            ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                            : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
+                        )}
+                      >
+                        <item.icon className={cn(
+                          "h-6 w-6 stroke-current transition-all duration-300",
+                          pathname === item.href ? "drop-shadow-sm" : ""
+                        )} />
+                      </Button>
+                    </Link>
+                  ))}
+                  {/* Profile Button */}
+                  <Link href="/profile" className="flex-1 max-w-[60px]">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full h-12 flex items-center justify-center rounded-full transition-all duration-300",
+                        pathname === '/profile' 
+                          ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                          : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
+                      )}
+                    >
+                      <UserCircleIcon className={cn(
+                        "h-6 w-6 stroke-current transition-all duration-300",
+                        pathname === '/profile' ? "drop-shadow-sm" : ""
+                      )} />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </nav>
+        ) : (
+          // Doctor/Admin Navigation - Original Style (Mobile Only)
+          <nav className="fixed bottom-0 left-0 right-0 border-t backdrop-blur z-40 border-gray-200 bg-white">
+            <div className="py-2 px-2">
+              <div className="flex items-center justify-around gap-1">
+                {navSections.flatMap(section => section.items).slice(0, 5).map((item) => (
+                  <Link key={item.href} href={item.href} className="flex-1">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full h-16 flex flex-col items-center justify-center gap-1 rounded-lg",
+                        "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                        pathname === item.href 
+                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]"
+                          : ""
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 stroke-current" />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </nav>
+        )}
+      </div>
+
+      {/* Desktop Navigation for Patients - Bottom Style */}
+      {userRole === 'PATIENT' && (
+        <>
+          {/* Desktop Header for Patients */}
+          <div className="fixed top-0 left-0 right-0 z-40 hidden lg:block">
+            <div className="bg-[#111111]/95 backdrop-blur-xl border-b border-gray-800 shadow-sm">
+              <div className="max-w-6xl mx-auto px-8 py-4">
+                <div className="flex items-center justify-between">
+                  <Link href="/" className="flex items-center">
+                    <div className="relative w-8 h-8">
+                      <Image
+                        src="/logo.png"
+                        alt="Logo"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </Link>
+                  <Link href="/profile">
+                    <div className="h-10 w-10 flex items-center justify-center cursor-pointer rounded-full bg-gray-800 hover:bg-gray-700 transition-colors">
+                      <UserAvatar />
+                    </div>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
-        </nav>
-      </div>
+
+          {/* Desktop Bottom Navigation for Patients */}
+          <nav className="fixed bottom-0 left-0 right-0 z-40 hidden lg:block">
+            <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
+              <div className="max-w-6xl mx-auto px-8 py-4">
+                <div className="flex items-center justify-center gap-12">
+                  {patientNavSections.flatMap(section => section.items).map((item) => (
+                    <Link key={item.href} href={item.href}>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "h-12 w-12 flex items-center justify-center rounded-full transition-all duration-300",
+                          pathname === item.href 
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                            : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
+                        )}
+                      >
+                        <item.icon className={cn(
+                          "h-6 w-6 stroke-current transition-all duration-300",
+                          pathname === item.href ? "drop-shadow-sm" : ""
+                        )} />
+                      </Button>
+                    </Link>
+                  ))}
+                  {/* Profile Button */}
+                  <Link href="/profile">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "h-12 w-12 flex items-center justify-center rounded-full transition-all duration-300",
+                        pathname === '/profile' 
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                          : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
+                      )}
+                    >
+                      <UserCircleIcon className={cn(
+                        "h-6 w-6 stroke-current transition-all duration-300",
+                        pathname === '/profile' ? "drop-shadow-sm" : ""
+                      )} />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </nav>
+        </>
+      )}
     </>
+  );
+}
+
+// Page Wrapper Component for automatic padding adjustment
+export function PageWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
+  const { data: session } = useSession();
+  const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
+
+  useEffect(() => {
+    const detectUserRole = async () => {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch('/api/auth/role');
+          if (response.ok) {
+            const data = await response.json();
+            setUserRole(data.role);
+          } else {
+            setUserRole('PATIENT');
+          }
+        } catch (error) {
+          setUserRole('PATIENT');
+        }
+      }
+    };
+
+    detectUserRole();
+  }, [session]);
+
+  return (
+    <div className={cn(
+      "min-h-screen",
+      userRole !== 'PATIENT' ? "lg:ml-64" : "", // Only add sidebar margin for doctors/admins
+      className
+    )}>
+      <div className={cn(
+        "p-4 lg:pl-6 lg:pr-4",
+        userRole === 'PATIENT' 
+          ? "pt-[88px] pb-24 lg:pt-[120px] lg:pb-[88px]" // Patients: mobile header + desktop header + bottom nav on both
+          : "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Doctors/Admins: mobile header, no desktop header
+      )}>
+        {children}
+      </div>
+    </div>
   );
 } 

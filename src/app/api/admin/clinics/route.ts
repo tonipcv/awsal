@@ -167,13 +167,14 @@ export async function POST(request: NextRequest) {
 
     // Criar subscription trial para a clínica
     const now = new Date();
+    const trialDays = defaultPlan.trialDays || 7; // Default to 7 days if null
     await prisma.clinicSubscription.create({
       data: {
         clinicId: clinic.id,
         planId: defaultPlan.id,
         status: 'TRIAL',
         maxDoctors: 3, // Padrão para trial
-        trialEndDate: new Date(now.getTime() + defaultPlan.trialDays * 24 * 60 * 60 * 1000)
+        trialEndDate: new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000)
       }
     });
 

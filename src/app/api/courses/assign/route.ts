@@ -22,19 +22,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseId, patientId, startDate, status = 'active' } = body;
+    const { courseId, patientId } = body;
 
     if (!courseId || !patientId) {
       return NextResponse.json({ 
         error: 'Course ID and Patient ID are required' 
-      }, { status: 400 });
-    }
-
-    // Validate status
-    const validStatuses = ['active', 'inactive', 'unavailable', 'completed', 'paused'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ 
-        error: 'Invalid status. Must be one of: ' + validStatuses.join(', ')
       }, { status: 400 });
     }
 
@@ -43,7 +35,7 @@ export async function POST(request: NextRequest) {
       where: { id: courseId },
       select: {
         id: true,
-        name: true,
+        title: true,
         doctorId: true
       }
     });
@@ -96,15 +88,13 @@ export async function POST(request: NextRequest) {
     const assignment = await prisma.userCourse.create({
       data: {
         userId: patientId,
-        courseId: courseId,
-        startDate: startDate ? new Date(startDate) : new Date(),
-        status: status
+        courseId: courseId
       },
       include: {
         course: {
           select: {
             id: true,
-            name: true,
+            title: true,
             description: true
           }
         },
@@ -120,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(assignment, { status: 201 });
   } catch (error) {
-    console.error('Error assigning course:', error);
+    console.error('Error assigning course:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -168,7 +158,7 @@ export async function GET(request: NextRequest) {
         course: {
           select: {
             id: true,
-            name: true,
+            title: true,
             description: true
           }
         },
@@ -181,13 +171,13 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        enrolledAt: 'desc'
       }
     });
 
     return NextResponse.json(assignments);
   } catch (error) {
-    console.error('Error fetching course assignments:', error);
+    console.error('Error fetching course assignments:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

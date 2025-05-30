@@ -56,10 +56,6 @@ export async function POST(request: Request) {
       referrer = await prisma.user.findUnique({
         where: { referralCode }
       });
-
-      if (!referrer && form.requireReferralCode) {
-        return NextResponse.json({ error: 'Código de indicação inválido' }, { status: 400 });
-      }
     }
 
     // Obter IP e User Agent
@@ -71,15 +67,18 @@ export async function POST(request: Request) {
     const submission = await prisma.consultationSubmission.create({
       data: {
         formId,
-        name,
-        email,
-        whatsapp,
-        age: age || null,
-        specialty: specialty || null,
-        message: message || null,
-        referralCode: referralCode || null,
-        ipAddress,
-        userAgent,
+        doctorId,
+        submissionData: {
+          name,
+          email,
+          whatsapp,
+          age: age || null,
+          specialty: specialty || null,
+          message: message || null,
+          referralCode: referralCode || null,
+          ipAddress,
+          userAgent
+        },
         status: 'NEW'
       }
     });
@@ -117,15 +116,15 @@ export async function POST(request: Request) {
       console.error('Erro ao enviar email para o médico:', emailError);
     }
 
-    // Enviar resposta automática se configurada
-    if (form.autoReply && form.autoReplyMessage) {
+    // Enviar resposta automática se configurada (usando thankYouMessage)
+    if (form.thankYouMessage) {
       try {
         const patientEmailSubject = `Confirmação de solicitação de consulta - ${form.doctor.name}`;
         const patientEmailBody = `
           <h2>Obrigado por sua solicitação!</h2>
           <p>Olá ${name},</p>
           
-          <p>${form.autoReplyMessage}</p>
+          <p>${form.thankYouMessage}</p>
           
           <h3>Resumo da sua solicitação:</h3>
           <ul>
@@ -157,8 +156,7 @@ export async function POST(request: Request) {
           data: {
             userId: referrer.id,
             amount: 1,
-            type: 'CONSULTATION_REFERRAL',
-            status: 'PENDING'
+            type: 'CONSULTATION_REFERRAL'
           }
         });
       } catch (creditError) {

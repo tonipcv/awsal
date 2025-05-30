@@ -20,20 +20,21 @@ export async function POST(
     const userCourse = await prisma.userCourse.findFirst({
       where: {
         userId: session.user.id,
-        courseId: courseId,
-        status: 'active'
+        courseId: courseId
       }
     });
 
     if (!userCourse) {
-      return NextResponse.json({ error: 'Course not assigned to you or not active' }, { status: 403 });
+      return NextResponse.json({ error: 'Course not assigned to you' }, { status: 403 });
     }
 
-    // Verify that the lesson belongs to this course
+    // Verify that the lesson belongs to this course (through module)
     const lesson = await prisma.lesson.findFirst({
       where: {
         id: lessonId,
-        courseId: courseId
+        module: {
+          courseId: courseId
+        }
       }
     });
 
@@ -50,13 +51,11 @@ export async function POST(
         }
       },
       update: {
-        isCompleted: true,
         completedAt: new Date()
       },
       create: {
         userId: session.user.id,
         lessonId: lessonId,
-        isCompleted: true,
         completedAt: new Date()
       }
     });
@@ -90,13 +89,12 @@ export async function DELETE(
     const userCourse = await prisma.userCourse.findFirst({
       where: {
         userId: session.user.id,
-        courseId: courseId,
-        status: 'active'
+        courseId: courseId
       }
     });
 
     if (!userCourse) {
-      return NextResponse.json({ error: 'Course not assigned to you or not active' }, { status: 403 });
+      return NextResponse.json({ error: 'Course not assigned to you' }, { status: 403 });
     }
 
     // Mark lesson as not completed
@@ -108,13 +106,11 @@ export async function DELETE(
         }
       },
       update: {
-        isCompleted: false,
         completedAt: null
       },
       create: {
         userId: session.user.id,
         lessonId: lessonId,
-        isCompleted: false,
         completedAt: null
       }
     });

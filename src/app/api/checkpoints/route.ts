@@ -26,13 +26,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Parse month to get start and end dates
+    const [year, monthNum] = month.split('-');
+    const startDate = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(monthNum), 0, 23, 59, 59);
+
     const checkpoints = await prisma.checkpoint.findMany({
       where: {
         userId: user.id,
-        date: {
-          startsWith: month.substring(0, 7),
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
         },
       },
+      orderBy: { createdAt: 'desc' }
     });
 
     return NextResponse.json(checkpoints);
@@ -53,11 +60,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { date, emotion, isCompleted } = await request.json();
+    const { title, completed } = await request.json();
 
-    if (!date) {
+    if (!title) {
       return NextResponse.json(
-        { error: "Date is required" },
+        { error: "Title is required" },
         { status: 400 }
       );
     }
@@ -70,40 +77,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const existingCheckpoint = await prisma.checkpoint.findFirst({
-      where: {
-        date,
-        userId: user.id,
-      },
-    });
-
-    const newIsCompleted = emotion ? true : (isCompleted ?? !existingCheckpoint?.isCompleted);
-
-    if (existingCheckpoint) {
-      const updatedCheckpoint = await prisma.checkpoint.update({
-        where: { id: existingCheckpoint.id },
-        data: {
-          isCompleted: newIsCompleted,
-          emotion: emotion || null,
-        },
-      });
-      return NextResponse.json(updatedCheckpoint);
-    }
-
     const checkpoint = await prisma.checkpoint.create({
       data: {
-        date,
-        isCompleted: newIsCompleted,
-        emotion: emotion || null,
+        title,
+        completed: completed ?? false,
         userId: user.id,
       },
     });
 
     return NextResponse.json(checkpoint);
   } catch (error) {
-    console.error("Error creating/updating checkpoint:", error);
+    console.error("Error creating checkpoint:", error);
     return NextResponse.json(
-      { error: "Error creating/updating checkpoint" },
+      { error: "Error creating checkpoint" },
       { status: 500 }
     );
   }

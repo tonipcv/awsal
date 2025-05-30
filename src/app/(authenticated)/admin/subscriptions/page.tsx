@@ -348,7 +348,7 @@ export default async function SubscriptionsPage() {
                   <div>• {plan.maxCourses === 999999 ? 'Cursos ilimitados' : `${plan.maxCourses} cursos`}</div>
                   <div>• {plan.maxProducts === 999999 ? 'Produtos ilimitados' : `${plan.maxProducts} produtos`}</div>
                 </div>
-                {plan.trialDays > 0 && (
+                {plan.trialDays && plan.trialDays > 0 && (
                   <div className="mt-2 text-xs text-green-600">
                     {plan.trialDays} dias de trial grátis
                   </div>
