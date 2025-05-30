@@ -15,30 +15,20 @@ import {
   XMarkIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { cn } from "@/lib/utils";
 
 interface Product {
   id: string;
   name: string;
   description?: string;
-  brand?: string;
-  imageUrl?: string;
-  originalPrice?: number;
-  discountPrice?: number;
-  discountPercentage?: number;
-  purchaseUrl?: string;
-  usageStats: number;
+  price?: number;
+  category?: string;
   isActive: boolean;
-  _count: {
-    protocolProducts: number;
-  };
-  protocolProducts: Array<{
-    protocol: {
-      id: string;
-      name: string;
-    };
-  }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface PageProps {
@@ -55,13 +45,8 @@ export default function EditProductPage({ params }: PageProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    brand: '',
-    imageUrl: '',
-    originalPrice: '',
-    discountPrice: '',
-    discountPercentage: '',
-    purchaseUrl: '',
-    usageStats: '0',
+    price: '',
+    category: '',
     isActive: true
   });
 
@@ -89,13 +74,8 @@ export default function EditProductPage({ params }: PageProps) {
         setFormData({
           name: data.name || '',
           description: data.description || '',
-          brand: data.brand || '',
-          imageUrl: data.imageUrl || '',
-          originalPrice: data.originalPrice?.toString() || '',
-          discountPrice: data.discountPrice?.toString() || '',
-          discountPercentage: data.discountPercentage?.toString() || '',
-          purchaseUrl: data.purchaseUrl || '',
-          usageStats: data.usageStats?.toString() || '0',
+          price: data.price?.toString() || '',
+          category: data.category || '',
           isActive: data.isActive
         });
       } else {
@@ -114,28 +94,13 @@ export default function EditProductPage({ params }: PageProps) {
       ...prev,
       [field]: value
     }));
-
-    // Auto-calculate discount percentage
-    if (field === 'originalPrice' || field === 'discountPrice') {
-      const original = field === 'originalPrice' ? parseFloat(value as string) : parseFloat(formData.originalPrice);
-      const discount = field === 'discountPrice' ? parseFloat(value as string) : parseFloat(formData.discountPrice);
-      
-      if (original && discount && original > discount) {
-        const percentage = Math.round(((original - discount) / original) * 100);
-        setFormData(prev => ({
-          ...prev,
-          [field]: value,
-          discountPercentage: percentage.toString()
-        }));
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      alert('Nome é obrigatório');
+      alert('Name is required');
       return;
     }
 
@@ -154,18 +119,18 @@ export default function EditProductPage({ params }: PageProps) {
         router.push('/doctor/products');
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao atualizar produto');
+        alert(error.error || 'Error updating product');
       }
     } catch (error) {
       console.error('Error updating product:', error);
-      alert('Erro ao atualizar produto');
+      alert('Error updating product');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       return;
     }
 
@@ -180,11 +145,11 @@ export default function EditProductPage({ params }: PageProps) {
         router.push('/doctor/products');
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao excluir produto');
+        alert(error.error || 'Error deleting product');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Erro ao excluir produto');
+      alert('Error deleting product');
     } finally {
       setIsDeleting(false);
     }
@@ -194,284 +159,220 @@ export default function EditProductPage({ params }: PageProps) {
     if (!price) return '';
     const num = parseFloat(price);
     if (isNaN(num)) return '';
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'USD'
     }).format(num);
-  };
-
-  const getDiscountPercentage = () => {
-    const original = parseFloat(formData.originalPrice);
-    const discount = parseFloat(formData.discountPrice);
-    if (original && discount && original > discount) {
-      return Math.round(((original - discount) / original) * 100);
-    }
-    return 0;
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando produto...</span>
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 lg:ml-64">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#5154e7] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold text-gray-900">Loading Product</h3>
+                <p className="text-sm text-gray-500">Please wait while we fetch the product details...</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Produto não encontrado</span>
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 lg:ml-64">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                <ShoppingBagIcon className="h-8 w-8 text-gray-400" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-900">Product Not Found</h3>
+                <p className="text-sm text-gray-500">The product you're looking for doesn't exist or has been removed.</p>
+              </div>
+              <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white">
+                <Link href="/doctor/products">Back to Products</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 lg:ml-64">
         
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-            <Link href="/doctor/products">
-              <ArrowLeftIcon className="h-4 w-4" />
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-light text-slate-800">
-              Editar Produto
-            </h1>
-            <p className="text-sm text-slate-600">
-              Atualize as informações do produto
-            </p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild 
+              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg"
+            >
+              <Link href="/doctor/products">
+                <ArrowLeftIcon className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
+              <p className="text-sm text-gray-500">Update product information and settings</p>
+            </div>
           </div>
           <Button 
             variant="outline" 
             onClick={handleDelete}
             disabled={isDeleting}
-            className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-400"
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-lg bg-white"
           >
             {isDeleting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div>
-                Excluindo...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Deleting...
               </>
             ) : (
               <>
                 <TrashIcon className="h-4 w-4 mr-2" />
-                Excluir
+                Delete Product
               </>
             )}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
               
               {/* Basic Information */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Informações Básicas</CardTitle>
+              <Card className="shadow-sm border-gray-200 rounded-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900">Basic Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="name" className="text-slate-800">Nome do Produto *</Label>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium text-gray-900">Product Name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Ex: Protetor Solar Ultra Light"
+                      placeholder="Enter product name"
                       required
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                      className="h-11 border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-lg"
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="brand" className="text-slate-800">Marca</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="category" className="text-sm font-medium text-gray-900">Category</Label>
                     <Input
-                      id="brand"
-                      value={formData.brand}
-                      onChange={(e) => handleInputChange('brand', e.target.value)}
-                      placeholder="Ex: La Roche-Posay"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange('category', e.target.value)}
+                      placeholder="Enter product category"
+                      className="h-11 border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-lg"
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="description" className="text-slate-800">Descrição</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-sm font-medium text-gray-900">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Descreva o produto e seus benefícios..."
-                      rows={3}
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="imageUrl" className="text-slate-800">URL da Imagem</Label>
-                    <Input
-                      id="imageUrl"
-                      value={formData.imageUrl}
-                      onChange={(e) => handleInputChange('imageUrl', e.target.value)}
-                      placeholder="https://exemplo.com/imagem.jpg"
-                      type="url"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                      placeholder="Describe the product and its benefits..."
+                      rows={4}
+                      className="border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-lg resize-none"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Pricing */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Preços</CardTitle>
+              <Card className="shadow-sm border-gray-200 rounded-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900">Pricing</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="originalPrice" className="text-slate-800">Preço Original</Label>
-                      <Input
-                        id="originalPrice"
-                        value={formData.originalPrice}
-                        onChange={(e) => handleInputChange('originalPrice', e.target.value)}
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="discountPrice" className="text-slate-800">Preço com Desconto</Label>
-                      <Input
-                        id="discountPrice"
-                        value={formData.discountPrice}
-                        onChange={(e) => handleInputChange('discountPrice', e.target.value)}
-                        placeholder="0.00"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                      />
-                    </div>
-                  </div>
-
-                  {getDiscountPercentage() > 0 && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-600">
-                        Desconto calculado: {getDiscountPercentage()}%
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Purchase Details */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Detalhes de Compra</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="purchaseUrl" className="text-slate-800">Link de Compra</Label>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="price" className="text-sm font-medium text-gray-900">Price</Label>
                     <Input
-                      id="purchaseUrl"
-                      value={formData.purchaseUrl}
-                      onChange={(e) => handleInputChange('purchaseUrl', e.target.value)}
-                      placeholder="https://loja.com/produto"
-                      type="url"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="usageStats" className="text-slate-800">Estatísticas de Uso (%)</Label>
-                    <Input
-                      id="usageStats"
-                      value={formData.usageStats}
-                      onChange={(e) => handleInputChange('usageStats', e.target.value)}
-                      placeholder="0"
+                      id="price"
+                      value={formData.price}
+                      onChange={(e) => handleInputChange('price', e.target.value)}
+                      placeholder="0.00"
                       type="number"
+                      step="0.01"
                       min="0"
-                      max="100"
-                      className="border-slate-300 bg-white text-slate-700 placeholder:text-slate-500"
+                      className="h-11 border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-lg"
                     />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Porcentagem de pacientes que usam este produto
-                    </p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Status */}
-              <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-800">Status</CardTitle>
+              <Card className="shadow-sm border-gray-200 rounded-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900">Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="isActive" className="text-slate-800">Produto Ativo</Label>
-                      <p className="text-sm text-slate-600">
-                        Produtos ativos podem ser recomendados em protocolos
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="space-y-1">
+                      <Label htmlFor="isActive" className="text-sm font-medium text-gray-900">Active Product</Label>
+                      <p className="text-sm text-gray-500">
+                        Active products can be recommended in protocols
                       </p>
                     </div>
                     <Switch
                       id="isActive"
                       checked={formData.isActive}
                       onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                      className="data-[state=checked]:bg-[#5154e7]"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Protocol Associations */}
-              {product.protocolProducts.length > 0 && (
-                <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-slate-800">Protocolos Associados</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {product.protocolProducts.map((pp) => (
-                        <div key={pp.protocol.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
-                          <span className="text-sm text-slate-800">{pp.protocol.name}</span>
-                          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                            <Link href={`/doctor/protocols/${pp.protocol.id}`}>
-                              Ver Protocolo
-                            </Link>
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Actions */}
-              <div className="flex gap-4">
-                <Button type="submit" disabled={isSaving} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+              <div className="flex gap-4 pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={isSaving} 
+                  className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white h-11 rounded-lg font-medium"
+                >
                   {isSaving ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Salvando...
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving Changes...
                     </>
                   ) : (
                     <>
                       <CheckIcon className="h-4 w-4 mr-2" />
-                      Salvar Alterações
+                      Save Changes
                     </>
                   )}
                 </Button>
-                <Button type="button" variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  asChild 
+                  className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 h-11 rounded-lg font-medium"
+                >
                   <Link href="/doctor/products">
                     <XMarkIcon className="h-4 w-4 mr-2" />
-                    Cancelar
+                    Cancel
                   </Link>
                 </Button>
               </div>
@@ -480,90 +381,55 @@ export default function EditProductPage({ params }: PageProps) {
 
           {/* Preview */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6 bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Preview</CardTitle>
+            <Card className="sticky top-8 shadow-sm border-gray-200 rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900">Preview</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Product Image */}
-                  <div className="w-full h-32 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden">
-                    {formData.imageUrl ? (
-                      <img 
-                        src={formData.imageUrl} 
-                        alt={formData.name || 'Produto'}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <ShoppingBagIcon className="h-8 w-8 text-slate-400" />
-                    )}
+                  {/* Product Icon */}
+                  <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <ShoppingBagIcon className="h-12 w-12 text-gray-400" />
                   </div>
 
                   {/* Product Info */}
-                  <div>
-                    <h3 className="font-medium text-slate-800">
-                      {formData.name || 'Nome do Produto'}
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      {formData.name || 'Product Name'}
                     </h3>
-                    {formData.brand && (
-                      <p className="text-sm text-blue-600">{formData.brand}</p>
+                    {formData.category && (
+                      <p className="text-sm text-[#5154e7] font-medium">{formData.category}</p>
                     )}
                   </div>
 
                   {formData.description && (
-                    <p className="text-sm text-slate-600 line-clamp-3">
+                    <p className="text-sm text-gray-600 line-clamp-3">
                       {formData.description}
                     </p>
                   )}
 
                   {/* Price */}
-                  {(formData.originalPrice || formData.discountPrice) && (
-                    <div className="flex items-center gap-2">
-                      {formData.discountPrice && formData.originalPrice ? (
-                        <>
-                          <span className="text-sm font-medium text-blue-600">
-                            {formatPrice(formData.discountPrice)}
-                          </span>
-                          <span className="text-sm text-slate-400 line-through">
-                            {formatPrice(formData.originalPrice)}
-                          </span>
-                          {getDiscountPercentage() > 0 && (
-                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
-                              -{getDiscountPercentage()}%
-                            </Badge>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-sm font-medium text-slate-800">
-                          {formatPrice(formData.originalPrice || formData.discountPrice)}
-                        </span>
-                      )}
+                  {formData.price && (
+                    <div className="pt-2">
+                      <span className="text-xl font-bold text-gray-900">
+                        {formatPrice(formData.price)}
+                      </span>
                     </div>
                   )}
 
                   {/* Status */}
-                  <div className="flex items-center gap-2">
-                    {formData.isActive ? (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
-                        Ativo
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600 border-slate-200">
-                        Inativo
-                      </Badge>
-                    )}
-                    {formData.usageStats && parseInt(formData.usageStats) > 0 && (
-                      <span className="text-xs text-slate-500">
-                        {formData.usageStats}% dos pacientes
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="text-xs text-slate-500">
-                    <p>{product._count.protocolProducts} protocolos associados</p>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Badge 
+                      variant="secondary" 
+                      className={cn(
+                        "text-xs font-medium",
+                        formData.isActive 
+                          ? "bg-green-100 text-green-700 border-green-200" 
+                          : "bg-gray-100 text-gray-600 border-gray-200"
+                      )}
+                    >
+                      {formData.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                 </div>
               </CardContent>

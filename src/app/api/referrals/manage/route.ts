@@ -34,14 +34,14 @@ export async function GET(req: Request) {
       prisma.referralLead.findMany({
         where,
         include: {
-          referrer: {
+          User_referral_leads_referrerIdToUser: {
             select: { id: true, name: true, email: true }
           },
           convertedUser: {
             select: { id: true, name: true, email: true }
           },
-          credits: {
-            select: { id: true, amount: true, status: true }
+          referral_credits: {
+            select: { id: true, amount: true, isUsed: true }
           }
         },
         orderBy: { createdAt: 'desc' },
@@ -50,6 +50,17 @@ export async function GET(req: Request) {
       }),
       prisma.referralLead.count({ where })
     ]);
+
+    // Transformar dados para formato esperado pelo frontend
+    const transformedLeads = leads.map(lead => ({
+      ...lead,
+      referrer: lead.User_referral_leads_referrerIdToUser,
+      credits: lead.referral_credits.map(credit => ({
+        id: credit.id,
+        amount: credit.amount,
+        status: credit.isUsed ? 'USED' : 'AVAILABLE'
+      }))
+    }));
 
     // Estatísticas
     const stats = await prisma.referralLead.groupBy({
@@ -67,7 +78,7 @@ export async function GET(req: Request) {
     };
 
     return NextResponse.json({
-      leads,
+      leads: transformedLeads,
       pagination: {
         page,
         limit,
@@ -78,7 +89,7 @@ export async function GET(req: Request) {
     });
 
   } catch (error) {
-    console.error('Erro ao buscar indicações:', error);
+    console.error('Erro ao buscar indicações:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -111,7 +122,7 @@ export async function PUT(req: Request) {
         doctorId: session.user.id
       },
       include: {
-        referrer: { select: { id: true, name: true, email: true } }
+        User_referral_leads_referrerIdToUser: { select: { id: true, name: true, email: true } }
       }
     });
 
@@ -128,7 +139,7 @@ export async function PUT(req: Request) {
       data: {
         status,
         notes: notes || lead.notes,
-        lastContactAt: new Date()
+        lastContactDate: new Date()
       }
     });
 
@@ -136,23 +147,23 @@ export async function PUT(req: Request) {
     if (status === REFERRAL_STATUS.CONVERTED && lead.status !== REFERRAL_STATUS.CONVERTED) {
       // Verificar se já não existe crédito
       const existingCredit = await prisma.referralCredit.findFirst({
-        where: { leadId }
+        where: { referralLeadId: leadId }
       });
 
-      if (!existingCredit) {
+      if (!existingCredit && lead.User_referral_leads_referrerIdToUser) {
         const credit = await prisma.referralCredit.create({
           data: {
-            userId: lead.referrer.id,
-            leadId: lead.id,
+            userId: lead.User_referral_leads_referrerIdToUser.id,
+            referralLeadId: lead.id,
             amount: 1,
             type: 'SUCCESSFUL_REFERRAL',
-            status: CREDIT_STATUS.APPROVED
+            description: 'Crédito por indicação convertida'
           }
         });
 
         // Enviar notificação de crédito
         sendCreditNotification(credit.id).catch(error => {
-          console.error('Erro ao enviar notificação de crédito:', error);
+          console.error('Erro ao enviar notificação de crédito:', error instanceof Error ? error.message : 'Erro desconhecido');
         });
       }
     }
@@ -163,7 +174,7 @@ export async function PUT(req: Request) {
     });
 
   } catch (error) {
-    console.error('Erro ao atualizar indicação:', error);
+    console.error('Erro ao atualizar indicação:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

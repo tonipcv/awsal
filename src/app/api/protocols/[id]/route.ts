@@ -47,45 +47,15 @@ export async function GET(
               include: {
                 tasks: {
                   include: {
-                    product: {
-                      select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        brand: true,
-                        imageUrl: true,
-                        originalPrice: true,
-                        discountPrice: true,
-                        purchaseUrl: true
-                      }
-                    }
+                    ProtocolContent: true
                   },
                   orderBy: {
-                    order: 'asc'
+                    orderIndex: 'asc'
                   }
                 }
               },
               orderBy: {
-                order: 'asc'
-              }
-            },
-            tasks: {
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                    brand: true,
-                    imageUrl: true,
-                    originalPrice: true,
-                    discountPrice: true,
-                    purchaseUrl: true
-                  }
-                }
-              },
-              orderBy: {
-                order: 'asc'
+                sessionNumber: 'asc'
               }
             }
           },
@@ -227,15 +197,15 @@ export async function PUT(
           where: {
             OR: [
               {
-                protocolDay: {
-                  protocolId: protocolId
-                }
-              },
-              {
-                protocolSession: {
-                  protocolDay: {
-                    protocolId: protocolId
-                  }
+                protocolSessionId: {
+                  in: await tx.protocolSession.findMany({
+                    where: {
+                      protocolDay: {
+                        protocolId: protocolId
+                      }
+                    },
+                    select: { id: true }
+                  }).then(sessions => sessions.map(s => s.id))
                 }
               }
             ]
@@ -261,6 +231,8 @@ export async function PUT(
           const protocolDay = await tx.protocolDay.create({
             data: {
               dayNumber: dayData.dayNumber,
+              title: dayData.title || `Dia ${dayData.dayNumber}`,
+              description: dayData.description || null,
               protocolId: protocol.id
             }
           });
@@ -270,9 +242,9 @@ export async function PUT(
             for (const sessionData of dayData.sessions) {
               const protocolSession = await tx.protocolSession.create({
                 data: {
-                  name: sessionData.name,
+                  title: sessionData.title || sessionData.name,
                   description: sessionData.description || null,
-                  order: sessionData.order || 0,
+                  sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
                   protocolDayId: protocolDay.id
                 }
               });
@@ -284,13 +256,9 @@ export async function PUT(
                     data: {
                       title: taskData.title,
                       description: taskData.description || null,
-                      order: taskData.order || 0,
-                      hasMoreInfo: taskData.hasMoreInfo || false,
-                      videoUrl: taskData.videoUrl || null,
-                      fullExplanation: taskData.fullExplanation || null,
-                      productId: taskData.productId || null,
-                      modalTitle: taskData.modalTitle || null,
-                      modalButtonText: taskData.modalButtonText || null,
+                      type: taskData.type || 'task',
+                      duration: taskData.duration || null,
+                      orderIndex: taskData.orderIndex || taskData.order || 0,
                       protocolSessionId: protocolSession.id
                     }
                   });
@@ -299,21 +267,26 @@ export async function PUT(
             }
           }
 
-          // Criar tarefas diretas do dia (sem sessão)
+          // Criar tarefas diretas do dia (sem sessão) - criar uma sessão padrão
           if (dayData.tasks && Array.isArray(dayData.tasks)) {
+            const defaultSession = await tx.protocolSession.create({
+              data: {
+                title: 'Sessão Principal',
+                description: 'Sessão principal do dia',
+                sessionNumber: 1,
+                protocolDayId: protocolDay.id
+              }
+            });
+
             for (const taskData of dayData.tasks) {
               await tx.protocolTask.create({
                 data: {
                   title: taskData.title,
                   description: taskData.description || null,
-                  order: taskData.order || 0,
-                  hasMoreInfo: taskData.hasMoreInfo || false,
-                  videoUrl: taskData.videoUrl || null,
-                  fullExplanation: taskData.fullExplanation || null,
-                  productId: taskData.productId || null,
-                  modalTitle: taskData.modalTitle || null,
-                  modalButtonText: taskData.modalButtonText || null,
-                  protocolDayId: protocolDay.id
+                  type: taskData.type || 'task',
+                  duration: taskData.duration || null,
+                  orderIndex: taskData.orderIndex || taskData.order || 0,
+                  protocolSessionId: defaultSession.id
                 }
               });
             }

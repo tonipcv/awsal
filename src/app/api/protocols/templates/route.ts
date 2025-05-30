@@ -30,8 +30,15 @@ export async function GET() {
       include: {
         days: {
           include: {
-            tasks: true,
-            contents: true
+            sessions: {
+              include: {
+                tasks: {
+                  include: {
+                    ProtocolContent: true
+                  }
+                }
+              }
+            }
           },
           orderBy: {
             dayNumber: 'asc'
@@ -43,12 +50,29 @@ export async function GET() {
       }
     });
 
+    // Transformar para formato esperado pelo frontend
+    const transformedCustomTemplates = customTemplates.map(template => ({
+      ...template,
+      days: template.days.map(day => ({
+        ...day,
+        tasks: day.sessions.flatMap(session => 
+          session.tasks.map(task => ({
+            ...task,
+            contents: task.ProtocolContent || []
+          }))
+        ),
+        contents: day.sessions.flatMap(session => 
+          session.tasks.flatMap(task => task.ProtocolContent || [])
+        )
+      }))
+    }));
+
     return NextResponse.json({
       predefined: PROTOCOL_TEMPLATES,
-      custom: customTemplates
+      custom: transformedCustomTemplates
     });
   } catch (error) {
-    console.error('Error fetching templates:', error);
+    console.error('Error fetching templates:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao buscar templates' }, { status: 500 });
   }
 }
@@ -98,35 +122,58 @@ export async function POST(request: Request) {
       const protocolDay = await prisma.protocolDay.create({
         data: {
           dayNumber: templateDay.dayNumber,
+          title: `Dia ${templateDay.dayNumber}`,
+          description: null,
           protocolId: protocol.id
         }
       });
 
-      // Criar tarefas do dia
+      // Criar uma sessão padrão para o dia
+      const protocolSession = await prisma.protocolSession.create({
+        data: {
+          sessionNumber: 1,
+          title: 'Sessão Principal',
+          description: 'Sessão principal do dia',
+          protocolDayId: protocolDay.id
+        }
+      });
+
+      // Criar tarefas da sessão
       for (let i = 0; i < templateDay.tasks.length; i++) {
         const task = templateDay.tasks[i];
-        await prisma.protocolTask.create({
+        const protocolTask = await prisma.protocolTask.create({
           data: {
             title: task.title,
             description: task.description,
-            protocolDayId: protocolDay.id,
-            order: i
+            type: 'task',
+            duration: null,
+            orderIndex: i,
+            protocolSessionId: protocolSession.id
           }
         });
       }
 
-      // Criar conteúdos do dia se existirem
-      if (templateDay.contents) {
+      // Criar conteúdos do dia se existirem (como conteúdos de uma tarefa geral)
+      if (templateDay.contents && Array.isArray(templateDay.contents)) {
+        // Criar uma tarefa geral para os conteúdos do dia
+        const generalTask = await prisma.protocolTask.create({
+          data: {
+            title: 'Conteúdos do Dia',
+            description: 'Conteúdos gerais do dia',
+            type: 'content',
+            orderIndex: 999,
+            protocolSessionId: protocolSession.id
+          }
+        });
+
         for (let i = 0; i < templateDay.contents.length; i++) {
           const content = templateDay.contents[i];
           await prisma.protocolContent.create({
             data: {
               type: content.type,
-              title: content.title,
               content: content.content,
-              description: content.description,
-              protocolDayId: protocolDay.id,
-              order: i
+              orderIndex: i,
+              protocolTaskId: generalTask.id
             }
           });
         }
@@ -141,16 +188,20 @@ export async function POST(request: Request) {
             where: {
               protocolId: protocol.id,
               dayNumber: customization.dayNumber
+            },
+            include: {
+              sessions: true
             }
           });
 
-          if (day) {
+          if (day && day.sessions.length > 0) {
             await prisma.protocolTask.create({
               data: {
                 title: customization.title,
                 description: customization.description,
-                protocolDayId: day.id,
-                order: customization.order || 999
+                type: 'task',
+                orderIndex: customization.order || 999,
+                protocolSessionId: day.sessions[0].id
               }
             });
           }
@@ -164,8 +215,15 @@ export async function POST(request: Request) {
       include: {
         days: {
           include: {
-            tasks: true,
-            contents: true
+            sessions: {
+              include: {
+                tasks: {
+                  include: {
+                    ProtocolContent: true
+                  }
+                }
+              }
+            }
           },
           orderBy: {
             dayNumber: 'asc'
@@ -174,9 +232,26 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(completeProtocol, { status: 201 });
+    // Transformar para formato esperado
+    const transformedProtocol = {
+      ...completeProtocol,
+      days: completeProtocol?.days.map(day => ({
+        ...day,
+        tasks: day.sessions.flatMap(session => 
+          session.tasks.map(task => ({
+            ...task,
+            contents: task.ProtocolContent || []
+          }))
+        ),
+        contents: day.sessions.flatMap(session => 
+          session.tasks.flatMap(task => task.ProtocolContent || [])
+        )
+      })) || []
+    };
+
+    return NextResponse.json(transformedProtocol, { status: 201 });
   } catch (error) {
-    console.error('Error creating protocol from template:', error);
+    console.error('Error creating protocol from template:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao criar protocolo a partir do template' }, { status: 500 });
   }
 } 

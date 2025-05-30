@@ -7,7 +7,7 @@ import { NextAuthProvider } from '@/components/NextAuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CXLUS - User Experience in Another Level',
+  title: 'Cxlus',
   description: 'CXLUS is a platform that provides a user experience in another level.',
   manifest: '/manifest.json',
   icons: {
@@ -39,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className="dark h-full">
+    <html lang="pt-BR" suppressHydrationWarning className="h-full">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -49,10 +49,9 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased h-full`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
-          forcedTheme="dark"
         >
           <NextAuthProvider>
             {children}

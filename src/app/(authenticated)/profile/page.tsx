@@ -181,21 +181,181 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className={cn(
-        "min-h-screen flex items-center justify-center",
+        "min-h-screen",
         isLightTheme ? "bg-white" : "bg-zinc-950"
       )}>
         <div className={cn(
-          "lg:ml-64",
+          "container max-w-6xl mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8",
           isLightTheme && "lg:ml-64"
         )}>
-          <div className="flex items-center space-x-3">
-            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
-            <span className={cn(
-              "font-medium",
-              isLightTheme ? "text-gray-700" : "text-white"
-            )}>
-              Loading profile...
-            </span>
+          
+          {/* Header Skeleton */}
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <div className={cn(
+                "h-8 rounded-lg w-32 animate-pulse",
+                isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+              )}></div>
+              <div className={cn(
+                "h-5 rounded-lg w-64 animate-pulse",
+                isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+              )}></div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Card Skeleton */}
+              <div className="lg:col-span-2">
+                <div className={cn(
+                  "shadow-lg rounded-2xl border",
+                  isLightTheme 
+                    ? "bg-white border-gray-200" 
+                    : "bg-zinc-900 border-zinc-800"
+                )}>
+                  <div className="p-8">
+                    <div className={cn(
+                      "h-6 rounded w-48 animate-pulse mb-8",
+                      isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                    )}></div>
+                    
+                    {/* Profile Image Skeleton */}
+                    <div className="flex flex-col items-center space-y-6 mb-8">
+                      <div className={cn(
+                        "w-32 h-32 rounded-2xl animate-pulse",
+                        isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                      )}></div>
+                      <div className="text-center space-y-2">
+                        <div className={cn(
+                          "h-4 rounded w-56 animate-pulse mx-auto",
+                          isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+                        )}></div>
+                        <div className={cn(
+                          "h-6 rounded-lg w-20 animate-pulse mx-auto",
+                          isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                        )}></div>
+                      </div>
+                    </div>
+
+                    {/* Form Fields Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="space-y-4">
+                        <div className={cn(
+                          "h-4 rounded w-16 animate-pulse",
+                          isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                        )}></div>
+                        <div className={cn(
+                          "h-12 rounded-xl border animate-pulse",
+                          isLightTheme ? "bg-gray-50 border-gray-200" : "bg-zinc-800 border-zinc-700"
+                        )}></div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className={cn(
+                          "h-4 rounded w-20 animate-pulse",
+                          isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                        )}></div>
+                        <div className={cn(
+                          "h-12 rounded-xl border animate-pulse",
+                          isLightTheme ? "bg-gray-50 border-gray-200" : "bg-zinc-800 border-zinc-700"
+                        )}></div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons Skeleton */}
+                    <div className="pt-6 space-y-4">
+                      <div className={cn(
+                        "h-12 rounded-xl w-32 animate-pulse",
+                        isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                      )}></div>
+                      <div className={cn(
+                        "h-12 rounded-xl w-full animate-pulse",
+                        isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+                      )}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar Skeleton */}
+              <div className="space-y-6">
+                {/* Account Info Card Skeleton */}
+                <div className={cn(
+                  "shadow-lg rounded-2xl border",
+                  isLightTheme 
+                    ? "bg-white border-gray-200" 
+                    : "bg-zinc-900 border-zinc-800"
+                )}>
+                  <div className="p-6">
+                    <div className={cn(
+                      "h-6 rounded w-28 animate-pulse mb-6",
+                      isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                    )}></div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div className={cn(
+                          "h-4 rounded w-24 animate-pulse",
+                          isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+                        )}></div>
+                        <div className={cn(
+                          "h-4 rounded w-20 animate-pulse",
+                          isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                        )}></div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className={cn(
+                          "h-4 rounded w-20 animate-pulse",
+                          isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+                        )}></div>
+                        <div className={cn(
+                          "h-4 rounded w-16 animate-pulse",
+                          isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                        )}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Card Skeleton */}
+                <div className={cn(
+                  "shadow-lg rounded-2xl border",
+                  isLightTheme 
+                    ? "bg-white border-gray-200" 
+                    : "bg-zinc-900 border-zinc-800"
+                )}>
+                  <div className="p-6">
+                    <div className={cn(
+                      "h-6 rounded w-24 animate-pulse mb-6",
+                      isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                    )}></div>
+                    <div className="grid grid-cols-1 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className={cn(
+                          "p-4 rounded-xl border",
+                          isLightTheme 
+                            ? "bg-gray-50 border-gray-200" 
+                            : "bg-zinc-800 border-zinc-700"
+                        )}>
+                          <div className="flex items-center space-x-3">
+                            <div className={cn(
+                              "h-6 w-6 rounded animate-pulse",
+                              isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                            )}></div>
+                            <div className="flex-1 space-y-2">
+                              <div className={cn(
+                                "h-6 rounded w-12 animate-pulse",
+                                isLightTheme ? "bg-gray-200" : "bg-zinc-700"
+                              )}></div>
+                              <div className={cn(
+                                "h-4 rounded w-16 animate-pulse",
+                                isLightTheme ? "bg-gray-100" : "bg-zinc-800"
+                              )}></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

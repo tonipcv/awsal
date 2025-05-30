@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/products - Listar produtos do médico
+// GET /api/products - Listar produtos
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -35,13 +35,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem visualizar produtos.' }, { status: 403 });
     }
 
-    let products;
     try {
-      // Tentar usar o Prisma client primeiro
-      products = await prisma.products.findMany({
-        where: {
-          doctorId: session.user.id
-        },
+      // Buscar todos os produtos (já que não há doctorId na tabela)
+      const products = await prisma.products.findMany({
         include: {
           _count: {
             select: {
@@ -53,41 +49,31 @@ export async function GET(request: Request) {
           createdAt: 'desc'
         }
       });
-    } catch (prismaError) {
-      // Fallback para query raw
-      const rawProducts = await prisma.$queryRaw`
-        SELECT * FROM products WHERE doctorId = ${session.user.id} ORDER BY createdAt DESC
-      `;
-      
-      // Buscar contagem de protocol_products para cada produto
-      const productsWithCount = await Promise.all(
-        (rawProducts as any[]).map(async (product) => {
-          const countResult = await prisma.$queryRaw`
-            SELECT COUNT(*) as count FROM protocol_products WHERE productId = ${product.id}
-          `;
-          return {
-            ...product,
-            _count: {
-              protocol_products: (countResult as any[])[0]?.count || 0
-            }
-          };
-        })
-      );
-      
-      products = productsWithCount;
+
+      // Transformar para o formato esperado pelo frontend
+      const transformedProducts = products.map((product: any) => ({
+        ...product,
+        // Adicionar campos que o frontend espera mas que não existem na tabela
+        brand: null,
+        imageUrl: null,
+        originalPrice: product.price,
+        discountPrice: null,
+        discountPercentage: null,
+        purchaseUrl: null,
+        usageStats: 0,
+        doctorId: session.user.id, // Simular que pertence ao médico atual
+        _count: {
+          protocolProducts: product._count?.protocol_products || 0
+        }
+      }));
+
+      return NextResponse.json(transformedProducts);
+    } catch (dbError) {
+      console.error('❌ Erro ao buscar produtos:', dbError);
+      return NextResponse.json({ error: 'Erro ao buscar produtos no banco de dados' }, { status: 500 });
     }
-
-    // Transformar para o formato esperado pelo frontend
-    const transformedProducts = products.map((product: any) => ({
-      ...product,
-      _count: {
-        protocolProducts: product._count?.protocol_products || product._count?.protocolProducts || 0
-      }
-    }));
-
-    return NextResponse.json(transformedProducts);
   } catch (error) {
-    console.error('❌ Error fetching products:', error);
+    console.error('❌ Error fetching products:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao buscar produtos' }, { status: 500 });
   }
 }
@@ -113,14 +99,8 @@ export async function POST(request: Request) {
     const { 
       name, 
       description, 
-      brand, 
-      imageUrl, 
-      originalPrice, 
-      discountPrice, 
-      discountPercentage, 
-      purchaseUrl, 
-      usageStats, 
-      isActive 
+      originalPrice,
+      category = 'Geral'
     } = body;
 
     // Validar campos obrigatórios
@@ -136,21 +116,28 @@ export async function POST(request: Request) {
         id: createId(),
         name,
         description,
-        brand,
-        imageUrl,
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-        discountPrice: discountPrice ? parseFloat(discountPrice) : null,
-        discountPercentage: discountPercentage ? parseInt(discountPercentage) : null,
-        purchaseUrl,
-        usageStats: usageStats ? parseInt(usageStats) : 0,
-        isActive: isActive !== undefined ? isActive : true,
-        doctorId: session.user.id
+        price: originalPrice ? parseFloat(originalPrice) : 0,
+        category,
+        isActive: true
       }
     });
 
-    return NextResponse.json(product, { status: 201 });
+    // Retornar no formato esperado pelo frontend
+    const transformedProduct = {
+      ...product,
+      brand: null,
+      imageUrl: null,
+      originalPrice: product.price,
+      discountPrice: null,
+      discountPercentage: null,
+      purchaseUrl: null,
+      usageStats: 0,
+      doctorId: session.user.id
+    };
+
+    return NextResponse.json(transformedProduct, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error('❌ Error creating product:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao criar produto' }, { status: 500 });
   }
 } 

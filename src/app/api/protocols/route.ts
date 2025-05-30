@@ -27,8 +27,15 @@ export async function GET() {
       include: {
         days: {
           include: {
-            tasks: true,
-            contents: true
+            sessions: {
+              include: {
+                tasks: {
+                  include: {
+                    ProtocolContent: true
+                  }
+                }
+              }
+            }
           },
           orderBy: {
             dayNumber: 'asc'
@@ -51,9 +58,26 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(protocols);
+    // Transformar dados para formato esperado pelo frontend
+    const transformedProtocols = protocols.map(protocol => ({
+      ...protocol,
+      days: protocol.days.map(day => ({
+        ...day,
+        tasks: day.sessions.flatMap(session => 
+          session.tasks.map(task => ({
+            ...task,
+            contents: task.ProtocolContent || []
+          }))
+        ),
+        contents: day.sessions.flatMap(session => 
+          session.tasks.flatMap(task => task.ProtocolContent || [])
+        )
+      }))
+    }));
+
+    return NextResponse.json(transformedProtocols);
   } catch (error) {
-    console.error('Error fetching protocols:', error);
+    console.error('Error fetching protocols:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao buscar protocolos' }, { status: 500 });
   }
 }
@@ -98,37 +122,75 @@ export async function POST(request: Request) {
         const protocolDay = await prisma.protocolDay.create({
           data: {
             dayNumber: day.dayNumber,
+            title: day.title || `Dia ${day.dayNumber}`,
+            description: day.description || null,
             protocolId: protocol.id
           }
         });
 
-        // Criar tarefas do dia
+        // Criar uma sessão padrão para o dia
+        const protocolSession = await prisma.protocolSession.create({
+          data: {
+            sessionNumber: 1,
+            title: 'Sessão Principal',
+            description: 'Sessão principal do dia',
+            protocolDayId: protocolDay.id
+          }
+        });
+
+        // Criar tarefas da sessão
         if (day.tasks && Array.isArray(day.tasks)) {
           for (let i = 0; i < day.tasks.length; i++) {
             const task = day.tasks[i];
-            await prisma.protocolTask.create({
+            const protocolTask = await prisma.protocolTask.create({
               data: {
                 title: task.title,
                 description: task.description,
-                protocolDayId: protocolDay.id,
-                order: i
+                type: task.type || 'task',
+                duration: task.duration || null,
+                orderIndex: i,
+                protocolSessionId: protocolSession.id
               }
             });
+
+            // Criar conteúdos da tarefa se existirem
+            if (task.contents && Array.isArray(task.contents)) {
+              for (let j = 0; j < task.contents.length; j++) {
+                const content = task.contents[j];
+                await prisma.protocolContent.create({
+                  data: {
+                    type: content.type,
+                    content: content.content,
+                    orderIndex: j,
+                    protocolTaskId: protocolTask.id
+                  }
+                });
+              }
+            }
           }
         }
 
-        // Criar conteúdos do dia
+        // Criar conteúdos do dia se existirem (como conteúdos de uma tarefa geral)
         if (day.contents && Array.isArray(day.contents)) {
+          // Criar uma tarefa geral para os conteúdos do dia
+          const generalTask = await prisma.protocolTask.create({
+            data: {
+              title: 'Conteúdos do Dia',
+              description: 'Conteúdos gerais do dia',
+              type: 'content',
+              orderIndex: 999,
+              protocolSessionId: protocolSession.id
+            }
+          });
+
           for (let i = 0; i < day.contents.length; i++) {
             const content = day.contents[i];
             await prisma.protocolContent.create({
               data: {
                 type: content.type,
-                title: content.title,
                 content: content.content,
-                description: content.description,
-                protocolDayId: protocolDay.id,
-                order: i
+                orderIndex: i,
+                protocolTaskId: generalTask.id
               }
             });
           }
@@ -142,8 +204,15 @@ export async function POST(request: Request) {
       include: {
         days: {
           include: {
-            tasks: true,
-            contents: true
+            sessions: {
+              include: {
+                tasks: {
+                  include: {
+                    ProtocolContent: true
+                  }
+                }
+              }
+            }
           },
           orderBy: {
             dayNumber: 'asc'
@@ -152,9 +221,26 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(completeProtocol, { status: 201 });
+    // Transformar para formato esperado
+    const transformedProtocol = {
+      ...completeProtocol,
+      days: completeProtocol?.days.map(day => ({
+        ...day,
+        tasks: day.sessions.flatMap(session => 
+          session.tasks.map(task => ({
+            ...task,
+            contents: task.ProtocolContent || []
+          }))
+        ),
+        contents: day.sessions.flatMap(session => 
+          session.tasks.flatMap(task => task.ProtocolContent || [])
+        )
+      })) || []
+    };
+
+    return NextResponse.json(transformedProtocol, { status: 201 });
   } catch (error) {
-    console.error('Error creating protocol:', error);
+    console.error('Error creating protocol:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro ao criar protocolo' }, { status: 500 });
   }
 } 

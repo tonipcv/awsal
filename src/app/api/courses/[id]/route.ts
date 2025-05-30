@@ -42,20 +42,12 @@ export async function GET(
             include: {
               lessons: {
                 orderBy: {
-                  order: 'asc'
+                  orderIndex: 'asc'
                 }
               }
             },
             orderBy: {
-              order: 'asc'
-            }
-          },
-          lessons: {
-            where: {
-              moduleId: null // Direct lessons without modules
-            },
-            orderBy: {
-              order: 'asc'
+              orderIndex: 'asc'
             }
           },
           assignments: {
@@ -81,7 +73,19 @@ export async function GET(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      return NextResponse.json(course);
+      // Transform to expected format
+      const transformedCourse = {
+        ...course,
+        name: course.title,
+        modalTitle: null,
+        modalVideoUrl: null,
+        modalDescription: null,
+        modalButtonText: 'Saber mais',
+        modalButtonUrl: null,
+        lessons: [] // Remove direct lessons since they don't exist in this structure
+      };
+
+      return NextResponse.json(transformedCourse);
     } else {
       // Patient view - course data with assignment info and lesson completion
       const assignment = await prisma.userCourse.findFirst({
@@ -96,20 +100,12 @@ export async function GET(
                 include: {
                   lessons: {
                     orderBy: {
-                      order: 'asc'
+                      orderIndex: 'asc'
                     }
                   }
                 },
                 orderBy: {
-                  order: 'asc'
-                }
-              },
-              lessons: {
-                where: {
-                  moduleId: null
-                },
-                orderBy: {
-                  order: 'asc'
+                  orderIndex: 'asc'
                 }
               }
             }
@@ -126,24 +122,26 @@ export async function GET(
         where: {
           userId: session.user.id,
           lesson: {
-            courseId: id
+            moduleId: {
+              in: assignment.course.modules.map(m => m.id)
+            }
           }
         },
         select: {
           lessonId: true,
-          isCompleted: true,
           completedAt: true
         }
       });
 
       // Create a map for quick lookup
       const completionMap = new Map(
-        userLessons.map(ul => [ul.lessonId, { completed: ul.isCompleted, completedAt: ul.completedAt }])
+        userLessons.map(ul => [ul.lessonId, { completed: !!ul.completedAt, completedAt: ul.completedAt }])
       );
 
       // Add completion data to lessons
       const courseWithCompletion = {
         ...assignment.course,
+        name: assignment.course.title,
         modules: assignment.course.modules.map(module => ({
           ...module,
           lessons: module.lessons.map(lesson => ({
@@ -152,18 +150,11 @@ export async function GET(
             completedAt: completionMap.get(lesson.id)?.completedAt || null
           }))
         })),
-        lessons: assignment.course.lessons.map(lesson => ({
-          ...lesson,
-          completed: completionMap.get(lesson.id)?.completed || false,
-          completedAt: completionMap.get(lesson.id)?.completedAt || null
-        }))
+        lessons: [] // Remove direct lessons
       };
 
       // Calculate progress
-      const allLessons = [
-        ...courseWithCompletion.modules.flatMap(m => m.lessons),
-        ...courseWithCompletion.lessons
-      ];
+      const allLessons = courseWithCompletion.modules.flatMap(m => m.lessons);
       const completedLessons = allLessons.filter(l => l.completed).length;
       const progress = allLessons.length > 0 ? Math.round((completedLessons / allLessons.length) * 100) : 0;
 
@@ -172,9 +163,8 @@ export async function GET(
         ...courseWithCompletion,
         assignment: {
           id: assignment.id,
-          status: assignment.status,
-          startDate: assignment.startDate,
-          endDate: assignment.endDate,
+          enrolledAt: assignment.enrolledAt,
+          completedAt: assignment.completedAt,
           progress: progress
         }
       };
@@ -213,13 +203,9 @@ export async function PUT(
     const {
       name,
       description,
-      modalTitle,
-      modalVideoUrl,
-      modalDescription,
-      modalButtonText,
-      modalButtonUrl,
-      modules = [],
-      lessons = []
+      thumbnail,
+      price,
+      modules = []
     } = body;
 
     // Check if course exists and belongs to doctor
@@ -229,11 +215,6 @@ export async function PUT(
         modules: {
           include: {
             lessons: true
-          }
-        },
-        lessons: {
-          where: {
-            moduleId: null
           }
         }
       }
@@ -255,7 +236,11 @@ export async function PUT(
     const updatedCourse = await prisma.$transaction(async (tx) => {
       // Delete existing modules and lessons
       await tx.lesson.deleteMany({
-        where: { courseId: id }
+        where: { 
+          moduleId: {
+            in: existingCourse.modules.map(m => m.id)
+          }
+        }
       });
       await tx.module.deleteMany({
         where: { courseId: id }
@@ -265,13 +250,10 @@ export async function PUT(
       const course = await tx.course.update({
         where: { id },
         data: {
-          name: name.trim(),
+          title: name.trim(),
           description: description?.trim() || null,
-          modalTitle: modalTitle?.trim() || null,
-          modalVideoUrl: modalVideoUrl?.trim() || null,
-          modalDescription: modalDescription?.trim() || null,
-          modalButtonText: modalButtonText?.trim() || 'Saber mais',
-          modalButtonUrl: modalButtonUrl?.trim() || null,
+          thumbnail: thumbnail?.trim() || null,
+          price: price ? parseFloat(price) : null,
         }
       });
 
@@ -280,9 +262,9 @@ export async function PUT(
         const module = modules[i];
         const createdModule = await tx.module.create({
           data: {
-            name: module.name,
+            title: module.name || module.title,
             description: module.description || null,
-            order: i,
+            orderIndex: i,
             courseId: id
           }
         });
@@ -293,33 +275,14 @@ export async function PUT(
           await tx.lesson.create({
             data: {
               title: lesson.title,
-              description: lesson.description || null,
               content: lesson.content || null,
               videoUrl: lesson.videoUrl || null,
               duration: lesson.duration && lesson.duration > 0 ? lesson.duration : null,
-              order: j,
-              courseId: id,
+              orderIndex: j,
               moduleId: createdModule.id
             }
           });
         }
-      }
-
-      // Create direct lessons (without modules)
-      for (let i = 0; i < lessons.length; i++) {
-        const lesson = lessons[i];
-        await tx.lesson.create({
-          data: {
-            title: lesson.title,
-            description: lesson.description || null,
-            content: lesson.content || null,
-            videoUrl: lesson.videoUrl || null,
-            duration: lesson.duration && lesson.duration > 0 ? lesson.duration : null,
-            order: i,
-            courseId: id,
-            moduleId: null
-          }
-        });
       }
 
       // Return the updated course with all relations
@@ -330,27 +293,31 @@ export async function PUT(
             include: {
               lessons: {
                 orderBy: {
-                  order: 'asc'
+                  orderIndex: 'asc'
                 }
               }
             },
             orderBy: {
-              order: 'asc'
-            }
-          },
-          lessons: {
-            where: {
-              moduleId: null
-            },
-            orderBy: {
-              order: 'asc'
+              orderIndex: 'asc'
             }
           }
         }
       });
     });
 
-    return NextResponse.json(updatedCourse);
+    // Transform response
+    const transformedCourse = {
+      ...updatedCourse,
+      name: updatedCourse?.title,
+      modalTitle: null,
+      modalVideoUrl: null,
+      modalDescription: null,
+      modalButtonText: 'Saber mais',
+      modalButtonUrl: null,
+      lessons: []
+    };
+
+    return NextResponse.json(transformedCourse);
   } catch (error) {
     console.error('Error updating course:', error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

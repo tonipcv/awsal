@@ -26,12 +26,77 @@ export async function GET() {
     });
 
     if (!form) {
-      return NextResponse.json({ error: 'Formulário não encontrado' }, { status: 404 });
+      // Retornar um formulário padrão se não existir
+      return NextResponse.json({
+        id: null,
+        doctorId: session.user.id,
+        title: 'Formulário de Consulta',
+        description: 'Preencha os dados abaixo para agendar sua consulta',
+        fields: [],
+        isActive: true,
+        allowAnonymous: false,
+        requireAuth: false,
+        autoCreatePatient: true,
+        emailNotifications: true,
+        smsNotifications: false,
+        thankYouMessage: 'Obrigado! Entraremos em contato em breve.',
+        redirectUrl: null,
+        customCss: null,
+        // Campos de compatibilidade com o frontend
+        welcomeMessage: null,
+        successMessage: 'Obrigado! Entraremos em contato em breve.',
+        nameLabel: 'Nome completo',
+        emailLabel: 'E-mail',
+        whatsappLabel: 'WhatsApp',
+        showAgeField: false,
+        ageLabel: 'Idade',
+        ageRequired: false,
+        showSpecialtyField: false,
+        specialtyLabel: 'Especialidade',
+        specialtyOptions: null,
+        specialtyRequired: false,
+        showMessageField: true,
+        messageLabel: 'Mensagem',
+        messageRequired: false,
+        primaryColor: '#3B82F6',
+        backgroundColor: '#FFFFFF',
+        textColor: '#1F2937',
+        requireReferralCode: false,
+        autoReply: true,
+        autoReplyMessage: 'Recebemos sua solicitação e entraremos em contato em breve.'
+      });
     }
 
-    return NextResponse.json(form);
+    // Transformar para formato esperado pelo frontend
+    const transformedForm = {
+      ...form,
+      // Extrair campos do JSON fields para compatibilidade
+      welcomeMessage: null,
+      successMessage: form.thankYouMessage || 'Obrigado! Entraremos em contato em breve.',
+      nameLabel: 'Nome completo',
+      emailLabel: 'E-mail',
+      whatsappLabel: 'WhatsApp',
+      showAgeField: false,
+      ageLabel: 'Idade',
+      ageRequired: false,
+      showSpecialtyField: false,
+      specialtyLabel: 'Especialidade',
+      specialtyOptions: null,
+      specialtyRequired: false,
+      showMessageField: true,
+      messageLabel: 'Mensagem',
+      messageRequired: false,
+      primaryColor: '#3B82F6',
+      backgroundColor: '#FFFFFF',
+      textColor: '#1F2937',
+      requireReferralCode: false,
+      autoReply: form.emailNotifications,
+      autoReplyMessage: form.thankYouMessage || 'Recebemos sua solicitação e entraremos em contato em breve.'
+    };
+
+    return NextResponse.json(transformedForm);
   } catch (error) {
-    console.error('Erro ao buscar formulário:', error);
+    console.error('Erro ao buscar formulário:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
@@ -56,8 +121,71 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     // Validar dados obrigatórios
-    if (!data.title || !data.description || !data.nameLabel || !data.emailLabel || !data.whatsappLabel) {
-      return NextResponse.json({ error: 'Campos obrigatórios não preenchidos' }, { status: 400 });
+    if (!data.title) {
+      return NextResponse.json({ error: 'Título é obrigatório' }, { status: 400 });
+    }
+
+    // Criar campos baseados nos dados recebidos
+    const fields = [];
+    
+    if (data.nameLabel) {
+      fields.push({
+        type: 'text',
+        name: 'name',
+        label: data.nameLabel,
+        required: true,
+        placeholder: 'Digite seu nome completo'
+      });
+    }
+    
+    if (data.emailLabel) {
+      fields.push({
+        type: 'email',
+        name: 'email',
+        label: data.emailLabel,
+        required: true,
+        placeholder: 'Digite seu e-mail'
+      });
+    }
+    
+    if (data.whatsappLabel) {
+      fields.push({
+        type: 'tel',
+        name: 'whatsapp',
+        label: data.whatsappLabel,
+        required: true,
+        placeholder: 'Digite seu WhatsApp'
+      });
+    }
+    
+    if (data.showAgeField) {
+      fields.push({
+        type: 'number',
+        name: 'age',
+        label: data.ageLabel || 'Idade',
+        required: data.ageRequired || false,
+        placeholder: 'Digite sua idade'
+      });
+    }
+    
+    if (data.showSpecialtyField) {
+      fields.push({
+        type: 'select',
+        name: 'specialty',
+        label: data.specialtyLabel || 'Especialidade',
+        required: data.specialtyRequired || false,
+        options: data.specialtyOptions || []
+      });
+    }
+    
+    if (data.showMessageField) {
+      fields.push({
+        type: 'textarea',
+        name: 'message',
+        label: data.messageLabel || 'Mensagem',
+        required: data.messageRequired || false,
+        placeholder: 'Digite sua mensagem'
+      });
     }
 
     // Criar ou atualizar formulário
@@ -65,62 +193,68 @@ export async function POST(request: Request) {
       where: { doctorId: session.user.id },
       update: {
         title: data.title,
-        description: data.description,
-        welcomeMessage: data.welcomeMessage || null,
-        successMessage: data.successMessage,
-        nameLabel: data.nameLabel,
-        emailLabel: data.emailLabel,
-        whatsappLabel: data.whatsappLabel,
-        showAgeField: data.showAgeField,
-        ageLabel: data.ageLabel,
-        ageRequired: data.ageRequired,
-        showSpecialtyField: data.showSpecialtyField,
-        specialtyLabel: data.specialtyLabel,
-        specialtyOptions: data.specialtyOptions || null,
-        specialtyRequired: data.specialtyRequired,
-        showMessageField: data.showMessageField,
-        messageLabel: data.messageLabel,
-        messageRequired: data.messageRequired,
-        primaryColor: data.primaryColor,
-        backgroundColor: data.backgroundColor,
-        textColor: data.textColor,
-        isActive: data.isActive,
-        requireReferralCode: data.requireReferralCode,
-        autoReply: data.autoReply,
-        autoReplyMessage: data.autoReplyMessage || null,
+        description: data.description || null,
+        fields: fields,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        allowAnonymous: !data.requireReferralCode,
+        requireAuth: false,
+        autoCreatePatient: true,
+        emailNotifications: data.autoReply !== undefined ? data.autoReply : true,
+        smsNotifications: false,
+        thankYouMessage: data.successMessage || data.autoReplyMessage || 'Obrigado! Entraremos em contato em breve.',
+        redirectUrl: null,
+        customCss: data.primaryColor || data.backgroundColor || data.textColor ? 
+          `:root { --primary-color: ${data.primaryColor || '#3B82F6'}; --bg-color: ${data.backgroundColor || '#FFFFFF'}; --text-color: ${data.textColor || '#1F2937'}; }` : 
+          null
       },
       create: {
         doctorId: session.user.id,
         title: data.title,
-        description: data.description,
-        welcomeMessage: data.welcomeMessage || null,
-        successMessage: data.successMessage,
-        nameLabel: data.nameLabel,
-        emailLabel: data.emailLabel,
-        whatsappLabel: data.whatsappLabel,
-        showAgeField: data.showAgeField,
-        ageLabel: data.ageLabel,
-        ageRequired: data.ageRequired,
-        showSpecialtyField: data.showSpecialtyField,
-        specialtyLabel: data.specialtyLabel,
-        specialtyOptions: data.specialtyOptions || null,
-        specialtyRequired: data.specialtyRequired,
-        showMessageField: data.showMessageField,
-        messageLabel: data.messageLabel,
-        messageRequired: data.messageRequired,
-        primaryColor: data.primaryColor,
-        backgroundColor: data.backgroundColor,
-        textColor: data.textColor,
-        isActive: data.isActive,
-        requireReferralCode: data.requireReferralCode,
-        autoReply: data.autoReply,
-        autoReplyMessage: data.autoReplyMessage || null,
+        description: data.description || null,
+        fields: fields,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        allowAnonymous: !data.requireReferralCode,
+        requireAuth: false,
+        autoCreatePatient: true,
+        emailNotifications: data.autoReply !== undefined ? data.autoReply : true,
+        smsNotifications: false,
+        thankYouMessage: data.successMessage || data.autoReplyMessage || 'Obrigado! Entraremos em contato em breve.',
+        redirectUrl: null,
+        customCss: data.primaryColor || data.backgroundColor || data.textColor ? 
+          `:root { --primary-color: ${data.primaryColor || '#3B82F6'}; --bg-color: ${data.backgroundColor || '#FFFFFF'}; --text-color: ${data.textColor || '#1F2937'}; }` : 
+          null
       }
     });
 
-    return NextResponse.json(form);
+    // Transformar resposta para formato esperado
+    const transformedForm = {
+      ...form,
+      welcomeMessage: data.welcomeMessage,
+      successMessage: form.thankYouMessage,
+      nameLabel: data.nameLabel,
+      emailLabel: data.emailLabel,
+      whatsappLabel: data.whatsappLabel,
+      showAgeField: data.showAgeField,
+      ageLabel: data.ageLabel,
+      ageRequired: data.ageRequired,
+      showSpecialtyField: data.showSpecialtyField,
+      specialtyLabel: data.specialtyLabel,
+      specialtyOptions: data.specialtyOptions,
+      specialtyRequired: data.specialtyRequired,
+      showMessageField: data.showMessageField,
+      messageLabel: data.messageLabel,
+      messageRequired: data.messageRequired,
+      primaryColor: data.primaryColor,
+      backgroundColor: data.backgroundColor,
+      textColor: data.textColor,
+      requireReferralCode: !form.allowAnonymous,
+      autoReply: form.emailNotifications,
+      autoReplyMessage: form.thankYouMessage
+    };
+
+    return NextResponse.json(transformedForm);
   } catch (error) {
-    console.error('Erro ao salvar formulário:', error);
+    console.error('Erro ao salvar formulário:', error instanceof Error ? error.message : 'Erro desconhecido');
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 } 

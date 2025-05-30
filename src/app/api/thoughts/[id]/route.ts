@@ -44,7 +44,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(updatedThought)
   } catch (error) {
-    console.error('Error updating thought:', error)
+    console.error('Error updating thought:', error instanceof Error ? error.message : 'Erro desconhecido')
     return NextResponse.json({ error: 'Error updating thought' }, { status: 500 })
   }
 }
@@ -84,7 +84,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting thought:', error)
+    console.error('Error deleting thought:', error instanceof Error ? error.message : 'Erro desconhecido')
     return NextResponse.json({ error: 'Error deleting thought' }, { status: 500 })
   }
 } 
