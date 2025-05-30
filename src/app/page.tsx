@@ -50,10 +50,9 @@ export default function Home() {
 
   if (!session || isChecking) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212121' }}>
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-turquoise mb-4"></div>
-          <p className="text-xs text-muted-foreground">Verificando acesso...</p>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-white/20 border-t-white"></div>
         </div>
       </div>
     );
