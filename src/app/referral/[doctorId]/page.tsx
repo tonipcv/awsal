@@ -31,6 +31,7 @@ export default function ReferralPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(5);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -63,6 +64,51 @@ export default function ReferralPage() {
       loadDoctorInfo();
     }
   }, [doctorId]);
+
+  // Redirecionamento automático após sucesso
+  useEffect(() => {
+    if (success) {
+      setCountdown(5);
+      
+      const interval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            // Verificar se o usuário está logado como paciente
+            fetch('/api/auth/session')
+              .then(res => res.json())
+              .then(session => {
+                if (session?.user) {
+                  // Se está logado, verificar se é paciente
+                  fetch('/api/auth/role')
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.role === 'PATIENT') {
+                        window.location.href = '/patient/referrals';
+                      } else {
+                        window.location.href = '/';
+                      }
+                    })
+                    .catch(() => {
+                      window.location.href = '/';
+                    });
+                } else {
+                  // Se não está logado, redirecionar para login
+                  window.location.href = '/auth/signin';
+                }
+              })
+              .catch(() => {
+                window.location.href = '/';
+              });
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [success]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,15 +188,60 @@ export default function ReferralPage() {
               <p className="text-slate-600 mb-4">
                 Sua indicação foi registrada com sucesso. Nossa equipe entrará em contato em breve.
               </p>
-              <Button 
-                onClick={() => {
-                  setSuccess(false);
-                  setFormData({ name: '', email: '', phone: '', referrerCode: referrerCode || '' });
-                }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Fazer Nova Indicação
-              </Button>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                <p className="text-blue-800 text-sm">
+                  Redirecionando para suas indicações em {countdown} segundo{countdown !== 1 ? 's' : ''}...
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    // Verificar se o usuário está logado como paciente
+                    fetch('/api/auth/session')
+                      .then(res => res.json())
+                      .then(session => {
+                        if (session?.user) {
+                          // Se está logado, verificar se é paciente
+                          fetch('/api/auth/role')
+                            .then(res => res.json())
+                            .then(data => {
+                              if (data.role === 'PATIENT') {
+                                window.location.href = '/patient/referrals';
+                              } else {
+                                window.location.href = '/';
+                              }
+                            })
+                            .catch(() => {
+                              window.location.href = '/';
+                            });
+                        } else {
+                          // Se não está logado, redirecionar para login
+                          window.location.href = '/auth/signin';
+                        }
+                      })
+                      .catch(() => {
+                        window.location.href = '/';
+                      });
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Ver Minhas Indicações Agora
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setSuccess(false);
+                    setCountdown(5);
+                    setFormData({ name: '', email: '', phone: '', referrerCode: referrerCode || '' });
+                  }}
+                  className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
+                >
+                  Fazer Nova Indicação
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

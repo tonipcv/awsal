@@ -29,10 +29,6 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    // TODO: Fix referral system schema mismatches
-    // Temporarily returning basic structure to prevent crashes
-    
-    /*
     // Buscar saldo de créditos atual
     const creditsBalance = await getUserCreditsBalance(userId);
 
@@ -40,7 +36,7 @@ export async function GET() {
     const creditsHistory = await prisma.referralCredit.findMany({
       where: { userId },
       include: {
-        lead: {
+        referral_leads: {
           select: { name: true, email: true, status: true }
         }
       },
@@ -50,13 +46,10 @@ export async function GET() {
 
     // Buscar indicações feitas pelo usuário
     const referralsMade = await prisma.referralLead.findMany({
-      where: { referrerCode: user?.referralCode || '' },
+      where: { referrerId: userId },
       include: {
         doctor: {
           select: { id: true, name: true }
-        },
-        credits: {
-          select: { id: true, amount: true, status: true }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -76,7 +69,7 @@ export async function GET() {
             select: { redemptions: true }
           }
         },
-        orderBy: { creditsRequired: 'asc' }
+        orderBy: { costInCredits: 'asc' }
       });
     }
 
@@ -85,7 +78,7 @@ export async function GET() {
       where: { userId },
       include: {
         reward: {
-          select: { title: true, description: true, creditsRequired: true }
+          select: { title: true, description: true, costInCredits: true }
         }
       },
       orderBy: { redeemedAt: 'desc' },
@@ -96,28 +89,58 @@ export async function GET() {
     const stats = {
       totalReferrals: referralsMade.length,
       convertedReferrals: referralsMade.filter(r => r.status === 'CONVERTED').length,
-      totalCreditsEarned: creditsHistory.reduce((sum, credit) => sum + credit.amount, 0),
-      totalCreditsUsed: redemptionsHistory.reduce((sum, redemption) => sum + redemption.creditsUsed, 0),
+      totalCreditsEarned: creditsHistory.reduce((sum, credit) => sum + Number(credit.amount), 0),
+      totalCreditsUsed: redemptionsHistory.reduce((sum, redemption) => sum + Number(redemption.creditsUsed), 0),
       currentBalance: creditsBalance
-    };
-    */
-
-    // Temporary basic response
-    const stats = {
-      totalReferrals: 0,
-      convertedReferrals: 0,
-      totalCreditsEarned: 0,
-      totalCreditsUsed: 0,
-      currentBalance: 0
     };
 
     return NextResponse.json({
       stats,
-      creditsBalance: 0,
-      creditsHistory: [],
-      referralsMade: [],
-      availableRewards: [],
-      redemptionsHistory: [],
+      creditsBalance,
+      creditsHistory: creditsHistory.map(credit => ({
+        id: credit.id,
+        amount: Number(credit.amount),
+        type: credit.type,
+        createdAt: credit.createdAt,
+        lead: credit.referral_leads ? {
+          name: credit.referral_leads.name,
+          email: credit.referral_leads.email,
+          status: credit.referral_leads.status
+        } : null
+      })),
+      referralsMade: referralsMade.map(referral => ({
+        id: referral.id,
+        name: referral.name,
+        email: referral.email,
+        status: referral.status,
+        createdAt: referral.createdAt,
+        doctor: referral.doctor,
+        credits: creditsHistory.filter(c => c.referralLeadId === referral.id).map(c => ({
+          id: c.id,
+          amount: Number(c.amount),
+          status: c.isUsed ? 'USED' : 'AVAILABLE'
+        }))
+      })),
+      availableRewards: availableRewards.map(reward => ({
+        id: reward.id,
+        title: reward.title,
+        description: reward.description,
+        creditsRequired: Number(reward.costInCredits),
+        maxRedemptions: reward.maxRedemptions,
+        currentRedemptions: reward._count.redemptions,
+        isActive: reward.isActive
+      })),
+      redemptionsHistory: redemptionsHistory.map(redemption => ({
+        id: redemption.id,
+        creditsUsed: Number(redemption.creditsUsed),
+        status: redemption.status,
+        redeemedAt: redemption.redeemedAt,
+        reward: {
+          title: redemption.reward.title,
+          description: redemption.reward.description,
+          creditsRequired: Number(redemption.reward.costInCredits)
+        }
+      })),
       doctorId: user?.doctorId,
       referralCode: user?.referralCode
     });
