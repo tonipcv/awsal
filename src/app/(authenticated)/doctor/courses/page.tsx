@@ -88,9 +88,46 @@ export default function DoctorCoursesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white">
         <div className="lg:ml-64">
-          <span className="text-sm text-gray-600 font-medium">Carregando cursos...</span>
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div>
+                <div className="h-8 bg-gray-200 rounded-lg w-32 mb-2 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="h-5 bg-gray-100 rounded-lg w-20 animate-pulse"></div>
+                <div className="h-12 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Courses Grid Skeleton */}
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded-lg w-full animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded-lg w-2/3 animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="h-4 bg-gray-100 rounded-lg animate-pulse"></div>
+                      <div className="h-4 bg-gray-100 rounded-lg animate-pulse"></div>
+                      <div className="h-4 bg-gray-100 rounded-lg animate-pulse"></div>
+                    </div>
+                    <div className="h-4 bg-gray-100 rounded-lg w-1/2 animate-pulse"></div>
+                    <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                      <div className="h-10 bg-gray-200 rounded-xl flex-1 animate-pulse"></div>
+                      <div className="h-10 bg-gray-200 rounded-xl flex-1 animate-pulse"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -99,27 +136,27 @@ export default function DoctorCoursesPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
         
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Cursos
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Courses
               </h1>
               <p className="text-gray-600 font-medium">
-                Gerencie seus cursos e conteúdos educacionais
+                Manage your courses and educational content
               </p>
             </div>
             
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3 text-gray-600 font-medium">
-                <span>{courses.length} {courses.length === 1 ? 'curso' : 'cursos'}</span>
+                <span>{courses.length} {courses.length === 1 ? 'course' : 'courses'}</span>
               </div>
-              <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+              <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 shadow-md font-semibold">
                 <Link href="/doctor/courses/create">
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Novo Curso
+                  New Course
                 </Link>
               </Button>
             </div>
@@ -132,15 +169,15 @@ export default function DoctorCoursesPage() {
                 <div className="text-center">
                   <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
                   <h3 className="text-xl font-bold mb-3 text-gray-900">
-                    Nenhum curso encontrado
+                    No courses found
                   </h3>
                   <p className="text-gray-600 font-medium mb-8">
-                    Comece criando seu primeiro curso educacional.
+                    Start by creating your first educational course.
                   </p>
-                  <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                  <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 shadow-md font-semibold">
                     <Link href="/doctor/courses/create">
                       <PlusIcon className="h-4 w-4 mr-2" />
-                      Criar Primeiro Curso
+                      Create First Course
                     </Link>
                   </Button>
                 </div>
@@ -189,7 +226,7 @@ export default function DoctorCoursesPage() {
                       {totalDuration > 0 && (
                         <div className="flex items-center gap-2 text-gray-600 font-medium">
                           <ClockIcon className="h-4 w-4 text-emerald-500" />
-                          <span className="text-sm">Duração: {formatDuration(totalDuration)}</span>
+                          <span className="text-sm">Duration: {formatDuration(totalDuration)}</span>
                         </div>
                       )}
 
@@ -199,11 +236,11 @@ export default function DoctorCoursesPage() {
                           variant="outline"
                           size="sm"
                           asChild
-                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
+                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 shadow-md font-semibold"
                         >
                           <Link href={`/doctor/courses/${course.id}`}>
                             <EyeIcon className="h-4 w-4 mr-2" />
-                            Ver
+                            View
                           </Link>
                         </Button>
                         
@@ -211,11 +248,11 @@ export default function DoctorCoursesPage() {
                           variant="outline"
                           size="sm"
                           asChild
-                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
+                          className="flex-1 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 shadow-md font-semibold"
                         >
                           <Link href={`/doctor/courses/${course.id}/edit`}>
                             <PencilIcon className="h-4 w-4 mr-2" />
-                            Editar
+                            Edit
                           </Link>
                         </Button>
                       </div>

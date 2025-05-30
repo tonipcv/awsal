@@ -17,7 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface Protocol {
   id: string;
@@ -64,7 +64,7 @@ export default function ProtocolsPage() {
   };
 
   const deleteProtocol = async (protocolId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este protocolo?')) return;
+    if (!confirm('Are you sure you want to delete this protocol?')) return;
 
     try {
       const response = await fetch(`/api/protocols/${protocolId}`, {
@@ -74,11 +74,11 @@ export default function ProtocolsPage() {
       if (response.ok) {
         setProtocols(protocols.filter(p => p.id !== protocolId));
       } else {
-        alert('Erro ao excluir protocolo');
+        alert('Error deleting protocol');
       }
     } catch (error) {
       console.error('Error deleting protocol:', error);
-      alert('Erro ao excluir protocolo');
+      alert('Error deleting protocol');
     }
   };
 
@@ -99,10 +99,64 @@ export default function ProtocolsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7] mb-4"></div>
-          <span className="text-xs text-gray-600 font-medium">Carregando protocolos...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-100 rounded-xl w-28 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded-xl w-36 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Search and Filters Skeleton */}
+            <div className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6 mb-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-10 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                  <div className="h-10 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                  <div className="h-10 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Protocols List Skeleton */}
+            <div className="space-y-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-8">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                        <div className="h-6 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                      </div>
+                      <div className="h-4 bg-gray-100 rounded w-96 animate-pulse"></div>
+                      <div className="flex items-center gap-6">
+                        <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                        <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                        <div className="h-4 bg-gray-100 rounded w-32 animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                      <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                      <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
         </div>
       </div>
     );
@@ -111,16 +165,16 @@ export default function ProtocolsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
         
           {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Protocolos
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Protocols
               </h1>
-              <p className="text-gray-600 mt-2 font-medium">
-                Gerencie seus protocolos e templates
+              <p className="text-gray-600 font-medium">
+                Manage your protocols and templates
               </p>
             </div>
             
@@ -128,7 +182,7 @@ export default function ProtocolsPage() {
               <Button 
                 asChild
                 variant="outline"
-                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-4 font-semibold"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-6 shadow-md font-semibold"
               >
                 <Link href="/doctor/templates">
                   <DocumentTextIcon className="h-4 w-4 mr-2" />
@@ -137,28 +191,28 @@ export default function ProtocolsPage() {
               </Button>
               <Button 
                 asChild
-                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-4 font-semibold"
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
               >
                 <Link href="/doctor/protocols/new">
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Novo Protocolo
+                  New Protocol
                 </Link>
               </Button>
             </div>
           </div>
 
           {/* Filters and Search */}
-          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+          <Card className="mb-6 bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardContent className="p-6">
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      placeholder="Buscar protocolos..."
+                      placeholder="Search protocols..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                      className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-12"
                     />
                   </div>
                 </div>
@@ -172,7 +226,7 @@ export default function ProtocolsPage() {
                       : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                     }
                   >
-                    Todos
+                    All
                   </Button>
                   <Button
                     variant={filter === 'active' ? 'default' : 'outline'}
@@ -183,7 +237,7 @@ export default function ProtocolsPage() {
                       : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
                     }
                   >
-                    Ativos
+                    Active
                   </Button>
                   <Button
                     variant={filter === 'templates' ? 'default' : 'outline'}
@@ -204,32 +258,30 @@ export default function ProtocolsPage() {
           {/* Protocols List */}
           {filteredProtocols.length === 0 ? (
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardContent className="p-12">
+              <CardContent className="p-8">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <DocumentTextIcon className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">
-                    {searchTerm ? 'Nenhum protocolo encontrado' : 'Nenhum protocolo criado'}
+                  <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2 text-gray-900">
+                    {searchTerm ? 'No protocols found' : 'No protocols created'}
                   </h3>
-                  <p className="text-gray-600 mb-8 font-medium">
+                  <p className="text-sm text-gray-500 mb-4 font-medium">
                     {searchTerm 
-                      ? 'Tente ajustar os filtros ou termo de busca'
-                      : 'Comece criando seu primeiro protocolo ou usando um template'
+                      ? 'Try adjusting your search term or filters'
+                      : 'Start by creating your first protocol or using a template'
                     }
                   </p>
                   {!searchTerm && (
                     <div className="flex gap-3 justify-center">
-                      <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                      <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold">
                         <Link href="/doctor/protocols/new">
                           <PlusIcon className="h-4 w-4 mr-2" />
-                          Criar Protocolo
+                          Create Protocol
                         </Link>
                       </Button>
-                      <Button variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold">
+                      <Button variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl shadow-md font-semibold">
                         <Link href="/doctor/templates">
                           <DocumentTextIcon className="h-4 w-4 mr-2" />
-                          Ver Templates
+                          View Templates
                         </Link>
                       </Button>
                     </div>
@@ -238,13 +290,13 @@ export default function ProtocolsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6">
+            <div className="space-y-6">
               {filteredProtocols.map((protocol) => {
                 const activeAssignments = getActiveAssignments(protocol);
                 
                 return (
-                  <Card key={protocol.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
-                    <CardContent className="p-8">
+                  <Card key={protocol.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-shadow">
+                    <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-3">
@@ -256,7 +308,7 @@ export default function ProtocolsPage() {
                             )}
                             {activeAssignments > 0 && (
                               <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
-                                {activeAssignments} ativo{activeAssignments > 1 ? 's' : ''}
+                                {activeAssignments} active
                               </span>
                             )}
                           </div>
@@ -267,27 +319,27 @@ export default function ProtocolsPage() {
                             </p>
                           )}
                           
-                          <div className="flex items-center gap-6 text-sm text-gray-600">
+                          <div className="flex items-center gap-6 text-sm text-gray-500">
                             <div className="flex items-center gap-2">
                               <CalendarDaysIcon className="h-4 w-4" />
-                              <span className="font-medium">{protocol.duration} dias</span>
+                              <span className="font-medium">{protocol.duration} days</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <UsersIcon className="h-4 w-4" />
-                              <span className="font-medium">{protocol.assignments.length} atribuição{protocol.assignments.length !== 1 ? 'ões' : ''}</span>
+                              <span className="font-medium">{protocol.assignments.length} assignment{protocol.assignments.length !== 1 ? 's' : ''}</span>
                             </div>
                             <span className="font-medium">
-                              Criado em {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                              Created on {format(new Date(protocol.createdAt), 'MM/dd/yyyy', { locale: enUS })}
                             </span>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-2 ml-6">
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 w-10 p-0"
+                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}`}>
                               <EyeIcon className="h-4 w-4" />
@@ -297,7 +349,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl h-10 w-10 p-0"
+                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}/edit`}>
                               <PencilIcon className="h-4 w-4" />
@@ -307,7 +359,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteProtocol(protocol.id)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-10 w-10 p-0"
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </Button>

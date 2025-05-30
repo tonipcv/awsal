@@ -103,26 +103,26 @@ export default function ClinicDashboard() {
         const data = await response.json();
         setClinic(data.clinic);
         
-        // Verificar se é admin
+        // Check if user is admin
         const userIsAdmin = data.clinic.ownerId === session?.user?.id || 
           data.clinic.members.some((m: any) => m.user.id === session?.user?.id && m.role === 'ADMIN');
         setIsAdmin(userIsAdmin);
 
-        // Inicializar valores de edição
+        // Initialize editing values
         setEditingClinicName(data.clinic.name);
         setEditingClinicDescription(data.clinic.description || '');
 
-        // Buscar estatísticas
+        // Fetch statistics
         const statsResponse = await fetch(`/api/clinic/stats`);
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
           setStats(statsData.stats);
         }
       } else {
-        console.error('Erro ao buscar dados da clínica');
+        console.error('Error loading clinic data');
       }
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -148,14 +148,14 @@ export default function ClinicDashboard() {
       if (response.ok) {
         setNewMemberEmail('');
         setNewMemberRole('DOCTOR');
-        fetchClinicData(); // Recarregar dados
+        fetchClinicData(); // Reload data
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao adicionar membro');
+        alert(error.error || 'Error adding member');
       }
     } catch (error) {
-      console.error('Erro ao adicionar membro:', error);
-      alert('Erro interno do servidor');
+      console.error('Error adding member:', error);
+      alert('Internal server error');
     } finally {
       setAddingMember(false);
     }
@@ -165,7 +165,7 @@ export default function ClinicDashboard() {
     try {
       setSavingSettings(true);
       
-      // Aqui você implementaria a API para salvar as configurações
+      // Here you would implement the API to save settings
       // const response = await fetch('/api/clinic/settings', {
       //   method: 'PUT',
       //   headers: { 'Content-Type': 'application/json' },
@@ -175,16 +175,16 @@ export default function ClinicDashboard() {
       //   })
       // });
 
-      // Simulação de sucesso
+      // Success simulation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setShowSettingsModal(false);
-      fetchClinicData(); // Recarregar dados
-      alert('Configurações salvas com sucesso!');
+      fetchClinicData(); // Reload data
+      alert('Settings saved successfully!');
       
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-      alert('Erro ao salvar configurações');
+      console.error('Error saving settings:', error);
+      alert('Error saving settings');
     } finally {
       setSavingSettings(false);
     }
@@ -192,10 +192,114 @@ export default function ClinicDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7] mb-4"></div>
-          <p className="text-xs text-gray-600">Carregando clínica...</p>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-200 rounded-xl w-24 animate-pulse"></div>
+                <div className="h-10 bg-gray-100 rounded-xl w-32 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-7 bg-gray-200 rounded w-8 animate-pulse"></div>
+                    <div className="h-3 bg-gray-100 rounded w-20 animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Team Section Skeleton - 2 columns */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded w-48 animate-pulse"></div>
+                  </div>
+                  <div className="h-10 bg-gray-200 rounded-xl w-24 animate-pulse"></div>
+                </div>
+                
+                <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                  <div className="divide-y divide-gray-100">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                              <div className="h-3 bg-gray-100 rounded w-40 animate-pulse"></div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="space-y-2">
+                              <div className="h-6 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                              <div className="h-3 bg-gray-100 rounded w-12 animate-pulse"></div>
+                            </div>
+                            <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sidebar Skeleton - 1 column */}
+              <div className="space-y-6">
+                {/* Subscription Card Skeleton */}
+                <div className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    <div className="h-6 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="p-6 bg-gray-50 rounded-2xl">
+                      <div className="h-6 bg-gray-200 rounded w-32 mx-auto animate-pulse"></div>
+                      <div className="h-4 bg-gray-100 rounded w-40 mx-auto mt-2 animate-pulse"></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="p-4 bg-gray-50 rounded-xl text-center">
+                          <div className="h-5 bg-gray-200 rounded w-8 mx-auto animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-12 mx-auto mt-1 animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Quick Actions Skeleton */}
+                <div className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-12 bg-gray-50 border border-gray-200 rounded-xl animate-pulse"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     );
@@ -203,20 +307,24 @@ export default function ClinicDashboard() {
 
   if (!clinic) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Card className="w-full max-w-md bg-white border-gray-200 shadow-lg rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-gray-900 font-bold">Clínica não encontrada</CardTitle>
-            <CardDescription className="text-gray-600">
-              Você não está associado a nenhuma clínica.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push('/doctor/dashboard')} className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12">
-              Voltar ao Dashboard
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24 flex items-center justify-center min-h-[calc(100vh-88px)]">
+            <Card className="w-full max-w-md bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="text-center p-6">
+                <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">Clinic not found</CardTitle>
+                <CardDescription className="text-gray-600 font-medium">
+                  You are not associated with any clinic.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <Button onClick={() => router.push('/doctor/dashboard')} className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold">
+                  Back to Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -224,19 +332,20 @@ export default function ClinicDashboard() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{clinic.name}</h1>
-              <p className="text-gray-600 mt-2 font-medium">{clinic.description}</p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">{clinic.name}</h1>
+              <p className="text-gray-600 font-medium">{clinic.description || 'No description available'}</p>
             </div>
             <div className="flex items-center gap-3">
               <Badge 
                 variant={clinic.subscription?.status === 'ACTIVE' ? 'default' : 'secondary'}
                 className={clinic.subscription?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold px-3 py-1 rounded-xl' : 'font-semibold px-3 py-1 rounded-xl'}
               >
-                {clinic.subscription?.status || 'Sem Plano'}
+                {clinic.subscription?.status || 'No Plan'}
               </Badge>
               {isAdmin && (
                 <Button 
@@ -246,77 +355,85 @@ export default function ClinicDashboard() {
                   onClick={() => setShowSettingsModal(true)}
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Configurações
+                  Settings
                 </Button>
               )}
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-                <CardTitle className="text-sm font-semibold text-gray-700">Médicos</CardTitle>
-                <div className="p-3 bg-[#5154e7] rounded-xl">
-                  <Users className="h-5 w-5 text-white" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#5154e7]/10 rounded-xl">
+                    <Users className="h-6 w-6 text-[#5154e7]" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Doctors</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats?.totalDoctors || 0}</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      of {clinic.subscription?.maxDoctors || 1} allowed
+                    </p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900">{stats?.totalDoctors || 0}</div>
-                <p className="text-sm text-gray-600 font-medium">
-                  de {clinic.subscription?.maxDoctors || 1} permitidos
-                </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-                <CardTitle className="text-sm font-semibold text-gray-700">Pacientes</CardTitle>
-                <div className="p-3 bg-emerald-500 rounded-xl">
-                  <Users className="h-5 w-5 text-white" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-100 rounded-xl">
+                    <Users className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Clients</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats?.totalPatients || 0}</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      of {clinic.subscription?.plan.maxPatients || 0} allowed
+                    </p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900">{stats?.totalPatients || 0}</div>
-                <p className="text-sm text-gray-600 font-medium">
-                  de {clinic.subscription?.plan.maxPatients || 0} permitidos
-                </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-                <CardTitle className="text-sm font-semibold text-gray-700">Protocolos</CardTitle>
-                <div className="p-3 bg-teal-500 rounded-xl">
-                  <FileText className="h-5 w-5 text-white" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-teal-100 rounded-xl">
+                    <FileText className="h-6 w-6 text-teal-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Protocols</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats?.totalProtocols || 0}</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      of {clinic.subscription?.plan.maxProtocols || 0} allowed
+                    </p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900">{stats?.totalProtocols || 0}</div>
-                <p className="text-sm text-gray-600 font-medium">
-                  de {clinic.subscription?.plan.maxProtocols || 0} permitidos
-                </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-                <CardTitle className="text-sm font-semibold text-gray-700">Cursos</CardTitle>
-                <div className="p-3 bg-orange-500 rounded-xl">
-                  <BarChart3 className="h-5 w-5 text-white" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-orange-100 rounded-xl">
+                    <BarChart3 className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Courses</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats?.totalCourses || 0}</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      of {clinic.subscription?.plan.maxCourses || 0} allowed
+                    </p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="text-2xl font-bold text-gray-900">{stats?.totalCourses || 0}</div>
-                <p className="text-sm text-gray-600 font-medium">
-                  de {clinic.subscription?.plan.maxCourses || 0} permitidos
-                </p>
               </CardContent>
             </Card>
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8">
             
             {/* Team Section - Takes 2 columns */}
             <div className="lg:col-span-2 space-y-6">
@@ -324,10 +441,10 @@ export default function ClinicDashboard() {
               {/* Team Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Equipe</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Team</h2>
                   <p className="text-gray-600 mt-1 font-medium">
-                    {clinic.members.length} {clinic.members.length === 1 ? 'membro' : 'membros'} • 
-                    {clinic.subscription?.maxDoctors ? ` ${clinic.subscription.maxDoctors - clinic.members.length} vagas disponíveis` : ' Sem limite'}
+                    {clinic.members.length} {clinic.members.length === 1 ? 'member' : 'members'} • 
+                    {clinic.subscription?.maxDoctors ? ` ${clinic.subscription.maxDoctors - clinic.members.length} spots available` : ' No limit'}
                   </p>
                 </div>
                 {isAdmin && (
@@ -335,39 +452,39 @@ export default function ClinicDashboard() {
                     <DialogTrigger asChild>
                       <Button size="sm" className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold">
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Convidar
+                        Invite
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-white border-gray-200 rounded-2xl">
                       <DialogHeader>
-                        <DialogTitle className="text-gray-900 font-bold">Convidar Médico</DialogTitle>
+                        <DialogTitle className="text-gray-900 font-bold">Invite Doctor</DialogTitle>
                         <DialogDescription className="text-gray-600 font-medium">
-                          Adicione um médico existente à sua equipe. O médico deve já estar cadastrado no sistema.
+                          Add an existing doctor to your team. The doctor must already be registered in the system.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="email" className="text-gray-700 font-semibold">Email do Médico</Label>
+                          <Label htmlFor="email" className="text-gray-700 font-semibold">Doctor's Email</Label>
                           <Input
                             id="email"
                             type="email"
-                            placeholder="medico@exemplo.com"
+                            placeholder="doctor@example.com"
                             value={newMemberEmail}
                             onChange={(e) => setNewMemberEmail(e.target.value)}
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 mt-2"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="role" className="text-gray-700 font-semibold">Função</Label>
+                          <Label htmlFor="role" className="text-gray-700 font-semibold">Role</Label>
                           <select
                             id="role"
                             value={newMemberRole}
                             onChange={(e) => setNewMemberRole(e.target.value)}
                             className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:border-[#5154e7] focus:outline-none focus:ring-1 focus:ring-[#5154e7] mt-2 h-12"
                           >
-                            <option value="DOCTOR">Médico</option>
-                            <option value="ADMIN">Administrador</option>
-                            <option value="VIEWER">Visualizador</option>
+                            <option value="DOCTOR">Doctor</option>
+                            <option value="ADMIN">Administrator</option>
+                            <option value="VIEWER">Viewer</option>
                           </select>
                         </div>
                         <Button 
@@ -375,7 +492,7 @@ export default function ClinicDashboard() {
                           disabled={addingMember || !newMemberEmail.trim()}
                           className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
                         >
-                          {addingMember ? 'Enviando convite...' : 'Enviar Convite'}
+                          {addingMember ? 'Sending invite...' : 'Send Invite'}
                         </Button>
                       </div>
                     </DialogContent>
@@ -422,10 +539,10 @@ export default function ClinicDashboard() {
                                 }
                               >
                                 {member.role === 'ADMIN' ? 'Admin' : 
-                                 member.role === 'DOCTOR' ? 'Médico' : 'Viewer'}
+                                 member.role === 'DOCTOR' ? 'Doctor' : 'Viewer'}
                               </Badge>
                               <p className="text-xs text-gray-500 mt-1 font-medium">
-                                Desde {new Date(member.joinedAt).toLocaleDateString('pt-BR', { 
+                                Since {new Date(member.joinedAt).toLocaleDateString('en-US', { 
                                   day: '2-digit', 
                                   month: 'short' 
                                 })}
@@ -453,12 +570,12 @@ export default function ClinicDashboard() {
               <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="pb-4 p-6">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-bold text-gray-900">Plano Atual</CardTitle>
+                    <CardTitle className="text-xl font-bold text-gray-900">Current Plan</CardTitle>
                     <Badge 
                       variant={clinic.subscription?.status === 'ACTIVE' ? 'default' : 'secondary'}
                       className={clinic.subscription?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 border-emerald-200 font-semibold rounded-xl' : 'font-semibold rounded-xl'}
                     >
-                      {clinic.subscription?.status || 'Inativo'}
+                      {clinic.subscription?.status || 'Inactive'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -469,12 +586,12 @@ export default function ClinicDashboard() {
                       <div className="text-center py-6 bg-gradient-to-br from-[#5154e7]/10 to-purple-50 rounded-2xl border border-[#5154e7]/20">
                         <h3 className="text-2xl font-bold text-gray-900">{clinic.subscription.plan.name}</h3>
                         <p className="text-sm text-gray-600 mt-2 font-medium">
-                          Renovação em {clinic.subscription.endDate 
-                            ? new Date(clinic.subscription.endDate).toLocaleDateString('pt-BR', { 
+                          Renews on {clinic.subscription.endDate 
+                            ? new Date(clinic.subscription.endDate).toLocaleDateString('en-US', { 
                                 day: '2-digit', 
                                 month: 'long' 
                               })
-                            : 'Sem vencimento'
+                            : 'No expiration'
                           }
                         </p>
                       </div>
@@ -483,19 +600,19 @@ export default function ClinicDashboard() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-4 bg-gray-50 rounded-xl">
                           <div className="text-xl font-bold text-gray-900">{clinic.subscription.maxDoctors}</div>
-                          <div className="text-xs text-gray-600 font-semibold">Médicos</div>
+                          <div className="text-xs text-gray-600 font-semibold">Doctors</div>
                         </div>
                         <div className="text-center p-4 bg-gray-50 rounded-xl">
                           <div className="text-xl font-bold text-gray-900">{clinic.subscription.plan.maxPatients}</div>
-                          <div className="text-xs text-gray-600 font-semibold">Pacientes</div>
+                          <div className="text-xs text-gray-600 font-semibold">Clients</div>
                         </div>
                         <div className="text-center p-4 bg-gray-50 rounded-xl">
                           <div className="text-xl font-bold text-gray-900">{clinic.subscription.plan.maxProtocols}</div>
-                          <div className="text-xs text-gray-600 font-semibold">Protocolos</div>
+                          <div className="text-xs text-gray-600 font-semibold">Protocols</div>
                         </div>
                         <div className="text-center p-4 bg-gray-50 rounded-xl">
                           <div className="text-xl font-bold text-gray-900">{clinic.subscription.plan.maxCourses}</div>
-                          <div className="text-xs text-gray-600 font-semibold">Cursos</div>
+                          <div className="text-xs text-gray-600 font-semibold">Courses</div>
                         </div>
                       </div>
 
@@ -503,7 +620,7 @@ export default function ClinicDashboard() {
                         <Button className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold" asChild>
                           <Link href="/clinic/subscription">
                             <CreditCard className="h-4 w-4 mr-2" />
-                            Gerenciar Plano
+                            Manage Plan
                           </Link>
                         </Button>
                       )}
@@ -513,12 +630,12 @@ export default function ClinicDashboard() {
                       <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <CreditCard className="h-8 w-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-600 mb-6 font-medium">Nenhum plano ativo</p>
+                      <p className="text-gray-600 mb-6 font-medium">No active plan</p>
                       {isAdmin && (
                         <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold" asChild>
                           <Link href="/clinic/subscription">
                             <Plus className="h-4 w-4 mr-2" />
-                            Escolher Plano
+                            Choose Plan
                           </Link>
                         </Button>
                       )}
@@ -530,19 +647,19 @@ export default function ClinicDashboard() {
               {/* Quick Actions */}
               <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="pb-4 p-6">
-                  <CardTitle className="text-xl font-bold text-gray-900">Ações Rápidas</CardTitle>
+                  <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 px-6 pb-6">
                   <Button variant="outline" className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50 bg-white rounded-xl h-12 font-semibold" asChild>
                     <Link href="/doctor/dashboard">
                       <BarChart3 className="h-4 w-4 mr-3" />
-                      Ver Dashboard
+                      View Dashboard
                     </Link>
                   </Button>
                   <Button variant="outline" className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50 bg-white rounded-xl h-12 font-semibold" asChild>
                     <Link href="/protocols">
                       <FileText className="h-4 w-4 mr-3" />
-                      Gerenciar Protocolos
+                      Manage Protocols
                     </Link>
                   </Button>
                   {isAdmin && (
@@ -552,7 +669,7 @@ export default function ClinicDashboard() {
                       onClick={() => setShowSettingsModal(true)}
                     >
                       <Settings className="h-4 w-4 mr-3" />
-                      Configurações
+                      Settings
                     </Button>
                   )}
                 </CardContent>
@@ -564,14 +681,14 @@ export default function ClinicDashboard() {
           <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
             <DialogContent className="bg-white border-gray-200 rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-gray-900 font-bold">Configurações da Clínica</DialogTitle>
+                <DialogTitle className="text-gray-900 font-bold">Clinic Settings</DialogTitle>
                 <DialogDescription className="text-gray-600 font-medium">
-                  Gerencie as informações da sua clínica
+                  Manage your clinic information
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="clinic-name-edit" className="text-gray-700 font-semibold">Nome da Clínica</Label>
+                  <Label htmlFor="clinic-name-edit" className="text-gray-700 font-semibold">Clinic Name</Label>
                   <Input 
                     id="clinic-name-edit" 
                     value={editingClinicName} 
@@ -581,7 +698,7 @@ export default function ClinicDashboard() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="clinic-description-edit" className="text-gray-700 font-semibold">Descrição</Label>
+                  <Label htmlFor="clinic-description-edit" className="text-gray-700 font-semibold">Description</Label>
                   <Input 
                     id="clinic-description-edit" 
                     value={editingClinicDescription} 
@@ -591,12 +708,12 @@ export default function ClinicDashboard() {
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-700 font-semibold">Proprietário</Label>
+                  <Label className="text-gray-700 font-semibold">Owner</Label>
                   <p className="font-bold text-gray-900 mt-1">{clinic.owner.name} ({clinic.owner.email})</p>
                 </div>
                 <div>
-                  <Label className="text-gray-700 font-semibold">Criada em</Label>
-                  <p className="font-bold text-gray-900 mt-1">{new Date(clinic.createdAt).toLocaleDateString('pt-BR')}</p>
+                  <Label className="text-gray-700 font-semibold">Created on</Label>
+                  <p className="font-bold text-gray-900 mt-1">{new Date(clinic.createdAt).toLocaleDateString('en-US')}</p>
                 </div>
                 {isAdmin && (
                   <div className="flex gap-3 pt-4">
@@ -605,14 +722,14 @@ export default function ClinicDashboard() {
                       disabled={savingSettings}
                       className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
                     >
-                      {savingSettings ? 'Salvando...' : 'Salvar Alterações'}
+                      {savingSettings ? 'Saving...' : 'Save Changes'}
                     </Button>
                     <Button 
                       variant="outline"
                       onClick={() => setShowSettingsModal(false)}
                       className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-white rounded-xl h-12 font-semibold"
                     >
-                      Cancelar
+                      Cancel
                     </Button>
                   </div>
                 )}

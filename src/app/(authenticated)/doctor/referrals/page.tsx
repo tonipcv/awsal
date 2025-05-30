@@ -181,11 +181,64 @@ export default function DoctorReferralsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white">
         <div className="lg:ml-64">
-          <div className="flex items-center space-x-3 text-gray-700">
-            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
-            <span className="font-medium">Loading...</span>
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header Skeleton */}
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <div className="h-8 bg-gray-200 rounded-lg w-32 mb-2 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="h-12 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="h-4 bg-gray-100 rounded w-16 mb-2 animate-pulse"></div>
+                        <div className="h-8 bg-gray-200 rounded w-12 animate-pulse"></div>
+                      </div>
+                      <div className="h-8 w-8 bg-gray-100 rounded-lg animate-pulse"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Filters and Table Skeleton */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-6 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                  <div className="h-10 bg-gray-100 rounded-xl w-32 animate-pulse"></div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Table Header */}
+                <div className="grid grid-cols-6 gap-4 p-4 border-b border-gray-200">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                  ))}
+                </div>
+                
+                {/* Table Rows */}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="grid grid-cols-6 gap-4 p-4 border-b border-gray-100">
+                    <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-6 bg-gray-100 rounded-full w-20 animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                    <div className="h-8 bg-gray-100 rounded-lg w-16 animate-pulse"></div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -195,11 +248,15 @@ export default function DoctorReferralsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Referral System</h1>
-              <p className="text-gray-600 font-medium">Manage your referrals and track conversions</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Referrals Management
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Manage referral leads and track conversions
+              </p>
             </div>
             <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
               <Share2 className="h-4 w-4" />

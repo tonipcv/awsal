@@ -130,8 +130,107 @@ export default function DoctorDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Loading dashboard...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+                <div className="h-10 bg-gray-100 rounded-xl w-36 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl animate-pulse">
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      <div className="h-7 bg-gray-100 rounded w-8 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Left Card Skeleton */}
+              <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <div className="flex flex-row items-center justify-between p-6 pb-4">
+                  <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                  <div className="h-8 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                </div>
+                <div className="p-6 pt-0 space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-32 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-6 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Card Skeleton */}
+              <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <div className="flex flex-row items-center justify-between p-6 pb-4">
+                  <div className="h-6 bg-gray-200 rounded w-36 animate-pulse"></div>
+                  <div className="h-8 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                </div>
+                <div className="p-6 pt-0 space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                          <div className="h-5 bg-gray-100 rounded-lg w-16 animate-pulse"></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="h-3 bg-gray-100 rounded w-20 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-16 animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Skeleton */}
+            <div className="mt-8 bg-white border border-gray-200 shadow-lg rounded-2xl">
+              <div className="p-6 pb-4">
+                <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+              </div>
+              <div className="p-6 pt-0">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-24 bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                      <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-3 bg-gray-100 rounded w-16 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
@@ -139,15 +238,15 @@ export default function DoctorDashboard() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
         
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 Dashboard
               </h1>
-              <p className="text-gray-500 font-medium">
+              <p className="text-gray-600 font-medium">
                 Welcome, {session?.user?.name}
               </p>
             </div>

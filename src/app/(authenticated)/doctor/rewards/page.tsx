@@ -217,11 +217,49 @@ export default function DoctorRewardsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white">
         <div className="lg:ml-64">
-          <div className="flex items-center space-x-3 text-gray-700">
-            <Loader2 className="h-8 w-8 animate-spin text-[#5154e7]" />
-            <span className="font-medium">Loading...</span>
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header Skeleton */}
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <div className="h-8 bg-gray-200 rounded-lg w-32 mb-2 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="h-12 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+            </div>
+
+            {/* Rewards Grid Skeleton */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-2 animate-pulse"></div>
+                        <div className="h-4 bg-gray-100 rounded-lg w-full animate-pulse"></div>
+                        <div className="h-4 bg-gray-100 rounded-lg w-2/3 mt-1 animate-pulse"></div>
+                      </div>
+                      <div className="h-6 w-12 bg-gray-100 rounded-full animate-pulse"></div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                      <div className="h-6 bg-gray-100 rounded-full w-16 animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                      <div className="h-4 bg-gray-100 rounded w-12 animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                      <div className="h-10 bg-gray-100 rounded-xl flex-1 animate-pulse"></div>
+                      <div className="h-10 bg-gray-100 rounded-xl w-10 animate-pulse"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -231,11 +269,15 @@ export default function DoctorRewardsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Rewards</h1>
-              <p className="text-gray-600 font-medium">Configure rewards for the referral system</p>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+                Rewards Management
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Create and manage rewards for your referral program
+              </p>
             </div>
             <Button onClick={openCreateDialog} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
               <Plus className="h-4 w-4" />

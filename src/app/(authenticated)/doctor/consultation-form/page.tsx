@@ -163,11 +163,97 @@ export default function ConsultationFormPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white">
         <div className="lg:ml-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7] mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Loading form...</p>
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header Skeleton */}
+            <div className="mb-8">
+              <div className="h-8 bg-gray-200 rounded-lg w-48 mb-2 animate-pulse"></div>
+              <div className="h-5 bg-gray-100 rounded-lg w-96 animate-pulse"></div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Settings Skeleton */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Basic Information Card */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="h-6 bg-gray-200 rounded-lg w-40 animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                      <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                      <div className="h-20 bg-gray-100 rounded-xl animate-pulse"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Form Fields Card */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="h-6 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <div className="h-4 bg-gray-100 rounded w-28 animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Styling Card */}
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="h-6 bg-gray-200 rounded-lg w-24 animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Preview Skeleton */}
+              <div className="lg:col-span-1">
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl sticky top-6">
+                  <CardHeader className="pb-4">
+                    <div className="h-6 bg-gray-200 rounded-lg w-20 animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded-lg animate-pulse"></div>
+                    <div className="h-4 bg-gray-100 rounded-lg w-3/4 animate-pulse"></div>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                          <div className="h-10 bg-gray-100 rounded-lg animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -179,9 +265,9 @@ export default function ConsultationFormPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8 max-w-6xl">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
               Consultation Form
             </h1>
             <p className="text-gray-600 font-medium">

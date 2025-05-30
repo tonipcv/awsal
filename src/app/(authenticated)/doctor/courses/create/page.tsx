@@ -42,7 +42,7 @@ export default function CreateCoursePage() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalDescription, setModalDescription] = useState('');
   const [modalVideoUrl, setModalVideoUrl] = useState('');
-  const [modalButtonText, setModalButtonText] = useState('Saber mais');
+  const [modalButtonText, setModalButtonText] = useState('Learn more');
   const [modalButtonUrl, setModalButtonUrl] = useState('');
   
   // Course structure
@@ -135,7 +135,7 @@ export default function CreateCoursePage() {
     e.preventDefault();
     
     if (!name.trim()) {
-      alert('Nome do curso é obrigatório');
+      alert('Course name is required');
       return;
     }
 
@@ -153,7 +153,7 @@ export default function CreateCoursePage() {
           modalTitle: modalTitle.trim() || null,
           modalDescription: modalDescription.trim() || null,
           modalVideoUrl: modalVideoUrl.trim() || null,
-          modalButtonText: modalButtonText.trim() || 'Saber mais',
+          modalButtonText: modalButtonText.trim() || 'Learn more',
           modalButtonUrl: modalButtonUrl.trim() || null,
           modules,
           lessons: directLessons
@@ -164,11 +164,11 @@ export default function CreateCoursePage() {
         router.push('/doctor/courses');
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao criar curso');
+        alert(error.error || 'Error creating course');
       }
     } catch (error) {
       console.error('Error creating course:', error);
-      alert('Erro ao criar curso');
+      alert('Error creating course');
     } finally {
       setIsLoading(false);
     }
@@ -177,21 +177,21 @@ export default function CreateCoursePage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           {/* Header */}
-          <div className="flex items-center gap-6">
-            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
+          <div className="flex items-center gap-6 mb-8">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold">
               <Link href="/doctor/courses">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Criar Novo Curso
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                New Course
               </h1>
               <p className="text-gray-600 font-medium">
-                Configure módulos, aulas e conteúdo educacional
+                Configure modules, lessons and educational content
               </p>
             </div>
           </div>
@@ -202,29 +202,29 @@ export default function CreateCoursePage() {
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl font-bold text-gray-900">
-                  Informações Básicas
+                  Basic Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Curso *</Label>
+                  <Label htmlFor="name" className="text-gray-900 font-semibold">Course Name *</Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Curso de Mindfulness"
+                    placeholder="e.g., Mindfulness Course"
                     className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                  <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Descreva o curso..."
+                    placeholder="Describe the course..."
                     className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium min-h-[100px]"
                   />
                 </div>
@@ -235,27 +235,27 @@ export default function CreateCoursePage() {
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl font-bold text-gray-900">
-                  Configuração do Modal (Opcional)
+                  Modal Configuration (Optional)
                 </CardTitle>
                 <p className="text-gray-600 font-medium">
-                  Configure um modal informativo que será exibido quando o curso estiver indisponível para um paciente.
+                  Configure an informative modal that will be displayed when the course is unavailable for a client.
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
+                    <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
                     <Input
                       id="modalTitle"
                       value={modalTitle}
                       onChange={(e) => setModalTitle(e.target.value)}
-                      placeholder="Ex: Curso em Breve"
+                      placeholder="e.g., Course Coming Soon"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo</Label>
+                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
                     <Input
                       id="modalVideoUrl"
                       value={modalVideoUrl}
@@ -267,35 +267,35 @@ export default function CreateCoursePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
+                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
                   <Textarea
                     id="modalDescription"
                     value={modalDescription}
                     onChange={(e) => setModalDescription(e.target.value)}
-                    placeholder="Mensagem para o paciente..."
+                    placeholder="Message for the client..."
                     className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium"
                   />
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
+                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
                     <Input
                       id="modalButtonText"
                       value={modalButtonText}
                       onChange={(e) => setModalButtonText(e.target.value)}
-                      placeholder="Saber mais"
+                      placeholder="Learn more"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão</Label>
+                    <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
                     <Input
                       id="modalButtonUrl"
                       value={modalButtonUrl}
                       onChange={(e) => setModalButtonUrl(e.target.value)}
-                      placeholder="https://exemplo.com"
+                      placeholder="https://example.com"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
                     />
                   </div>
@@ -308,15 +308,15 @@ export default function CreateCoursePage() {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl font-bold text-gray-900">
-                    Módulos
+                    Modules
                   </CardTitle>
                   <Button
                     type="button"
                     onClick={addModule}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 shadow-md font-semibold"
                   >
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Adicionar Módulo
+                    Add Module
                   </Button>
                 </div>
               </CardHeader>
@@ -325,13 +325,13 @@ export default function CreateCoursePage() {
                   <Card key={moduleIndex} className="bg-gray-50 border-gray-200 rounded-xl">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-bold text-gray-900">Módulo {moduleIndex + 1}</CardTitle>
+                        <CardTitle className="text-lg font-bold text-gray-900">Module {moduleIndex + 1}</CardTitle>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => removeModule(moduleIndex)}
-                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0"
+                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0 shadow-md"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
@@ -340,20 +340,20 @@ export default function CreateCoursePage() {
                     <CardContent className="space-y-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label className="text-gray-900 font-semibold">Nome do Módulo</Label>
+                          <Label className="text-gray-900 font-semibold">Module Name</Label>
                           <Input
                             value={module.name}
                             onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
-                            placeholder="Ex: Fundamentos"
+                            placeholder="e.g., Fundamentals"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-gray-900 font-semibold">Descrição</Label>
+                          <Label className="text-gray-900 font-semibold">Description</Label>
                           <Input
                             value={module.description}
                             onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
-                            placeholder="Descrição do módulo"
+                            placeholder="Module description"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                           />
                         </div>
@@ -362,15 +362,15 @@ export default function CreateCoursePage() {
                       {/* Module Lessons */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-gray-900">Aulas do Módulo</h4>
+                          <h4 className="text-sm font-bold text-gray-900">Module Lessons</h4>
                           <Button
                             type="button"
                             size="sm"
                             onClick={() => addLessonToModule(moduleIndex)}
-                            className="bg-teal-100 hover:bg-teal-200 text-teal-700 border-teal-300 rounded-xl h-8 px-3 font-semibold"
+                            className="bg-teal-100 hover:bg-teal-200 text-teal-700 border-teal-300 rounded-xl h-8 px-3 shadow-md font-semibold"
                           >
                             <PlusIcon className="h-3 w-3 mr-1" />
-                            Aula
+                            Lesson
                           </Button>
                         </div>
 
@@ -378,13 +378,13 @@ export default function CreateCoursePage() {
                           <Card key={lessonIndex} className="bg-white border-gray-200 rounded-xl">
                             <CardContent className="p-4 space-y-3">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-gray-700">Aula {lessonIndex + 1}</span>
+                                <span className="text-sm font-semibold text-gray-700">Lesson {lessonIndex + 1}</span>
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
                                   onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
-                                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 h-6 w-6 p-0 rounded-lg"
+                                  className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 h-6 w-6 p-0 rounded-lg shadow-md"
                                 >
                                   <TrashIcon className="h-3 w-3" />
                                 </Button>
@@ -394,7 +394,7 @@ export default function CreateCoursePage() {
                                 <Input
                                   value={lesson.title}
                                   onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
-                                  placeholder="Título da aula"
+                                  placeholder="Lesson title"
                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                                 />
                                 <Input
@@ -402,7 +402,7 @@ export default function CreateCoursePage() {
                                   min="0"
                                   value={lesson.duration}
                                   onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
-                                  placeholder="Duração (min)"
+                                  placeholder="Duration (min)"
                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                                 />
                               </div>
@@ -410,21 +410,21 @@ export default function CreateCoursePage() {
                               <Input
                                 value={lesson.description}
                                 onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
-                                placeholder="Descrição da aula"
+                                placeholder="Lesson description"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                               />
                               
                               <Input
                                 value={lesson.videoUrl}
                                 onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
-                                placeholder="URL do vídeo"
+                                placeholder="Video URL"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg h-9 text-sm font-medium"
                               />
                               
                               <Textarea
                                 value={lesson.content}
                                 onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
-                                placeholder="Conteúdo da aula"
+                                placeholder="Lesson content"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-lg text-sm font-medium min-h-[60px]"
                               />
                             </CardContent>
@@ -442,15 +442,15 @@ export default function CreateCoursePage() {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl font-bold text-gray-900">
-                    Aulas Diretas (sem módulo)
+                    Direct Lessons (without module)
                   </CardTitle>
                   <Button
                     type="button"
                     onClick={addDirectLesson}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 shadow-md font-semibold"
                   >
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Adicionar Aula
+                    Add Lesson
                   </Button>
                 </div>
               </CardHeader>
@@ -459,13 +459,13 @@ export default function CreateCoursePage() {
                   <Card key={index} className="bg-gray-50 border-gray-200 rounded-xl">
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-gray-900">Aula {index + 1}</span>
+                        <span className="text-lg font-bold text-gray-900">Lesson {index + 1}</span>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => removeDirectLesson(index)}
-                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0"
+                          className="border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 w-8 p-0 shadow-md"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </Button>
@@ -475,7 +475,7 @@ export default function CreateCoursePage() {
                         <Input
                           value={lesson.title}
                           onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
-                          placeholder="Título da aula"
+                          placeholder="Lesson title"
                           className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                         />
                         <Input
@@ -483,7 +483,7 @@ export default function CreateCoursePage() {
                           min="0"
                           value={lesson.duration}
                           onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
-                          placeholder="Duração (min)"
+                          placeholder="Duration (min)"
                           className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                         />
                       </div>
@@ -491,21 +491,21 @@ export default function CreateCoursePage() {
                       <Input
                         value={lesson.description}
                         onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
-                        placeholder="Descrição da aula"
+                        placeholder="Lesson description"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                       />
                       
                       <Input
                         value={lesson.videoUrl}
                         onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
-                        placeholder="URL do vídeo"
+                        placeholder="Video URL"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-medium"
                       />
                       
                       <Textarea
                         value={lesson.content}
                         onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
-                        placeholder="Conteúdo da aula"
+                        placeholder="Lesson content"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl font-medium min-h-[80px]"
                       />
                     </CardContent>
@@ -520,16 +520,16 @@ export default function CreateCoursePage() {
                 type="button"
                 variant="outline"
                 asChild
-                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 shadow-md font-semibold"
               >
-                <Link href="/doctor/courses">Cancelar</Link>
+                <Link href="/doctor/courses">Cancel</Link>
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 shadow-md font-semibold"
               >
-                {isLoading ? 'Criando...' : 'Criar Curso'}
+                {isLoading ? 'Creating...' : 'Create Course'}
               </Button>
             </div>
           </form>

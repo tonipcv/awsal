@@ -22,7 +22,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface Patient {
   id: string;
@@ -107,16 +107,16 @@ export default function PatientsPage() {
       const response = await fetch('/api/patients');
       if (response.ok) {
         const data = await response.json();
-        console.log('Patients loaded:', data);
+        console.log('Clients loaded:', data);
         setPatients(Array.isArray(data) ? data : []);
       } else {
         const errorData = await response.json();
         console.error('API Error:', response.status, errorData);
-        alert(`Erro ao carregar pacientes: ${errorData.error || 'Erro desconhecido'}`);
+        alert(`Error loading clients: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error loading patients:', error);
-      alert('Erro de conexão ao carregar pacientes');
+      console.error('Error loading clients:', error);
+      alert('Connection error while loading clients');
     } finally {
       setIsLoading(false);
     }
@@ -142,21 +142,21 @@ export default function PatientsPage() {
 
   const addPatient = async () => {
     if (!newPatient.name.trim() || !newPatient.email.trim()) {
-      alert('Nome e email são obrigatórios');
+      alert('Name and email are required');
       return;
     }
 
     try {
       setIsAddingPatient(true);
       
-      // Preparar dados para envio (remover campos vazios)
+      // Prepare data for sending (remove empty fields)
       const patientData: any = {
         name: newPatient.name.trim(),
         email: newPatient.email.trim(),
         sendCredentials: newPatient.sendCredentials
       };
 
-      // Adicionar campos opcionais apenas se preenchidos
+      // Add optional fields only if filled
       if (newPatient.phone.trim()) patientData.phone = newPatient.phone.trim();
       if (newPatient.birthDate) patientData.birthDate = newPatient.birthDate;
       if (newPatient.gender) patientData.gender = newPatient.gender;
@@ -178,7 +178,7 @@ export default function PatientsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        // Recarregar a lista de pacientes
+        // Reload clients list
         await loadPatients();
         resetForm();
         setShowAddPatient(false);
@@ -187,15 +187,15 @@ export default function PatientsPage() {
           setGeneratedCredentials({ email: result.email, password: result.temporaryPassword });
           setShowCredentials(true);
         } else {
-          alert('Paciente criado com sucesso!');
+          alert('Client created successfully!');
         }
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao adicionar paciente');
+        alert(error.error || 'Error adding client');
       }
     } catch (error) {
-      console.error('Error adding patient:', error);
-      alert('Erro ao adicionar paciente');
+      console.error('Error adding client:', error);
+      alert('Error adding client');
     } finally {
       setIsAddingPatient(false);
     }
@@ -210,15 +210,15 @@ export default function PatientsPage() {
       });
 
       if (response.ok) {
-        // Recarregar a lista de pacientes
+        // Reload clients list
         await loadPatients();
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao excluir paciente');
+        alert(error.error || 'Error deleting client');
       }
     } catch (error) {
-      console.error('Error deleting patient:', error);
-      alert('Erro ao excluir paciente');
+      console.error('Error deleting client:', error);
+      alert('Error deleting client');
     } finally {
       setDeletingPatientId(null);
       setShowDeleteConfirm(false);
@@ -243,7 +243,7 @@ export default function PatientsPage() {
   );
 
   const getPatientInitials = (name?: string) => {
-    if (!name) return 'P';
+    if (!name) return 'C';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
@@ -253,8 +253,58 @@ export default function PatientsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-xs text-slate-600">Carregando pacientes...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="h-10 bg-gray-200 rounded-xl w-36 animate-pulse"></div>
+            </div>
+
+            {/* Search Skeleton */}
+            <div className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6 mb-6">
+              <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+            </div>
+
+            {/* Clients List Skeleton */}
+            <div className="space-y-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                          <div className="h-5 bg-gray-100 rounded-xl w-24 animate-pulse"></div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="h-4 bg-gray-100 rounded w-40 animate-pulse"></div>
+                          <div className="h-4 bg-gray-100 rounded w-24 animate-pulse"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-100 rounded w-48 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-36 animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                      <div className="h-8 w-20 bg-gray-100 rounded-xl animate-pulse"></div>
+                      <div className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
@@ -262,34 +312,34 @@ export default function PatientsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
         
         {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-light text-gray-900">
-              Pacientes
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Clients
             </h1>
-              <p className="text-gray-500">
-              Gerencie seus pacientes e protocolos atribuídos
+              <p className="text-gray-600 font-medium">
+              Manage your clients and assigned protocols
             </p>
           </div>
           
           <Button 
             onClick={() => setShowAddPatient(true)}
-              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md"
+              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
-            Adicionar Paciente
+            Add Client
           </Button>
         </div>
 
         {/* Add Patient Modal */}
         {showAddPatient && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Adicionar Novo Paciente</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Add New Client</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -297,33 +347,33 @@ export default function PatientsPage() {
                       setShowAddPatient(false);
                       resetForm();
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 rounded-xl"
                   >
                     <XMarkIcon className="h-5 w-5" />
                   </Button>
                 </div>
                 
                 <div className="p-6 space-y-6">
-                  {/* Informações Básicas */}
+                  {/* Basic Information */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Informações Básicas *</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information *</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-                          Nome Completo *
+                        <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+                          Full Name *
                         </Label>
                         <Input
                           id="name"
                           value={newPatient.name}
                           onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
-                          placeholder="Nome completo do paciente"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          placeholder="Client's full name"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                        <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
                           Email *
                         </Label>
                         <Input
@@ -331,179 +381,179 @@ export default function PatientsPage() {
                           type="email"
                           value={newPatient.email}
                           onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
-                          placeholder="email@exemplo.com"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          placeholder="email@example.com"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Informações de Contato */}
+                  {/* Contact Information */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Informações de Contato</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                          Telefone
+                        <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                          Phone
                         </Label>
                         <Input
                           id="phone"
                           value={newPatient.phone}
                           onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
                           placeholder="(11) 99999-9999"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="birthDate" className="text-sm font-medium text-gray-700">
-                          Data de Nascimento
+                        <Label htmlFor="birthDate" className="text-sm font-semibold text-gray-700">
+                          Birth Date
                         </Label>
                         <Input
                           id="birthDate"
                           type="date"
                           value={newPatient.birthDate}
                           onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
-                          className="mt-1 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
-                          Gênero
+                        <Label htmlFor="gender" className="text-sm font-semibold text-gray-700">
+                          Gender
                         </Label>
                         <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
-                          <SelectTrigger className="mt-1 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7]">
-                            <SelectValue placeholder="Selecione o gênero" />
+                          <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
+                            <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
-                          <SelectContent className="bg-white border-gray-200 shadow-lg">
-                            <SelectItem value="M">Masculino</SelectItem>
-                            <SelectItem value="F">Feminino</SelectItem>
-                            <SelectItem value="Outro">Outro</SelectItem>
+                          <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
+                            <SelectItem value="M">Male</SelectItem>
+                            <SelectItem value="F">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       
                       <div>
-                        <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                          Endereço
+                        <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
+                          Address
                         </Label>
                         <Input
                           id="address"
                           value={newPatient.address}
                           onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
-                          placeholder="Endereço completo"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          placeholder="Full address"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Contato de Emergência */}
+                  {/* Emergency Contact */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Contato de Emergência</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="emergencyContact" className="text-sm font-medium text-gray-700">
-                          Nome do Contato
+                        <Label htmlFor="emergencyContact" className="text-sm font-semibold text-gray-700">
+                          Contact Name
                         </Label>
                         <Input
                           id="emergencyContact"
                           value={newPatient.emergencyContact}
                           onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
-                          placeholder="Nome do contato de emergência"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          placeholder="Emergency contact name"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                       
                       <div>
-                        <Label htmlFor="emergencyPhone" className="text-sm font-medium text-gray-700">
-                          Telefone de Emergência
+                        <Label htmlFor="emergencyPhone" className="text-sm font-semibold text-gray-700">
+                          Emergency Phone
                         </Label>
                   <Input
                           id="emergencyPhone"
                           value={newPatient.emergencyPhone}
                           onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
                           placeholder="(11) 99999-9999"
-                          className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Informações Médicas */}
+                  {/* Medical Information */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Informações Médicas</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information</h3>
                     
                     <div>
-                      <Label htmlFor="medicalHistory" className="text-sm font-medium text-gray-700">
-                        Histórico Médico
+                      <Label htmlFor="medicalHistory" className="text-sm font-semibold text-gray-700">
+                        Medical History
                       </Label>
                       <Textarea
                         id="medicalHistory"
                         value={newPatient.medicalHistory}
                         onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
-                        placeholder="Histórico médico relevante, cirurgias anteriores, etc."
-                        className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                        placeholder="Relevant medical history, previous surgeries, etc."
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
                         rows={3}
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="allergies" className="text-sm font-medium text-gray-700">
-                        Alergias
+                      <Label htmlFor="allergies" className="text-sm font-semibold text-gray-700">
+                        Allergies
                       </Label>
                       <Textarea
                         id="allergies"
                         value={newPatient.allergies}
                         onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
-                        placeholder="Alergias conhecidas a medicamentos, alimentos, etc."
-                        className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                        placeholder="Known allergies to medications, foods, etc."
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
                         rows={2}
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="medications" className="text-sm font-medium text-gray-700">
-                        Medicações Atuais
+                      <Label htmlFor="medications" className="text-sm font-semibold text-gray-700">
+                        Current Medications
                       </Label>
                       <Textarea
                         id="medications"
                         value={newPatient.medications}
                         onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
-                        placeholder="Medicamentos em uso atualmente"
-                        className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                        placeholder="Medications currently in use"
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
                         rows={2}
                       />
                     </div>
                   </div>
 
-                  {/* Observações */}
+                  {/* Notes */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Observações</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes</h3>
                     
                     <div>
-                      <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
-                        Notas Gerais
+                      <Label htmlFor="notes" className="text-sm font-semibold text-gray-700">
+                        General Notes
                       </Label>
                       <Textarea
                         id="notes"
                         value={newPatient.notes}
                         onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
-                        placeholder="Observações gerais sobre o paciente"
-                        className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7]"
+                        placeholder="General observations about the client"
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
                         rows={3}
                       />
                     </div>
                   </div>
 
-                  {/* Configurações */}
+                  {/* Settings */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Configurações</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Settings</h3>
                     
                     <div className="flex items-center space-x-2">
                       <input
@@ -513,14 +563,14 @@ export default function PatientsPage() {
                         onChange={(e) => setNewPatient({...newPatient, sendCredentials: e.target.checked})}
                         className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                       />
-                      <Label htmlFor="sendCredentials" className="text-sm text-gray-700">
-                        Gerar senha temporária e mostrar após criação
+                      <Label htmlFor="sendCredentials" className="text-sm text-gray-700 font-medium">
+                        Generate temporary password and show after creation
                       </Label>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
                 <Button 
                   variant="outline"
                   onClick={() => {
@@ -528,16 +578,16 @@ export default function PatientsPage() {
                       resetForm();
                     }}
                     disabled={isAddingPatient}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
                   >
-                    Cancelar
+                    Cancel
                   </Button>
                   <Button
                     onClick={addPatient}
                     disabled={isAddingPatient}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md"
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
                   >
-                    {isAddingPatient ? 'Criando...' : 'Criar Paciente'}
+                    {isAddingPatient ? 'Creating...' : 'Create Client'}
                   </Button>
                 </div>
               </div>
@@ -547,26 +597,26 @@ export default function PatientsPage() {
           {/* Delete Confirmation Modal */}
           {showDeleteConfirm && patientToDelete && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
                 <div className="p-6">
                   <div className="flex items-start gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
                       <TrashIcon className="h-6 w-6 text-red-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-1">Excluir Paciente</h3>
-                      <p className="text-sm text-gray-500">Esta ação não pode ser desfeita</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Delete Client</h3>
+                      <p className="text-sm text-gray-500 font-medium">This action cannot be undone</p>
                     </div>
                   </div>
                   
                   <div className="mb-8">
-                    <p className="text-gray-700 leading-relaxed">
-                      Tem certeza que deseja excluir o paciente{' '}
-                      <span className="font-semibold text-gray-900">"{patientToDelete.name}"</span>?
+                    <p className="text-gray-700 leading-relaxed font-medium">
+                      Are you sure you want to delete the client{' '}
+                      <span className="font-bold text-gray-900">"{patientToDelete.name}"</span>?
                     </p>
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-sm text-amber-800">
-                        ⚠️ Todos os dados relacionados, incluindo protocolos e histórico, serão perdidos permanentemente.
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-sm text-amber-800 font-medium">
+                        ⚠️ All related data, including protocols and history, will be permanently lost.
                       </p>
                     </div>
                   </div>
@@ -576,22 +626,22 @@ export default function PatientsPage() {
                       variant="ghost"
                       onClick={handleDeleteCancel}
                       disabled={deletingPatientId === patientToDelete.id}
-                      className="flex-1 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 rounded-xl"
+                      className="flex-1 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 rounded-xl font-semibold"
                 >
-                  Cancelar
+                  Cancel
                 </Button>
                     <Button
                       onClick={handleDeleteConfirm}
                       disabled={deletingPatientId === patientToDelete.id}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-md rounded-xl"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-md rounded-xl font-semibold"
                     >
                       {deletingPatientId === patientToDelete.id ? (
                         <>
                           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
-                          Excluindo...
+                          Deleting...
                         </>
                       ) : (
-                        'Excluir'
+                        'Delete'
                       )}
                     </Button>
                   </div>
@@ -603,15 +653,15 @@ export default function PatientsPage() {
           {/* Generated Credentials Modal */}
           {showCredentials && generatedCredentials && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-200">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
                 <div className="p-6">
                   <div className="flex items-start gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
                       <CheckCircleIcon className="h-6 w-6 text-green-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-1">Paciente Criado com Sucesso!</h3>
-                      <p className="text-sm text-gray-500">Credenciais temporárias geradas</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">Client Created Successfully!</h3>
+                      <p className="text-sm text-gray-500 font-medium">Temporary credentials generated</p>
                     </div>
                   </div>
                   
@@ -619,24 +669,24 @@ export default function PatientsPage() {
                     <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div className="space-y-3">
                         <div>
-                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
-                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded border border-gray-200 mt-1">
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded-xl border border-gray-200 mt-1">
                             {generatedCredentials.email}
                           </p>
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Senha Temporária</label>
-                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded border border-gray-200 mt-1">
+                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Temporary Password</label>
+                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded-xl border border-gray-200 mt-1">
                             {generatedCredentials.password}
                           </p>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        💡 Compartilhe essas credenciais com o paciente. Ele deverá alterar a senha no primeiro acesso.
-                      </p>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                      <p className="text-sm text-blue-800 font-medium">
+                        💡 Share these credentials with the client. They should change the password on first login.
+              </p>
                     </div>
                   </div>
                   
@@ -644,20 +694,20 @@ export default function PatientsPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        navigator.clipboard.writeText(`Email: ${generatedCredentials.email}\nSenha: ${generatedCredentials.password}`);
+                        navigator.clipboard.writeText(`Email: ${generatedCredentials.email}\nPassword: ${generatedCredentials.password}`);
                       }}
-                      className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
+                      className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
                     >
-                      Copiar Credenciais
+                      Copy Credentials
                     </Button>
                     <Button
                       onClick={() => {
                         setShowCredentials(false);
                         setGeneratedCredentials(null);
                       }}
-                      className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl"
+                      className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
                     >
-                      Fechar
+                      Close
                     </Button>
                   </div>
                 </div>
@@ -671,44 +721,44 @@ export default function PatientsPage() {
             <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Buscar pacientes..."
+                placeholder="Search clients..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-gray-300 bg-white text-gray-700 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                  className="pl-10 border-gray-300 bg-white text-gray-700 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Patients List */}
+        {/* Clients List */}
         {filteredPatients.length === 0 ? (
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardContent className="p-8">
               <div className="text-center">
-                  <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2 text-gray-900">
-                  {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
+                  <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2 text-gray-900">
+                  {searchTerm ? 'No clients found' : 'No clients registered'}
                 </h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-gray-500 mb-4 font-medium">
                   {searchTerm 
-                    ? 'Tente ajustar o termo de busca'
-                    : 'Comece adicionando seu primeiro paciente'
+                    ? 'Try adjusting your search term'
+                    : 'Start by adding your first client'
                   }
                 </p>
                 {!searchTerm && (
                   <Button 
                     onClick={() => setShowAddPatient(true)}
-                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md"
+                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
                   >
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Adicionar Primeiro Paciente
+                    Add First Client
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         ) : (
-            <div className="grid gap-6">
+            <div className="space-y-6">
             {filteredPatients.map((patient) => {
               const activeProtocol = getActiveProtocol(patient);
               const totalProtocols = patient.assignedProtocols.length;
@@ -719,29 +769,29 @@ export default function PatientsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
                         {/* Avatar */}
-                          <div className="h-12 w-12 rounded-xl bg-[#5154e7] flex items-center justify-center text-sm font-medium text-white">
+                          <div className="h-12 w-12 rounded-xl bg-teal-100 flex items-center justify-center text-sm font-bold text-teal-600">
                           {getPatientInitials(patient.name)}
                         </div>
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-medium text-gray-900">
-                              {patient.name || 'Nome não informado'}
+                              <h3 className="text-lg font-bold text-gray-900">
+                              {patient.name || 'Name not provided'}
                             </h3>
                             {activeProtocol && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs bg-green-100 text-green-700 border border-green-200">
-                                Protocolo Ativo
+                                <span className="inline-flex items-center px-2 py-1 rounded-xl text-xs bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
+                                Active Protocol
                               </span>
                             )}
                           </div>
                           
                           <div className="flex items-center gap-1 mb-3">
                               <EnvelopeIcon className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm text-gray-500">{patient.email}</span>
+                              <span className="text-sm text-gray-500 font-medium">{patient.email}</span>
                               {patient.phone && (
                                 <>
                                   <span className="text-gray-300 mx-2">•</span>
-                                  <span className="text-sm text-gray-500">{patient.phone}</span>
+                                  <span className="text-sm text-gray-500 font-medium">{patient.phone}</span>
                                 </>
                               )}
                           </div>
@@ -750,23 +800,23 @@ export default function PatientsPage() {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                   <DocumentTextIcon className="h-3 w-3 text-gray-400" />
-                                  <span className="text-sm font-medium text-gray-700">{activeProtocol.protocol.name}</span>
+                                  <span className="text-sm font-semibold text-gray-700">{activeProtocol.protocol.name}</span>
                               </div>
-                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
                                 <div className="flex items-center gap-1">
                                   <CalendarDaysIcon className="h-3 w-3" />
-                                  <span>{activeProtocol.protocol.duration} dias</span>
+                                  <span>{activeProtocol.protocol.duration} days</span>
                                 </div>
                                 <span>
-                                  Iniciado em {format(new Date(activeProtocol.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                  Started on {format(new Date(activeProtocol.startDate), 'MM/dd/yyyy', { locale: enUS })}
                                 </span>
                               </div>
                             </div>
                           ) : (
-                              <div className="text-sm text-gray-500">
+                              <div className="text-sm text-gray-500 font-medium">
                               {totalProtocols > 0 
-                                ? `${totalProtocols} protocolo${totalProtocols > 1 ? 's' : ''} concluído${totalProtocols > 1 ? 's' : ''}`
-                                : 'Nenhum protocolo atribuído'
+                                ? `${totalProtocols} protocol${totalProtocols > 1 ? 's' : ''} completed`
+                                : 'No protocols assigned'
                               }
                             </div>
                           )}
@@ -788,18 +838,18 @@ export default function PatientsPage() {
                           variant="outline"
                           size="sm"
                           asChild
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-[#4145d1] hover:border-[#5154e7] rounded-xl"
+                            className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-white hover:border-[#5154e7] rounded-xl font-semibold"
                         >
                           <Link href={`/doctor/patients/${patient.id}/assign`}>
                             <DocumentTextIcon className="h-4 w-4 mr-1" />
-                            Protocolo
+                            Protocol
                           </Link>
                         </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setPatientToDelete({ id: patient.id, name: patient.name || 'Paciente' });
+                              setPatientToDelete({ id: patient.id, name: patient.name || 'Client' });
                               setShowDeleteConfirm(true);
                             }}
                             disabled={deletingPatientId === patient.id}
@@ -810,8 +860,8 @@ export default function PatientsPage() {
                             ) : (
                               <TrashIcon className="h-4 w-4" />
                             )}
-                          </Button>
-                        </div>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

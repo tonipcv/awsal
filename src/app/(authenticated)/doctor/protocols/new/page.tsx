@@ -59,14 +59,14 @@ interface ProtocolForm {
 }
 
 const defaultSections = [
-  'Manhã',
-  'Tarde', 
-  'Noite',
-  'Medicamentos',
-  'Cuidados',
-  'Exercícios',
-  'Alimentação',
-  'Observações'
+  'Morning',
+  'Afternoon', 
+  'Evening',
+  'Medications',
+  'Care',
+  'Exercises',
+  'Nutrition',
+  'Notes'
 ];
 
 export default function NewProtocolPage() {
@@ -109,7 +109,7 @@ export default function NewProtocolPage() {
 
   // Funções para seções
   const addSection = (dayNumber: number, sectionName?: string) => {
-    const name = sectionName || `Nova Seção`;
+    const name = sectionName || `New Section`;
     setProtocol(prev => ({
       ...prev,
       days: prev.days.map(day => 
@@ -188,7 +188,7 @@ export default function NewProtocolPage() {
                           fullExplanation: '',
                           productId: '',
                           modalTitle: '',
-                          modalButtonText: 'Saber mais',
+                          modalButtonText: 'Learn more',
                           modalButtonUrl: ''
                         }
                       ]
@@ -222,25 +222,7 @@ export default function NewProtocolPage() {
     }));
   };
 
-  const updateLooseTask = (dayNumber: number, taskId: string, field: keyof ProtocolTask, value: string | boolean) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              tasks: day.tasks.map(task => 
-                task.id === taskId 
-                  ? { ...task, [field]: value }
-                  : task
-              )
-            }
-          : day
-      )
-    }));
-  };
-
-  const updateTaskInSection = (dayNumber: number, sectionId: string, taskId: string, field: keyof ProtocolTask, value: string | boolean) => {
+  const updateTaskInSection = (dayNumber: number, sectionId: string, taskId: string, field: keyof ProtocolTask, value: any) => {
     setProtocol(prev => ({
       ...prev,
       days: prev.days.map(day => 
@@ -251,8 +233,8 @@ export default function NewProtocolPage() {
                 section.id === sectionId
                   ? {
                       ...section,
-                      tasks: section.tasks.map(task => 
-                        task.id === taskId 
+                      tasks: section.tasks.map(task =>
+                        task.id === taskId
                           ? { ...task, [field]: value }
                           : task
                       )
@@ -265,7 +247,7 @@ export default function NewProtocolPage() {
     }));
   };
 
-  // Funções para tarefas soltas (fora de seções)
+  // Funções para tarefas soltas
   const addLooseTask = (dayNumber: number) => {
     setProtocol(prev => ({
       ...prev,
@@ -285,7 +267,7 @@ export default function NewProtocolPage() {
                   fullExplanation: '',
                   productId: '',
                   modalTitle: '',
-                  modalButtonText: 'Saber mais',
+                  modalButtonText: 'Learn more',
                   modalButtonUrl: ''
                 }
               ]
@@ -310,72 +292,39 @@ export default function NewProtocolPage() {
     }));
   };
 
+  const updateLooseTask = (dayNumber: number, taskId: string, field: keyof ProtocolTask, value: any) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => 
+        day.dayNumber === dayNumber 
+          ? {
+              ...day,
+              tasks: day.tasks.map(task =>
+                task.id === taskId
+                  ? { ...task, [field]: value }
+                  : task
+              )
+            }
+          : day
+      )
+    }));
+  };
+
   const saveProtocol = async () => {
     if (!protocol.name.trim()) {
-      alert('Nome do protocolo é obrigatório');
-      return;
-    }
-
-    if (protocol.duration < 1) {
-      alert('Duração deve ser pelo menos 1 dia');
+      alert('Protocol name is required');
       return;
     }
 
     try {
       setIsLoading(true);
-
-      // Combinar tarefas soltas e tarefas de seções
-      const daysForAPI = protocol.days.map(day => {
-        const looseTasks = day.tasks
-          .filter(task => task.title.trim())
-          .map((task, index) => ({
-            title: task.title,
-            description: task.description,
-            order: index,
-            hasMoreInfo: task.hasMoreInfo,
-            videoUrl: task.videoUrl || null,
-            fullExplanation: task.fullExplanation || null,
-            productId: task.productId || null,
-            modalTitle: task.modalTitle || null,
-            modalButtonText: task.modalButtonText || 'Saber mais',
-            modalButtonUrl: task.modalButtonUrl || null
-          }));
-
-        const sectionTasks = day.sections.flatMap(section => 
-          section.tasks
-            .filter(task => task.title.trim())
-            .map((task, index) => ({
-              title: `[${section.name}] ${task.title}`,
-              description: task.description,
-              order: looseTasks.length + index,
-              hasMoreInfo: task.hasMoreInfo,
-              videoUrl: task.videoUrl || null,
-              fullExplanation: task.fullExplanation || null,
-              productId: task.productId || null,
-              modalTitle: task.modalTitle || null,
-              modalButtonText: task.modalButtonText || 'Saber mais',
-              modalButtonUrl: task.modalButtonUrl || null
-            }))
-        );
-
-        return {
-          dayNumber: day.dayNumber,
-          tasks: [...looseTasks, ...sectionTasks]
-        };
-      }).filter(day => day.tasks.length > 0);
-
+      
       const response = await fetch('/api/protocols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: protocol.name,
-          duration: protocol.duration,
-          description: protocol.description,
-          isTemplate: protocol.isTemplate,
-          days: daysForAPI
-        })
+        body: JSON.stringify(protocol)
       });
 
       if (response.ok) {
@@ -383,11 +332,11 @@ export default function NewProtocolPage() {
         router.push(`/doctor/protocols/${newProtocol.id}`);
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao criar protocolo');
+        alert(error.error || 'Error creating protocol');
       }
     } catch (error) {
       console.error('Error creating protocol:', error);
-      alert('Erro ao criar protocolo');
+      alert('Error creating protocol');
     } finally {
       setIsLoading(false);
     }
@@ -396,22 +345,22 @@ export default function NewProtocolPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
         
           {/* Header */}
-          <div className="flex items-center gap-6">
-            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
+          <div className="flex items-center gap-6 mb-8">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold">
               <Link href="/doctor/protocols">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Novo Protocolo
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                New Protocol
               </h1>
-              <p className="text-gray-600 mt-2 font-medium">
-                Crie um protocolo personalizado para seus pacientes
+              <p className="text-gray-600 font-medium">
+                Create a custom protocol for your clients
               </p>
             </div>
           </div>
@@ -422,22 +371,22 @@ export default function NewProtocolPage() {
             <div className="lg:col-span-1">
               <Card className="sticky top-6 bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900">Informações do Protocolo</CardTitle>
+                  <CardTitle className="text-lg font-bold text-gray-900">Protocol Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Protocolo</Label>
+                    <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
                     <Input
                       id="name"
                       value={protocol.name}
                       onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Ex: Pós-Preenchimento Facial"
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                      placeholder="e.g., Post-Facial Filler Protocol"
+                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-12"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="duration" className="text-gray-900 font-semibold">Duração (dias)</Label>
+                    <Label htmlFor="duration" className="text-gray-900 font-semibold">Duration (days)</Label>
                     <Input
                       id="duration"
                       type="number"
@@ -445,19 +394,19 @@ export default function NewProtocolPage() {
                       max="365"
                       value={protocol.duration}
                       onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
+                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 rounded-xl h-12"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                    <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
                     <Textarea
                       id="description"
                       value={protocol.description}
                       onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Descreva o objetivo e características do protocolo..."
+                      placeholder="Describe the purpose and characteristics of the protocol..."
                       rows={3}
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
                     />
                   </div>
 
@@ -470,22 +419,22 @@ export default function NewProtocolPage() {
                       className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                     />
                     <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
-                      Salvar como template
+                      Save as template
                     </Label>
                   </div>
 
                   <Button 
                     onClick={saveProtocol} 
                     disabled={isLoading}
-                    className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
+                    className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold shadow-md"
                   >
                     <CheckIcon className="h-4 w-4 mr-2" />
-                    {isLoading ? 'Salvando...' : 'Salvar Protocolo'}
+                    {isLoading ? 'Saving...' : 'Save Protocol'}
                   </Button>
 
                   {/* Quick Add Sections */}
                   <div className="border-t border-gray-200 pt-6">
-                    <Label className="text-gray-900 font-semibold mb-3 block">Seções Rápidas</Label>
+                    <Label className="text-gray-900 font-semibold mb-3 block">Quick Sections</Label>
                     <div className="grid grid-cols-2 gap-2">
                       {defaultSections.map((sectionName) => (
                         <Button
@@ -520,17 +469,17 @@ export default function NewProtocolPage() {
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-bold text-gray-900">
-                          Dia {day.dayNumber}
+                          Day {day.dayNumber}
                         </CardTitle>
                         <div className="relative">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => toggleAddOptions(day.dayNumber)}
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
+                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold"
                           >
                             <PlusIcon className="h-4 w-4 mr-2" />
-                            Adicionar
+                            Add
                             <ChevronDownIcon className="h-3 w-3 ml-2" />
                           </Button>
                           
@@ -543,7 +492,7 @@ export default function NewProtocolPage() {
                                 className="w-full justify-start px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-none h-auto font-medium"
                               >
                                 <FolderPlusIcon className="h-4 w-4 mr-3" />
-                                Adicionar Seção
+                                Add Section
                               </Button>
                               <Button
                                 variant="ghost"
@@ -552,7 +501,7 @@ export default function NewProtocolPage() {
                                 className="w-full justify-start px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-none h-auto font-medium"
                               >
                                 <PlusIcon className="h-4 w-4 mr-3" />
-                                Adicionar Tarefa
+                                Add Task
                               </Button>
                             </div>
                           )}
@@ -569,17 +518,17 @@ export default function NewProtocolPage() {
                                 {/* Campos Básicos */}
                                 <div className="space-y-4">
                                   <Input
-                                    placeholder="Título da tarefa"
+                                    placeholder="Task title"
                                     value={task.title}
                                     onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'title', e.target.value)}
-                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-semibold"
+                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-12 font-semibold"
                                   />
                                   <Textarea
-                                    placeholder="Descrição básica"
+                                    placeholder="Basic description"
                                     value={task.description}
                                     onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'description', e.target.value)}
                                     rows={2}
-                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
                                   />
                                 </div>
 
@@ -594,51 +543,51 @@ export default function NewProtocolPage() {
                                   />
                                   <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
                                     <InformationCircleIcon className="h-4 w-4" />
-                                    Adicionar conteúdo extra
+                                    Add extra content
                                   </Label>
                                 </div>
 
-                                {/* Campos Extras (aparecem quando hasMoreInfo é true) */}
+                                {/* Campos Extras */}
                                 {task.hasMoreInfo && (
-                                  <div className="space-y-4 p-4 bg-white rounded-xl border border-gray-200">
+                                  <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                                     <div className="grid grid-cols-1 gap-4">
                                       <div>
                                         <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                           <PlayIcon className="h-4 w-4" />
-                                          URL do Vídeo
+                                          Video URL
                                         </Label>
                                         <Input
                                           placeholder="https://youtube.com/watch?v=..."
                                           value={task.videoUrl}
                                           onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                         />
                                       </div>
                                       
                                       <div>
                                         <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                           <InformationCircleIcon className="h-4 w-4" />
-                                          Explicação Completa
+                                          Full Explanation
                                         </Label>
                                         <Textarea
-                                          placeholder="Explicação detalhada da tarefa..."
+                                          placeholder="Detailed task explanation..."
                                           value={task.fullExplanation}
                                           onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
                                           rows={3}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
                                         />
                                       </div>
 
                                       <div>
                                         <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                           <ShoppingBagIcon className="h-4 w-4" />
-                                          ID do Produto (opcional)
+                                          Product ID (optional)
                                         </Label>
                                         <Input
-                                          placeholder="ID do produto relacionado"
+                                          placeholder="Related product ID"
                                           value={task.productId}
                                           onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'productId', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                         />
                                       </div>
 
@@ -646,38 +595,38 @@ export default function NewProtocolPage() {
                                         <div>
                                           <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                             <EyeIcon className="h-4 w-4" />
-                                            Título do Modal
+                                            Modal Title
                                           </Label>
                                           <Input
-                                            placeholder="Título personalizado"
+                                            placeholder="Custom title"
                                             value={task.modalTitle}
                                             onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalTitle', e.target.value)}
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                           />
                                         </div>
                                         
                                         <div>
                                           <Label className="text-gray-900 font-semibold mb-2 block">
-                                            Texto do Botão
+                                            Button Text
                                           </Label>
                                           <Input
-                                            placeholder="Saber mais"
+                                            placeholder="Learn more"
                                             value={task.modalButtonText}
                                             onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalButtonText', e.target.value)}
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                           />
                                         </div>
                                       </div>
 
                                       <div>
                                         <Label className="text-gray-900 font-semibold mb-2 block">
-                                          URL do Botão
+                                          Button URL
                                         </Label>
                                         <Input
-                                          placeholder="https://exemplo.com/produto"
+                                          placeholder="https://example.com/product"
                                           value={task.modalButtonUrl}
                                           onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalButtonUrl', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                         />
                                       </div>
                                     </div>
@@ -688,9 +637,9 @@ export default function NewProtocolPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeLooseTask(day.dayNumber, task.id)}
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-10 w-10 p-0"
+                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
                               >
-                                <TrashIcon className="h-4 w-4" />
+                                <TrashIcon className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
@@ -707,7 +656,7 @@ export default function NewProtocolPage() {
                               <Input
                                 value={section.name}
                                 onChange={(e) => updateSectionName(day.dayNumber, section.id, e.target.value)}
-                                placeholder="Nome da seção"
+                                placeholder="Section name"
                                 className="border-0 bg-transparent text-gray-900 font-semibold p-0 h-auto focus:ring-0 focus:border-0"
                               />
                             </div>
@@ -715,7 +664,7 @@ export default function NewProtocolPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeSection(day.dayNumber, section.id)}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
+                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
                             >
                               <TrashIcon className="h-3 w-3" />
                             </Button>
@@ -731,17 +680,17 @@ export default function NewProtocolPage() {
                                       {/* Campos Básicos */}
                                       <div className="space-y-3">
                                         <Input
-                                          placeholder="Título da tarefa"
+                                          placeholder="Task title"
                                           value={task.title}
                                           onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'title', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
                                         />
                                         <Textarea
-                                          placeholder="Descrição básica"
+                                          placeholder="Basic description"
                                           value={task.description}
                                           onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'description', e.target.value)}
                                           rows={2}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
                                         />
                                       </div>
 
@@ -756,7 +705,7 @@ export default function NewProtocolPage() {
                                         />
                                         <Label htmlFor={`hasMoreInfo-section-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
                                           <InformationCircleIcon className="h-4 w-4" />
-                                          Adicionar conteúdo extra
+                                          Add extra content
                                         </Label>
                                       </div>
 
@@ -767,40 +716,40 @@ export default function NewProtocolPage() {
                                             <div>
                                               <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                                 <PlayIcon className="h-4 w-4" />
-                                                URL do Vídeo
+                                                Video URL
                                               </Label>
                                               <Input
                                                 placeholder="https://youtube.com/watch?v=..."
                                                 value={task.videoUrl}
                                                 onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'videoUrl', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                               />
                                             </div>
                                             
                                             <div>
                                               <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                                 <InformationCircleIcon className="h-4 w-4" />
-                                                Explicação Completa
+                                                Full Explanation
                                               </Label>
                                               <Textarea
-                                                placeholder="Explicação detalhada da tarefa..."
+                                                placeholder="Detailed task explanation..."
                                                 value={task.fullExplanation}
                                                 onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'fullExplanation', e.target.value)}
                                                 rows={3}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
                                               />
                                             </div>
 
                                             <div>
                                               <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                                 <ShoppingBagIcon className="h-4 w-4" />
-                                                ID do Produto (opcional)
+                                                Product ID (optional)
                                               </Label>
                                               <Input
-                                                placeholder="ID do produto relacionado"
+                                                placeholder="Related product ID"
                                                 value={task.productId}
                                                 onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'productId', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                               />
                                             </div>
 
@@ -808,38 +757,38 @@ export default function NewProtocolPage() {
                                               <div>
                                                 <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                                                   <EyeIcon className="h-4 w-4" />
-                                                  Título do Modal
+                                                  Modal Title
                                                 </Label>
                                                 <Input
-                                                  placeholder="Título personalizado"
+                                                  placeholder="Custom title"
                                                   value={task.modalTitle}
                                                   onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalTitle', e.target.value)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                                 />
                                               </div>
                                               
                                               <div>
                                                 <Label className="text-gray-900 font-semibold mb-2 block">
-                                                  Texto do Botão
+                                                  Button Text
                                                 </Label>
                                                 <Input
-                                                  placeholder="Saber mais"
+                                                  placeholder="Learn more"
                                                   value={task.modalButtonText}
                                                   onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalButtonText', e.target.value)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                                 />
                                               </div>
                                             </div>
 
                                             <div>
                                               <Label className="text-gray-900 font-semibold mb-2 block">
-                                                URL do Botão
+                                                Button URL
                                               </Label>
                                               <Input
-                                                placeholder="https://exemplo.com/produto"
+                                                placeholder="https://example.com/product"
                                                 value={task.modalButtonUrl}
                                                 onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalButtonUrl', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
                                               />
                                             </div>
                                           </div>
@@ -850,7 +799,7 @@ export default function NewProtocolPage() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => removeTaskFromSection(day.dayNumber, section.id, task.id)}
-                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                                      className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
                                     >
                                       <TrashIcon className="h-3 w-3" />
                                     </Button>
@@ -866,7 +815,7 @@ export default function NewProtocolPage() {
                               className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
                             >
                               <PlusIcon className="h-4 w-4 mr-2" />
-                              Adicionar Tarefa
+                              Add Task
                             </Button>
                           </div>
                         </div>
@@ -876,8 +825,8 @@ export default function NewProtocolPage() {
                       {day.tasks.length === 0 && day.sections.length === 0 && (
                         <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
                           <PlusIcon className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-600 font-medium mb-4">Nenhuma tarefa ou seção criada</p>
-                          <p className="text-gray-500 text-sm">Clique em "Adicionar" para começar</p>
+                          <p className="text-gray-600 font-medium mb-4">No tasks or sections created</p>
+                          <p className="text-gray-500 text-sm">Click "Add" to get started</p>
                         </div>
                       )}
                     </CardContent>

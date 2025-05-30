@@ -10,7 +10,7 @@ export default function AuthenticatedLayout({
   return (
     <div className="min-h-[100dvh] h-full">
       <Navigation />
-      <main className="lg:pl-20 h-full">
+      <main className="h-full">
         {children}
       </main>
     </div>
