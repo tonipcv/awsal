@@ -116,7 +116,7 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
+      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72 lg:pl-72">
         
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">

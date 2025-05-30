@@ -233,23 +233,22 @@ export default function Navigation() {
 
   const NavButton = ({ item, className }: { item: typeof navSections[0]['items'][0], className?: string }) => (
     <Button
-      variant="outline"
+      variant="ghost"
       className={cn(
-        "w-full h-14 flex items-center justify-center",
+        "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
         shouldUseLightTheme
-          ? "bg-white border-slate-200" // Doctor/Admin pages: solid light theme
-          : "bg-transparent", // Patient pages: dark theme
+          ? "text-gray-700 hover:bg-gray-100" // Doctor/Admin pages: clean light theme
+          : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
         pathname === item.href 
           ? shouldUseLightTheme
-            ? "!border-slate-400 !text-slate-800 hover:!bg-slate-100" // Doctor/Admin pages active - using !important to override
-            : "border-white/20 text-white hover:bg-white/5" // Patient pages active
-          : shouldUseLightTheme
-            ? "!border-slate-200 !text-slate-600 hover:!border-slate-300 hover:!text-slate-700 hover:!bg-slate-50" // Doctor/Admin pages inactive - using !important
-            : "border-white/10 text-white/70 hover:border-white/20 hover:text-white hover:bg-white/5", // Patient pages inactive
+            ? "bg-[#5154e7] text-white hover:bg-[#4145d1] shadow-sm" // Doctor/Admin pages active - brand color
+            : "bg-white/10 text-white" // Patient pages active
+          : "",
         className
       )}
     >
-      <item.icon className="h-4 w-4 stroke-current" />
+      <item.icon className="h-5 w-5 stroke-current flex-shrink-0" />
+      <span className="text-sm truncate">{item.label}</span>
     </Button>
   );
 
@@ -265,8 +264,8 @@ export default function Navigation() {
       </div>
     ) : (
       <UserCircleIcon className={cn(
-        "h-3.5 w-3.5",
-        shouldUseLightTheme ? "!text-slate-600" : "text-white"
+        "h-5 w-5",
+        shouldUseLightTheme ? "text-gray-600" : "text-white"
       )} />
     )
   );
@@ -275,17 +274,18 @@ export default function Navigation() {
     <>
       {/* Desktop Navigation */}
       <nav className={cn(
-        "fixed left-0 top-0 bottom-0 w-20 border-r backdrop-blur hidden lg:block z-40",
+        "fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40",
         shouldUseLightTheme
-          ? "border-slate-200 bg-slate-50 supports-[backdrop-filter]:bg-slate-50" // Doctor/Admin pages: solid light theme
+          ? "border-gray-200 bg-white" // Doctor/Admin pages: clean white background
           : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages: dark theme
       )}>
         <div className="flex flex-col h-full">
+          {/* Logo Section */}
           <div className={cn(
             "p-6 border-b",
-            shouldUseLightTheme ? "border-slate-200" : "border-white/10"
+            shouldUseLightTheme ? "border-gray-200" : "border-white/10"
           )}>
-            <Link href="/" className="flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-3">
               <div className="relative w-8 h-8">
                 <Image
                   src="/logo.png"
@@ -294,33 +294,60 @@ export default function Navigation() {
                   className="object-contain"
                 />
               </div>
+              {shouldUseLightTheme && (
+                <span className="text-xl font-bold text-gray-900">MedFlow</span>
+              )}
             </Link>
           </div>
-          <div className="flex-1 py-6">
-            <nav className="space-y-6 px-2">
+
+          {/* Navigation Sections */}
+          <div className="flex-1 py-6 px-4 overflow-y-auto">
+            <nav className="space-y-8">
               {navSections.map((section) => (
-                <div key={section.title} className="space-y-1">
-                  {section.items.map((item) => (
-                    <Link key={item.href} href={item.href} className="block">
-                      <NavButton item={item} />
-                    </Link>
-                  ))}
+                <div key={section.title} className="space-y-2">
+                  <h3 className={cn(
+                    "text-xs font-semibold uppercase tracking-wider px-3",
+                    shouldUseLightTheme ? "text-gray-500" : "text-white/50"
+                  )}>
+                    {section.title}
+                  </h3>
+                  <div className="space-y-1">
+                    {section.items.map((item) => (
+                      <Link key={item.href} href={item.href} className="block">
+                        <NavButton item={item} />
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               ))}
             </nav>
           </div>
+
+          {/* User Profile Section */}
           <div className={cn(
-            "p-6 border-t",
-            shouldUseLightTheme ? "border-slate-200" : "border-white/10"
+            "p-4 border-t",
+            shouldUseLightTheme ? "border-gray-200" : "border-white/10"
           )}>
             <Link href="/profile">
               <div className={cn(
-                "w-10 h-10 flex items-center justify-center cursor-pointer border rounded-full mx-auto",
+                "flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer",
                 shouldUseLightTheme
-                  ? "border-slate-300 hover:border-slate-400 bg-white" // Doctor/Admin pages
-                  : "border-white/10 hover:border-white/20" // Patient pages
+                  ? "hover:bg-gray-100" // Doctor/Admin pages
+                  : "hover:bg-white/5" // Patient pages
               )}>
-                <UserAvatar />
+                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
+                  <UserAvatar />
+                </div>
+                {shouldUseLightTheme && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {session?.user?.name || 'Usuário'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {session?.user?.email}
+                    </p>
+                  </div>
+                )}
               </div>
             </Link>
           </div>
@@ -333,11 +360,11 @@ export default function Navigation() {
         <div className={cn(
           "fixed top-0 left-0 right-0 border-b backdrop-blur z-40",
           shouldUseLightTheme
-            ? "border-slate-200 bg-slate-50 supports-[backdrop-filter]:bg-slate-50" // Doctor/Admin pages - solid
+            ? "border-gray-200 bg-white" // Doctor/Admin pages - clean white
             : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
               <div className="relative w-6 h-6">
                 <Image
                   src="/logo.png"
@@ -346,13 +373,16 @@ export default function Navigation() {
                   className="object-contain"
                 />
               </div>
+              {shouldUseLightTheme && (
+                <span className="text-lg font-bold text-gray-900">MedFlow</span>
+              )}
             </Link>
             <Link href="/profile">
               <div className={cn(
-                "h-7 w-7 flex items-center justify-center cursor-pointer border rounded-full",
+                "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
                 shouldUseLightTheme
-                  ? "border-slate-300 hover:border-slate-400 bg-white" // Doctor/Admin pages - solid
-                  : "border-white/10 hover:border-white/20" // Patient pages
+                  ? "bg-gray-100 hover:bg-gray-200" // Doctor/Admin pages - clean
+                  : "border border-white/10 hover:border-white/20" // Patient pages
               )}>
                 <UserAvatar />
               </div>
@@ -364,30 +394,29 @@ export default function Navigation() {
         <nav className={cn(
           "fixed bottom-0 left-0 right-0 border-t backdrop-blur z-40",
           shouldUseLightTheme
-            ? "border-slate-200 bg-slate-50 supports-[backdrop-filter]:bg-slate-50" // Doctor/Admin pages - solid
+            ? "border-gray-200 bg-white" // Doctor/Admin pages - clean white
             : "border-white/10 bg-background/50 supports-[backdrop-filter]:bg-background/30" // Patient pages
         )}>
-          <div className="py-3 px-4">
-            <div className="flex items-center justify-around gap-2">
+          <div className="py-2 px-2">
+            <div className="flex items-center justify-around gap-1">
               {navSections.flatMap(section => section.items).slice(0, 5).map((item) => (
                 <Link key={item.href} href={item.href} className="flex-1">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     className={cn(
-                      "w-full h-14 flex items-center justify-center",
+                      "w-full h-16 flex flex-col items-center justify-center gap-1 rounded-lg",
                       shouldUseLightTheme
-                        ? "bg-white border-slate-200" // Doctor/Admin pages: solid light theme
-                        : "bg-transparent", // Patient pages: dark theme
+                        ? "text-gray-600 hover:bg-gray-100" // Doctor/Admin pages: clean light theme
+                        : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
                       pathname === item.href 
                         ? shouldUseLightTheme
-                          ? "!border-slate-400 !text-slate-800 hover:!bg-slate-100" // Doctor/Admin pages active - using !important
-                          : "border-white/20 text-white hover:bg-white/5" // Patient pages active
-                        : shouldUseLightTheme
-                          ? "!border-slate-200 !text-slate-600 hover:!border-slate-300 hover:!text-slate-700 hover:!bg-slate-50" // Doctor/Admin pages inactive - using !important
-                          : "border-white/10 text-white/70 hover:border-white/20 hover:text-white hover:bg-white/5" // Patient pages inactive
+                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" // Doctor/Admin pages active - brand color
+                          : "bg-white/10 text-white" // Patient pages active
+                        : ""
                     )}
                   >
-                    <item.icon className="h-4 w-4 stroke-current" />
+                    <item.icon className="h-5 w-5 stroke-current" />
+                    <span className="text-xs font-medium">{item.label}</span>
                   </Button>
                 </Link>
               ))}

@@ -137,267 +137,268 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
         
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-light text-slate-800">
-              Dashboard Médico
-            </h1>
-            <p className="text-sm text-slate-600">
-              Bem-vindo, Dr. {session?.user?.name}
-            </p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              asChild
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Link href="/doctor/patients">
-                <UserPlusIcon className="h-4 w-4 mr-2" />
-                Novo Paciente
-              </Link>
-            </Button>
-            <Button 
-              asChild
-              variant="outline"
-              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-            >
-              <Link href="/doctor/protocols">
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Novo Protocolo
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <UsersIcon className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Pacientes</p>
-                  <p className="text-xl font-light text-slate-800">{stats.totalPatients}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <ClockIcon className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Protocolos Ativos</p>
-                  <p className="text-xl font-light text-slate-800">{stats.activeProtocols}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <DocumentTextIcon className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Total Protocolos</p>
-                  <p className="text-xl font-light text-slate-800">{stats.totalProtocols}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <CheckCircleIcon className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Concluídos Hoje</p>
-                  <p className="text-xl font-light text-slate-800">{stats.completedToday}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          
-          {/* Pacientes Recentes */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-normal text-slate-800">Pacientes Ativos</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                <Link href="/doctor/patients">Ver todos</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {patients.length === 0 ? (
-                <div className="text-center py-8">
-                  <UsersIcon className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                  <p className="text-sm text-slate-600">Nenhum paciente cadastrado</p>
-                  <Button className="mt-3 bg-blue-600 hover:bg-blue-700 text-white" size="sm" asChild>
-                    <Link href="/doctor/patients">Adicionar primeiro paciente</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {patients.slice(0, 5).map((patient) => {
-                    const activeProtocol = getActiveProtocolForPatient(patient);
-                    
-                    return (
-                      <div key={patient.id} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-lg border border-slate-200/50">
-                        <div className="flex items-center gap-3">
-                          {/* Simple Avatar */}
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600">
-                            {getPatientInitials(patient.name)}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-800">{patient.name || 'Sem nome'}</p>
-                            <p className="text-xs text-slate-600">{patient.email}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {activeProtocol ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 text-blue-700 border border-blue-200">
-                              {activeProtocol.protocol.name}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-slate-100 text-slate-600 border border-slate-200">
-                              Sem protocolo
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Protocolos Recentes */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-normal text-slate-800">Protocolos Criados</CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                <Link href="/doctor/protocols">Ver todos</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {protocols.length === 0 ? (
-                <div className="text-center py-8">
-                  <DocumentTextIcon className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                  <p className="text-sm text-slate-600">Nenhum protocolo criado</p>
-                  <Button className="mt-3 bg-blue-600 hover:bg-blue-700 text-white" size="sm" asChild>
-                    <Link href="/doctor/protocols">Criar primeiro protocolo</Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {protocols.slice(0, 5).map((protocol) => {
-                    const activeAssignments = protocol.assignments.filter(a => a.isActive).length;
-                    
-                    return (
-                      <div key={protocol.id} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-lg border border-slate-200/50">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-slate-800">{protocol.name}</p>
-                            {protocol.isTemplate && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-700 border border-purple-200">
-                                Template
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <CalendarDaysIcon className="h-3 w-3 text-slate-500" />
-                            <span className="text-xs text-slate-600">
-                              {protocol.duration} dias
-                            </span>
-                            {activeAssignments > 0 && (
-                              <>
-                                <span className="text-xs text-slate-500">•</span>
-                                <span className="text-xs text-blue-600">
-                                  {activeAssignments} ativo{activeAssignments > 1 ? 's' : ''}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="mt-6 bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-normal text-slate-800">Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Dashboard Médico
+              </h1>
+              <p className="text-gray-500 font-medium">
+                Bem-vindo, Dr. {session?.user?.name}
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
               <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 asChild
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
               >
                 <Link href="/doctor/patients">
-                  <UserPlusIcon className="h-6 w-6" />
-                  <span className="text-xs">Adicionar Paciente</span>
+                  <UserPlusIcon className="h-4 w-4 mr-2" />
+                  Novo Paciente
                 </Link>
               </Button>
-              
               <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 asChild
+                variant="outline"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-6 shadow-md font-semibold"
               >
                 <Link href="/doctor/protocols">
-                  <PlusIcon className="h-6 w-6" />
-                  <span className="text-xs">Criar Protocolo</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                asChild
-              >
-                <Link href="/doctor/templates">
-                  <DocumentTextIcon className="h-6 w-6" />
-                  <span className="text-xs">Templates</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                asChild
-              >
-                <Link href="/doctor/patients">
-                  <UsersIcon className="h-6 w-6" />
-                  <span className="text-xs">Ver Pacientes</span>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Novo Protocolo
                 </Link>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#5154e7]/10 rounded-xl">
+                    <UsersIcon className="h-6 w-6 text-[#5154e7]" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Pacientes</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalPatients}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-teal-100 rounded-xl">
+                    <ClockIcon className="h-6 w-6 text-teal-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Protocolos Ativos</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.activeProtocols}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-cyan-100 rounded-xl">
+                    <DocumentTextIcon className="h-6 w-6 text-cyan-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Total Protocolos</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.totalProtocols}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-100 rounded-xl">
+                    <CheckCircleIcon className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-500 font-semibold">Concluídos Hoje</p>
+                    <p className="text-2xl font-bold text-gray-900">{stats.completedToday}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            
+            {/* Pacientes Recentes */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Pacientes Ativos</CardTitle>
+                <Button variant="ghost" size="sm" asChild className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl font-semibold">
+                  <Link href="/doctor/patients">Ver todos</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                {patients.length === 0 ? (
+                  <div className="text-center py-12">
+                    <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4 font-medium">Nenhum paciente cadastrado</p>
+                    <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm" asChild>
+                      <Link href="/doctor/patients">Adicionar primeiro paciente</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {patients.slice(0, 5).map((patient) => {
+                      const activeProtocol = getActiveProtocolForPatient(patient);
+                      
+                      return (
+                        <div key={patient.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+                          <div className="flex items-center gap-4">
+                            {/* Simple Avatar */}
+                            <div className="h-10 w-10 rounded-xl bg-teal-100 flex items-center justify-center text-sm font-bold text-teal-600">
+                              {getPatientInitials(patient.name)}
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-bold text-gray-900">{patient.name || 'Sem nome'}</p>
+                              <p className="text-sm text-gray-500 font-medium">{patient.email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {activeProtocol ? (
+                              <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-sm bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
+                                {activeProtocol.protocol.name}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-sm bg-gray-100 text-gray-600 border border-gray-200 font-medium">
+                                Sem protocolo
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Protocolos Recentes */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Protocolos Criados</CardTitle>
+                <Button variant="ghost" size="sm" asChild className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl font-semibold">
+                  <Link href="/doctor/protocols">Ver todos</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                {protocols.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4 font-medium">Nenhum protocolo criado</p>
+                    <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm" asChild>
+                      <Link href="/doctor/protocols">Criar primeiro protocolo</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {protocols.slice(0, 5).map((protocol) => {
+                      const activeAssignments = protocol.assignments.filter(a => a.isActive).length;
+                      
+                      return (
+                        <div key={protocol.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-3">
+                              <p className="font-bold text-gray-900">{protocol.name}</p>
+                              {protocol.isTemplate && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs bg-[#5154e7]/10 text-[#5154e7] border border-[#5154e7]/20 font-semibold">
+                                  Template
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1">
+                                <CalendarDaysIcon className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm text-gray-500 font-medium">
+                                  {protocol.duration} dias
+                                </span>
+                              </div>
+                              {activeAssignments > 0 && (
+                                <span className="text-sm text-teal-600 font-semibold">
+                                  {activeAssignments} ativo{activeAssignments > 1 ? 's' : ''}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <Card className="mt-8 bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardHeader className="p-6 pb-4">
+              <CardTitle className="text-lg font-bold text-gray-900">Ações Rápidas</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 border-gray-300 bg-white text-gray-700 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 rounded-2xl shadow-md font-semibold"
+                  asChild
+                >
+                  <Link href="/doctor/patients">
+                    <UserPlusIcon className="h-8 w-8" />
+                    <span className="text-sm">Adicionar Paciente</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 border-gray-300 bg-white text-gray-700 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 rounded-2xl shadow-md font-semibold"
+                  asChild
+                >
+                  <Link href="/doctor/protocols">
+                    <PlusIcon className="h-8 w-8" />
+                    <span className="text-sm">Criar Protocolo</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 border-gray-300 bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 rounded-2xl shadow-md font-semibold"
+                  asChild
+                >
+                  <Link href="/doctor/templates">
+                    <DocumentTextIcon className="h-8 w-8" />
+                    <span className="text-sm">Templates</span>
+                  </Link>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="h-24 flex-col gap-3 border-gray-300 bg-white text-gray-700 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 rounded-2xl shadow-md font-semibold"
+                  asChild
+                >
+                  <Link href="/doctor/patients">
+                    <UsersIcon className="h-8 w-8" />
+                    <span className="text-sm">Ver Pacientes</span>
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

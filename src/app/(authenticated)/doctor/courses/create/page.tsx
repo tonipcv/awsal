@@ -176,7 +176,7 @@ export default function CreateCoursePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
+      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
