@@ -102,6 +102,11 @@ export default function Navigation() {
   useEffect(() => {
     const detectUserRole = async () => {
       if (session?.user?.id) {
+        // Se já temos o userRole, não fazer nova chamada
+        if (userRole) {
+          return;
+        }
+
         try {
           setIsLoadingRole(true);
           const response = await fetch('/api/auth/role');
@@ -126,7 +131,7 @@ export default function Navigation() {
     };
 
     detectUserRole();
-  }, [session, pathname]);
+  }, [session]); // Removido pathname da dependência
 
   // Lista de rotas protegidas onde a navegação deve aparecer
   const protectedRoutes = [
@@ -298,12 +303,12 @@ export default function Navigation() {
       className={cn(
         "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
         shouldUseLightTheme
-          ? "text-gray-700 hover:bg-gray-100 hover:text-gray-900" // Doctor/Admin pages: clean light theme with better hover contrast
-          : "text-white/70 hover:bg-white/5", // Patient pages: dark theme
+          ? "text-gray-700 hover:bg-gray-100 hover:text-gray-800" // Doctor/Admin pages: melhor contraste no hover
+          : "text-white/70 hover:bg-white/5 hover:text-white", // Patient pages: texto branco no hover
         pathname === item.href 
           ? shouldUseLightTheme
-            ? "bg-[#5154e7] text-white hover:bg-[#4145d1] shadow-sm" // Doctor/Admin pages active - brand color
-            : "bg-white/10 text-white" // Patient pages active
+            ? "bg-[#5154e7] text-white hover:bg-[#4145d1] hover:text-white shadow-sm" // Doctor/Admin pages active - manter texto branco
+            : "bg-white/10 text-white hover:text-white" // Patient pages active
           : "",
         className
       )}

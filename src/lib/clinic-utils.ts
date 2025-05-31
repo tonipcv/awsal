@@ -338,8 +338,8 @@ export async function ensureDoctorHasClinic(doctorId: string): Promise<{ success
     // Criar clínica automática APENAS se não for membro de nenhuma clínica
     const clinic = await prisma.clinic.create({
       data: {
-        name: `Clínica ${doctor.name}`,
-        description: `Clínica pessoal do Dr(a). ${doctor.name}`,
+        name: `${doctor.name} Clinic`,
+        description: `Personal clinic of ${doctor.name}`,
         ownerId: doctorId
       }
     });
