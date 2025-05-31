@@ -32,14 +32,8 @@ interface Course {
       duration: number | null;
     }>;
   }>;
-  lessons: Array<{
-    id: string;
-    title: string;
-    duration: number | null;
-  }>;
   _count: {
     modules: number;
-    lessons: number;
   };
 }
 
@@ -73,16 +67,13 @@ export default function CoursesPage() {
   };
 
   const getTotalLessons = (course: Course) => {
-    const moduleLessons = course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
-    return moduleLessons + course.lessons.length;
+    return course.modules.reduce((acc, module) => acc + module.lessons.length, 0);
   };
 
   const getTotalDuration = (course: Course) => {
-    const moduleDuration = course.modules.reduce((acc, module) => 
+    return course.modules.reduce((acc, module) => 
       acc + module.lessons.reduce((lessonAcc, lesson) => lessonAcc + (lesson.duration || 0), 0), 0
     );
-    const directDuration = course.lessons.reduce((acc, lesson) => acc + (lesson.duration || 0), 0);
-    return moduleDuration + directDuration;
   };
 
   const formatDuration = (minutes: number) => {

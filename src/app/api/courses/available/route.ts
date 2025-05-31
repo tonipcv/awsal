@@ -76,9 +76,21 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // For now, treat all assigned courses as active
-    // In the future, you might want to add a status field to UserCourse
-    const activeCourses = userCourses.map(uc => uc.course);
+    // Transform courses to match frontend interface
+    const activeCourses = userCourses.map(uc => ({
+      ...uc.course,
+      name: uc.course.title, // Map title to name for frontend compatibility
+      status: 'active',
+      modalTitle: null,
+      modalVideoUrl: null,
+      modalDescription: null,
+      modalButtonText: 'Saber mais',
+      modalButtonUrl: null,
+      modules: uc.course.modules.map(module => ({
+        ...module,
+        name: module.title // Map module title to name as well
+      }))
+    }));
 
     return NextResponse.json({
       active: activeCourses,

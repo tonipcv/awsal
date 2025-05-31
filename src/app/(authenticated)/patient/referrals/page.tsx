@@ -264,268 +264,262 @@ export default function PatientReferralsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/20 via-zinc-800/10 to-zinc-900/20" />
-        <div className="relative pt-[88px] lg:pt-[120px] pb-12 lg:pb-16">
-          <div className="max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto">
-              <div className="mb-8">
-                <h1 className="text-3xl lg:text-4xl font-light text-white mb-3">
-                  Olá {session?.user?.name || 'Usuário'}
+    <div className="min-h-screen bg-black">
+      {/* Padding para menu lateral no desktop e header no mobile */}
+      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        
+        {/* Hero Section Compacto */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20" />
+          <div className="relative py-6 lg:py-8">
+            <div className="max-w-6xl mx-auto px-3 lg:px-6">
+              <div className="text-center max-w-3xl mx-auto">
+                <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
+                  Programa de Indicações
                 </h1>
-                <p className="text-xl lg:text-2xl text-zinc-300 font-light">
+                <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
                   Indique amigos e ganhe recompensas incríveis
                 </p>
-        </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-          {referralCode && (
-            <Button 
-              variant="outline" 
-              onClick={copyReferralCode} 
-                    className="bg-zinc-800/50 border-zinc-700 text-white hover:bg-zinc-700/50 backdrop-blur-sm"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Código: {referralCode}
-            </Button>
-          )}
-          {doctorId && referralCode && (
-            <Button 
-              onClick={copyReferralLink} 
-                    className="bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/25"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-                    Compartilhar Link de Indicação
-            </Button>
-          )}
-      </div>
-
-      {/* Stats Cards */}
-      {stats && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-                  <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-3xl font-bold text-blue-400 mb-2">{creditsBalance}</div>
-                      <div className="text-zinc-400 text-sm">Créditos Disponíveis</div>
-            </CardContent>
-          </Card>
-
-                  <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-3xl font-bold text-white mb-2">{stats.totalReferrals}</div>
-                      <div className="text-zinc-400 text-sm">Total de Indicações</div>
-            </CardContent>
-          </Card>
-
-                  <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-3xl font-bold text-green-400 mb-2">{stats.convertedReferrals}</div>
-                      <div className="text-zinc-400 text-sm">Convertidas</div>
-            </CardContent>
-          </Card>
-
-                  <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-                    <CardContent className="p-6 text-center">
-                      <div className="text-3xl font-bold text-purple-400 mb-2">
-                  {stats.totalReferrals > 0 ? Math.round((stats.convertedReferrals / stats.totalReferrals) * 100) : 0}%
+                
+                {/* Action Buttons Compactos */}
+                <div className="flex flex-col sm:flex-row gap-2 lg:gap-3 justify-center items-center mb-4 lg:mb-6">
+                  {referralCode && (
+                    <Button 
+                      variant="outline" 
+                      onClick={copyReferralCode} 
+                      className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 backdrop-blur-sm text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4"
+                    >
+                      <Copy className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                      Código: {referralCode}
+                    </Button>
+                  )}
+                  {doctorId && referralCode && (
+                    <Button 
+                      onClick={copyReferralLink} 
+                      className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 shadow-md shadow-teal-400/25"
+                    >
+                      <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                      Compartilhar Link
+                    </Button>
+                  )}
                 </div>
-                      <div className="text-zinc-400 text-sm">Taxa de Conversão</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+                {/* Stats Cards Compactas */}
+                {stats && (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
+                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                      <div className="text-xl lg:text-2xl font-light text-teal-400 mb-1">{creditsBalance}</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">Créditos Disponíveis</div>
+                    </div>
+
+                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                      <div className="text-xl lg:text-2xl font-light text-white mb-1">{stats.totalReferrals}</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">Total de Indicações</div>
+                    </div>
+
+                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                      <div className="text-xl lg:text-2xl font-light text-green-400 mb-1">{stats.convertedReferrals}</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">Convertidas</div>
+                    </div>
+
+                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                      <div className="text-xl lg:text-2xl font-light text-purple-400 mb-1">
+                        {stats.totalReferrals > 0 ? Math.round((stats.convertedReferrals / stats.totalReferrals) * 100) : 0}%
+                      </div>
+                      <div className="text-gray-400 text-xs lg:text-sm">Taxa de Conversão</div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 pb-24 space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recompensas Disponíveis */}
-          <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-600/20 rounded-lg">
-                  <Gift className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Recompensas</CardTitle>
-                  <CardDescription className="text-zinc-400">
-              Use seus créditos para resgatar recompensas
-            </CardDescription>
-                </div>
-              </div>
-          </CardHeader>
-            <CardContent className="space-y-4">
-            {availableRewards.map((reward) => (
-                <div key={reward.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                  <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                      <h3 className="font-semibold text-white text-lg">{reward.title}</h3>
-                    <p className="text-zinc-400 text-sm mt-1">{reward.description}</p>
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-3 lg:px-6 space-y-4 lg:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+            {/* Recompensas Disponíveis */}
+            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
+              <CardHeader className="pb-3 lg:pb-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="p-1.5 lg:p-2 bg-teal-400/20 rounded-lg">
+                    <Gift className="h-4 w-4 lg:h-5 lg:w-5 text-teal-400" />
                   </div>
-                    <div className="text-right ml-4">
-                      <div className="text-white font-bold text-lg">{reward.creditsRequired}</div>
-                    <div className="text-zinc-400 text-xs">créditos</div>
+                  <div>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">Recompensas</CardTitle>
+                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                      Use seus créditos para resgatar recompensas
+                    </CardDescription>
                   </div>
                 </div>
-                
-                {reward.maxRedemptions && (
-                  <p className="text-zinc-500 text-xs mb-3">
-                    Restam: {reward.maxRedemptions - reward.currentRedemptions} resgates
-                  </p>
-                )}
+              </CardHeader>
+              <CardContent className="space-y-3 lg:space-y-4">
+                {availableRewards.map((reward) => (
+                  <div key={reward.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                    <div className="flex justify-between items-start mb-2 lg:mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-white text-sm lg:text-base">{reward.title}</h3>
+                        <p className="text-gray-400 text-xs lg:text-sm mt-1">{reward.description}</p>
+                      </div>
+                      <div className="text-right ml-3 lg:ml-4">
+                        <div className="text-white font-medium text-sm lg:text-base">{reward.creditsRequired}</div>
+                        <div className="text-gray-400 text-xs">créditos</div>
+                      </div>
+                    </div>
+                    
+                    {reward.maxRedemptions && (
+                      <p className="text-gray-500 text-xs mb-2 lg:mb-3">
+                        Restam: {reward.maxRedemptions - reward.currentRedemptions} resgates
+                      </p>
+                    )}
 
-                <Button
-                  onClick={() => handleRedeemReward(reward.id)}
-                  disabled={
-                    creditsBalance < reward.creditsRequired ||
-                    redeeming === reward.id ||
-                    (reward.maxRedemptions ? reward.currentRedemptions >= reward.maxRedemptions : false)
-                  }
-                    className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-500"
-                >
-                  {redeeming === reward.id ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Resgatando...
-                    </>
-                  ) : creditsBalance < reward.creditsRequired ? (
-                    'Créditos insuficientes'
-                  ) : (reward.maxRedemptions && reward.currentRedemptions >= reward.maxRedemptions) ? (
-                    'Esgotado'
-                  ) : (
-                    'Resgatar'
-                  )}
-                </Button>
-              </div>
-            ))}
-
-            {availableRewards.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="p-3 bg-zinc-800/50 rounded-full w-fit mx-auto mb-4">
-                    <Gift className="h-8 w-8 text-zinc-500" />
+                    <Button
+                      onClick={() => handleRedeemReward(reward.id)}
+                      disabled={
+                        creditsBalance < reward.creditsRequired ||
+                        redeeming === reward.id ||
+                        (reward.maxRedemptions ? reward.currentRedemptions >= reward.maxRedemptions : false)
+                      }
+                      className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium disabled:bg-gray-700 disabled:text-gray-500 text-xs lg:text-sm h-7 lg:h-8"
+                    >
+                      {redeeming === reward.id ? (
+                        <>
+                          <Loader2 className="mr-1.5 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4 animate-spin" />
+                          Resgatando...
+                        </>
+                      ) : creditsBalance < reward.creditsRequired ? (
+                        'Créditos insuficientes'
+                      ) : (reward.maxRedemptions && reward.currentRedemptions >= reward.maxRedemptions) ? (
+                        'Esgotado'
+                      ) : (
+                        'Resgatar'
+                      )}
+                    </Button>
                   </div>
-                  <div className="text-zinc-500 text-lg mb-2">Nenhuma recompensa disponível</div>
-                <div className="text-zinc-400 text-sm">Aguarde novas recompensas do seu médico</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                ))}
 
-        {/* Histórico de Indicações */}
-          <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-600/20 rounded-lg">
-                  <UserPlus className="h-5 w-5 text-green-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Suas Indicações</CardTitle>
-                  <CardDescription className="text-zinc-400">
-              Pessoas que você indicou
-            </CardDescription>
-                </div>
-              </div>
-          </CardHeader>
-            <CardContent className="space-y-4">
-              {referralsMade.map((referral) => {
-                const StatusIcon = statusConfig[referral.status as keyof typeof statusConfig]?.icon || Clock;
-                return (
-                  <div key={referral.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                    <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
-                        <h3 className="font-semibold text-white">{referral.name}</h3>
-                        <p className="text-zinc-400 text-sm">{referral.email}</p>
-                  </div>
-                      <Badge className={`${statusConfig[referral.status as keyof typeof statusConfig]?.color || 'bg-zinc-700 text-zinc-300'} border text-xs flex items-center gap-1`}>
-                        <StatusIcon className="h-3 w-3" />
-                    {statusConfig[referral.status as keyof typeof statusConfig]?.label || referral.status}
-                  </Badge>
-                </div>
-                
-                    <div className="flex justify-between items-center text-sm text-zinc-400 mb-2">
-                  <span>Dr(a). {referral.doctor.name}</span>
-                  <span>{new Date(referral.createdAt).toLocaleDateString('pt-BR')}</span>
-                </div>
-
-                {referral.credits.length > 0 && (
-                      <div className="text-blue-400 text-sm font-medium flex items-center gap-1">
-                        <Star className="h-4 w-4" />
-                    +{referral.credits.reduce((sum, credit) => sum + credit.amount, 0)} créditos ganhos
+                {availableRewards.length === 0 && (
+                  <div className="text-center py-8 lg:py-12">
+                    <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
+                      <Gift className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">Nenhuma recompensa disponível</div>
+                    <div className="text-gray-400 text-xs lg:text-sm">Aguarde novas recompensas do seu médico</div>
                   </div>
                 )}
-              </div>
-                );
-              })}
+              </CardContent>
+            </Card>
 
-            {referralsMade.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="p-3 bg-zinc-800/50 rounded-full w-fit mx-auto mb-4">
-                    <UserPlus className="h-8 w-8 text-zinc-500" />
+            {/* Histórico de Indicações */}
+            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
+              <CardHeader className="pb-3 lg:pb-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="p-1.5 lg:p-2 bg-green-400/20 rounded-lg">
+                    <UserPlus className="h-4 w-4 lg:h-5 lg:w-5 text-green-400" />
                   </div>
-                  <div className="text-zinc-500 text-lg mb-2">Nenhuma indicação ainda</div>
-                <div className="text-zinc-400 text-sm mb-4">Comece a indicar pessoas para ganhar créditos</div>
-                {doctorId && (
-                  <Button 
-                    onClick={copyReferralLink} 
-                      className="bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Começar a Indicar
-                  </Button>
+                  <div>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">Suas Indicações</CardTitle>
+                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                      Pessoas que você indicou
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 lg:space-y-4">
+                {referralsMade.map((referral) => {
+                  const StatusIcon = statusConfig[referral.status as keyof typeof statusConfig]?.icon || Clock;
+                  return (
+                    <div key={referral.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-white text-sm lg:text-base">{referral.name}</h3>
+                          <p className="text-gray-400 text-xs lg:text-sm">{referral.email}</p>
+                        </div>
+                        <Badge className={`${statusConfig[referral.status as keyof typeof statusConfig]?.color || 'bg-gray-700 text-gray-300'} border text-xs flex items-center gap-1`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {statusConfig[referral.status as keyof typeof statusConfig]?.label || referral.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs lg:text-sm text-gray-400 mb-2">
+                        <span>Dr(a). {referral.doctor.name}</span>
+                        <span>{new Date(referral.createdAt).toLocaleDateString('pt-BR')}</span>
+                      </div>
+
+                      {referral.credits.length > 0 && (
+                        <div className="text-teal-400 text-xs lg:text-sm font-medium flex items-center gap-1">
+                          <Star className="h-3 w-3 lg:h-4 lg:w-4" />
+                          +{referral.credits.reduce((sum, credit) => sum + credit.amount, 0)} créditos ganhos
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {referralsMade.length === 0 && (
+                  <div className="text-center py-8 lg:py-12">
+                    <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
+                      <UserPlus className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                    </div>
+                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">Nenhuma indicação ainda</div>
+                    <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">Comece a indicar pessoas para ganhar créditos</div>
+                    {doctorId && (
+                      <Button 
+                        onClick={copyReferralLink} 
+                        className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-7 lg:h-8 px-3 lg:px-4"
+                      >
+                        <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                        Começar a Indicar
+                      </Button>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Histórico de Resgates */}
-      {redemptionsHistory.length > 0 && (
-          <Card className="bg-zinc-900/50 border-zinc-800 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-600/20 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-white text-xl">Histórico de Resgates</CardTitle>
-                  <CardDescription className="text-zinc-400">
-              Recompensas que você já resgatou
-            </CardDescription>
-                </div>
-              </div>
-          </CardHeader>
-            <CardContent className="space-y-4">
-              {redemptionsHistory.map((redemption) => {
-                const StatusIcon = statusConfig[redemption.status as keyof typeof statusConfig]?.icon || Clock;
-                return (
-                  <div key={redemption.id} className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                    <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
-                        <h3 className="font-semibold text-white">{redemption.reward.title}</h3>
-                        <p className="text-zinc-400 text-sm">{redemption.reward.description}</p>
+          {/* Histórico de Resgates */}
+          {redemptionsHistory.length > 0 && (
+            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
+              <CardHeader className="pb-3 lg:pb-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="p-1.5 lg:p-2 bg-purple-400/20 rounded-lg">
+                    <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5 text-purple-400" />
                   </div>
-                      <Badge className={`${statusConfig[redemption.status as keyof typeof statusConfig]?.color || 'bg-zinc-700 text-zinc-300'} border text-xs flex items-center gap-1`}>
-                        <StatusIcon className="h-3 w-3" />
-                    {statusConfig[redemption.status as keyof typeof statusConfig]?.label || redemption.status}
-                  </Badge>
+                  <div>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">Histórico de Resgates</CardTitle>
+                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                      Recompensas que você já resgatou
+                    </CardDescription>
+                  </div>
                 </div>
-                    <div className="flex justify-between items-center text-sm text-zinc-400">
-                  <span>{redemption.creditsUsed} créditos usados</span>
-                  <span>{new Date(redemption.redeemedAt).toLocaleDateString('pt-BR')}</span>
-                </div>
-              </div>
-                );
-              })}
-          </CardContent>
-        </Card>
-      )}
+              </CardHeader>
+              <CardContent className="space-y-3 lg:space-y-4">
+                {redemptionsHistory.map((redemption) => {
+                  const StatusIcon = statusConfig[redemption.status as keyof typeof statusConfig]?.icon || Clock;
+                  return (
+                    <div key={redemption.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-white text-sm lg:text-base">{redemption.reward.title}</h3>
+                          <p className="text-gray-400 text-xs lg:text-sm">{redemption.reward.description}</p>
+                        </div>
+                        <Badge className={`${statusConfig[redemption.status as keyof typeof statusConfig]?.color || 'bg-gray-700 text-gray-300'} border text-xs flex items-center gap-1`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {statusConfig[redemption.status as keyof typeof statusConfig]?.label || redemption.status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center text-xs lg:text-sm text-gray-400">
+                        <span>{redemption.creditsUsed} créditos usados</span>
+                        <span>{new Date(redemption.redeemedAt).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

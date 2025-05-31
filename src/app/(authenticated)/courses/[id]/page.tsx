@@ -185,49 +185,49 @@ export default function PatientCourseViewPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Ativo</Badge>;
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Ativo</Badge>;
       case 'completed':
-        return <Badge className="bg-[#4e51e1]/20 text-[#4e51e1] border-[#4e51e1]/30">Concluído</Badge>;
+        return <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 text-xs">Concluído</Badge>;
       case 'paused':
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pausado</Badge>;
+        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pausado</Badge>;
       case 'unavailable':
-        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Indisponível</Badge>;
+        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">Indisponível</Badge>;
       default:
-        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Inativo</Badge>;
+        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 text-xs">Inativo</Badge>;
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <span className="text-xs text-zinc-300">Carregando curso...</span>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <span className="text-xs text-gray-300">Carregando curso...</span>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <span className="text-xs text-zinc-300">Curso não encontrado</span>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <span className="text-xs text-gray-300">Curso não encontrado</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-black pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
       {/* Header */}
-      <div className="sticky top-0 bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/80 z-10 border-b border-zinc-600/30">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 pt-[88px] lg:pt-6 pb-3 lg:pb-4">
+      <div className="sticky top-[88px] lg:top-0 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/80 z-10 border-b border-gray-800/40">
+        <div className="max-w-6xl mx-auto px-3 lg:px-6 py-2 lg:py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-1">
-              <Button variant="ghost" size="sm" asChild className="text-zinc-300 hover:text-white flex-shrink-0">
+            <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1">
+              <Button variant="ghost" size="sm" asChild className="text-gray-300 hover:text-white flex-shrink-0 h-7 px-2">
                 <Link href="/courses">
-                  <ArrowLeftIcon className="h-4 w-4 mr-1 lg:mr-2" />
-                  <span className="hidden sm:inline">Cursos</span>
+                  <ArrowLeftIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+                  <span className="hidden sm:inline text-xs lg:text-sm">Cursos</span>
                 </Link>
               </Button>
-              <div className="h-4 w-px bg-zinc-500 flex-shrink-0" />
-              <h1 className="text-sm lg:text-xl font-light text-white truncate">
+              <div className="h-3 w-px bg-gray-500 flex-shrink-0" />
+              <h1 className="text-xs lg:text-base font-light text-white truncate">
                 {course.name}
               </h1>
             </div>
@@ -239,56 +239,56 @@ export default function PatientCourseViewPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 pb-24">
-        <div className="space-y-8 pt-8 lg:pt-12">
+      <div className="max-w-6xl mx-auto px-3 lg:px-6">
+        <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
           {/* Course Overview */}
-          <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-4 lg:p-8 backdrop-blur-sm">
-            <div className="space-y-4 lg:space-y-6">
+          <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm">
+            <div className="space-y-3 lg:space-y-4">
               <div>
-                <h2 className="text-lg lg:text-2xl font-light text-white mb-2">
+                <h2 className="text-base lg:text-lg font-light text-white mb-1">
                   {course.name}
                 </h2>
                 {course.description && (
-                  <p className="hidden lg:block text-base text-zinc-300 leading-relaxed">
+                  <p className="hidden lg:block text-sm text-gray-300 leading-relaxed">
                     {course.description}
                   </p>
                 )}
-                <div className="mt-3 lg:mt-4 text-xs lg:text-sm text-zinc-400">
+                <div className="mt-2 text-xs text-gray-400">
                   Iniciado em {formatDate(course.assignment.startDate)}
                 </div>
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 <div className="text-center">
-                  <div className="text-lg lg:text-2xl font-light text-[#76e1d8]">{course.assignment.progress || 0}%</div>
-                  <div className="text-xs text-zinc-400">Progresso</div>
+                  <div className="text-base lg:text-lg font-light text-teal-400">{course.assignment.progress || 0}%</div>
+                  <div className="text-xs text-gray-400">Progresso</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg lg:text-2xl font-light text-green-400">
+                  <div className="text-base lg:text-lg font-light text-green-400">
                     {getAllLessonsInOrder().filter(l => l.completed).length}
                   </div>
-                  <div className="text-xs text-zinc-400">Concluídas</div>
+                  <div className="text-xs text-gray-400">Concluídas</div>
                 </div>
                 <div className="hidden lg:block text-center">
-                  <div className="text-2xl font-light text-white">{getTotalLessons()}</div>
-                  <div className="text-xs text-zinc-400">Aulas</div>
+                  <div className="text-lg font-light text-white">{getTotalLessons()}</div>
+                  <div className="text-xs text-gray-400">Aulas</div>
                 </div>
                 <div className="hidden lg:block text-center">
-                  <div className="text-2xl font-light text-white">{formatDuration(getTotalDuration())}</div>
-                  <div className="text-xs text-zinc-400">Duração</div>
+                  <div className="text-lg font-light text-white">{formatDuration(getTotalDuration())}</div>
+                  <div className="text-xs text-gray-400">Duração</div>
                 </div>
               </div>
 
               {/* Progress Bar - Hidden on mobile */}
-              <div className="hidden lg:block space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-300">Progresso do Curso</span>
+              <div className="hidden lg:block space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-300">Progresso do Curso</span>
                   <span className="text-white">{course.assignment.progress || 0}%</span>
                 </div>
-                <div className="w-full bg-zinc-700/50 rounded-full h-2">
+                <div className="w-full bg-gray-700/50 rounded-full h-1.5">
                   <div 
-                    className="bg-[#76e1d8] h-2 rounded-full transition-all duration-500"
+                    className="bg-teal-400 h-1.5 rounded-full transition-all duration-500"
                     style={{ width: `${course.assignment.progress || 0}%` }}
                   />
                 </div>
@@ -296,8 +296,8 @@ export default function PatientCourseViewPage() {
 
               {/* Start Course Button */}
               {getFirstLesson() && (
-                <div className="flex justify-center pt-2">
-                  <Button asChild className="bg-[#76e1d8] hover:bg-[#5dd4c8] text-white px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base">
+                <div className="flex justify-center pt-1">
+                  <Button asChild className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium">
                     <Link href={`/courses/${courseId}/lessons/${getFirstLesson()!.id}`}>
                       {getButtonText()}
                     </Link>
@@ -308,41 +308,41 @@ export default function PatientCourseViewPage() {
           </div>
 
           {/* Course Content */}
-          <div className="space-y-8">
+          <div className="space-y-4 lg:space-y-6">
             {/* Modules */}
             {course.modules.length > 0 && (
-              <div className="space-y-6">
-                <h3 className="text-xl lg:text-2xl font-light text-white">
+              <div className="space-y-3 lg:space-y-4">
+                <h3 className="text-base lg:text-lg font-light text-white">
                   Módulos
                 </h3>
                 
-                <div className="space-y-4">
+                <div className="space-y-2 lg:space-y-3">
                   {course.modules.map((module, index) => (
-                    <div key={module.id} className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg backdrop-blur-sm">
+                    <div key={module.id} className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
                       {/* Module Header */}
                       <div 
-                        className="p-6 cursor-pointer hover:bg-zinc-800/30 transition-colors"
+                        className="p-3 lg:p-4 cursor-pointer hover:bg-gray-800/30 transition-colors"
                         onClick={() => toggleModule(module.id)}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+                          <div className="flex items-center gap-2 lg:gap-3">
+                            <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-medium ${
                               isModuleCompleted(module)
                                 ? 'bg-green-500 text-white'
-                                : 'bg-[#76e1d8] text-white'
+                                : 'bg-teal-400 text-black'
                             }`}>
                               {isModuleCompleted(module) ? (
-                                <CheckCircleIcon className="h-5 w-5" />
+                                <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
                               ) : (
                                 index + 1
                               )}
                             </div>
                             <div>
-                              <h4 className="text-lg font-light text-white">{module.name}</h4>
+                              <h4 className="text-sm lg:text-base font-light text-white">{module.name}</h4>
                               {module.description && (
-                                <p className="text-sm text-zinc-400 mt-1">{module.description}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{module.description}</p>
                               )}
-                              <div className="flex items-center gap-4 mt-2 text-sm text-zinc-500">
+                              <div className="flex items-center gap-2 lg:gap-3 mt-1 text-xs text-gray-500">
                                 <span>
                                   {module.lessons.filter(l => l.completed).length}/{module.lessons.length} concluídas
                                 </span>
@@ -358,11 +358,11 @@ export default function PatientCourseViewPage() {
                             </div>
                           </div>
                           
-                          <div className="text-zinc-400">
+                          <div className="text-gray-400">
                             {expandedModules.has(module.id) ? (
-                              <ChevronDownIcon className="h-5 w-5" />
+                              <ChevronDownIcon className="h-4 w-4" />
                             ) : (
-                              <ChevronRightIcon className="h-5 w-5" />
+                              <ChevronRightIcon className="h-4 w-4" />
                             )}
                           </div>
                         </div>
@@ -370,44 +370,44 @@ export default function PatientCourseViewPage() {
                       
                       {/* Module Lessons */}
                       {expandedModules.has(module.id) && (
-                        <div className="border-t border-zinc-600/30 p-6 pt-4">
-                          <div className="space-y-3">
+                        <div className="border-t border-gray-600/30 p-3 lg:p-4 pt-2 lg:pt-3">
+                          <div className="space-y-2">
                             {module.lessons.map((lesson, lessonIndex) => (
                               <Link 
                                 key={lesson.id} 
                                 href={`/courses/${courseId}/lessons/${lesson.id}`}
-                                className="flex items-center justify-between p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-[#76e1d8]/30 transition-colors"
+                                className="flex items-center justify-between p-2 lg:p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 hover:border-teal-400/30 transition-colors"
                               >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-xs ${
                                     lesson.completed 
                                       ? 'bg-green-500 text-white' 
-                                      : 'bg-zinc-600/50 text-zinc-300'
+                                      : 'bg-gray-600/50 text-gray-300'
                                   }`}>
                                     {lesson.completed ? (
-                                      <CheckCircleIcon className="h-4 w-4" />
+                                      <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
                                     ) : (
                                       lessonIndex + 1
                                     )}
                                   </div>
                                   <div>
-                                    <span className={`text-sm ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
+                                    <span className={`text-xs lg:text-sm ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
                                       {lesson.title}
                                     </span>
                                     {lesson.description && (
-                                      <p className="text-xs text-zinc-400 mt-1">{lesson.description}</p>
+                                      <p className="text-xs text-gray-400 mt-0.5">{lesson.description}</p>
                                     )}
                                   </div>
                                 </div>
                                 
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   {lesson.completed && (
                                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                                       Concluída
                                     </Badge>
                                   )}
                                   {lesson.duration && (
-                                    <span className="text-xs text-zinc-400">
+                                    <span className="text-xs text-gray-400">
                                       {lesson.duration}min
                                     </span>
                                   )}
@@ -425,48 +425,48 @@ export default function PatientCourseViewPage() {
 
             {/* Direct Lessons */}
             {course.lessons.length > 0 && (
-              <div className="space-y-6">
-                <h3 className="text-xl lg:text-2xl font-light text-white">
+              <div className="space-y-3 lg:space-y-4">
+                <h3 className="text-base lg:text-lg font-light text-white">
                   Aulas
                 </h3>
                 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {course.lessons.map((lesson, index) => (
                     <Link 
                       key={lesson.id} 
                       href={`/courses/${courseId}/lessons/${lesson.id}`}
-                      className="flex items-center justify-between p-4 bg-zinc-900/50 border border-zinc-800/50 rounded-lg hover:border-[#76e1d8]/30 transition-colors backdrop-blur-sm"
+                      className="flex items-center justify-between p-3 lg:p-4 bg-gray-900/40 border border-gray-800/40 rounded-lg hover:border-teal-400/30 transition-colors backdrop-blur-sm"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      <div className="flex items-center gap-2 lg:gap-3">
+                        <div className={`w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                           lesson.completed 
                             ? 'bg-green-500 text-white' 
-                            : 'bg-[#76e1d8] text-white'
+                            : 'bg-teal-400 text-black'
                         }`}>
                           {lesson.completed ? (
-                            <CheckCircleIcon className="h-5 w-5" />
+                            <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
                           ) : (
                             index + 1
                           )}
                         </div>
                         <div>
-                          <span className={`text-base ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
+                          <span className={`text-sm lg:text-base ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
                             {lesson.title}
                           </span>
                           {lesson.description && (
-                            <p className="text-sm text-zinc-400 mt-1">{lesson.description}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{lesson.description}</p>
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         {lesson.completed && (
                           <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                             Concluída
                           </Badge>
                         )}
                         {lesson.duration && (
-                          <span className="text-sm text-zinc-400">
+                          <span className="text-xs text-gray-400">
                             {lesson.duration}min
                           </span>
                         )}
@@ -479,12 +479,12 @@ export default function PatientCourseViewPage() {
 
             {/* Empty State */}
             {course.modules.length === 0 && course.lessons.length === 0 && (
-              <div className="text-center py-20">
+              <div className="text-center py-12 lg:py-16">
                 <div className="max-w-md mx-auto">
-                  <h3 className="text-xl font-light text-white mb-3">
+                  <h3 className="text-base lg:text-lg font-light text-white mb-2">
                     Curso sem conteúdo
                   </h3>
-                  <p className="text-zinc-300 leading-relaxed">
+                  <p className="text-sm text-gray-300 leading-relaxed">
                     Este curso ainda não possui conteúdo disponível.
                   </p>
                 </div>

@@ -86,6 +86,7 @@ export default function Navigation() {
   const isAdminPage = pathname?.startsWith('/admin');
   const isProtocolsPage = pathname === '/protocols';
   const isChecklistPage = pathname?.startsWith('/checklist');
+  const isSpecificCoursePage = pathname?.match(/^\/courses\/[^\/]+/) && pathname !== '/courses';
   
   // Determinar role inicial baseado na URL para evitar flash
   const getInitialRole = () => {
@@ -475,7 +476,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar - Different styles for patients vs doctors/admins */}
-        {userRole === 'PATIENT' && !isChecklistPage ? (
+        {userRole === 'PATIENT' && !isChecklistPage && !isSpecificCoursePage ? (
           // Patient Bottom Navigation - App Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 z-40">
             <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
