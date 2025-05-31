@@ -42,7 +42,7 @@ export async function GET() {
           include: {
             sessions: {
               include: {
-                tasks: {
+            tasks: {
                   orderBy: {
                     orderIndex: 'asc'
                   }

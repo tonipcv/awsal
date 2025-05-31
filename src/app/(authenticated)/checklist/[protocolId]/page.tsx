@@ -1,21 +1,14 @@
 /* eslint-disable */
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   CheckIcon, 
   ArrowLeftIcon, 
-  CalendarDaysIcon,
-  ClockIcon,
-  PlayIcon,
-  CheckCircleIcon,
-  ShoppingBagIcon,
-  LinkIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
@@ -27,6 +20,7 @@ interface ProtocolProgress {
   date: string;
   isCompleted: boolean;
   notes?: string;
+  _optimistic?: boolean;
   protocolTask: {
     id: string;
     title: string;
@@ -114,28 +108,6 @@ interface ActiveProtocol {
           };
         }>;
       }>;
-      tasks: Array<{
-        id: string;
-        title: string;
-        description?: string;
-        order: number;
-        hasMoreInfo?: boolean;
-        videoUrl?: string;
-        fullExplanation?: string;
-        productId?: string;
-        modalTitle?: string;
-        modalButtonText?: string;
-        product?: {
-          id: string;
-          name: string;
-          description?: string;
-          brand?: string;
-          imageUrl?: string;
-          originalPrice?: number;
-          discountPrice?: number;
-          purchaseUrl?: string;
-        };
-      }>;
     }>;
     doctor: {
       id: string;
@@ -153,9 +125,22 @@ export default function ProtocolChecklistPage() {
   const [progress, setProgress] = useState<ProtocolProgress[]>([]);
   const [products, setProducts] = useState<ProtocolProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [showTaskInfoModal, setShowTaskInfoModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set());
+  const [debounceMap, setDebounceMap] = useState<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Memoizar cálculos pesados
+  const progressMap = useMemo(() => {
+    const map = new Map<string, ProtocolProgress>();
+    progress.forEach(p => {
+      // Normalizar a data para formato yyyy-MM-dd para coincidir com getDateForProtocolDay
+      const dateOnly = p.date.split('T')[0];
+      const key = `${p.protocolTask.id}-${dateOnly}`;
+      map.set(key, p);
+    });
+    return map;
+  }, [progress]);
 
   const loadActiveProtocol = useCallback(async () => {
     try {
@@ -163,228 +148,228 @@ export default function ProtocolChecklistPage() {
       const response = await fetch('/api/protocols/assign');
       const assignments = await response.json();
       
-      console.log('Loaded assignments:', assignments);
-      
-      // Buscar protocolo específico pelo ID da URL
       const protocolId = params.protocolId as string;
       const targetProtocol = assignments.find((assignment: any) => assignment.protocolId === protocolId);
       
       if (targetProtocol) {
         setActiveProtocol(targetProtocol);
-        console.log('Active protocol:', targetProtocol);
         
-        // Carregar progresso do protocolo
-        const progressResponse = await fetch(`/api/protocols/progress?protocolId=${targetProtocol.protocolId}`);
-        const progressData = await progressResponse.json();
-        console.log('Progress data loaded:', progressData);
-        console.log('Progress data length:', progressData?.length);
-        console.log('Progress data sample:', progressData?.[0]);
+        // Carregar progresso e produtos em paralelo
+        const [progressResponse, productsResponse] = await Promise.all([
+          fetch(`/api/protocols/progress?protocolId=${targetProtocol.protocolId}`),
+          fetch(`/api/protocols/${targetProtocol.protocolId}/products/patient`)
+        ]);
+        
+        const [progressData, productsData] = await Promise.all([
+          progressResponse.json(),
+          productsResponse.ok ? productsResponse.json() : []
+        ]);
+        
         setProgress(Array.isArray(progressData) ? progressData : []);
-
-        // Carregar produtos do protocolo
-        loadProtocolProducts(targetProtocol.protocolId);
+        setProducts(Array.isArray(productsData) ? productsData : []);
       } else {
-        // Protocolo não encontrado, redirecionar para página de protocolos
         router.push('/protocols');
       }
     } catch (error) {
-      console.error('Error loading active protocol:', error);
+      console.error('Error loading protocol:', error);
       router.push('/protocols');
     } finally {
       setIsLoading(false);
     }
   }, [params.protocolId, router]);
 
-  const loadProtocolProducts = async (protocolId: string) => {
-    try {
-      setIsLoadingProducts(true);
-      const response = await fetch(`/api/protocols/${protocolId}/products/patient`);
-      
-      if (response.ok) {
-        const productsData = await response.json();
-        console.log('Products loaded:', productsData);
-        setProducts(Array.isArray(productsData) ? productsData : []);
-      } else {
-        console.error('Error loading products:', response.status);
-        setProducts([]);
-      }
-    } catch (error) {
-      console.error('Error loading protocol products:', error);
-      setProducts([]);
-    } finally {
-      setIsLoadingProducts(false);
-    }
-  };
-
   useEffect(() => {
     loadActiveProtocol();
   }, [loadActiveProtocol]);
 
-  const formatPrice = (price?: number) => {
-    if (!price) return null;
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  };
+  // Cleanup dos timeouts quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      debounceMap.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [debounceMap]);
 
-  const toggleTask = async (taskId: string, date: string) => {
-    console.log('=== TOGGLE TASK DEBUG ===');
-    console.log('TaskId:', taskId);
-    console.log('Date:', date);
-    console.log('Active Protocol ID:', activeProtocol?.protocolId);
-    console.log('User ID:', session?.user?.id);
-    console.log('Current progress state:', progress);
-    
-    try {
-      const requestBody = { protocolTaskId: taskId, date };
-      console.log('Request body:', requestBody);
-      
-      const response = await fetch('/api/protocols/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
-      
-      console.log('Toggle response status:', response.status);
-      console.log('Toggle response headers:', Object.fromEntries(response.headers.entries()));
-      
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-      
-      if (response.ok) {
-        const result = JSON.parse(responseText);
-        console.log('Toggle result:', result);
-        
-        // Recarregar progresso
-        console.log('Reloading progress...');
-        const progressResponse = await fetch(`/api/protocols/progress?protocolId=${activeProtocol?.protocolId}`);
-        console.log('Progress reload status:', progressResponse.status);
-        
-        if (progressResponse.ok) {
-          const progressData = await progressResponse.json();
-          console.log('Reloaded progress data:', progressData);
-          console.log('Reloaded progress length:', progressData?.length);
-          
-          // Verificar se os dados realmente mudaram
-          const oldProgressLength = progress.length;
-          const newProgressLength = Array.isArray(progressData) ? progressData.length : 0;
-          console.log('Progress length change:', oldProgressLength, '->', newProgressLength);
-          
-          setProgress(Array.isArray(progressData) ? progressData : []);
-        } else {
-          console.error('Failed to reload progress:', progressResponse.status);
-        }
-      } else {
-        let error;
-        try {
-          error = JSON.parse(responseText);
-        } catch {
-          error = { error: responseText };
-        }
-        console.error('Toggle error:', error);
-        alert(`Erro ao atualizar tarefa: ${error.error || 'Erro desconhecido'}`);
-      }
-    } catch (error) {
-      console.error('Error toggling task:', error);
-      alert(`Erro de rede: ${error}`);
+  const toggleTask = useCallback(async (taskId: string, date: string) => {
+    if (!taskId || !date) {
+      console.error('❌ TaskId ou date inválidos:', { taskId, date });
+      return;
     }
-  };
 
-  const getDateForProtocolDay = (dayNumber: number): string => {
+    const debounceKey = `${taskId}-${date}`;
+    
+    // Cancelar debounce anterior se existir
+    const existingTimeout = debounceMap.get(debounceKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
+    // Verificar estado atual
+    const key = `${taskId}-${date}`;
+    const currentProgress = progressMap.get(key);
+    const newCompletedState = !currentProgress?.isCompleted;
+    
+    // Marcar como pendente ANTES da atualização
+    setPendingTasks(prev => new Set(prev).add(taskId));
+    
+    // Atualização otimista IMEDIATA
+    setProgress(prev => {
+      const [year, month, day] = date.split('-').map(Number);
+      const normalizedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      
+      const existingIndex = prev.findIndex(p => 
+        p.protocolTask.id === taskId && 
+        new Date(p.date).getTime() === normalizedDate.getTime()
+      );
+      
+      if (existingIndex >= 0) {
+        // Atualizar registro existente
+        const newProgress = [...prev];
+        newProgress[existingIndex] = {
+          ...newProgress[existingIndex],
+          isCompleted: newCompletedState,
+          _optimistic: true
+        };
+        return newProgress;
+      } else {
+        // Criar novo registro otimista
+        return [...prev, {
+          id: `optimistic-${taskId}-${date}`,
+          date: normalizedDate.toISOString(),
+          isCompleted: newCompletedState,
+          _optimistic: true,
+          protocolTask: {
+            id: taskId,
+            title: '',
+            order: 0,
+            protocolDay: {
+              id: '',
+              dayNumber: 0,
+              protocol: { id: '', name: '', duration: 0 }
+            }
+          },
+          user: { id: session?.user?.id || '' }
+        }];
+      }
+    });
+
+    // Debounce da chamada da API
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/protocols/progress', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ 
+            protocolTaskId: taskId, 
+            date: date 
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.progress) {
+          // Substituir dados otimistas pelos dados reais da API (SEM piscar)
+          setProgress(prev => {
+            const [year, month, day] = date.split('-').map(Number);
+            const normalizedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+            
+            // Encontrar e substituir APENAS se o estado for diferente
+            const existingIndex = prev.findIndex(p => 
+              p.protocolTask.id === taskId && 
+              new Date(p.date).getTime() === normalizedDate.getTime()
+            );
+            
+            if (existingIndex >= 0) {
+              const existing = prev[existingIndex];
+              // Só atualizar se o estado mudou (evita piscar)
+              if (existing.isCompleted !== result.progress.isCompleted || existing._optimistic) {
+                const newProgress = [...prev];
+                newProgress[existingIndex] = {
+                  ...result.progress,
+                  _optimistic: false
+                };
+                return newProgress;
+              }
+              return prev; // Não mudou, não atualizar
+            } else {
+              // Remover otimistas e adicionar real
+              const filteredProgress = prev.filter(p => 
+                !(p.protocolTask.id === taskId && 
+                  new Date(p.date).getTime() === normalizedDate.getTime())
+              );
+              return [...filteredProgress, result.progress];
+            }
+          });
+        } else {
+          throw new Error('Resposta inválida da API');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao alternar tarefa:', error);
+        
+        // Reverter para estado original em caso de erro
+        setProgress(prev => {
+          const [year, month, day] = date.split('-').map(Number);
+          const normalizedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+          
+          const existingIndex = prev.findIndex(p => 
+            p.protocolTask.id === taskId && 
+            new Date(p.date).getTime() === normalizedDate.getTime()
+          );
+          
+          if (existingIndex >= 0) {
+            const newProgress = [...prev];
+            newProgress[existingIndex] = {
+              ...newProgress[existingIndex],
+              isCompleted: !newCompletedState,
+              _optimistic: false
+            };
+            return newProgress;
+          }
+          // Remover registros otimistas que falharam
+          return prev.filter(p => !p.id?.startsWith('optimistic-'));
+        });
+        
+        alert('Erro ao atualizar tarefa. Tente novamente.');
+      } finally {
+        setPendingTasks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(taskId);
+          return newSet;
+        });
+        
+        // Limpar debounce
+        setDebounceMap(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(debounceKey);
+          return newMap;
+        });
+      }
+    }, 100); // Debounce de 100ms
+
+    // Salvar timeout no map
+    setDebounceMap(prev => new Map(prev).set(debounceKey, timeout));
+  }, [progressMap, session?.user?.id, debounceMap]);
+
+  const getDateForProtocolDay = useCallback((dayNumber: number): string => {
     if (!activeProtocol) return '';
     const startDate = new Date(activeProtocol.startDate);
     const targetDate = addDays(startDate, dayNumber - 1);
     return format(targetDate, 'yyyy-MM-dd');
-  };
+  }, [activeProtocol]);
 
-  const isTaskCompleted = (taskId: string, date: string) => {
-    const completed = progress.some(p => {
-      // Normalizar ambas as datas para comparação
-      const progressDate = new Date(p.date);
-      const targetDate = new Date(date);
-      
-      // Comparar apenas ano, mês e dia (ignorar horas)
-      const progressDateStr = format(progressDate, 'yyyy-MM-dd');
-      const targetDateStr = format(targetDate, 'yyyy-MM-dd');
-      
-      const isMatch = p.protocolTask.id === taskId && 
-                     progressDateStr === targetDateStr && 
-                     p.isCompleted;
-      
-      if (isMatch) {
-        console.log('Task completed match found:', {
-          taskId,
-          targetDate: targetDateStr,
-          progressDate: progressDateStr,
-          isCompleted: p.isCompleted,
-          progressItem: p
-        });
-      }
-      
-      return isMatch;
-    });
-    
-    return completed;
-  };
+  const isTaskCompleted = useCallback((taskId: string, date: string) => {
+    const key = `${taskId}-${date}`;
+    return progressMap.get(key)?.isCompleted || false;
+  }, [progressMap]);
 
-  const getDayStatus = (dayNumber: number) => {
-    if (!activeProtocol) return 'future';
-    
-    const today = new Date();
-    const startDate = new Date(activeProtocol.startDate);
-    const dayDate = addDays(startDate, dayNumber - 1);
-    
-    // Normalizar datas (remover horas)
-    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const normalizedDayDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
-    
-    if (normalizedDayDate < normalizedToday) return 'past';
-    if (normalizedDayDate.getTime() === normalizedToday.getTime()) return 'current';
-    return 'future';
-  };
-
-  const getDayProgressStatus = (dayNumber: number) => {
-    if (!activeProtocol) return 'pending';
-    
-    const day = activeProtocol.protocol.days.find(d => d.dayNumber === dayNumber);
-    if (!day) return 'pending';
-    
-    // Coletar todas as tarefas (diretas + das sessões)
-    const allTasks = [
-      ...day.tasks,
-      ...day.sessions.flatMap(session => session.tasks)
-    ];
-    
-    if (allTasks.length === 0) return 'completed';
-    
-    const date = getDateForProtocolDay(dayNumber);
-    const completedTasks = allTasks.filter(task => isTaskCompleted(task.id, date));
-    
-    if (completedTasks.length === allTasks.length) return 'completed';
-    if (completedTasks.length > 0) return 'partial';
-    return 'pending';
-  };
-
-  const getDayProgress = (dayNumber: number) => {
-    if (!activeProtocol) return { completed: 0, total: 0 };
-    
-    const day = activeProtocol.protocol.days.find(d => d.dayNumber === dayNumber);
-    if (!day) return { completed: 0, total: 0 };
-    
-    // Coletar todas as tarefas (diretas + das sessões)
-    const allTasks = [
-      ...day.tasks,
-      ...day.sessions.flatMap(session => session.tasks)
-    ];
-    
-    const date = getDateForProtocolDay(dayNumber);
-    const completed = allTasks.filter(task => isTaskCompleted(task.id, date)).length;
-    
-    return { completed, total: allTasks.length };
-  };
-
-  const getCurrentDay = () => {
+  const getCurrentDay = useCallback(() => {
     if (!activeProtocol) return 1;
     
     const today = new Date();
@@ -393,546 +378,401 @@ export default function ProtocolChecklistPage() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
     
     return Math.max(1, Math.min(diffDays, activeProtocol.protocol.duration));
-  };
+  }, [activeProtocol]);
 
-  // Função para verificar se uma sessão está completa
-  const isSessionCompleted = (session: any, date: string) => {
-    if (session.tasks.length === 0) return true;
-    return session.tasks.every((task: any) => isTaskCompleted(task.id, date));
-  };
+  const getDayStatus = useCallback((dayNumber: number) => {
+    if (!activeProtocol) return 'future';
+    
+    const today = new Date();
+    const startDate = new Date(activeProtocol.startDate);
+    const dayDate = addDays(startDate, dayNumber - 1);
+    
+    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const normalizedDayDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
+    
+    if (normalizedDayDate < normalizedToday) return 'past';
+    if (normalizedDayDate.getTime() === normalizedToday.getTime()) return 'current';
+    return 'future';
+  }, [activeProtocol]);
 
-  if (!session) {
+  if (!session || isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <span className="text-xs text-zinc-300">Carregando...</span>
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-4xl mx-auto px-3 py-2 lg:px-4 lg:py-4">
+            
+            {/* Header Skeleton */}
+            <div className="mb-4 lg:mb-6">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2">
+                <div className="h-8 w-8 bg-zinc-800/50 rounded animate-pulse"></div>
+                <div className="h-4 w-px bg-zinc-700"></div>
+                <div className="h-6 bg-zinc-800/50 rounded-lg w-48 animate-pulse"></div>
+              </div>
+              <div className="flex items-center justify-end">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 bg-zinc-800/50 rounded w-6 animate-pulse"></div>
+                  <div className="h-5 bg-zinc-700/50 rounded w-8 animate-pulse"></div>
+                  <div className="h-4 bg-zinc-700/30 rounded w-16 ml-2 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Protocol Days Skeleton */}
+            <div className="space-y-3 lg:space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl backdrop-blur-sm">
+                  {/* Day Header Skeleton */}
+                  <div className="p-3 lg:p-4 border-b border-zinc-800/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 lg:gap-3">
+                        <div className="w-7 h-7 lg:w-8 lg:h-8 bg-zinc-800/50 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="h-4 lg:h-5 bg-zinc-800/50 rounded w-16 mb-1 animate-pulse"></div>
+                          <div className="h-3 bg-zinc-700/50 rounded w-12 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-6 bg-zinc-800/50 rounded-md w-12 animate-pulse"></div>
+                    </div>
+                  </div>
+
+                  {/* Sessions Skeleton */}
+                  <div className="p-3 lg:p-4 space-y-2 lg:space-y-3">
+                    {[1, 2].map((j) => (
+                      <div key={j} className="bg-zinc-800/30 border border-zinc-700/30 rounded-lg p-2 lg:p-3">
+                        <div className="h-4 bg-zinc-700/50 rounded w-24 mb-2 lg:mb-3 animate-pulse"></div>
+                        
+                        {/* Tasks Skeleton */}
+                        <div className="space-y-2">
+                          {[1, 2, 3].map((k) => (
+                            <div key={k} className="flex items-center gap-2 lg:gap-3 p-2 bg-zinc-900/30 rounded-lg border border-zinc-700/20">
+                              <div className="w-5 h-5 bg-zinc-700/50 rounded border animate-pulse"></div>
+                              <div className="flex-1">
+                                <div className="h-4 bg-zinc-700/50 rounded w-32 mb-1 animate-pulse"></div>
+                                <div className="h-3 bg-zinc-800/50 rounded w-48 animate-pulse"></div>
+                              </div>
+                              <div className="w-6 h-6 bg-zinc-700/50 rounded animate-pulse"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Products Section Skeleton */}
+            <div className="mt-6 lg:mt-8 bg-zinc-900/50 border border-zinc-800/50 rounded-xl backdrop-blur-sm">
+              <div className="p-3 lg:p-4 border-b border-zinc-800/30">
+                <div className="h-4 lg:h-5 bg-zinc-800/50 rounded w-32 animate-pulse"></div>
+              </div>
+              <div className="p-3 lg:p-4">
+                <div className="grid gap-2 lg:gap-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg">
+                      <div className="w-10 h-10 lg:w-12 lg:h-12 bg-zinc-700/50 rounded-lg animate-pulse"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-zinc-700/50 rounded w-24 animate-pulse"></div>
+                        <div className="h-3 bg-zinc-800/50 rounded w-32 animate-pulse"></div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 bg-zinc-700/50 rounded w-16 animate-pulse"></div>
+                          <div className="h-4 bg-zinc-800/50 rounded w-12 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-8 bg-zinc-700/50 rounded-lg w-16 lg:w-20 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeProtocol) {
+    return (
+      <div className="min-h-screen bg-black">
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
+          <span className="text-gray-400">Protocolo não encontrado</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Header */}
-      <div className="sticky top-0 bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-zinc-900/80 z-10 border-b border-zinc-700/30">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-[88px] lg:pt-6 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild className="text-zinc-300 hover:text-white">
+    <div className="min-h-screen bg-black">
+      {/* Padding para menu lateral no desktop e header no mobile */}
+      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="max-w-4xl mx-auto px-3 py-2 lg:px-4 lg:py-4">
+          {/* Botão de voltar e título do protocolo */}
+          <div className="mb-4 lg:mb-6">
+            <div className="flex items-center gap-2 lg:gap-3 mb-2">
+              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-teal-400 transition-colors">
                 <Link href="/protocols">
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Protocolos</span>
+                  <ArrowLeftIcon className="h-4 w-4" />
                 </Link>
               </Button>
-              <div className="h-4 w-px bg-zinc-600 hidden sm:block" />
-              <h1 className="text-sm sm:text-lg lg:text-xl font-light text-white truncate">
-                {activeProtocol ? activeProtocol.protocol.name : 'Carregando...'}
+              <div className="h-4 w-px bg-gray-700" />
+              <h1 className="text-base lg:text-lg font-light text-white tracking-wide">
+                {activeProtocol.protocol.name}
               </h1>
             </div>
-            {activeProtocol && (
-              <div className="hidden lg:flex items-center gap-4 text-sm text-zinc-400">
-                <span>{activeProtocol.protocol.duration} dias</span>
-                <span>•</span>
-                <span>Dr. {activeProtocol.protocol.doctor?.name || 'Carregando...'}</span>
-                <span>•</span>
-                <span>Dia {getCurrentDay()}</span>
+            <div className="flex items-center justify-end text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-teal-400 font-medium">
+                  {getCurrentDay()}
+                </span>
+                <span className="text-gray-500">/{activeProtocol.protocol.duration}</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider ml-2">
+                  Dia Atual
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 lg:space-y-4">
+            {activeProtocol.protocol.days
+              .sort((a, b) => {
+                const statusA = getDayStatus(a.dayNumber);
+                const statusB = getDayStatus(b.dayNumber);
+                const statusPriority = { current: 0, future: 1, past: 2 };
+                
+                if (statusA !== statusB) {
+                  return statusPriority[statusA] - statusPriority[statusB];
+                }
+                return a.dayNumber - b.dayNumber;
+              })
+              .map(day => {
+                const dayStatus = getDayStatus(day.dayNumber);
+                const dayDate = getDateForProtocolDay(day.dayNumber);
+                const isCurrentDay = getCurrentDay() === day.dayNumber;
+                
+                return (
+                  <div 
+                    key={day.id} 
+                    className={cn(
+                      "bg-gray-900/40 border border-gray-800/40 rounded-xl transition-all duration-300 backdrop-blur-sm",
+                      isCurrentDay && "ring-1 ring-teal-400/30 bg-teal-400/5",
+                      dayStatus === 'future' && "opacity-60"
+                    )}
+                  >
+                    {/* Header do dia compacto */}
+                    <div className="p-3 lg:p-4 border-b border-gray-800/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 lg:gap-3">
+                          <div className={cn(
+                            "w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-sm font-medium border transition-all",
+                            isCurrentDay 
+                              ? "bg-teal-400/20 border-teal-400/50 text-teal-400" 
+                              : "bg-gray-800/50 border-gray-700/50 text-gray-400"
+                          )}>
+                            {day.dayNumber}
+                          </div>
+                          <div>
+                            <h3 className="text-sm lg:text-base font-medium text-white">
+                              Dia {day.dayNumber}
+                            </h3>
+                            <div className="text-xs text-gray-400">
+                              {format(addDays(new Date(activeProtocol.startDate), day.dayNumber - 1), 'dd/MM', { locale: ptBR })}
+                            </div>
+                          </div>
+                        </div>
+                        {isCurrentDay && (
+                          <div className="px-2 py-1 bg-teal-400/15 border border-teal-400/25 rounded-md">
+                            <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">
+                              Hoje
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Tarefas compactas */}
+                    <div className="p-3 lg:p-4">
+                      {day.sessions
+                        .sort((a, b) => a.order - b.order)
+                        .map(session => (
+                          <div key={session.id} className="space-y-2 lg:space-y-3">
+                            {/* Session Header compacto */}
+                            {session.name && (
+                              <div className="mb-2 lg:mb-3">
+                                <h4 className="text-sm font-medium text-teal-400">
+                                  {session.name}
+                                </h4>
+                                {session.description && (
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {session.description}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Tasks compactas */}
+                            {session.tasks
+                              .sort((a, b) => a.order - b.order)
+                              .map(task => {
+                                const isCompleted = isTaskCompleted(task.id, dayDate);
+                                const canInteract = dayStatus !== 'future';
+                                const isPending = pendingTasks.has(task.id);
+                                
+                                return (
+                                  <div 
+                                    key={task.id}
+                                    className={cn(
+                                      "group flex items-start gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg border transition-all duration-200 hover:border-gray-600/50",
+                                      isCompleted 
+                                        ? "bg-teal-500/10 border-teal-500/30" 
+                                        : "bg-gray-800/20 border-gray-700/40",
+                                      !canInteract && "opacity-50",
+                                      isPending && "opacity-80 scale-[0.98]"
+                                    )}
+                                  >
+                                    <button
+                                      disabled={!canInteract || isPending}
+                                      className={cn(
+                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
+                                        isCompleted 
+                                          ? "bg-teal-500 border-teal-500 text-white shadow-lg shadow-teal-500/25 scale-110" 
+                                          : "border-gray-600 hover:border-teal-400/50 hover:bg-teal-400/10 hover:scale-105",
+                                        !canInteract && "cursor-not-allowed",
+                                        isPending && "animate-pulse border-teal-400/70"
+                                      )}
+                                      onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
+                                    >
+                                      {isCompleted && <CheckIcon className="h-3 w-3 transition-all duration-200" />}
+                                    </button>
+                                    
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1">
+                                          <h5 className={cn(
+                                            "text-sm font-medium leading-snug",
+                                            isCompleted ? "text-teal-300 line-through" : "text-white"
+                                          )}>
+                                            {task.title}
+                                          </h5>
+                                          {task.description && (
+                                            <p className={cn(
+                                              "text-xs mt-1 leading-relaxed",
+                                              isCompleted ? "text-teal-400/70" : "text-gray-300"
+                                            )}>
+                                              {task.description}
+                                            </p>
+                                          )}
+                                        </div>
+                                        
+                                        {task.hasMoreInfo && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-teal-400 hover:text-teal-300 hover:bg-teal-400/10 h-6 px-2 opacity-0 group-hover:opacity-100 transition-all lg:opacity-100"
+                                            onClick={() => {
+                                              setSelectedTask(task);
+                                              setShowTaskInfoModal(true);
+                                            }}
+                                          >
+                                            <InformationCircleIcon className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+            {/* Produtos compactos */}
+            {products.length > 0 && (
+              <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                <div className="mb-3 lg:mb-4">
+                  <h3 className="text-sm lg:text-base font-medium text-white mb-1">
+                    Produtos Recomendados
+                  </h3>
+                  <p className="text-xs text-teal-400">
+                    Selecionados para seu protocolo
+                  </p>
+                </div>
+                
+                <div className="grid gap-2 lg:gap-3">
+                  {products
+                    .sort((a, b) => a.order - b.order)
+                    .map((protocolProduct) => (
+                      <div key={protocolProduct.id} className="group flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-gray-800/20 rounded-lg border border-gray-700/40 hover:border-teal-400/30 transition-all duration-300">
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700/50 rounded-lg flex-shrink-0 overflow-hidden">
+                          {protocolProduct.product.imageUrl ? (
+                            <img 
+                              src={protocolProduct.product.imageUrl} 
+                              alt={protocolProduct.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700" />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-white text-sm">
+                            {protocolProduct.product.name}
+                          </h4>
+                          {protocolProduct.product.brand && (
+                            <p className="text-xs text-gray-400">
+                              {protocolProduct.product.brand}
+                            </p>
+                          )}
+                          {protocolProduct.isRequired && (
+                            <div className="inline-flex items-center px-2 py-0.5 bg-teal-400/15 border border-teal-400/25 rounded-md mt-1">
+                              <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">
+                                Obrigatório
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {protocolProduct.product.purchaseUrl && (
+                          <Button 
+                            size="sm" 
+                            className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium px-3 lg:px-4 py-1.5 text-xs shadow-md shadow-teal-400/25 hover:shadow-teal-400/40 transition-all duration-200"
+                            asChild
+                          >
+                            <a 
+                              href={protocolProduct.product.purchaseUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              Adquirir
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-8 pb-24">
-        {isLoading ? (
-          <div className="text-center py-16">
-            <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <span className="text-zinc-300">Carregando protocolo...</span>
-          </div>
-        ) : !activeProtocol ? (
-          <div className="text-center py-16">
-            <span className="text-zinc-300">Protocolo não encontrado.</span>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Protocol Overview */}
-            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-6 lg:p-8 backdrop-blur-sm">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex-1">
-                  <h2 className="text-xl lg:text-2xl font-light text-white mb-2">
-                    {activeProtocol.protocol.name}
-                  </h2>
-                  {activeProtocol.protocol.description && (
-                    <p className="text-zinc-300 leading-relaxed">
-                      {activeProtocol.protocol.description}
-                    </p>
-                  )}
-                  <div className="mt-4 text-sm text-zinc-400">
-                    Iniciado em {format(new Date(activeProtocol.startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                  </div>
-                </div>
-                
-                {/* Stats */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-zinc-200">{getCurrentDay()}</div>
-                    <div className="text-xs text-zinc-400">Dia Atual</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-white">{activeProtocol.protocol.duration}</div>
-                    <div className="text-xs text-zinc-400">Total</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-white">
-                      {activeProtocol.protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)}
-                    </div>
-                    <div className="text-xs text-zinc-400">Tarefas</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-light text-green-400">
-                      {progress.filter(p => p.isCompleted).length}
-                    </div>
-                    <div className="text-xs text-zinc-400">Concluídas</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Protocol Days */}
-            <div className="space-y-6">
-              {activeProtocol.protocol.days
-                .sort((a, b) => {
-                  const statusA = getDayStatus(a.dayNumber);
-                  const statusB = getDayStatus(b.dayNumber);
-                  
-                  // Prioridade: current > future > past
-                  const statusPriority = { current: 0, future: 1, past: 2 };
-                  
-                  if (statusA !== statusB) {
-                    return statusPriority[statusA] - statusPriority[statusB];
-                  }
-                  
-                  // Se mesmo status, ordenar por número do dia
-                  return a.dayNumber - b.dayNumber;
-                })
-                .map(day => {
-                  const dayStatus = getDayStatus(day.dayNumber);
-                  const dayProgress = getDayProgress(day.dayNumber);
-                  const dayDate = getDateForProtocolDay(day.dayNumber);
-                  const isCurrentDay = getCurrentDay() === day.dayNumber;
-                  
-                  return (
-                    <div 
-                      key={day.id} 
-                      className={cn(
-                        "bg-zinc-900/50 border border-zinc-800/50 rounded-lg transition-all duration-200 backdrop-blur-sm",
-                        isCurrentDay && "ring-1 ring-zinc-400/30 bg-zinc-500/10",
-                        dayStatus === 'past' && dayProgress.completed === dayProgress.total && "border-green-500/30",
-                      )}
-                    >
-                      {/* Day Header */}
-                      <div className="p-6 border-b border-zinc-600/20">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium",
-                              isCurrentDay && "bg-zinc-500 text-white",
-                              dayStatus === 'past' && dayProgress.completed === dayProgress.total && "bg-green-500 text-white",
-                              dayStatus === 'past' && dayProgress.completed < dayProgress.total && "bg-yellow-500 text-white",
-                              dayStatus === 'future' && "bg-zinc-700 text-zinc-400"
-                            )}>
-                              {dayStatus === 'past' && dayProgress.completed === dayProgress.total ? (
-                                <CheckCircleIcon className="h-5 w-5" />
-                              ) : (
-                                day.dayNumber
-                              )}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-lg font-light text-white">
-                                  Dia {day.dayNumber}
-                                </h3>
-                                {isCurrentDay && (
-                                  <Badge className="bg-zinc-500/20 text-zinc-300 border-zinc-500/30 text-xs">
-                                    Hoje
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-sm text-zinc-400 mt-1">
-                                {format(addDays(new Date(activeProtocol.startDate), day.dayNumber - 1), 'dd/MM/yyyy', { locale: ptBR })} • {day.sessions.length + day.tasks.length} {(day.sessions.length + day.tasks.length) === 1 ? 'item' : 'itens'}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="text-lg font-light text-white">
-                              {dayProgress.completed}/{dayProgress.total}
-                            </div>
-                            <div className="text-xs text-zinc-400">Concluídas</div>
-                          </div>
-                        </div>
-                        
-                        {/* Progress Bar */}
-                        {dayProgress.total > 0 && (
-                          <div className="w-full bg-zinc-700 rounded-full h-2 mt-4">
-                            <div 
-                              className={cn(
-                                "h-2 rounded-full transition-all duration-500",
-                                dayProgress.completed === dayProgress.total ? "bg-green-500" : "bg-zinc-400"
-                              )}
-                              style={{ width: `${(dayProgress.completed / dayProgress.total) * 100}%` }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Tasks */}
-                      <div className="p-6">
-                        <div className="space-y-6">
-                          {/* Sessões */}
-                          {day.sessions
-                            .sort((a, b) => a.order - b.order)
-                            .map(session => (
-                              <div key={session.id} className="space-y-4">
-                                {/* Session Header */}
-                                <div className="border-b border-zinc-600/30 pb-3">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <h4 className={cn(
-                                        "text-base font-medium",
-                                        isSessionCompleted(session, dayDate) 
-                                          ? "text-green-400" 
-                                          : "text-[#76e1d8]"
-                                      )}>
-                                        {session.name}
-                                      </h4>
-                                      {isSessionCompleted(session, dayDate) && (
-                                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                                          <CheckIcon className="h-3 w-3 mr-1" />
-                                          Completa
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="text-xs text-zinc-400">
-                                      {session.tasks.filter((task: any) => isTaskCompleted(task.id, dayDate)).length}/{session.tasks.length}
-                                    </div>
-                                  </div>
-                                  {session.description && (
-                                    <p className={cn(
-                                      "text-sm mt-2",
-                                      isSessionCompleted(session, dayDate) 
-                                        ? "text-green-300/70" 
-                                        : "text-zinc-400"
-                                    )}>
-                                      {session.description}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {/* Session Tasks */}
-                                <div className={cn(
-                                  "space-y-3 pl-4 border-l-2",
-                                  isSessionCompleted(session, dayDate) 
-                                    ? "border-green-400/50" 
-                                    : "border-[#76e1d8]/30"
-                                )}>
-                                  {session.tasks
-                                    .sort((a, b) => a.order - b.order)
-                                    .map(task => {
-                                      const isCompleted = isTaskCompleted(task.id, dayDate);
-                                      const canInteract = dayStatus !== 'future';
-                                      
-                                      return (
-                                        <div 
-                                          key={task.id}
-                                          className={cn(
-                                            "flex items-start gap-4 p-4 rounded-lg border transition-all duration-200",
-                                            isCompleted 
-                                              ? "bg-green-500/10 border-green-500/20" 
-                                              : "bg-zinc-800/30 border-zinc-600/30 hover:border-zinc-500/50",
-                                            !canInteract && "opacity-50"
-                                          )}
-                                        >
-                                          <Button
-                                            variant="outline"
-                                            size="icon"
-                                            disabled={!canInteract}
-                                            className={cn(
-                                              "w-6 h-6 rounded-full flex-shrink-0 mt-0.5",
-                                              isCompleted 
-                                                ? "bg-green-500 border-green-500 text-white hover:bg-green-600" 
-                                                : "border-zinc-600 hover:border-zinc-500",
-                                              !canInteract && "cursor-not-allowed"
-                                            )}
-                                            onClick={() => canInteract && toggleTask(task.id, dayDate)}
-                                          >
-                                            {isCompleted && <CheckIcon className="h-3 w-3" />}
-                                          </Button>
-                                          
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between">
-                                              <h5 className={cn(
-                                                "text-sm font-medium",
-                                                isCompleted ? "text-green-100 line-through" : "text-white"
-                                              )}>
-                                                {task.title}
-                                              </h5>
-                                              
-                                              {/* Botão Ver Mais - só aparece se a tarefa tem informações adicionais */}
-                                              {task.hasMoreInfo && (
-                                                <Button
-                                                  variant="ghost"
-                                                  size="sm"
-                                                  className="text-[#76e1d8] hover:text-white hover:bg-[#76e1d8]/20 ml-2"
-                                                  onClick={() => {
-                                                    setSelectedTask(task);
-                                                    setShowTaskInfoModal(true);
-                                                  }}
-                                                >
-                                                  <InformationCircleIcon className="h-4 w-4 mr-1" />
-                                                  {task.modalButtonText || 'Ver mais'}
-                                                </Button>
-                                              )}
-                                            </div>
-                                            {task.description && (
-                                              <p className={cn(
-                                                "text-sm mt-1 leading-relaxed",
-                                                isCompleted ? "text-green-200/70" : "text-zinc-300"
-                                              )}>
-                                                {task.description}
-                                              </p>
-                                            )}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              </div>
-                            ))}
-
-                          {/* Tarefas Diretas (sem sessão) */}
-                          {day.tasks.length > 0 && (
-                            <div className="space-y-3">
-                              {day.sessions.length > 0 && (
-                                <div className="border-b border-zinc-600/30 pb-3">
-                                  <h4 className="text-base font-medium text-zinc-300">
-                                    Outras Tarefas
-                                  </h4>
-                                </div>
-                              )}
-                              
-                              {day.tasks
-                                .sort((a, b) => a.order - b.order)
-                                .map(task => {
-                                  const isCompleted = isTaskCompleted(task.id, dayDate);
-                                  const canInteract = dayStatus !== 'future';
-                                  
-                                  return (
-                                    <div 
-                                      key={task.id}
-                                      className={cn(
-                                        "flex items-start gap-4 p-4 rounded-lg border transition-all duration-200",
-                                        isCompleted 
-                                          ? "bg-green-500/10 border-green-500/20" 
-                                          : "bg-zinc-800/30 border-zinc-600/30 hover:border-zinc-500/50",
-                                        !canInteract && "opacity-50"
-                                      )}
-                                    >
-                                      <Button
-                                        variant="outline"
-                                        size="icon"
-                                        disabled={!canInteract}
-                                        className={cn(
-                                          "w-6 h-6 rounded-full flex-shrink-0 mt-0.5",
-                                          isCompleted 
-                                            ? "bg-green-500 border-green-500 text-white hover:bg-green-600" 
-                                            : "border-zinc-600 hover:border-zinc-500",
-                                          !canInteract && "cursor-not-allowed"
-                                        )}
-                                        onClick={() => canInteract && toggleTask(task.id, dayDate)}
-                                      >
-                                        {isCompleted && <CheckIcon className="h-3 w-3" />}
-                                      </Button>
-                                      
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                          <h4 className={cn(
-                                            "text-sm font-medium",
-                                            isCompleted ? "text-green-100 line-through" : "text-white"
-                                          )}>
-                                            {task.title}
-                                          </h4>
-                                          
-                                          {/* Botão Ver Mais - só aparece se a tarefa tem informações adicionais */}
-                                          {task.hasMoreInfo && (
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="text-[#76e1d8] hover:text-white hover:bg-[#76e1d8]/20 ml-2"
-                                              onClick={() => {
-                                                setSelectedTask(task);
-                                                setShowTaskInfoModal(true);
-                                              }}
-                                            >
-                                              <InformationCircleIcon className="h-4 w-4 mr-1" />
-                                              {task.modalButtonText || 'Ver mais'}
-                                            </Button>
-                                          )}
-                                        </div>
-                                        {task.description && (
-                                          <p className={cn(
-                                            "text-sm mt-1 leading-relaxed",
-                                            isCompleted ? "text-green-200/70" : "text-zinc-300"
-                                          )}>
-                                            {task.description}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-
-            {/* Protocol Products */}
-            {products.length > 0 && (
-              <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-6 lg:p-8 backdrop-blur-sm">
-                <div className="mb-6">
-                  <h3 className="text-lg font-light text-white mb-2">
-                    Produtos Recomendados ({products.length})
-                  </h3>
-                  <p className="text-sm text-[#76e1d8] font-medium">
-                    Descontos Exclusivos para Membros
-                  </p>
-                </div>
-                
-                {isLoadingProducts ? (
-                  <div className="text-center py-8">
-                    <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <span className="text-zinc-300">Carregando produtos...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {products
-                      .sort((a, b) => a.order - b.order)
-                      .map((protocolProduct) => (
-                        <div key={protocolProduct.id} className="p-6 bg-zinc-800/30 rounded-xl border border-zinc-600/20 hover:border-[#76e1d8]/30 hover:shadow-lg hover:shadow-[#76e1d8]/5 transition-all duration-300">
-                          <div className="flex items-start gap-6">
-                            {/* Product Image */}
-                            <div className="w-20 h-20 rounded-xl bg-zinc-700/50 flex items-center justify-center overflow-hidden flex-shrink-0 ring-1 ring-zinc-600/30">
-                              {protocolProduct.product.imageUrl ? (
-                                <img 
-                                  src={protocolProduct.product.imageUrl} 
-                                  alt={protocolProduct.product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 bg-zinc-600 rounded-lg" />
-                              )}
-                            </div>
-
-                            {/* Product Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="text-lg font-semibold text-white mb-1">
-                                    {protocolProduct.product.name}
-                                  </h4>
-                                  {protocolProduct.product.brand && (
-                                    <p className="text-sm text-zinc-400 mb-3 font-medium">
-                                      {protocolProduct.product.brand}
-                                    </p>
-                                  )}
-                                  {protocolProduct.product.description && (
-                                    <p className="text-sm text-zinc-300 leading-relaxed mb-4">
-                                      {protocolProduct.product.description}
-                                    </p>
-                                  )}
-                                  
-                                  {/* Required Badge */}
-                                  {protocolProduct.isRequired && (
-                                    <Badge className="bg-[#76e1d8]/20 text-[#76e1d8] border-[#76e1d8]/30 text-xs mb-3 font-medium">
-                                      Obrigatório
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <div className="flex flex-col items-start lg:items-end gap-4">
-                                  {/* Price */}
-                                  {(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice) && (
-                                    <div className="text-left lg:text-right">
-                                      {protocolProduct.product.discountPrice && protocolProduct.product.originalPrice ? (
-                                        <>
-                                          <div className="text-xl font-bold text-[#76e1d8] mb-1">
-                                            R$ {protocolProduct.product.discountPrice.toFixed(2)}
-                                          </div>
-                                          <div className="text-sm text-zinc-500 line-through font-medium">
-                                            R$ {protocolProduct.product.originalPrice.toFixed(2)}
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div className="text-xl font-bold text-white">
-                                          R$ {protocolProduct.product.originalPrice?.toFixed(2) || protocolProduct.product.discountPrice?.toFixed(2)}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Purchase Link */}
-                                  {protocolProduct.product.purchaseUrl && (
-                                    <Button 
-                                      size="default" 
-                                      className="bg-gradient-to-r from-[#76e1d8] to-[#5dd4c8] hover:from-[#5dd4c8] hover:to-[#4bc5b8] text-white font-semibold px-8 py-2.5 shadow-lg shadow-[#76e1d8]/20 hover:shadow-[#76e1d8]/30 transition-all duration-200"
-                                      asChild
-                                    >
-                                      <a 
-                                        href={protocolProduct.product.purchaseUrl} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                      >
-                                        Comprar Produto
-                                      </a>
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Notes */}
-                              {protocolProduct.notes && (
-                                <div className="mt-4 p-4 bg-zinc-700/40 rounded-lg border border-zinc-600/30">
-                                  <p className="text-sm text-zinc-300">
-                                    <span className="font-semibold text-[#76e1d8]">Observações:</span> {protocolProduct.notes}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        {/* Modal */}
+        {showTaskInfoModal && selectedTask && (
+          <TaskInfoModal
+            isOpen={showTaskInfoModal}
+            task={selectedTask}
+            isCompleted={isTaskCompleted(selectedTask.id, getDateForProtocolDay(1))}
+            onClose={() => {
+              setShowTaskInfoModal(false);
+              setSelectedTask(null);
+            }}
+          />
         )}
       </div>
-
-      {/* Task Info Modal */}
-      {showTaskInfoModal && selectedTask && (
-        <TaskInfoModal
-          isOpen={showTaskInfoModal}
-          task={selectedTask}
-          isCompleted={isTaskCompleted(selectedTask.id, getDateForProtocolDay(1))}
-          onClose={() => {
-            setShowTaskInfoModal(false);
-            setSelectedTask(null);
-          }}
-        />
-      )}
     </div>
   );
 } 

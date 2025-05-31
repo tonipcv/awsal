@@ -331,7 +331,6 @@ model ProtocolDayProgress {
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   protocolTask    ProtocolTask? @relation(fields: [protocolTaskId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, protocolId, dayNumber])
   @@unique([userId, protocolTaskId, date])
 }
 

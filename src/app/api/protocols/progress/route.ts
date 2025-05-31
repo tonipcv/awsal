@@ -11,13 +11,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { protocolTaskId, date, isCompleted, notes } = await request.json();
+    const { protocolTaskId, date, notes } = await request.json();
 
     if (!protocolTaskId || !date) {
       return NextResponse.json({ error: 'ID da tarefa e data são obrigatórios' }, { status: 400 });
     }
 
-    // Verificar se a tarefa existe
+    // Normalizar a data para evitar problemas de timezone
+    // Criar data sempre no UTC para consistência
+    const [year, month, day] = date.split('-').map(Number);
+    const normalizedDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+
+    // Verificar se a tarefa existe (todas as tarefas estão em sessões)
     const task = await prisma.protocolTask.findUnique({
       where: { id: protocolTaskId },
       include: {
@@ -46,82 +51,71 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 });
     }
 
-    // Verificar se o usuário tem acesso a esta tarefa
-    // A tarefa pode estar diretamente no dia ou em uma sessão
-    const protocol = task.protocolSession?.protocolDay?.protocol;
-    
-    if (!protocol) {
-      return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
-    }
-
+    // Verificar acesso
+    const protocol = task.protocolSession.protocolDay.protocol;
     const hasAccess = protocol.assignments.length > 0;
+    
     if (!hasAccess) {
       return NextResponse.json({ error: 'Acesso negado a esta tarefa' }, { status: 403 });
     }
 
-    // Verificar se já existe progresso para esta data
-    const existingProgress = await prisma.protocolDayProgress.findUnique({
+    const dayNumber = task.protocolSession.protocolDay.dayNumber;
+
+    // Verificar se já existe progresso para esta tarefa específica nesta data
+    const existingProgress = await prisma.protocolDayProgress.findFirst({
       where: {
-        userId_protocolTaskId_date: {
-          userId: session.user.id,
-          protocolTaskId: protocolTaskId,
-          date: new Date(date)
-        }
+        userId: session.user.id,
+        protocolTaskId: protocolTaskId,
+        date: normalizedDate
       }
     });
 
     let progress;
 
     if (existingProgress) {
-      // Atualizar progresso existente
+      // Toggle: se existe, inverter o estado
+      const newCompletedState = !existingProgress.isCompleted;
+      
       progress = await prisma.protocolDayProgress.update({
         where: { id: existingProgress.id },
         data: {
-          isCompleted: isCompleted ?? !existingProgress.isCompleted,
-          notes: notes || existingProgress.notes
+          isCompleted: newCompletedState,
+          notes: notes || existingProgress.notes,
+          updatedAt: new Date()
         },
         include: {
           protocolTask: {
             include: {
               protocolSession: {
                 include: {
-                  protocolDay: true
+                  protocolDay: {
+                    include: {
+                      protocol: true
+                    }
+                  }
                 }
               }
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
             }
           }
         }
       });
     } else {
-      // Buscar informações da tarefa para obter protocolId e dayNumber
-      const taskInfo = await prisma.protocolTask.findUnique({
-        where: { id: protocolTaskId },
-        include: {
-          protocolSession: {
-            include: {
-              protocolDay: {
-                include: {
-                  protocol: true
-                }
-              }
-            }
-          }
-        }
-      });
-
-      if (!taskInfo) {
-        return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 });
-      }
-
-      // Criar novo progresso
+      // Se não existe, criar como concluída
       progress = await prisma.protocolDayProgress.create({
         data: {
           userId: session.user.id,
-          protocolId: taskInfo.protocolSession.protocolDay.protocol.id,
-          dayNumber: taskInfo.protocolSession.protocolDay.dayNumber,
+          protocolId: protocol.id,
+          dayNumber: dayNumber,
           protocolTaskId: protocolTaskId,
-          date: new Date(date),
-          isCompleted: isCompleted ?? true,
+          date: normalizedDate,
+          isCompleted: true,
           notes: notes
         },
         include: {
@@ -129,19 +123,39 @@ export async function POST(request: Request) {
             include: {
               protocolSession: {
                 include: {
-                  protocolDay: true
+                  protocolDay: {
+                    include: {
+                      protocol: true
+                    }
+                  }
                 }
               }
+            }
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
             }
           }
         }
       });
     }
 
-    return NextResponse.json(progress);
+    return NextResponse.json({
+      success: true,
+      progress,
+      action: existingProgress ? 'toggled' : 'created',
+      isCompleted: progress.isCompleted
+    });
+
   } catch (error) {
     console.error('Error updating protocol progress:', error);
-    return NextResponse.json({ error: 'Erro ao atualizar progresso' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Erro ao atualizar progresso',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
@@ -185,43 +199,17 @@ export async function GET(request: Request) {
         }
 
         whereClause.userId = userId;
-        whereClause.protocolTask = {
-          OR: [
-            {
-              protocolDay: {
-                protocolId: protocolId
-              }
-            },
-            {
-              protocolSession: {
-                protocolDay: {
-                  protocolId: protocolId
-                }
-              }
-            }
-          ]
-        };
+        whereClause.protocolId = protocolId;
       } else {
-        // Buscar progresso de todos os pacientes do médico
+        // Buscar progresso de todos os pacientes do médico para protocolos do médico
         whereClause.protocolTask = {
-          OR: [
-            {
-              protocolDay: {
-                protocol: {
-                  doctorId: session.user.id
-                }
-              }
-            },
-            {
-              protocolSession: {
-                protocolDay: {
-                  protocol: {
-                    doctorId: session.user.id
-                  }
-                }
+          protocolSession: {
+            protocolDay: {
+              protocol: {
+                doctorId: session.user.id
               }
             }
-          ]
+          }
         };
       }
     } else {
@@ -229,27 +217,14 @@ export async function GET(request: Request) {
       whereClause.userId = session.user.id;
       
       if (protocolId) {
-        whereClause.protocolTask = {
-          OR: [
-            {
-              protocolDay: {
-                protocolId: protocolId
-              }
-            },
-            {
-              protocolSession: {
-                protocolDay: {
-                  protocolId: protocolId
-                }
-              }
-            }
-          ]
-        };
+        whereClause.protocolId = protocolId;
       }
     }
 
     if (date) {
-      whereClause.date = new Date(date);
+      const normalizedDate = new Date(date);
+      normalizedDate.setHours(0, 0, 0, 0);
+      whereClause.date = normalizedDate;
     }
 
     const progress = await prisma.protocolDayProgress.findMany({
@@ -292,6 +267,9 @@ export async function GET(request: Request) {
     return NextResponse.json(progress);
   } catch (error) {
     console.error('Error fetching protocol progress:', error);
-    return NextResponse.json({ error: 'Erro ao buscar progresso' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Erro ao buscar progresso',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 } 

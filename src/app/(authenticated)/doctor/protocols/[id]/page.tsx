@@ -31,6 +31,13 @@ interface ProtocolDay {
   id: string;
   dayNumber: number;
   tasks: ProtocolTask[];
+  sessions?: ProtocolSession[];
+}
+
+interface ProtocolSession {
+  id: string;
+  title: string;
+  tasks?: ProtocolTask[];
 }
 
 interface Assignment {
@@ -250,7 +257,16 @@ export default function ProtocolDetailPage() {
                     <div>
                       <p className="text-sm text-gray-600 font-medium">Total de Tarefas</p>
                       <p className="text-lg font-bold text-gray-900">
-                        {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)}
+                        {protocol.days.reduce((acc, day) => {
+                          // Contar tarefas das sessões
+                          const sessionTasks = day.sessions?.reduce((sessionAcc, session) => 
+                            sessionAcc + (session.tasks?.length || 0), 0) || 0;
+                          
+                          // Contar tarefas diretas do dia (se existirem)
+                          const directTasks = day.tasks?.length || 0;
+                          
+                          return acc + sessionTasks + directTasks;
+                        }, 0)}
                       </p>
                     </div>
                   </div>
@@ -455,22 +471,57 @@ export default function ProtocolDetailPage() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          {day.tasks.length === 0 ? (
+                          {(!day.tasks || day.tasks.length === 0) && (!day.sessions || day.sessions.length === 0) ? (
                             <p className="text-gray-600 font-medium text-center py-8">
                               Nenhuma tarefa configurada para este dia
                             </p>
                           ) : (
                             <div className="space-y-4">
-                              {day.tasks
-                                .sort((a, b) => a.order - b.order)
-                                .map((task) => (
-                                  <div key={task.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                    <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
-                                    {task.description && (
-                                      <p className="text-gray-600 font-medium">{task.description}</p>
-                                    )}
-                                  </div>
-                                ))}
+                              {/* Renderizar tarefas diretas do dia */}
+                              {day.tasks && day.tasks.length > 0 && (
+                                <div className="space-y-4">
+                                  <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Tarefas do Dia</h5>
+                                  {day.tasks
+                                    .sort((a, b) => a.order - b.order)
+                                    .map((task) => (
+                                      <div key={task.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                        <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
+                                        {task.description && (
+                                          <p className="text-gray-600 font-medium">{task.description}</p>
+                                        )}
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                              
+                              {/* Renderizar sessões e suas tarefas */}
+                              {day.sessions && day.sessions.length > 0 && (
+                                <div className="space-y-6">
+                                  {day.sessions.map((session) => (
+                                    <div key={session.id} className="space-y-3">
+                                      <h5 className="text-sm font-semibold text-[#5154e7] uppercase tracking-wider">
+                                        {session.title}
+                                      </h5>
+                                      {session.tasks && session.tasks.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {session.tasks
+                                            .sort((a, b) => a.order - b.order)
+                                            .map((task) => (
+                                              <div key={task.id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                                <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
+                                                {task.description && (
+                                                  <p className="text-gray-600 font-medium">{task.description}</p>
+                                                )}
+                                              </div>
+                                            ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-gray-500 text-sm italic">Nenhuma tarefa nesta sessão</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </CardContent>

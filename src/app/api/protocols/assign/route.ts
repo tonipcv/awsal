@@ -251,7 +251,35 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json(assignments);
+    // Transform the data to match the expected structure
+    const transformedAssignments = assignments.map(assignment => ({
+      ...assignment,
+      protocol: {
+        ...assignment.protocol,
+        days: assignment.protocol.days.map(day => ({
+          ...day,
+          sessions: day.sessions.map(session => ({
+            ...session,
+            name: session.title, // Map title to name for compatibility
+            order: session.sessionNumber - 1, // Convert to 0-based index
+            tasks: session.tasks.map(task => ({
+              ...task,
+              order: task.orderIndex,
+              hasMoreInfo: false, // Default values for compatibility
+              videoUrl: '',
+              fullExplanation: '',
+              productId: '',
+              modalTitle: '',
+              modalButtonText: ''
+            }))
+          })),
+          // Remove the flattened tasks array to avoid duplication
+          tasks: []
+        }))
+      }
+    }));
+
+    return NextResponse.json(transformedAssignments);
   } catch (error) {
     console.error('Error fetching protocol assignments:', String(error));
     return NextResponse.json({ error: 'Erro ao buscar atribuições de protocolos' }, { status: 500 });

@@ -65,7 +65,7 @@ export async function GET(
 
     return NextResponse.json(transformedProducts);
   } catch (error) {
-    console.error('Error fetching protocol products for patient:', error);
+    console.error('Error fetching protocol products for patient:', error?.toString() || 'Unknown error');
     return NextResponse.json({ error: 'Erro ao buscar produtos do protocolo' }, { status: 500 });
   }
 } 

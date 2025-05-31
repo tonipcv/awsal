@@ -43,17 +43,17 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-700">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black border-gray-800/50 backdrop-blur-xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-light text-white">
+            <DialogTitle className="text-xl font-light text-white tracking-wide">
               {modalTitle}
             </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-zinc-400 hover:text-white"
+              className="text-gray-400 hover:text-white hover:bg-gray-800/50"
             >
               <XMarkIcon className="h-5 w-5" />
             </Button>
@@ -65,10 +65,10 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           {task.videoUrl && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <PlayIcon className="h-5 w-5 text-[#76e1d8]" />
+                <PlayIcon className="h-5 w-5 text-teal-400" />
                 <h3 className="text-lg font-medium text-white">Vídeo Explicativo</h3>
               </div>
-              <div className="aspect-video rounded-lg overflow-hidden bg-zinc-800">
+              <div className="aspect-video rounded-xl overflow-hidden bg-gray-900/50 border border-gray-800/50">
                 <iframe
                   src={task.videoUrl}
                   className="w-full h-full"
@@ -83,8 +83,8 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           {task.fullExplanation && (
             <div className="space-y-3">
               <h3 className="text-lg font-medium text-white">Explicação Detalhada</h3>
-              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
-                <p className="text-zinc-300 leading-relaxed whitespace-pre-wrap">
+              <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
+                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {task.fullExplanation}
                 </p>
               </div>
@@ -95,13 +95,13 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           {task.product && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <ShoppingBagIcon className="h-5 w-5 text-[#76e1d8]" />
+                <ShoppingBagIcon className="h-5 w-5 text-teal-400" />
                 <h3 className="text-lg font-medium text-white">Produto Recomendado</h3>
               </div>
-              <div className="bg-zinc-800/50 rounded-lg p-4 border border-zinc-700/50">
+              <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
                 <div className="flex items-start gap-4">
                   {/* Imagem do Produto */}
-                  <div className="w-16 h-16 rounded-lg bg-zinc-700/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-16 h-16 rounded-xl bg-gray-800/50 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {task.product.imageUrl ? (
                       <img 
                         src={task.product.imageUrl} 
@@ -109,7 +109,7 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-8 h-8 bg-zinc-600 rounded" />
+                      <div className="w-8 h-8 bg-gray-700 rounded" />
                     )}
                   </div>
 
@@ -119,12 +119,12 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                       {task.product.name}
                     </h4>
                     {task.product.brand && (
-                      <p className="text-sm text-zinc-400 mb-2">
+                      <p className="text-sm text-gray-400 mb-2">
                         {task.product.brand}
                       </p>
                     )}
                     {task.product.description && (
-                      <p className="text-sm text-zinc-300 mb-3">
+                      <p className="text-sm text-gray-300 mb-3">
                         {task.product.description}
                       </p>
                     )}
@@ -134,10 +134,10 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                       <div className="mb-3">
                         {task.product.discountPrice && task.product.originalPrice ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-[#76e1d8]">
+                            <span className="text-lg font-bold text-teal-400">
                               R$ {task.product.discountPrice.toFixed(2)}
                             </span>
-                            <span className="text-sm text-zinc-500 line-through">
+                            <span className="text-sm text-gray-500 line-through">
                               R$ {task.product.originalPrice.toFixed(2)}
                             </span>
                           </div>
@@ -153,7 +153,7 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                     {task.product.purchaseUrl && (
                       <Button 
                         size="sm" 
-                        className="bg-[#76e1d8] hover:bg-[#5dd4c8] text-white"
+                        className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium shadow-lg shadow-teal-400/25"
                         asChild
                       >
                         <a 
@@ -162,7 +162,7 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                           rel="noopener noreferrer"
                           className="flex items-center gap-2"
                         >
-                          Comprar Produto
+                          Adquirir Produto
                           <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                         </a>
                       </Button>
@@ -177,7 +177,7 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           <div className="flex justify-end pt-4">
             <Button 
               onClick={onClose}
-              className="bg-zinc-700 hover:bg-zinc-600 text-white"
+              className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700/50"
             >
               {buttonText}
             </Button>

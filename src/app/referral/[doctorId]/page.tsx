@@ -196,8 +196,8 @@ export default function ReferralPage() {
               </div>
               
               <div className="space-y-3">
-                <Button 
-                  onClick={() => {
+              <Button 
+                onClick={() => {
                     // Verificar se o usuário está logado como paciente
                     fetch('/api/auth/session')
                       .then(res => res.json())
@@ -224,8 +224,8 @@ export default function ReferralPage() {
                       .catch(() => {
                         window.location.href = '/';
                       });
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Ver Minhas Indicações Agora
                 </Button>
@@ -238,9 +238,9 @@ export default function ReferralPage() {
                     setFormData({ name: '', email: '', phone: '', referrerCode: referrerCode || '' });
                   }}
                   className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
-                >
-                  Fazer Nova Indicação
-                </Button>
+              >
+                Fazer Nova Indicação
+              </Button>
               </div>
             </div>
           </CardContent>
