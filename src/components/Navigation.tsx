@@ -48,30 +48,56 @@ interface DoctorInfo {
 function useDoctorInfo() {
   const [doctorInfo, setDoctorInfo] = useState<DoctorInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
 
-  useEffect(() => {
-    const fetchDoctorInfo = async () => {
-      if (!session?.user?.id) return;
+  const fetchDoctorInfo = async (forceRefresh = false) => {
+    if (!session?.user?.id) return;
 
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/protocols/doctor-info');
-        if (response.ok) {
-          const data = await response.json();
-          setDoctorInfo(data.doctor);
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Add cache-busting parameter if forcing refresh
+      const url = forceRefresh 
+        ? `/api/protocols/doctor-info?t=${Date.now()}` 
+        : '/api/protocols/doctor-info';
+      
+      const response = await fetch(url, {
+        cache: 'no-store', // Prevent caching
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
-      } catch (error) {
-        console.error('Error fetching doctor info:', error);
-      } finally {
-        setIsLoading(false);
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Doctor info fetched:', data.doctor);
+        setDoctorInfo(data.doctor);
+      } else {
+        console.error('Failed to fetch doctor info:', response.status);
+        setError(`Failed to fetch doctor info: ${response.status}`);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching doctor info:', error);
+      setError('Error fetching doctor info');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchDoctorInfo();
   }, [session]);
 
-  return { doctorInfo, isLoading };
+  // Return refresh function along with state
+  return { 
+    doctorInfo, 
+    isLoading, 
+    error, 
+    refreshDoctorInfo: () => fetchDoctorInfo(true) 
+  };
 }
 
 export default function Navigation() {
