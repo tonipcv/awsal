@@ -436,7 +436,7 @@ export default function Navigation() {
                   </Link>
                 </div>
                 <div className="flex items-center">
-                  {(isProtocolsPage || isChecklistPage) && doctorInfo && (
+                  {doctorInfo && (
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col text-right">
                         <span className="text-xs text-gray-400">{doctorInfo.name}</span>
@@ -569,7 +569,7 @@ export default function Navigation() {
               </div>
 
               {/* Doctor Info Section - if available */}
-              {(isProtocolsPage || isChecklistPage) && doctorInfo && (
+              {doctorInfo && (
                 <div className="p-4 border-b border-gray-800">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
                     <div className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600">
