@@ -187,7 +187,7 @@ export default function PatientCourseViewPage() {
       case 'active':
         return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Ativo</Badge>;
       case 'completed':
-        return <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 text-xs">Concluído</Badge>;
+        return <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-xs">Concluído</Badge>;
       case 'paused':
         return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pausado</Badge>;
       case 'unavailable':
@@ -199,16 +199,92 @@ export default function PatientCourseViewPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <span className="text-xs text-gray-300">Carregando curso...</span>
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-3 lg:px-6 py-4 lg:py-6">
+            
+            {/* Header Skeleton */}
+            <div className="mb-4 lg:mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1">
+                  <div className="h-7 w-16 bg-gray-800/50 rounded animate-pulse"></div>
+                  <div className="h-3 w-px bg-gray-700"></div>
+                  <div className="h-6 bg-gray-800/50 rounded-lg w-48 animate-pulse"></div>
+                </div>
+                <div className="h-6 bg-gray-800/50 rounded w-20 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Course Overview Skeleton */}
+            <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm mb-4 lg:mb-6">
+              <div className="space-y-3 lg:space-y-4">
+                <div>
+                  <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-64 mb-2 animate-pulse"></div>
+                  <div className="hidden lg:block h-4 bg-gray-700/50 rounded w-96 mb-2 animate-pulse"></div>
+                  <div className="h-3 bg-gray-700/30 rounded w-32 animate-pulse"></div>
+                </div>
+
+                {/* Stats Skeleton */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className={`text-center ${i > 2 ? 'hidden lg:block' : ''}`}>
+                      <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-12 mx-auto mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-700/50 rounded w-16 mx-auto animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Progress Bar Skeleton */}
+                <div className="hidden lg:block space-y-1">
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-700/50 rounded w-24 animate-pulse"></div>
+                    <div className="h-3 bg-gray-700/50 rounded w-8 animate-pulse"></div>
+                  </div>
+                  <div className="w-full bg-gray-700/50 rounded-full h-1.5 animate-pulse"></div>
+                </div>
+
+                {/* Button Skeleton */}
+                <div className="flex justify-center pt-1">
+                  <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-32 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modules Skeleton */}
+            <div className="space-y-3 lg:space-y-4">
+              <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-20 animate-pulse"></div>
+              
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
+                  <div className="p-3 lg:p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 lg:gap-3">
+                        <div className="w-7 h-7 lg:w-8 lg:h-8 bg-gray-800/50 rounded-full animate-pulse"></div>
+                        <div>
+                          <div className="h-4 lg:h-5 bg-gray-800/50 rounded w-32 mb-1 animate-pulse"></div>
+                          <div className="h-3 bg-gray-700/50 rounded w-48 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-4 w-4 bg-gray-700/50 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <span className="text-xs text-gray-300">Curso não encontrado</span>
+      <div className="min-h-screen bg-black">
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
+          <span className="text-gray-400">Curso não encontrado</span>
+        </div>
       </div>
     );
   }
@@ -261,7 +337,7 @@ export default function PatientCourseViewPage() {
               {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 <div className="text-center">
-                  <div className="text-base lg:text-lg font-light text-teal-400">{course.assignment.progress || 0}%</div>
+                  <div className="text-base lg:text-lg font-light text-turquoise">{course.assignment.progress || 0}%</div>
                   <div className="text-xs text-gray-400">Progresso</div>
                 </div>
                 <div className="text-center">
@@ -288,7 +364,7 @@ export default function PatientCourseViewPage() {
                 </div>
                 <div className="w-full bg-gray-700/50 rounded-full h-1.5">
                   <div 
-                    className="bg-teal-400 h-1.5 rounded-full transition-all duration-500"
+                    className="bg-turquoise h-1.5 rounded-full transition-all duration-500"
                     style={{ width: `${course.assignment.progress || 0}%` }}
                   />
                 </div>
@@ -297,7 +373,7 @@ export default function PatientCourseViewPage() {
               {/* Start Course Button */}
               {getFirstLesson() && (
                 <div className="flex justify-center pt-1">
-                  <Button asChild className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium">
+                  <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium">
                     <Link href={`/courses/${courseId}/lessons/${getFirstLesson()!.id}`}>
                       {getButtonText()}
                     </Link>
@@ -329,7 +405,7 @@ export default function PatientCourseViewPage() {
                             <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-medium ${
                               isModuleCompleted(module)
                                 ? 'bg-green-500 text-white'
-                                : 'bg-teal-400 text-black'
+                                : 'bg-turquoise text-black'
                             }`}>
                               {isModuleCompleted(module) ? (
                                 <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
@@ -376,7 +452,7 @@ export default function PatientCourseViewPage() {
                               <Link 
                                 key={lesson.id} 
                                 href={`/courses/${courseId}/lessons/${lesson.id}`}
-                                className="flex items-center justify-between p-2 lg:p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 hover:border-teal-400/30 transition-colors"
+                                className="flex items-center justify-between p-2 lg:p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 hover:border-turquoise/30 transition-colors"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-xs ${
@@ -435,13 +511,13 @@ export default function PatientCourseViewPage() {
                     <Link 
                       key={lesson.id} 
                       href={`/courses/${courseId}/lessons/${lesson.id}`}
-                      className="flex items-center justify-between p-3 lg:p-4 bg-gray-900/40 border border-gray-800/40 rounded-lg hover:border-teal-400/30 transition-colors backdrop-blur-sm"
+                      className="flex items-center justify-between p-3 lg:p-4 bg-gray-900/40 border border-gray-800/40 rounded-lg hover:border-turquoise/30 transition-colors backdrop-blur-sm"
                     >
                       <div className="flex items-center gap-2 lg:gap-3">
                         <div className={`w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                           lesson.completed 
                             ? 'bg-green-500 text-white' 
-                            : 'bg-teal-400 text-black'
+                            : 'bg-turquoise text-black'
                         }`}>
                           {lesson.completed ? (
                             <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />

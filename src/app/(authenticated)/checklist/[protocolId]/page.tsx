@@ -511,7 +511,7 @@ export default function ProtocolChecklistPage() {
           {/* Botão de voltar e título do protocolo */}
           <div className="mb-4 lg:mb-6">
             <div className="flex items-center gap-2 lg:gap-3 mb-2">
-              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-teal-400 transition-colors">
+              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors">
                 <Link href="/protocols">
                   <ArrowLeftIcon className="h-4 w-4" />
                 </Link>
@@ -523,7 +523,7 @@ export default function ProtocolChecklistPage() {
             </div>
             <div className="flex items-center justify-end text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-teal-400 font-medium">
+                <span className="text-turquoise font-medium">
                   {getCurrentDay()}
                 </span>
                 <span className="text-gray-500">/{activeProtocol.protocol.duration}</span>
@@ -556,7 +556,7 @@ export default function ProtocolChecklistPage() {
                     key={day.id} 
                     className={cn(
                       "bg-gray-900/40 border border-gray-800/40 rounded-xl transition-all duration-300 backdrop-blur-sm",
-                      isCurrentDay && "ring-1 ring-teal-400/30 bg-teal-400/5",
+                      isCurrentDay && "ring-1 ring-turquoise/30 bg-turquoise/5",
                       dayStatus === 'future' && "opacity-60"
                     )}
                   >
@@ -567,7 +567,7 @@ export default function ProtocolChecklistPage() {
                           <div className={cn(
                             "w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-sm font-medium border transition-all",
                             isCurrentDay 
-                              ? "bg-teal-400/20 border-teal-400/50 text-teal-400" 
+                              ? "bg-turquoise/20 border-turquoise/50 text-turquoise" 
                               : "bg-gray-800/50 border-gray-700/50 text-gray-400"
                           )}>
                             {day.dayNumber}
@@ -582,8 +582,8 @@ export default function ProtocolChecklistPage() {
                           </div>
                         </div>
                         {isCurrentDay && (
-                          <div className="px-2 py-1 bg-teal-400/15 border border-teal-400/25 rounded-md">
-                            <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">
+                          <div className="px-2 py-1 bg-turquoise/15 border border-turquoise/25 rounded-md">
+                            <span className="text-xs font-medium text-turquoise uppercase tracking-wider">
                               Hoje
                             </span>
                           </div>
@@ -600,7 +600,7 @@ export default function ProtocolChecklistPage() {
                             {/* Session Header compacto */}
                             {session.name && (
                               <div className="mb-2 lg:mb-3">
-                                <h4 className="text-sm font-medium text-teal-400">
+                                <h4 className="text-sm font-medium text-turquoise">
                                   {session.name}
                                 </h4>
                                 {session.description && (
@@ -625,7 +625,7 @@ export default function ProtocolChecklistPage() {
                                     className={cn(
                                       "group flex items-start gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg border transition-all duration-200 hover:border-gray-600/50",
                                       isCompleted 
-                                        ? "bg-teal-500/10 border-teal-500/30" 
+                                        ? "bg-turquoise/10 border-turquoise/30" 
                                         : "bg-gray-800/20 border-gray-700/40",
                                       !canInteract && "opacity-50",
                                       isPending && "opacity-80 scale-[0.98]"
@@ -636,10 +636,10 @@ export default function ProtocolChecklistPage() {
                                       className={cn(
                                         "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
                                         isCompleted 
-                                          ? "bg-teal-500 border-teal-500 text-white shadow-lg shadow-teal-500/25 scale-110" 
-                                          : "border-gray-600 hover:border-teal-400/50 hover:bg-teal-400/10 hover:scale-105",
+                                          ? "bg-turquoise border-turquoise text-white shadow-lg shadow-turquoise/25 scale-110" 
+                                          : "border-gray-600 hover:border-turquoise/50 hover:bg-turquoise/10 hover:scale-105",
                                         !canInteract && "cursor-not-allowed",
-                                        isPending && "animate-pulse border-teal-400/70"
+                                        isPending && "animate-pulse border-turquoise/70"
                                       )}
                                       onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
                                     >
@@ -651,14 +651,14 @@ export default function ProtocolChecklistPage() {
                                         <div className="flex-1">
                                           <h5 className={cn(
                                             "text-sm font-medium leading-snug",
-                                            isCompleted ? "text-teal-300 line-through" : "text-white"
+                                            isCompleted ? "text-turquoise-light line-through" : "text-white"
                                           )}>
                                             {task.title}
                                           </h5>
                                           {task.description && (
                                             <p className={cn(
                                               "text-xs mt-1 leading-relaxed",
-                                              isCompleted ? "text-teal-400/70" : "text-gray-300"
+                                              isCompleted ? "text-turquoise/70" : "text-gray-300"
                                             )}>
                                               {task.description}
                                             </p>
@@ -669,7 +669,7 @@ export default function ProtocolChecklistPage() {
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-teal-400 hover:text-teal-300 hover:bg-teal-400/10 h-6 px-2 opacity-0 group-hover:opacity-100 transition-all lg:opacity-100"
+                                            className="text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 h-6 px-2 opacity-0 group-hover:opacity-100 transition-all lg:opacity-100"
                                             onClick={() => {
                                               setSelectedTask(task);
                                               setShowTaskInfoModal(true);
@@ -697,7 +697,7 @@ export default function ProtocolChecklistPage() {
                   <h3 className="text-sm lg:text-base font-medium text-white mb-1">
                     Produtos Recomendados
                   </h3>
-                  <p className="text-xs text-teal-400">
+                  <p className="text-xs text-turquoise">
                     Selecionados para seu protocolo
                   </p>
                 </div>
@@ -706,7 +706,7 @@ export default function ProtocolChecklistPage() {
                   {products
                     .sort((a, b) => a.order - b.order)
                     .map((protocolProduct) => (
-                      <div key={protocolProduct.id} className="group flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-gray-800/20 rounded-lg border border-gray-700/40 hover:border-teal-400/30 transition-all duration-300">
+                      <div key={protocolProduct.id} className="group flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-gray-800/20 rounded-lg border border-gray-700/40 hover:border-turquoise/30 transition-all duration-300">
                         <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700/50 rounded-lg flex-shrink-0 overflow-hidden">
                           {protocolProduct.product.imageUrl ? (
                             <img 
@@ -729,8 +729,8 @@ export default function ProtocolChecklistPage() {
                             </p>
                           )}
                           {protocolProduct.isRequired && (
-                            <div className="inline-flex items-center px-2 py-0.5 bg-teal-400/15 border border-teal-400/25 rounded-md mt-1">
-                              <span className="text-xs font-medium text-teal-400 uppercase tracking-wider">
+                            <div className="inline-flex items-center px-2 py-0.5 bg-turquoise/15 border border-turquoise/25 rounded-md mt-1">
+                              <span className="text-xs font-medium text-turquoise uppercase tracking-wider">
                                 Obrigatório
                               </span>
                             </div>
@@ -740,7 +740,7 @@ export default function ProtocolChecklistPage() {
                         {protocolProduct.product.purchaseUrl && (
                           <Button 
                             size="sm" 
-                            className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium px-3 lg:px-4 py-1.5 text-xs shadow-md shadow-teal-400/25 hover:shadow-teal-400/40 transition-all duration-200"
+                            className="bg-turquoise hover:bg-turquoise/90 text-black font-medium px-3 lg:px-4 py-1.5 text-xs shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200"
                             asChild
                           >
                             <a 

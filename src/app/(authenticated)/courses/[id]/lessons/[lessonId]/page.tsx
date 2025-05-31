@@ -253,16 +253,82 @@ export default function LessonPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <span className="text-xs text-gray-300">Carregando aula...</span>
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-3 lg:px-6 py-4 lg:py-6">
+            
+            {/* Header Skeleton */}
+            <div className="mb-4 lg:mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="h-3 bg-gray-700/50 rounded w-24 animate-pulse"></div>
+                  <div className="h-3 bg-gray-700/50 rounded w-2 animate-pulse"></div>
+                  <div className="h-3 bg-gray-700/50 rounded w-32 animate-pulse"></div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="h-4 bg-gray-700/50 rounded w-12 animate-pulse"></div>
+                  <div className="h-6 bg-gray-800/50 rounded w-20 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lesson Header Skeleton */}
+            <div className="space-y-2 lg:space-y-3 mb-4 lg:mb-6">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="h-7 lg:h-9 bg-gray-800/50 rounded w-80 animate-pulse"></div>
+                </div>
+                <div className="h-7 w-16 bg-gray-800/50 rounded animate-pulse"></div>
+              </div>
+              <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-96 animate-pulse"></div>
+              <div className="h-3 bg-gray-700/30 rounded w-24 animate-pulse"></div>
+            </div>
+
+            {/* Video Player Skeleton */}
+            <div className="flex justify-center mb-4 lg:mb-6">
+              <div className="w-full max-w-4xl bg-gray-900/40 border border-gray-800/40 rounded-lg overflow-hidden backdrop-blur-sm">
+                <div className="aspect-video bg-gray-800/50 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm mb-4 lg:mb-6">
+              <div className="h-5 bg-gray-800/50 rounded w-32 mb-2 lg:mb-3 animate-pulse"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-700/50 rounded w-full animate-pulse"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-5/6 animate-pulse"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-4/5 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Action Button Skeleton */}
+            <div className="flex justify-center pt-2 mb-4 lg:mb-6">
+              <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-40 animate-pulse"></div>
+            </div>
+
+            {/* Navigation Skeleton */}
+            <div className="flex justify-between gap-2 lg:gap-3 pt-3 lg:pt-4 border-t border-gray-800/40">
+              <div className="flex-1">
+                <div className="h-12 lg:h-16 bg-gray-800/30 rounded w-full animate-pulse"></div>
+              </div>
+              <div className="flex-1">
+                <div className="h-12 lg:h-16 bg-gray-800/30 rounded w-full animate-pulse"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!course || !currentLesson) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <span className="text-xs text-gray-300">Aula não encontrada</span>
+      <div className="min-h-screen bg-black">
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
+          <span className="text-gray-400">Aula não encontrada</span>
+        </div>
       </div>
     );
   }
@@ -382,7 +448,7 @@ export default function LessonPage() {
             <Button 
               onClick={markAsCompleted}
               disabled={isCompleted || isMarkingComplete}
-              className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black disabled:opacity-50 px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium"
+              className="bg-turquoise hover:bg-turquoise/90 text-black disabled:opacity-50 px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium"
             >
               {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Aula Concluída' : 'Marcar como Concluída'}
             </Button>
@@ -418,10 +484,10 @@ export default function LessonPage() {
                   </Link>
                 </Button>
               ) : (
-                <Button variant="ghost" asChild className="w-full text-teal-400 hover:text-teal-300 hover:bg-teal-400/10 p-2 lg:p-3 h-auto justify-end">
+                <Button variant="ghost" asChild className="w-full text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 p-2 lg:p-3 h-auto justify-end">
                   <Link href={`/courses/${courseId}`}>
                     <div className="text-right">
-                      <div className="text-xs text-teal-400 hidden sm:block">Finalizar</div>
+                      <div className="text-xs text-turquoise hidden sm:block">Finalizar</div>
                       <div className="text-xs lg:text-sm font-light">Voltar ao Curso</div>
                     </div>
                     <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4 ml-1 lg:ml-2 flex-shrink-0" />
