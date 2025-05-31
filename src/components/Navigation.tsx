@@ -52,10 +52,10 @@ function useDoctorInfo() {
   const { data: session } = useSession();
 
   const fetchDoctorInfo = async (forceRefresh = false) => {
-    if (!session?.user?.id) return;
+      if (!session?.user?.id) return;
 
-    try {
-      setIsLoading(true);
+      try {
+        setIsLoading(true);
       setError(null);
       
       // Add cache-busting parameter if forcing refresh
@@ -71,21 +71,21 @@ function useDoctorInfo() {
         }
       });
       
-      if (response.ok) {
-        const data = await response.json();
+        if (response.ok) {
+          const data = await response.json();
         console.log('Doctor info fetched:', data.doctor);
-        setDoctorInfo(data.doctor);
+          setDoctorInfo(data.doctor);
       } else {
         console.error('Failed to fetch doctor info:', response.status);
         setError(`Failed to fetch doctor info: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Error fetching doctor info:', error);
+        }
+      } catch (error) {
+        console.error('Error fetching doctor info:', error);
       setError('Error fetching doctor info');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   useEffect(() => {
     fetchDoctorInfo();
@@ -632,7 +632,7 @@ export default function Navigation() {
                               variant="ghost"
                               className={cn(
                                 "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
-                                "text-white/70 hover:bg-white/5",
+                                "text-white/70 hover:bg-white/5 hover:text-white",
                                 pathname === item.href 
                                   ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30" 
                                   : ""

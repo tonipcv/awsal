@@ -192,7 +192,7 @@ export default function CoursesPage() {
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
                   <div className="text-center">
-                    <div className="text-lg lg:text-2xl font-light text-teal-400 mb-0.5">
+                    <div className="text-lg lg:text-2xl font-light text-turquoise mb-0.5">
                       {coursesData.active.reduce((acc, course) => acc + getTotalLessons(course), 0)}
                     </div>
                     <div className="text-xs lg:text-sm text-gray-400">
@@ -228,7 +228,7 @@ export default function CoursesPage() {
               {coursesData.active.length > 0 && (
                 <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
-                    <AcademicCapIcon className="h-4 w-4 lg:h-5 lg:w-5 text-teal-400" />
+                    <AcademicCapIcon className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
                     Cursos Ativos
                   </h2>
                   
@@ -236,16 +236,16 @@ export default function CoursesPage() {
                     {coursesData.active.map(course => (
                       <div 
                         key={course.id} 
-                        className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-teal-400/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
+                        className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
                       >
                         <div className="p-3 lg:p-4">
                           <div className="space-y-3 lg:space-y-4">
                             <div>
                               <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-teal-400 transition-colors line-clamp-1">
+                                <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-turquoise transition-colors line-clamp-1">
                                   {course.name}
                                 </h3>
-                                <Badge className="bg-teal-400/15 text-teal-400 border-teal-400/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
                                   {course.status === 'active' ? 'Ativo' : 'Concluído'}
                                 </Badge>
                               </div>
@@ -286,13 +286,13 @@ export default function CoursesPage() {
                             {course.modules.length > 0 && (
                               <div className="space-y-2">
                                 <h4 className="text-xs lg:text-sm font-medium text-gray-300 flex items-center gap-1.5">
-                                  <BookOpenIcon className="h-3 w-3 lg:h-4 lg:w-4 text-teal-400" />
+                                  <BookOpenIcon className="h-3 w-3 lg:h-4 lg:w-4 text-turquoise" />
                                   Módulos
                                 </h4>
                                 <div className="space-y-1">
                                   {course.modules.slice(0, 2).map(module => (
                                     <div key={module.id} className="text-xs lg:text-sm text-gray-400 flex items-center gap-2">
-                                      <div className="w-1 h-1 bg-teal-400 rounded-full flex-shrink-0" />
+                                      <div className="w-1 h-1 bg-turquoise rounded-full flex-shrink-0" />
                                       <span className="line-clamp-1">{module.name}</span>
                                       <span className="text-gray-500">({module.lessons.length})</span>
                                     </div>
@@ -308,7 +308,7 @@ export default function CoursesPage() {
 
                             {/* Action Button Compacto */}
                             <div className="pt-1">
-                              <Button asChild className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-teal-400/25 hover:shadow-teal-400/40 transition-all duration-200">
+                              <Button asChild className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200">
                                 <Link href={`/courses/${course.id}`}>
                                   <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
                                   Ver Curso
@@ -424,7 +424,7 @@ export default function CoursesPage() {
                   Fechar
                 </Button>
                 {selectedUnavailableCourse.modalButtonUrl && (
-                  <Button asChild className="flex-1 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-8 lg:h-9">
+                  <Button asChild className="flex-1 bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9">
                     <Link href={selectedUnavailableCourse.modalButtonUrl} target="_blank" rel="noopener noreferrer">
                       {selectedUnavailableCourse.modalButtonText || 'Saber mais'}
                     </Link>

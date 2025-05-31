@@ -240,21 +240,135 @@ export default function PatientReferralsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
+            
+            {/* Hero Skeleton */}
+            <div className="mb-6 lg:mb-8">
+              <div className="text-center max-w-3xl mx-auto">
+                <div className="h-8 lg:h-12 bg-gray-800/50 rounded-lg w-64 mx-auto mb-3 lg:mb-4 animate-pulse"></div>
+                <div className="h-4 lg:h-6 bg-gray-700/50 rounded w-80 mx-auto mb-6 lg:mb-8 animate-pulse"></div>
+                
+                {/* Action Buttons Skeleton */}
+                <div className="flex flex-col sm:flex-row gap-2 lg:gap-3 justify-center items-center mb-4 lg:mb-6">
+                  <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-32 animate-pulse"></div>
+                  <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-40 animate-pulse"></div>
+                </div>
+                
+                {/* Stats Cards Skeleton */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
+                      <div className="h-6 lg:h-8 bg-gray-800/50 rounded w-8 mx-auto mb-2 animate-pulse"></div>
+                      <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-20 mx-auto animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              {/* Recompensas Card Skeleton */}
+              <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm">
+                <div className="p-4 lg:p-6 border-b border-gray-800/40">
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800/50 rounded-lg animate-pulse"></div>
+                    <div>
+                      <div className="h-5 lg:h-6 bg-gray-800/50 rounded w-24 mb-1 animate-pulse"></div>
+                      <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-40 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                      <div className="flex justify-between items-start mb-2 lg:mb-3">
+                        <div className="flex-1">
+                          <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-32 mb-2 animate-pulse"></div>
+                          <div className="h-3 lg:h-4 bg-gray-600/50 rounded w-48 animate-pulse"></div>
+                        </div>
+                        <div className="text-right ml-3 lg:ml-4">
+                          <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-8 mb-1 animate-pulse"></div>
+                          <div className="h-3 bg-gray-600/50 rounded w-12 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="h-7 lg:h-8 bg-gray-700/50 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Indicações Card Skeleton */}
+              <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm">
+                <div className="p-4 lg:p-6 border-b border-gray-800/40">
+                  <div className="flex items-center gap-2 lg:gap-3">
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800/50 rounded-lg animate-pulse"></div>
+                    <div>
+                      <div className="h-5 lg:h-6 bg-gray-800/50 rounded w-32 mb-1 animate-pulse"></div>
+                      <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-36 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-28 mb-1 animate-pulse"></div>
+                          <div className="h-3 lg:h-4 bg-gray-600/50 rounded w-40 animate-pulse"></div>
+                        </div>
+                        <div className="h-5 bg-gray-700/50 rounded w-20 animate-pulse"></div>
+                      </div>
+                      <div className="h-3 bg-gray-600/50 rounded w-24 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Cards Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:mt-6">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm">
+                  <div className="p-4 lg:p-6 border-b border-gray-800/40">
+                    <div className="flex items-center gap-2 lg:gap-3">
+                      <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800/50 rounded-lg animate-pulse"></div>
+                      <div>
+                        <div className="h-5 lg:h-6 bg-gray-800/50 rounded w-28 mb-1 animate-pulse"></div>
+                        <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-32 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 lg:p-6 space-y-3">
+                    {[1, 2].map((j) => (
+                      <div key={j} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                        <div className="h-4 bg-gray-700/50 rounded w-full mb-2 animate-pulse"></div>
+                        <div className="h-3 bg-gray-600/50 rounded w-3/4 animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
 
   if (accessDenied) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-          <p className="text-zinc-400 mb-6">Esta página é exclusiva para pacientes.</p>
+          <p className="text-gray-400 mb-6">Esta página é exclusiva para pacientes.</p>
           <Button 
             onClick={() => window.location.href = '/'}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-turquoise hover:bg-turquoise/90 text-black"
           >
             Voltar ao Início
           </Button>

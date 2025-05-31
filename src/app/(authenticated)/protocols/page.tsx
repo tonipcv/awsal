@@ -208,131 +208,66 @@ export default function ProtocolsPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <span className="text-xs text-zinc-400">Carregando...</span>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <span className="text-xs text-gray-400">Carregando...</span>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950">
-        {/* Hero Section Skeleton */}
-        <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/20 via-zinc-800/10 to-zinc-900/20" />
-          <div className="relative pt-[88px] lg:pt-[120px] pb-8 lg:pb-12">
-            <div className="max-w-6xl mx-auto px-4 lg:px-8">
-              {/* Stats Cards Skeleton */}
-              <div className="grid grid-cols-3 gap-3 lg:gap-6 max-w-4xl mx-auto">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-zinc-900/30 border border-zinc-800/30 rounded-2xl p-4 lg:p-6 backdrop-blur-sm">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-10 h-10 lg:w-12 lg:h-12 bg-zinc-800/50 rounded-full mb-3 animate-pulse"></div>
-                      <div className="h-6 lg:h-8 bg-zinc-800/50 rounded w-8 lg:w-12 mx-auto mb-1 animate-pulse"></div>
-                      <div className="h-3 lg:h-4 bg-zinc-800/30 rounded w-12 lg:w-16 mx-auto animate-pulse"></div>
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
+            
+            {/* Hero Skeleton */}
+            <div className="mb-6 lg:mb-8">
+              <div className="text-center max-w-3xl mx-auto">
+                <div className="h-8 lg:h-12 bg-gray-800/50 rounded-lg w-48 mx-auto mb-3 lg:mb-4 animate-pulse"></div>
+                <div className="h-4 lg:h-6 bg-gray-700/50 rounded w-64 mx-auto mb-6 lg:mb-8 animate-pulse"></div>
+                
+                {/* Stats Skeleton */}
+                <div className="flex items-center justify-center gap-6 lg:gap-8">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="text-center">
+                      <div className="h-6 lg:h-8 bg-gray-800/50 rounded w-8 mx-auto mb-1 animate-pulse"></div>
+                      <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-16 animate-pulse"></div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Main Content Skeleton */}
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-20 lg:pb-24">
-          <div className="space-y-8 lg:space-y-12">
-            {/* Active Protocols Section Skeleton */}
-            <section>
-              <div className="h-5 lg:h-7 bg-zinc-800/50 rounded-lg w-40 lg:w-48 mb-4 lg:mb-6 animate-pulse"></div>
-              
-              <div className="grid gap-4 lg:gap-6">
-                {[1, 2].map((i) => (
-                  <div 
-                    key={i}
-                    className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg p-4 lg:p-8 backdrop-blur-sm"
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
-                      {/* Protocol Info Skeleton */}
-                      <div className="flex-1 space-y-3 lg:space-y-4">
-                        <div>
-                          <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                            <div className="h-5 lg:h-7 bg-zinc-800/50 rounded-lg w-36 lg:w-48 animate-pulse"></div>
-                            <div className="h-4 lg:h-5 bg-zinc-700/50 rounded-full w-10 lg:w-12 animate-pulse"></div>
-                          </div>
-
-                          {/* Doctor Info Skeleton */}
-                          <div className="flex items-center gap-2 mb-2 lg:mb-3">
-                            <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-zinc-700/50 animate-pulse"></div>
-                            <div className="h-3 lg:h-4 bg-zinc-800/30 rounded w-24 lg:w-32 animate-pulse"></div>
-                          </div>
-                          
-                          <div className="h-3 lg:h-4 bg-zinc-800/30 rounded-lg w-full mb-1 lg:mb-2 animate-pulse"></div>
-                          <div className="h-3 lg:h-4 bg-zinc-800/30 rounded-lg w-3/4 animate-pulse"></div>
-                        </div>
-
-                        {/* Protocol Stats Skeleton */}
-                        <div className="grid grid-cols-3 gap-3 lg:gap-4">
-                          {[1, 2, 3].map((j) => (
-                            <div key={j}>
-                              <div className="h-2.5 lg:h-3 bg-zinc-800/30 rounded w-12 lg:w-16 mb-1 animate-pulse"></div>
-                              <div className="h-3 lg:h-4 bg-zinc-800/50 rounded w-16 lg:w-20 animate-pulse"></div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Progress Skeleton */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="h-3 lg:h-4 bg-zinc-800/30 rounded w-20 lg:w-24 animate-pulse"></div>
-                            <div className="h-3 lg:h-4 bg-zinc-800/30 rounded w-6 lg:w-8 animate-pulse"></div>
-                          </div>
-                          <div className="h-1.5 lg:h-2 bg-zinc-800/50 rounded-full w-full animate-pulse"></div>
-                        </div>
-                      </div>
-
-                      {/* Action Button Skeleton */}
-                      <div className="lg:w-40">
-                        <div className="h-8 lg:h-10 bg-zinc-800/50 rounded-lg w-full lg:w-24 animate-pulse"></div>
-                      </div>
+            {/* Protocols Grid Skeleton */}
+            <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-gray-900/50 border border-gray-800/50 rounded-xl p-3 lg:p-4">
+                  <div className="space-y-3 lg:space-y-4">
+                    <div className="flex items-center gap-2 lg:gap-3">
+                      <div className="h-5 lg:h-6 bg-gray-800/50 rounded w-32 animate-pulse"></div>
+                      <div className="h-4 bg-gray-700/50 rounded w-12 animate-pulse"></div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Available Protocols Section Skeleton */}
-            <section>
-              <div className="h-5 lg:h-7 bg-zinc-800/50 rounded-lg w-36 lg:w-44 mb-4 lg:mb-6 animate-pulse"></div>
-              
-              <div className="grid gap-3 lg:gap-4 lg:grid-cols-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div 
-                    key={i}
-                    className="bg-zinc-900/30 border border-zinc-800/30 rounded-lg p-4 lg:p-6 backdrop-blur-sm"
-                  >
-                    <div className="space-y-3 lg:space-y-4">
+                    <div className="h-4 bg-gray-700/50 rounded w-full animate-pulse"></div>
+                    <div className="h-4 bg-gray-700/50 rounded w-3/4 animate-pulse"></div>
+                    
+                    <div className="grid grid-cols-2 gap-3 lg:gap-4">
                       <div>
-                        <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                          <div className="h-4 lg:h-5 bg-zinc-800/50 rounded-lg w-28 lg:w-36 animate-pulse"></div>
-                          <div className="h-3 lg:h-4 bg-zinc-700/50 rounded-full w-16 lg:w-20 animate-pulse"></div>
-                        </div>
-                        
-                        <div className="h-3 lg:h-4 bg-zinc-800/30 rounded-lg w-full mb-1 lg:mb-2 animate-pulse"></div>
-                        <div className="h-3 lg:h-4 bg-zinc-800/30 rounded-lg w-2/3 animate-pulse"></div>
+                        <div className="h-3 bg-gray-800/50 rounded w-8 mb-1 animate-pulse"></div>
+                        <div className="h-4 bg-gray-700/50 rounded w-12 animate-pulse"></div>
                       </div>
-
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center gap-3 lg:gap-4">
-                          <div className="h-3 bg-zinc-800/30 rounded w-10 animate-pulse"></div>
-                          <div className="h-3 bg-zinc-800/30 rounded w-12 animate-pulse"></div>
-                        </div>
-                        <div className="h-6 lg:h-8 bg-zinc-800/50 rounded-lg w-16 lg:w-20 animate-pulse"></div>
+                      <div>
+                        <div className="h-3 bg-gray-800/50 rounded w-12 mb-1 animate-pulse"></div>
+                        <div className="h-4 bg-gray-700/50 rounded w-16 animate-pulse"></div>
                       </div>
                     </div>
+                    
+                    <div className="h-8 lg:h-9 bg-gray-800/50 rounded-lg animate-pulse"></div>
                   </div>
-                ))}
-              </div>
-            </section>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       </div>
@@ -343,121 +278,112 @@ export default function ProtocolsPage() {
   const primaryDoctor = getPrimaryDoctor();
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/20 via-zinc-800/10 to-zinc-900/20" />
-        <div className="relative pt-[88px] lg:pt-[120px] pb-8 lg:pb-12">
-          <div className="max-w-6xl mx-auto px-4 lg:px-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-3 lg:gap-6 max-w-4xl mx-auto">
-              {/* Protocolos Ativos */}
-              <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-2xl p-4 lg:p-6 backdrop-blur-sm">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-500/20 rounded-full flex items-center justify-center mb-3">
-                    <CheckCircleIcon className="w-5 h-5 lg:w-6 lg:h-6 text-green-400" />
+    <div className="min-h-screen bg-black">
+      {/* Padding para menu lateral no desktop e header no mobile */}
+      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        
+        {/* Hero Section Compacto */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20" />
+          <div className="relative py-6 lg:py-8">
+            <div className="max-w-6xl mx-auto px-3 lg:px-6">
+              <div className="text-center max-w-3xl mx-auto">
+                <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
+                  Seus Protocolos
+                </h1>
+                <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
+                  Acompanhe seu progresso e continue seu tratamento
+                </p>
+                
+                {/* Stats Compactas */}
+                <div className="flex items-center justify-center gap-4 lg:gap-8">
+                  <div className="text-center">
+                    <div className="text-lg lg:text-2xl font-light text-white mb-0.5">
+                      {activeProtocols.length}
+                    </div>
+                    <div className="text-xs lg:text-sm text-gray-400">
+                      {activeProtocols.length === 1 ? 'Protocolo Ativo' : 'Protocolos Ativos'}
+                    </div>
                   </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                    {activeProtocols.length}
+                  <div className="w-px h-6 lg:h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="text-lg lg:text-2xl font-light text-white mb-0.5">
+                      {totalProtocols}
+                    </div>
+                    <div className="text-xs lg:text-sm text-gray-400">
+                      Total Disponível
+                    </div>
                   </div>
-                  <div className="text-xs lg:text-sm text-green-400 font-medium">
-                    {activeProtocols.length === 1 ? 'Ativo' : 'Ativos'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Total de Protocolos */}
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-2xl p-4 lg:p-6 backdrop-blur-sm">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500/20 rounded-full flex items-center justify-center mb-3">
-                    <DocumentTextIcon className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                    {totalProtocols}
-                  </div>
-                  <div className="text-xs lg:text-sm text-blue-400 font-medium">
-                    Total
-                  </div>
-                </div>
-              </div>
-
-              {/* Progresso Médio */}
-              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-2xl p-4 lg:p-6 backdrop-blur-sm">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500/20 rounded-full flex items-center justify-center mb-3">
-                    <StarIcon className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                    {activeProtocols.length > 0 
-                      ? Math.round(activeProtocols.reduce((acc, p) => acc + getProtocolProgress(p).progressPercentage, 0) / activeProtocols.length)
-                      : 0}%
-                  </div>
-                  <div className="text-xs lg:text-sm text-purple-400 font-medium">
-                    Progresso
+                  <div className="w-px h-6 lg:h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="text-lg lg:text-2xl font-light text-turquoise mb-0.5">
+                      {activeProtocols.length > 0 
+                        ? Math.round(activeProtocols.reduce((acc, p) => acc + getProtocolProgress(p).progressPercentage, 0) / activeProtocols.length)
+                        : 0}%
+                    </div>
+                    <div className="text-xs lg:text-sm text-gray-400">
+                      Progresso Médio
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 pb-20 lg:pb-24">
-        {totalProtocols === 0 ? (
-          /* Empty State */
-          <div className="text-center py-16 lg:py-20">
-            <div className="max-w-md mx-auto">
-              <h3 className="text-lg lg:text-xl font-light text-white mb-3">
-                Nenhum protocolo disponível
-              </h3>
-              <p className="text-sm lg:text-base text-zinc-300 mb-6 leading-relaxed">
-                Entre em contato com seu médico para obter um protocolo personalizado.
-              </p>
-              <Button asChild className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-2">
-                <Link href="/profile">
-                  Ver Perfil
-                </Link>
-              </Button>
+        {/* Main Content */}
+        <div className="max-w-6xl mx-auto px-3 lg:px-6">
+          {totalProtocols === 0 ? (
+            /* Empty State */
+            <div className="text-center py-12 lg:py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DocumentTextIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg lg:text-xl font-light text-white mb-2 lg:mb-3">
+                  Nenhum protocolo disponível
+                </h3>
+                <p className="text-sm lg:text-base text-gray-300 leading-relaxed">
+                  Entre em contato com seu médico para obter um protocolo personalizado.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-8 lg:space-y-12">
-            {/* Active Protocols */}
-            {activeProtocols.length > 0 && (
-              <section>
-                <h2 className="text-lg lg:text-2xl font-light text-white mb-4 lg:mb-6">
-                  Protocolos em Andamento
-                </h2>
-                
-                <div className="grid gap-4 lg:gap-6">
-                  {activeProtocols.map(assignment => {
-                    const progress = getProtocolProgress(assignment);
-                    const totalTasks = getTotalTasks(assignment.protocol);
-                    const isActive = assignment.isActive;
-                    const isCompleted = progress.currentDay >= progress.totalDays;
-                    
-                    return (
-                      <Card 
-                        key={assignment.id} 
-                        className="group bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700/70 transition-all duration-300 backdrop-blur-sm"
-                      >
-                        <CardContent className="p-4 lg:p-8">
-                          <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
-                            {/* Protocol Info */}
-                            <div className="flex-1 space-y-3 lg:space-y-4">
+          ) : (
+            <div className="space-y-6 lg:space-y-8">
+              {/* Active Protocols */}
+              {activeProtocols.length > 0 && (
+                <section>
+                  <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
+                    <CheckCircleIcon className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
+                    Protocolos Ativos
+                  </h2>
+                  
+                  <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                    {activeProtocols.map(assignment => {
+                      const progress = getProtocolProgress(assignment);
+                      const totalTasks = getTotalTasks(assignment.protocol);
+                      const isActive = assignment.isActive;
+                      const isCompleted = progress.currentDay >= progress.totalDays;
+                      
+                      return (
+                        <div 
+                          key={assignment.id} 
+                          className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
+                        >
+                          <div className="p-3 lg:p-4">
+                            <div className="space-y-3 lg:space-y-4">
                               <div>
                                 <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                  <h3 className="text-lg lg:text-2xl font-light text-white group-hover:text-zinc-200 transition-colors">
+                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-turquoise transition-colors line-clamp-1">
                                     {assignment.protocol.name}
                                   </h3>
                                   {isActive && (
-                                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                    <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
                                       Ativo
                                     </Badge>
                                   )}
                                   {isCompleted && (
-                                    <Badge className="bg-zinc-600/20 text-zinc-300 border-zinc-600/30 text-xs">
+                                    <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
                                       Concluído
                                     </Badge>
                                   )}
@@ -465,16 +391,14 @@ export default function ProtocolsPage() {
 
                                 {/* Doctor Info - Only show if showDoctorInfo is true */}
                                 {assignment.protocol.showDoctorInfo && assignment.protocol.doctor && (
-                                  <div className="flex items-center gap-2 mb-2 lg:mb-3">
-                                    <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-zinc-700 overflow-hidden flex-shrink-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
                                       {assignment.protocol.doctor.image ? (
                                         <img 
                                           src={assignment.protocol.doctor.image} 
                                           alt={assignment.protocol.doctor.name || 'Médico'}
                                           className="w-full h-full object-cover"
-                                          onLoad={() => console.log('Imagem carregada com sucesso:', assignment.protocol.doctor.image)}
                                           onError={(e) => {
-                                            console.log('Erro ao carregar imagem:', assignment.protocol.doctor.image);
                                             e.currentTarget.style.display = 'none';
                                             const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                                             if (fallback) {
@@ -484,185 +408,188 @@ export default function ProtocolsPage() {
                                         />
                                       ) : null}
                                       <div 
-                                        className="w-full h-full bg-zinc-600 flex items-center justify-center"
+                                        className="w-full h-full bg-gray-600 flex items-center justify-center"
                                         style={{ display: assignment.protocol.doctor.image ? 'none' : 'flex' }}
                                       >
-                                        <span className="text-xs text-zinc-300 font-medium">
+                                        <span className="text-xs text-gray-300 font-medium">
                                           {assignment.protocol.doctor.name?.charAt(0) || 'M'}
                                         </span>
                                       </div>
                                     </div>
-                                    <span className="text-xs lg:text-sm text-zinc-400">
+                                    <span className="text-xs text-gray-400">
                                       {assignment.protocol.doctor.name || 'Médico Responsável'}
                                     </span>
                                   </div>
                                 )}
                                 
                                 {assignment.protocol.description && (
-                                  <p className="text-sm lg:text-base text-zinc-300 leading-relaxed">
+                                  <p className="text-xs lg:text-sm text-gray-300 leading-relaxed line-clamp-2">
                                     {assignment.protocol.description}
                                   </p>
                                 )}
                               </div>
 
-                              {/* Protocol Stats */}
-                              <div className="grid grid-cols-3 gap-3 lg:gap-4 text-xs lg:text-sm">
-                                <div>
-                                  <div className="text-zinc-400">Duração</div>
-                                  <div className="text-white font-medium">
-                                    {assignment.protocol.duration} dias
+                              {/* Protocol Stats Compactas */}
+                              <div className="grid grid-cols-2 gap-3 lg:gap-4 text-xs lg:text-sm">
+                                <div className="flex items-center gap-1.5 lg:gap-2">
+                                  <CalendarDaysIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
+                                  <div>
+                                    <div className="text-gray-400">Duração</div>
+                                    <div className="text-white font-medium">
+                                      {assignment.protocol.duration} dias
+                                    </div>
                                   </div>
                                 </div>
                                 
-                                <div>
-                                  <div className="text-zinc-400">Tarefas</div>
-                                  <div className="text-white font-medium">
-                                    {totalTasks} atividades
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <div className="text-zinc-400">Início</div>
-                                  <div className="text-white font-medium">
-                                    {format(new Date(assignment.startDate), 'dd/MM/yy', { locale: ptBR })}
+                                <div className="flex items-center gap-1.5 lg:gap-2">
+                                  <DocumentTextIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
+                                  <div>
+                                    <div className="text-gray-400">Tarefas</div>
+                                    <div className="text-white font-medium">
+                                      {totalTasks}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Progress */}
+                              {/* Progress Compacto */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between text-xs lg:text-sm">
-                                  <span className="text-zinc-300">
+                                  <span className="text-gray-300">
                                     Dia {progress.currentDay} de {progress.totalDays}
                                   </span>
-                                  <span className="text-zinc-200 font-medium">
+                                  <span className="text-turquoise font-medium">
                                     {progress.progressPercentage}%
                                   </span>
                                 </div>
                                 <Progress 
                                   value={progress.progressPercentage} 
-                                  className="h-1.5 lg:h-2 bg-zinc-800"
+                                  className="h-1.5 lg:h-2 bg-gray-800"
                                 />
                               </div>
-                            </div>
 
-                            {/* Action Button */}
-                            <div className="lg:w-40">
-                              <Button 
-                                asChild
-                                className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 lg:px-6 py-2 w-full lg:w-auto text-sm"
-                              >
-                                <Link href={`/checklist/${assignment.protocolId}`}>
-                                  Continuar
-                                </Link>
-                              </Button>
+                              {/* Action Button Compacto */}
+                              <div className="pt-1">
+                                <Button 
+                                  asChild
+                                  className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200"
+                                >
+                                  <Link href={`/checklist/${assignment.protocolId}`}>
+                                    <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                                    Continuar
+                                  </Link>
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
-            {/* Unavailable Protocols */}
-            {unavailableProtocols.length > 0 && (
-              <section>
-                <h2 className="text-lg lg:text-2xl font-light text-white mb-4 lg:mb-6">
-                  Protocolos Disponíveis
-                </h2>
-                
-                <div className="grid gap-3 lg:gap-4 lg:grid-cols-2">
-                  {unavailableProtocols.map(protocol => {
-                    const totalTasks = getTotalTasks(protocol);
-                    
-                    return (
-                      <Card 
-                        key={protocol.id} 
-                        className="group bg-zinc-900/30 border-zinc-800/30 hover:border-zinc-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
-                        onClick={() => openModal(protocol)}
-                      >
-                        <CardContent className="p-4 lg:p-6">
-                          <div className="space-y-3 lg:space-y-4">
-                            <div>
-                              <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                <h3 className="text-base lg:text-lg font-light text-white group-hover:text-zinc-200 transition-colors">
-                                  {protocol.name}
-                                </h3>
-                                <Badge className="bg-zinc-700/20 text-zinc-400 border-zinc-700/30 text-xs">
-                                  Indisponível
-                                </Badge>
-                              </div>
-
-                              {/* Doctor Info - Only show if showDoctorInfo is true */}
-                              {protocol.showDoctorInfo && protocol.doctor && (
-                                <div className="flex items-center gap-2 mb-2 lg:mb-3">
-                                  <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-zinc-700 overflow-hidden flex-shrink-0">
-                                    {protocol.doctor.image ? (
-                                      <img 
-                                        src={protocol.doctor.image} 
-                                        alt={protocol.doctor.name || 'Médico'}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          console.log('Erro ao carregar imagem:', protocol.doctor.image);
-                                          e.currentTarget.style.display = 'none';
-                                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                          if (fallback) {
-                                            fallback.style.display = 'flex';
-                                          }
-                                        }}
-                                      />
-                                    ) : null}
-                                    <div 
-                                      className="w-full h-full bg-zinc-600 flex items-center justify-center"
-                                      style={{ display: protocol.doctor.image ? 'none' : 'flex' }}
-                                    >
-                                      <span className="text-xs text-zinc-300 font-medium">
-                                        {protocol.doctor.name?.charAt(0) || 'M'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <span className="text-xs lg:text-sm text-zinc-400">
-                                    {protocol.doctor.name || 'Médico Responsável'}
-                                  </span>
+              {/* Unavailable Protocols */}
+              {unavailableProtocols.length > 0 && (
+                <section>
+                  <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
+                    <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
+                    Protocolos Indisponíveis
+                  </h2>
+                  
+                  <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                    {unavailableProtocols.map(protocol => {
+                      const totalTasks = getTotalTasks(protocol);
+                      
+                      return (
+                        <div 
+                          key={protocol.id} 
+                          className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
+                          onClick={() => openModal(protocol)}
+                        >
+                          <div className="p-3 lg:p-4">
+                            <div className="space-y-3">
+                              <div>
+                                <div className="flex items-center gap-2 lg:gap-3 mb-2">
+                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-1">
+                                    {protocol.name}
+                                  </h3>
+                                  <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                    Indisponível
+                                  </Badge>
                                 </div>
-                              )}
-                              
-                              {protocol.description && (
-                                <p className="text-zinc-400 text-xs lg:text-sm leading-relaxed line-clamp-2">
-                                  {protocol.description}
-                                </p>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 lg:gap-4 text-xs text-zinc-500">
-                                <span>{protocol.duration} dias</span>
-                                <span>{totalTasks} tarefas</span>
-                                {protocol.doctor?.name && (
-                                  <span className="hidden lg:inline">{protocol.doctor.name}</span>
+
+                                {/* Doctor Info - Only show if showDoctorInfo is true */}
+                                {protocol.showDoctorInfo && protocol.doctor && (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                                      {protocol.doctor.image ? (
+                                        <img 
+                                          src={protocol.doctor.image} 
+                                          alt={protocol.doctor.name || 'Médico'}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                            if (fallback) {
+                                              fallback.style.display = 'flex';
+                                            }
+                                          }}
+                                        />
+                                      ) : null}
+                                      <div 
+                                        className="w-full h-full bg-gray-600 flex items-center justify-center"
+                                        style={{ display: protocol.doctor.image ? 'none' : 'flex' }}
+                                      >
+                                        <span className="text-xs text-gray-300 font-medium">
+                                          {protocol.doctor.name?.charAt(0) || 'M'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <span className="text-xs text-gray-400">
+                                      {protocol.doctor.name || 'Médico Responsável'}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {protocol.description && (
+                                  <p className="text-xs lg:text-sm text-gray-400 leading-relaxed line-clamp-2">
+                                    {protocol.description}
+                                  </p>
                                 )}
                               </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <CalendarDaysIcon className="h-3 w-3 text-gray-500" />
+                                    <span>{protocol.duration} dias</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <DocumentTextIcon className="h-3 w-3 text-gray-500" />
+                                    <span>{totalTasks} tarefas</span>
+                                  </div>
+                                </div>
 
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="border-zinc-700/30 text-zinc-400 hover:bg-zinc-800/10 opacity-0 group-hover:opacity-100 transition-opacity text-xs px-3 py-1"
-                              >
-                                Ver detalhes
-                              </Button>
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-700/30 text-gray-400 hover:bg-gray-800/10 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 lg:h-7 px-2 lg:px-3"
+                                >
+                                  Ver detalhes
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal */}

@@ -65,13 +65,13 @@ export default {
   				'5': 'hsl(var(--chart-5))'
   			},
   			turquoise: {
-  				DEFAULT: '#76e1d8',
-  				light: '#8ae8df',
+  				DEFAULT: '#61aed1',
+  				light: '#7bc0db',
   			},
   			highlight: {
-  				DEFAULT: '#76e1d8',
-  				light: '#8ae8df',
-  				dark: '#5dd4c8',
+  				DEFAULT: '#61aed1',
+  				light: '#7bc0db',
+  				dark: '#4a9bc7',
   			},
   		},
   		borderRadius: {
