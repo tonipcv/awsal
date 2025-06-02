@@ -2,12 +2,9 @@
 'use client';
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/ui/logo";
+import Image from 'next/image';
 import Link from "next/link";
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -43,72 +40,117 @@ export default function ForgotPassword() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-        <div className="w-full max-w-[350px] mx-auto">
-          <Card className="border-none shadow-none">
-            <CardHeader className="space-y-1 pb-4">
-              <Logo className="flex justify-center h-8 w-8 mx-auto" />
-            </CardHeader>
-            <CardContent className="text-center text-white/70">
-              Enviamos um link de recuperação de senha para seu email.
-            </CardContent>
-            <CardFooter>
-              <Link 
-                href="/auth/signin" 
-                className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
-              >
-                Voltar para login
-              </Link>
-            </CardFooter>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <div className="flex justify-center items-center mb-4">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={40}
+                  height={13}
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Success Icon */}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-200 mb-2">Email enviado!</h2>
+              <p className="text-gray-400 text-sm">
+                Enviamos um link de recuperação de senha para seu email.
+              </p>
+            </div>
+
+            {/* Back to login */}
+            <Link 
+              href="/auth/signin"
+              className="w-full py-2.5 px-4 text-sm font-semibold text-gray-300 bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para login
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-      <div className="w-full max-w-[350px] mx-auto">
-        <Card className="border-none shadow-none">
-          <CardHeader className="space-y-1 pb-4">
-            <Logo className="flex justify-center h-8 w-8 mx-auto" />
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              {error && (
-                <div className="text-sm text-red-500 text-center">
-                  {error}
-                </div>
-              )}
-              <Button 
-                type="submit" 
-                className="w-full border-white border bg-transparent hover:bg-white/10 text-white hover:text-white" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Enviando link..." : "Recuperar senha"}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter>
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center items-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={13}
+                className="object-contain"
+                priority
+              />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-200 mb-2">Esqueceu sua senha?</h1>
+            <p className="text-gray-400 text-sm">
+              Digite seu email e enviaremos um link para redefinir sua senha.
+            </p>
+          </div>
+
+          {/* Mensagem de erro */}
+          {error && (
+            <div className="mb-6 text-red-400 text-center text-sm">{error}</div>
+          )}
+          
+          {/* Formulário */}
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="off"
+                className="w-full px-4 py-2.5 text-sm bg-[#1a1a1a] border border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-600/20 focus:border-gray-500 transition-all duration-200 text-gray-200"
+                placeholder="m@example.com"
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Enviando link...' : 'Recuperar senha'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          {/* Links */}
+          <div className="mt-4 text-center">
             <Link 
               href="/auth/signin" 
-              className="text-sm text-white/70 hover:text-white transition-colors w-full text-center"
+              className="text-sm text-gray-400 hover:text-gray-200 transition-colors duration-200 flex items-center justify-center gap-2"
             >
+              <ArrowLeft className="h-3 w-3" />
               Voltar para login
             </Link>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

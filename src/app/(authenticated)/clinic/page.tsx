@@ -19,7 +19,10 @@ import {
   FileText,
   Crown,
   Trash2,
-  Plus
+  Plus,
+  CheckCircle,
+  Mail,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -84,6 +87,12 @@ export default function ClinicDashboard() {
   const [editingClinicName, setEditingClinicName] = useState('');
   const [editingClinicDescription, setEditingClinicDescription] = useState('');
   const [savingSettings, setSavingSettings] = useState(false);
+  
+  // Notification states
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [successTitle, setSuccessTitle] = useState('');
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -148,14 +157,25 @@ export default function ClinicDashboard() {
       if (response.ok) {
         setNewMemberEmail('');
         setNewMemberRole('DOCTOR');
+        setShowInviteDialog(false); // Close invite dialog
         fetchClinicData(); // Reload data
+        
+        // Show beautiful success dialog
+        setSuccessTitle('Convite Enviado!');
+        setSuccessMessage(`O convite foi enviado com sucesso para ${newMemberEmail}. O médico receberá um email para se juntar à equipe.`);
+        setShowSuccessDialog(true);
       } else {
         const error = await response.json();
-        alert(error.error || 'Error adding member');
+        // Show error dialog
+        setSuccessTitle('Erro ao Enviar Convite');
+        setSuccessMessage(error.error || 'Erro ao adicionar membro à equipe');
+        setShowSuccessDialog(true);
       }
     } catch (error) {
       console.error('Error adding member:', error);
-      alert('Internal server error');
+      setSuccessTitle('Erro ao Enviar Convite');
+      setSuccessMessage('Erro interno do servidor');
+      setShowSuccessDialog(true);
     } finally {
       setAddingMember(false);
     }
@@ -165,26 +185,37 @@ export default function ClinicDashboard() {
     try {
       setSavingSettings(true);
       
-      // Here you would implement the API to save settings
-      // const response = await fetch('/api/clinic/settings', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: editingClinicName,
-      //     description: editingClinicDescription
-      //   })
-      // });
+      const response = await fetch('/api/clinic/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingClinicName,
+          description: editingClinicDescription
+        })
+      });
 
-      // Success simulation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setShowSettingsModal(false);
-      fetchClinicData(); // Reload data
-      alert('Settings saved successfully!');
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowSettingsModal(false);
+        fetchClinicData(); // Reload data
+        
+        // Show beautiful success dialog
+        setSuccessTitle('Configurações Salvas!');
+        setSuccessMessage('As configurações da clínica foram atualizadas com sucesso.');
+        setShowSuccessDialog(true);
+      } else {
+        // Show error dialog
+        setSuccessTitle('Erro ao Salvar');
+        setSuccessMessage(data.error || 'Erro ao salvar configurações');
+        setShowSuccessDialog(true);
+      }
       
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Error saving settings');
+      setSuccessTitle('Erro ao Salvar');
+      setSuccessMessage('Erro ao salvar configurações');
+      setShowSuccessDialog(true);
     } finally {
       setSavingSettings(false);
     }
@@ -448,7 +479,7 @@ export default function ClinicDashboard() {
                   </p>
                 </div>
                 {isAdmin && (
-                  <Dialog>
+                  <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
                     <DialogTrigger asChild>
                       <Button size="sm" className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold">
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -487,13 +518,22 @@ export default function ClinicDashboard() {
                             <option value="VIEWER">Viewer</option>
                           </select>
                         </div>
-                        <Button 
-                          onClick={addMember} 
-                          disabled={addingMember || !newMemberEmail.trim()}
-                          className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
-                        >
-                          {addingMember ? 'Sending invite...' : 'Send Invite'}
-                        </Button>
+                        <div className="flex gap-3 pt-4">
+                          <Button 
+                            onClick={addMember} 
+                            disabled={addingMember || !newMemberEmail.trim()}
+                            className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
+                          >
+                            {addingMember ? 'Sending invite...' : 'Send Invite'}
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={() => setShowInviteDialog(false)}
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-white rounded-xl h-12 font-semibold"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -733,6 +773,54 @@ export default function ClinicDashboard() {
                     </Button>
                   </div>
                 )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Beautiful Success/Error Dialog */}
+          <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+            <DialogContent className="bg-white border-gray-200 rounded-2xl max-w-md">
+              <div className="text-center p-6">
+                {/* Close button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl"
+                  onClick={() => setShowSuccessDialog(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+
+                {/* Icon */}
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-2xl flex items-center justify-center">
+                  {successTitle.includes('Erro') ? (
+                    <X className="h-8 w-8 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-8 w-8 text-emerald-600" />
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {successTitle}
+                </h3>
+
+                {/* Message */}
+                <p className="text-gray-600 font-medium mb-6 leading-relaxed">
+                  {successMessage}
+                </p>
+
+                {/* Action Button */}
+                <Button 
+                  onClick={() => setShowSuccessDialog(false)}
+                  className={`w-full h-12 rounded-xl font-semibold ${
+                    successTitle.includes('Erro') 
+                      ? 'bg-red-600 hover:bg-red-700 text-white' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {successTitle.includes('Erro') ? 'Tentar Novamente' : 'Perfeito!'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

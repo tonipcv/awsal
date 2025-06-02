@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     while (!isUnique && attempts < 10) {
       leadReferralCode = generateUniqueReferralCode();
       
-      const existing = await prisma.referralLead.findUnique({
+      const existing = await prisma.referralLead.findFirst({
         where: { referralCode: leadReferralCode }
       });
       

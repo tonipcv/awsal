@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   PlusIcon,
   UsersIcon,
@@ -18,7 +19,9 @@ import {
   EnvelopeIcon,
   XMarkIcon,
   TrashIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  PaperAirplaneIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -80,6 +83,13 @@ export default function PatientsPage() {
   const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [showCredentials, setShowCredentials] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  
+  // Notification states
+  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   
   const [newPatient, setNewPatient] = useState<NewPatientForm>({
     name: '',
@@ -94,7 +104,7 @@ export default function PatientsPage() {
     allergies: '',
     medications: '',
     notes: '',
-    sendCredentials: true
+    sendCredentials: false
   });
 
   useEffect(() => {
@@ -107,16 +117,28 @@ export default function PatientsPage() {
       const response = await fetch('/api/patients');
       if (response.ok) {
         const data = await response.json();
-        console.log('Clients loaded:', data);
+        console.log('🔍 DEBUG: Patients loaded from API:', data);
+        
+        // Debug each patient's email
+        data.forEach((patient: Patient, index: number) => {
+          console.log(`Patient ${index + 1}:`, {
+            id: patient.id,
+            name: patient.name,
+            email: patient.email,
+            emailType: typeof patient.email,
+            emailValue: patient.email === null ? 'NULL' : patient.email === undefined ? 'UNDEFINED' : patient.email
+          });
+        });
+        
         setPatients(Array.isArray(data) ? data : []);
       } else {
         const errorData = await response.json();
         console.error('API Error:', response.status, errorData);
-        alert(`Error loading clients: ${errorData.error || 'Unknown error'}`);
+        showNotification('Erro ao Carregar', `Erro ao carregar clientes: ${errorData.error || 'Erro desconhecido'}`, 'error');
       }
     } catch (error) {
       console.error('Error loading clients:', error);
-      alert('Connection error while loading clients');
+      showNotification('Erro de Conexão', 'Erro de conexão ao carregar clientes', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -136,13 +158,13 @@ export default function PatientsPage() {
       allergies: '',
       medications: '',
       notes: '',
-      sendCredentials: true
+      sendCredentials: false
     });
   };
 
   const addPatient = async () => {
     if (!newPatient.name.trim() || !newPatient.email.trim()) {
-      alert('Name and email are required');
+      showNotification('Campos Obrigatórios', 'Nome e email são obrigatórios', 'error');
       return;
     }
 
@@ -178,24 +200,29 @@ export default function PatientsPage() {
 
       if (response.ok) {
         const result = await response.json();
+        console.log('🔍 DEBUG: Patient creation result:', result);
+        console.log('🔍 DEBUG: Result email:', result.email);
+        console.log('🔍 DEBUG: Result patient:', result.patient);
+        console.log('🔍 DEBUG: Result patient email:', result.patient?.email);
+        
         // Reload clients list
         await loadPatients();
         resetForm();
         setShowAddPatient(false);
         
-        if (result.temporaryPassword) {
-          setGeneratedCredentials({ email: result.email, password: result.temporaryPassword });
-          setShowCredentials(true);
+        // Automatically send password reset email instead of showing credentials
+        if (newPatient.sendCredentials && result.patient?.id) {
+          await sendPasswordResetEmail(result.patient.id, result.patient.email || newPatient.email);
         } else {
-          alert('Client created successfully!');
+          showNotification('Cliente Criado!', 'Cliente criado com sucesso!', 'success');
         }
       } else {
         const error = await response.json();
-        alert(error.error || 'Error adding client');
+        showNotification('Erro ao Criar Cliente', error.error || 'Erro ao adicionar cliente', 'error');
       }
     } catch (error) {
       console.error('Error adding client:', error);
-      alert('Error adding client');
+      showNotification('Erro ao Criar Cliente', 'Erro ao adicionar cliente', 'error');
     } finally {
       setIsAddingPatient(false);
     }
@@ -212,13 +239,14 @@ export default function PatientsPage() {
       if (response.ok) {
         // Reload clients list
         await loadPatients();
+        showNotification('Cliente Removido', `Cliente ${patientName} foi removido com sucesso`, 'success');
       } else {
         const error = await response.json();
-        alert(error.error || 'Error deleting client');
+        showNotification('Erro ao Remover', error.error || 'Erro ao deletar cliente', 'error');
       }
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert('Error deleting client');
+      showNotification('Erro ao Remover', 'Erro ao deletar cliente', 'error');
     } finally {
       setDeletingPatientId(null);
       setShowDeleteConfirm(false);
@@ -237,6 +265,33 @@ export default function PatientsPage() {
     setPatientToDelete(null);
   };
 
+  const sendPasswordResetEmail = async (patientId: string, patientEmail: string) => {
+    try {
+      setSendingEmailId(patientId);
+      
+      const response = await fetch(`/api/patients/${patientId}/send-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showNotification('Email Enviado!', `Email de redefinição de senha enviado para ${patientEmail} com sucesso!`, 'success');
+        console.log('Reset URL (for testing):', result.resetUrl);
+      } else {
+        const error = await response.json();
+        showNotification('Erro ao Enviar Email', error.error || 'Erro ao enviar email de redefinição de senha', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      showNotification('Erro ao Enviar Email', 'Erro ao enviar email de redefinição de senha', 'error');
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
   const filteredPatients = patients.filter(patient => 
     patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -249,6 +304,14 @@ export default function PatientsPage() {
 
   const getActiveProtocol = (patient: Patient) => {
     return patient.assignedProtocols.find(p => p.isActive);
+  };
+
+  // Helper function to show notifications
+  const showNotification = (title: string, message: string, type: 'success' | 'error' = 'success') => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotificationDialog(true);
   };
 
   if (isLoading) {
@@ -564,7 +627,7 @@ export default function PatientsPage() {
                         className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                       />
                       <Label htmlFor="sendCredentials" className="text-sm text-gray-700 font-medium">
-                        Generate temporary password and show after creation
+                        Send password setup email to client after creation
                       </Label>
                     </div>
                   </div>
@@ -837,6 +900,20 @@ export default function PatientsPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
+                          disabled={sendingEmailId === patient.id}
+                          className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-xl font-semibold"
+                          title="Send password setup email"
+                        >
+                          {sendingEmailId === patient.id ? (
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                          ) : (
+                            <PaperAirplaneIcon className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           asChild
                             className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-white hover:border-[#5154e7] rounded-xl font-semibold"
                         >
@@ -871,6 +948,58 @@ export default function PatientsPage() {
         )}
         </div>
       </div>
+
+      {/* Beautiful Notification Dialog */}
+      <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
+        <DialogContent className="bg-white border-gray-200 rounded-2xl max-w-md">
+          <div className="text-center p-6">
+            {/* Close button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl"
+              onClick={() => setShowNotificationDialog(false)}
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </Button>
+
+            {/* Icon */}
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
+              notificationType === 'success' 
+                ? 'bg-gradient-to-br from-emerald-100 to-emerald-50' 
+                : 'bg-gradient-to-br from-red-100 to-red-50'
+            }`}>
+              {notificationType === 'success' ? (
+                <CheckCircleIcon className="h-8 w-8 text-emerald-600" />
+              ) : (
+                <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+              )}
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              {notificationTitle}
+            </h3>
+
+            {/* Message */}
+            <p className="text-gray-600 font-medium mb-6 leading-relaxed">
+              {notificationMessage}
+            </p>
+
+            {/* Action Button */}
+            <Button 
+              onClick={() => setShowNotificationDialog(false)}
+              className={`w-full h-12 rounded-xl font-semibold ${
+                notificationType === 'success'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                  : 'bg-red-600 hover:bg-red-700 text-white'
+              }`}
+            >
+              {notificationType === 'success' ? 'Perfeito!' : 'Entendi'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

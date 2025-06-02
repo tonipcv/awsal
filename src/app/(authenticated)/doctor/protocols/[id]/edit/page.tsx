@@ -36,6 +36,7 @@ interface ProtocolTask {
   productId?: string;
   modalTitle?: string;
   modalButtonText?: string;
+  modalButtonUrl?: string;
 }
 
 interface ProtocolSession {
@@ -189,7 +190,8 @@ export default function EditProtocolPage() {
                 fullExplanation: task.fullExplanation || '',
                 productId: task.productId || '',
                 modalTitle: task.modalTitle || '',
-                modalButtonText: task.modalButtonText || ''
+                modalButtonText: task.modalButtonText || '',
+                modalButtonUrl: task.modalButtonUrl || ''
               }))
             })),
             tasks: day.tasks.map((task: any) => ({
@@ -202,7 +204,8 @@ export default function EditProtocolPage() {
               fullExplanation: task.fullExplanation || '',
               productId: task.productId || '',
               modalTitle: task.modalTitle || '',
-              modalButtonText: task.modalButtonText || ''
+              modalButtonText: task.modalButtonText || '',
+              modalButtonUrl: task.modalButtonUrl || ''
             }))
           })),
           products: protocolProducts
@@ -285,7 +288,8 @@ export default function EditProtocolPage() {
       fullExplanation: '',
       productId: '',
       modalTitle: '',
-      modalButtonText: ''
+      modalButtonText: '',
+      modalButtonUrl: ''
     };
 
     setProtocol(prev => ({
@@ -559,7 +563,8 @@ export default function EditProtocolPage() {
                 fullExplanation: task.fullExplanation || '',
                 productId: task.productId || null,
                 modalTitle: task.modalTitle || '',
-                modalButtonText: task.modalButtonText || ''
+                modalButtonText: task.modalButtonText || '',
+                modalButtonUrl: task.modalButtonUrl || ''
               }))
             })).filter(session => session.tasks.length > 0),
             tasks: day.tasks.filter(task => task.title.trim()).map((task, index) => ({
@@ -571,7 +576,8 @@ export default function EditProtocolPage() {
               fullExplanation: task.fullExplanation || '',
               productId: task.productId || null,
               modalTitle: task.modalTitle || '',
-              modalButtonText: task.modalButtonText || ''
+              modalButtonText: task.modalButtonText || '',
+              modalButtonUrl: task.modalButtonUrl || ''
             }))
           })).filter(day => day.sessions.length > 0 || day.tasks.length > 0)
         })
@@ -637,8 +643,8 @@ export default function EditProtocolPage() {
                   <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
                   <div className="h-4 w-1 bg-gray-200 rounded animate-pulse"></div>
                   <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
+            </div>
+          </div>
               <div className="h-12 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
             </div>
 
@@ -1317,12 +1323,9 @@ export default function EditProtocolPage() {
                                               </Select>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4">
-                                              <div>
-                                                <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                  <EyeIcon className="h-4 w-4" />
-                                                  Título do Modal
-                                                </Label>
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                              <div className="space-y-2">
+                                                <Label className="text-gray-900 font-semibold">Título do Modal</Label>
                                                 <Input
                                                   placeholder="Título personalizado"
                                                   value={task.modalTitle || ''}
@@ -1331,10 +1334,8 @@ export default function EditProtocolPage() {
                                                 />
                                               </div>
                                               
-                                              <div>
-                                                <Label className="text-gray-900 font-semibold mb-2 block">
-                                                  Texto do Botão
-                                                </Label>
+                                              <div className="space-y-2">
+                                                <Label className="text-gray-900 font-semibold">Texto do Botão</Label>
                                                 <Input
                                                   placeholder="Saber mais"
                                                   value={task.modalButtonText || ''}
@@ -1342,6 +1343,16 @@ export default function EditProtocolPage() {
                                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                                                 />
                                               </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                              <Label className="text-gray-900 font-semibold">Link do Botão</Label>
+                                              <Input
+                                                placeholder="https://exemplo.com"
+                                                value={task.modalButtonUrl || ''}
+                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonUrl', e.target.value, session.id)}
+                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                              />
                                             </div>
                                           </div>
                                         </div>
@@ -1469,21 +1480,21 @@ export default function EditProtocolPage() {
                                               <PlayIcon className="h-4 w-4" />
                                               URL do Vídeo
                                             </Label>
-                                            <Input
-                                              value={task.videoUrl || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
-                                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                            />
-                                          </div>
+                                          <Input
+                                            value={task.videoUrl || ''}
+                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
+                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                          />
+                                        </div>
 
-                                          <div className="space-y-2">
-                                            <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
-                                            <Textarea
-                                              value={task.fullExplanation || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
-                                              placeholder="Explicação detalhada sobre como realizar esta tarefa..."
-                                              className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                            />
+                                        <div className="space-y-2">
+                                          <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
+                                          <Textarea
+                                            value={task.fullExplanation || ''}
+                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
+                                            placeholder="Explicação detalhada sobre como realizar esta tarefa..."
+                                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                          />
                                           </div>
                                         </div>
 

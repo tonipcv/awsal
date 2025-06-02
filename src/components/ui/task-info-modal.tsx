@@ -64,10 +64,6 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           {/* Vídeo */}
           {task.videoUrl && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <PlayIcon className="h-5 w-5 text-teal-400" />
-                <h3 className="text-lg font-medium text-white">Vídeo Explicativo</h3>
-              </div>
               <div className="aspect-video rounded-xl overflow-hidden bg-gray-900/50 border border-gray-800/50">
                 <iframe
                   src={task.videoUrl}

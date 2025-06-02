@@ -20,14 +20,14 @@ export async function GET() {
     }
 
     console.log('[ROLE API] Buscando usuário para email:', session.user.email);
-    
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { role: true, id: true, email: true }
     });
 
     console.log('[ROLE API] Usuário encontrado:', user ? 'Sim' : 'Não');
-    
+
     if (!user) {
       console.log('[ROLE API] Erro: Usuário não encontrado no banco - invalidando sessão');
       // Se o usuário não existe no banco mas tem sessão válida, 
@@ -39,7 +39,7 @@ export async function GET() {
     }
 
     console.log('[ROLE API] Role do usuário:', user.role);
-    
+
     return NextResponse.json(
       { role: user.role }, 
       {

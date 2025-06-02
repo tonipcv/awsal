@@ -265,12 +265,12 @@ export async function GET(request: Request) {
             tasks: session.tasks.map(task => ({
               ...task,
               order: task.orderIndex,
-              hasMoreInfo: false, // Default values for compatibility
-              videoUrl: '',
-              fullExplanation: '',
-              productId: '',
-              modalTitle: '',
-              modalButtonText: ''
+              hasMoreInfo: task.hasMoreInfo || false,
+              videoUrl: task.videoUrl || '',
+              fullExplanation: task.fullExplanation || '',
+              productId: task.productId || '',
+              modalTitle: task.modalTitle || '',
+              modalButtonText: task.modalButtonText || ''
             }))
           })),
           // Remove the flattened tasks array to avoid duplication

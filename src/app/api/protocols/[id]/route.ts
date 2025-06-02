@@ -132,10 +132,14 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const resolvedParams = await params;
+  const protocolId = resolvedParams.id;
+  
+  // Declarar variáveis no escopo da função para estarem disponíveis no catch
+  let updateData: any = {};
+  let days: any;
+  
   try {
-    const resolvedParams = await params;
-    const protocolId = resolvedParams.id;
-    
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -157,7 +161,6 @@ export async function PUT(
       description, 
       isTemplate, 
       showDoctorInfo,
-      days,
       isAvailable,
       modalTitle,
       modalVideoUrl,
@@ -165,6 +168,9 @@ export async function PUT(
       modalButtonText,
       modalButtonUrl
     } = body;
+    
+    // Atribuir days para estar disponível no catch
+    days = body.days;
 
     // Verificar se o protocolo pertence ao médico
     const existingProtocol = await prisma.protocol.findFirst({
@@ -194,8 +200,6 @@ export async function PUT(
     }
 
     // Preparar dados para atualização
-    const updateData: any = {};
-    
     if (name !== undefined) updateData.name = name;
     if (duration !== undefined) updateData.duration = duration;
     if (description !== undefined) updateData.description = description;
@@ -228,34 +232,8 @@ export async function PUT(
 
       // Se há dias para atualizar, remover e recriar
       if (days && Array.isArray(days)) {
-        // Remover dias existentes
-        await tx.protocolTask.deleteMany({
-          where: {
-            OR: [
-              {
-                protocolSessionId: {
-                  in: await tx.protocolSession.findMany({
-                    where: {
-                      protocolDay: {
-                        protocolId: protocolId
-                      }
-                    },
-                    select: { id: true }
-                  }).then(sessions => sessions.map(s => s.id))
-                }
-              }
-            ]
-          }
-        });
-
-        await tx.protocolSession.deleteMany({
-          where: {
-            protocolDay: {
-              protocolId: protocolId
-            }
-          }
-        });
-
+        // Remover dados existentes de forma mais eficiente usando cascade
+        // Como ProtocolDay tem cascade, ao deletar os dias, as sessões e tarefas são removidas automaticamente
         await tx.protocolDay.deleteMany({
           where: {
             protocolId: protocolId
@@ -295,6 +273,13 @@ export async function PUT(
                       type: taskData.type || 'task',
                       duration: taskData.duration || null,
                       orderIndex: taskData.orderIndex || taskData.order || 0,
+                      hasMoreInfo: taskData.hasMoreInfo || false,
+                      videoUrl: taskData.videoUrl || null,
+                      fullExplanation: taskData.fullExplanation || null,
+                      productId: taskData.productId || null,
+                      modalTitle: taskData.modalTitle || null,
+                      modalButtonText: taskData.modalButtonText || null,
+                      modalButtonUrl: taskData.modalButtonUrl || null,
                       protocolSessionId: protocolSession.id
                     }
                   });
@@ -322,6 +307,13 @@ export async function PUT(
                   type: taskData.type || 'task',
                   duration: taskData.duration || null,
                   orderIndex: taskData.orderIndex || taskData.order || 0,
+                  hasMoreInfo: taskData.hasMoreInfo || false,
+                  videoUrl: taskData.videoUrl || null,
+                  fullExplanation: taskData.fullExplanation || null,
+                  productId: taskData.productId || null,
+                  modalTitle: taskData.modalTitle || null,
+                  modalButtonText: taskData.modalButtonText || null,
+                  modalButtonUrl: taskData.modalButtonUrl || null,
                   protocolSessionId: defaultSession.id
                 }
               });
@@ -331,14 +323,129 @@ export async function PUT(
       }
 
       return protocol;
+    }, {
+      timeout: 15000, // 15 segundos de timeout
     });
 
     return NextResponse.json(updatedProtocol);
   } catch (error) {
     console.error('Error updating protocol:', { 
       error: error instanceof Error ? error.message : 'Unknown error', 
-      stack: error instanceof Error ? error.stack : undefined 
+      stack: error instanceof Error ? error.stack : undefined,
+      protocolId,
+      timestamp: new Date().toISOString()
     });
+    
+    // Se for erro de transação, tentar uma abordagem alternativa
+    if (error instanceof Error && error.message.includes('Transaction')) {
+      console.log('🔄 Tentando abordagem alternativa sem transação...');
+      
+      try {
+        // Usar os dados já parseados do body original
+        // Atualizar protocolo primeiro
+        const protocol = await prisma.protocol.update({
+          where: { id: protocolId },
+          data: updateData
+        });
+
+        // Se há dias para atualizar, fazer separadamente
+        if (days && Array.isArray(days)) {
+          // Remover dados existentes
+          await prisma.protocolDay.deleteMany({
+            where: { protocolId: protocolId }
+          });
+
+          // Criar novos dias
+          for (const dayData of days) {
+            const protocolDay = await prisma.protocolDay.create({
+              data: {
+                dayNumber: dayData.dayNumber,
+                title: dayData.title || `Dia ${dayData.dayNumber}`,
+                description: dayData.description || null,
+                protocolId: protocol.id
+              }
+            });
+
+            // Criar sessões se existirem
+            if (dayData.sessions && Array.isArray(dayData.sessions)) {
+              for (const sessionData of dayData.sessions) {
+                const protocolSession = await prisma.protocolSession.create({
+                  data: {
+                    title: sessionData.title || sessionData.name,
+                    description: sessionData.description || null,
+                    sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
+                    protocolDayId: protocolDay.id
+                  }
+                });
+
+                // Criar tarefas da sessão
+                if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+                  for (const taskData of sessionData.tasks) {
+                    await prisma.protocolTask.create({
+                      data: {
+                        title: taskData.title,
+                        description: taskData.description || null,
+                        type: taskData.type || 'task',
+                        duration: taskData.duration || null,
+                        orderIndex: taskData.orderIndex || taskData.order || 0,
+                        hasMoreInfo: taskData.hasMoreInfo || false,
+                        videoUrl: taskData.videoUrl || null,
+                        fullExplanation: taskData.fullExplanation || null,
+                        productId: taskData.productId || null,
+                        modalTitle: taskData.modalTitle || null,
+                        modalButtonText: taskData.modalButtonText || null,
+                        modalButtonUrl: taskData.modalButtonUrl || null,
+                        protocolSessionId: protocolSession.id
+                      }
+                    });
+                  }
+                }
+              }
+            }
+
+            // Criar tarefas diretas do dia (sem sessão)
+            if (dayData.tasks && Array.isArray(dayData.tasks)) {
+              const defaultSession = await prisma.protocolSession.create({
+                data: {
+                  title: 'Sessão Principal',
+                  description: 'Sessão principal do dia',
+                  sessionNumber: 1,
+                  protocolDayId: protocolDay.id
+                }
+              });
+
+              for (const taskData of dayData.tasks) {
+                await prisma.protocolTask.create({
+                  data: {
+                    title: taskData.title,
+                    description: taskData.description || null,
+                    type: taskData.type || 'task',
+                    duration: taskData.duration || null,
+                    orderIndex: taskData.orderIndex || taskData.order || 0,
+                    hasMoreInfo: taskData.hasMoreInfo || false,
+                    videoUrl: taskData.videoUrl || null,
+                    fullExplanation: taskData.fullExplanation || null,
+                    productId: taskData.productId || null,
+                    modalTitle: taskData.modalTitle || null,
+                    modalButtonText: taskData.modalButtonText || null,
+                    modalButtonUrl: taskData.modalButtonUrl || null,
+                    protocolSessionId: defaultSession.id
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        console.log('✅ Protocolo atualizado com abordagem alternativa');
+        return NextResponse.json(protocol);
+        
+      } catch (fallbackError) {
+        console.error('❌ Erro na abordagem alternativa:', fallbackError);
+        return NextResponse.json({ error: 'Erro ao atualizar protocolo' }, { status: 500 });
+      }
+    }
+    
     return NextResponse.json({ error: 'Erro ao atualizar protocolo' }, { status: 500 });
   }
 }

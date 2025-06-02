@@ -65,7 +65,7 @@ export default function Home() {
     };
 
     if (session) {
-      checkUserRole();
+    checkUserRole();
     }
   }, [session, status, router]);
 

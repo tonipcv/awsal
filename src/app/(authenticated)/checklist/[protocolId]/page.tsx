@@ -374,7 +374,12 @@ export default function ProtocolChecklistPage() {
     
     const today = new Date();
     const startDate = new Date(activeProtocol.startDate);
-    const diffTime = today.getTime() - startDate.getTime();
+    
+    // Normalizar as datas para comparação (apenas data, sem hora) - mesma lógica do getDayStatus
+    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    
+    const diffTime = normalizedToday.getTime() - normalizedStartDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
     
     return Math.max(1, Math.min(diffDays, activeProtocol.protocol.duration));
@@ -507,43 +512,56 @@ export default function ProtocolChecklistPage() {
     <div className="min-h-screen bg-black">
       {/* Padding para menu lateral no desktop e header no mobile */}
       <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
-        <div className="max-w-4xl mx-auto px-3 py-2 lg:px-4 lg:py-4">
-          {/* Botão de voltar e título do protocolo */}
-          <div className="mb-4 lg:mb-6">
-            <div className="flex items-center gap-2 lg:gap-3 mb-2">
-              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors">
+        <div className="max-w-4xl mx-auto px-4 py-6 lg:px-6 lg:py-8">
+          {/* Header Section */}
+          <div className="mb-8 lg:mb-12">
+            <div className="flex items-center gap-4 mb-4">
+              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
                 <Link href="/protocols">
-                  <ArrowLeftIcon className="h-4 w-4" />
+                  <ArrowLeftIcon className="h-5 w-5" />
                 </Link>
               </Button>
-              <div className="h-4 w-px bg-gray-700" />
-              <h1 className="text-base lg:text-lg font-light text-white tracking-wide">
+              <div className="h-6 w-px bg-gray-700/50" />
+              <h1 className="text-xl lg:text-2xl font-medium text-white tracking-tight">
                 {activeProtocol.protocol.name}
               </h1>
             </div>
-            <div className="flex items-center justify-end text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-turquoise font-medium">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                Acompanhe seu progresso diário
+              </div>
+              <div className="flex items-center gap-3 bg-gray-900/50 border border-gray-800/50 rounded-lg px-4 py-2">
+                <span className="text-2xl font-bold text-turquoise">
                   {getCurrentDay()}
                 </span>
-                <span className="text-gray-500">/{activeProtocol.protocol.duration}</span>
-                <span className="text-xs text-gray-500 uppercase tracking-wider ml-2">
+                <span className="text-gray-500">de {activeProtocol.protocol.duration}</span>
+                <div className="h-4 w-px bg-gray-700/50 mx-1" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">
                   Dia Atual
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3 lg:space-y-4">
+          <div className="space-y-6 lg:space-y-8">
             {activeProtocol.protocol.days
               .sort((a, b) => {
                 const statusA = getDayStatus(a.dayNumber);
                 const statusB = getDayStatus(b.dayNumber);
-                const statusPriority = { current: 0, future: 1, past: 2 };
                 
-                if (statusA !== statusB) {
-                  return statusPriority[statusA] - statusPriority[statusB];
+                // Se um é current e outro não, current vem primeiro
+                if (statusA === 'current' && statusB !== 'current') return -1;
+                if (statusB === 'current' && statusA !== 'current') return 1;
+                
+                // Se ambos são current (não deveria acontecer) ou ambos não são current
+                if (statusA === statusB) {
+                  return a.dayNumber - b.dayNumber; // Ordem crescente por número do dia
                 }
+                
+                // Entre future e past, future vem primeiro
+                if (statusA === 'future' && statusB === 'past') return -1;
+                if (statusA === 'past' && statusB === 'future') return 1;
+                
                 return a.dayNumber - b.dayNumber;
               })
               .map(day => {
@@ -555,35 +573,35 @@ export default function ProtocolChecklistPage() {
                   <div 
                     key={day.id} 
                     className={cn(
-                      "bg-gray-900/40 border border-gray-800/40 rounded-xl transition-all duration-300 backdrop-blur-sm",
-                      isCurrentDay && "ring-1 ring-turquoise/30 bg-turquoise/5",
+                      "bg-white/[0.02] border border-gray-800/60 rounded-2xl transition-all duration-300 backdrop-blur-sm overflow-hidden",
+                      isCurrentDay && "ring-1 ring-turquoise/40 bg-turquoise/[0.02] border-turquoise/20",
                       dayStatus === 'future' && "opacity-60"
                     )}
                   >
-                    {/* Header do dia compacto */}
-                    <div className="p-3 lg:p-4 border-b border-gray-800/30">
+                    {/* Day Header */}
+                    <div className="p-6 lg:p-8 border-b border-gray-800/40">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 lg:gap-3">
+                        <div className="flex items-center gap-4">
                           <div className={cn(
-                            "w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-sm font-medium border transition-all",
+                            "w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center text-lg font-semibold border-2 transition-all",
                             isCurrentDay 
-                              ? "bg-turquoise/20 border-turquoise/50 text-turquoise" 
-                              : "bg-gray-800/50 border-gray-700/50 text-gray-400"
+                              ? "bg-turquoise/15 border-turquoise/50 text-turquoise shadow-lg shadow-turquoise/10" 
+                              : "bg-gray-800/50 border-gray-700/50 text-gray-300"
                           )}>
                             {day.dayNumber}
                           </div>
                           <div>
-                            <h3 className="text-sm lg:text-base font-medium text-white">
+                            <h3 className="text-lg lg:text-xl font-semibold text-white mb-1">
                               Dia {day.dayNumber}
                             </h3>
-                            <div className="text-xs text-gray-400">
-                              {format(addDays(new Date(activeProtocol.startDate), day.dayNumber - 1), 'dd/MM', { locale: ptBR })}
+                            <div className="text-sm text-gray-400 font-medium">
+                              {format(addDays(new Date(activeProtocol.startDate), day.dayNumber - 1), 'EEEE, dd/MM', { locale: ptBR })}
                             </div>
                           </div>
                         </div>
                         {isCurrentDay && (
-                          <div className="px-2 py-1 bg-turquoise/15 border border-turquoise/25 rounded-md">
-                            <span className="text-xs font-medium text-turquoise uppercase tracking-wider">
+                          <div className="px-4 py-2 bg-turquoise/15 border border-turquoise/30 rounded-xl">
+                            <span className="text-sm font-semibold text-turquoise uppercase tracking-wider">
                               Hoje
                             </span>
                           </div>
@@ -591,98 +609,100 @@ export default function ProtocolChecklistPage() {
                       </div>
                     </div>
                     
-                    {/* Tarefas compactas */}
-                    <div className="p-3 lg:p-4">
+                    {/* Tasks Section */}
+                    <div className="p-6 lg:p-8">
                       {day.sessions
                         .sort((a, b) => a.order - b.order)
-                        .map(session => (
-                          <div key={session.id} className="space-y-2 lg:space-y-3">
-                            {/* Session Header compacto */}
+                        .map((session, sessionIndex) => (
+                          <div key={session.id} className={cn("space-y-4", sessionIndex > 0 && "mt-8")}>
+                            {/* Session Header */}
                             {session.name && (
-                              <div className="mb-2 lg:mb-3">
-                                <h4 className="text-sm font-medium text-turquoise">
+                              <div className="mb-6">
+                                <h4 className="text-base font-semibold text-turquoise mb-2">
                                   {session.name}
                                 </h4>
                                 {session.description && (
-                                  <p className="text-xs text-gray-400 mt-1">
+                                  <p className="text-sm text-gray-400 leading-relaxed">
                                     {session.description}
                                   </p>
                                 )}
                               </div>
                             )}
 
-                            {/* Tasks compactas */}
-                            {session.tasks
-                              .sort((a, b) => a.order - b.order)
-                              .map(task => {
-                                const isCompleted = isTaskCompleted(task.id, dayDate);
-                                const canInteract = dayStatus !== 'future';
-                                const isPending = pendingTasks.has(task.id);
-                                
-                                return (
-                                  <div 
-                                    key={task.id}
-                                    className={cn(
-                                      "group flex items-start gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg border transition-all duration-200 hover:border-gray-600/50",
-                                      isCompleted 
-                                        ? "bg-turquoise/10 border-turquoise/30" 
-                                        : "bg-gray-800/20 border-gray-700/40",
-                                      !canInteract && "opacity-50",
-                                      isPending && "opacity-80 scale-[0.98]"
-                                    )}
-                                  >
-                                    <button
-                                      disabled={!canInteract || isPending}
+                            {/* Tasks Grid */}
+                            <div className="space-y-3">
+                              {session.tasks
+                                .sort((a, b) => a.order - b.order)
+                                .map(task => {
+                                  const isCompleted = isTaskCompleted(task.id, dayDate);
+                                  const canInteract = dayStatus !== 'future';
+                                  const isPending = pendingTasks.has(task.id);
+                                  
+                                  return (
+                                    <div 
+                                      key={task.id}
                                       className={cn(
-                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
+                                        "group flex items-start gap-4 p-4 lg:p-5 rounded-xl border transition-all duration-200 hover:border-gray-600/60 hover:bg-white/[0.01]",
                                         isCompleted 
-                                          ? "bg-turquoise border-turquoise text-white shadow-lg shadow-turquoise/25 scale-110" 
-                                          : "border-gray-600 hover:border-turquoise/50 hover:bg-turquoise/10 hover:scale-105",
-                                        !canInteract && "cursor-not-allowed",
-                                        isPending && "animate-pulse border-turquoise/70"
+                                          ? "bg-turquoise/[0.08] border-turquoise/30 hover:border-turquoise/40" 
+                                          : "bg-gray-800/20 border-gray-700/40",
+                                        !canInteract && "opacity-50",
+                                        isPending && "opacity-80 scale-[0.99]"
                                       )}
-                                      onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
                                     >
-                                      {isCompleted && <CheckIcon className="h-3 w-3 transition-all duration-200" />}
-                                    </button>
-                                    
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1">
-                                          <h5 className={cn(
-                                            "text-sm font-medium leading-snug",
-                                            isCompleted ? "text-turquoise-light line-through" : "text-white"
-                                          )}>
-                                            {task.title}
-                                          </h5>
-                                          {task.description && (
-                                            <p className={cn(
-                                              "text-xs mt-1 leading-relaxed",
-                                              isCompleted ? "text-turquoise/70" : "text-gray-300"
+                                      <button
+                                        disabled={!canInteract || isPending}
+                                        className={cn(
+                                          "w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
+                                          isCompleted 
+                                            ? "bg-turquoise border-turquoise text-white shadow-lg shadow-turquoise/25 scale-105" 
+                                            : "border-gray-600 hover:border-turquoise/60 hover:bg-turquoise/10 hover:scale-105",
+                                          !canInteract && "cursor-not-allowed",
+                                          isPending && "animate-pulse border-turquoise/70"
+                                        )}
+                                        onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
+                                      >
+                                        {isCompleted && <CheckIcon className="h-4 w-4 transition-all duration-200" />}
+                                      </button>
+                                      
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-4">
+                                          <div className="flex-1">
+                                            <h5 className={cn(
+                                              "text-base font-medium leading-relaxed mb-1",
+                                              isCompleted ? "text-turquoise-light line-through" : "text-white"
                                             )}>
-                                              {task.description}
-                                            </p>
+                                              {task.title}
+                                            </h5>
+                                            {task.description && (
+                                              <p className={cn(
+                                                "text-sm leading-relaxed",
+                                                isCompleted ? "text-turquoise/70" : "text-gray-300"
+                                              )}>
+                                                {task.description}
+                                              </p>
+                                            )}
+                                          </div>
+                                          
+                                          {task.hasMoreInfo && (
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 h-9 w-9 p-0 rounded-xl transition-all flex-shrink-0 hover:scale-105"
+                                              onClick={() => {
+                                                setSelectedTask(task);
+                                                setShowTaskInfoModal(true);
+                                              }}
+                                            >
+                                              <InformationCircleIcon className="h-5 w-5" />
+                                            </Button>
                                           )}
                                         </div>
-                                        
-                                        {task.hasMoreInfo && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 h-6 px-2 opacity-0 group-hover:opacity-100 transition-all lg:opacity-100"
-                                            onClick={() => {
-                                              setSelectedTask(task);
-                                              setShowTaskInfoModal(true);
-                                            }}
-                                          >
-                                            <InformationCircleIcon className="h-3 w-3" />
-                                          </Button>
-                                        )}
                                       </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                            </div>
                           </div>
                         ))}
                     </div>
@@ -690,24 +710,24 @@ export default function ProtocolChecklistPage() {
                 );
               })}
 
-            {/* Produtos compactos */}
+            {/* Products Section */}
             {products.length > 0 && (
-              <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
-                <div className="mb-3 lg:mb-4">
-                  <h3 className="text-sm lg:text-base font-medium text-white mb-1">
+              <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 lg:p-8 backdrop-blur-sm">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-white mb-2">
                     Produtos Recomendados
                   </h3>
-                  <p className="text-xs text-turquoise">
-                    Selecionados para seu protocolo
+                  <p className="text-sm text-turquoise font-medium">
+                    Selecionados especialmente para seu protocolo
                   </p>
                 </div>
                 
-                <div className="grid gap-2 lg:gap-3">
+                <div className="grid gap-4">
                   {products
                     .sort((a, b) => a.order - b.order)
                     .map((protocolProduct) => (
-                      <div key={protocolProduct.id} className="group flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-gray-800/20 rounded-lg border border-gray-700/40 hover:border-turquoise/30 transition-all duration-300">
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-700/50 rounded-lg flex-shrink-0 overflow-hidden">
+                      <div key={protocolProduct.id} className="group flex items-center gap-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700/40 hover:border-turquoise/30 hover:bg-gray-800/40 transition-all duration-300">
+                        <div className="w-14 h-14 bg-gray-700/50 rounded-xl flex-shrink-0 overflow-hidden">
                           {protocolProduct.product.imageUrl ? (
                             <img 
                               src={protocolProduct.product.imageUrl} 
@@ -720,17 +740,17 @@ export default function ProtocolChecklistPage() {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white text-sm">
+                          <h4 className="font-semibold text-white text-base mb-1">
                             {protocolProduct.product.name}
                           </h4>
                           {protocolProduct.product.brand && (
-                            <p className="text-xs text-gray-400">
+                            <p className="text-sm text-gray-400 mb-2">
                               {protocolProduct.product.brand}
                             </p>
                           )}
                           {protocolProduct.isRequired && (
-                            <div className="inline-flex items-center px-2 py-0.5 bg-turquoise/15 border border-turquoise/25 rounded-md mt-1">
-                              <span className="text-xs font-medium text-turquoise uppercase tracking-wider">
+                            <div className="inline-flex items-center px-3 py-1 bg-turquoise/15 border border-turquoise/30 rounded-lg">
+                              <span className="text-xs font-semibold text-turquoise uppercase tracking-wider">
                                 Obrigatório
                               </span>
                             </div>
@@ -740,7 +760,7 @@ export default function ProtocolChecklistPage() {
                         {protocolProduct.product.purchaseUrl && (
                           <Button 
                             size="sm" 
-                            className="bg-turquoise hover:bg-turquoise/90 text-black font-medium px-3 lg:px-4 py-1.5 text-xs shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200"
+                            className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-6 py-2.5 text-sm rounded-xl shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
                             asChild
                           >
                             <a 

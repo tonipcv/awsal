@@ -282,7 +282,7 @@ export default function PatientDetailPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Client not found</h2>
               <Button asChild className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl">
                 <Link href="/doctor/patients">Back to Clients</Link>
-              </Button>
+          </Button>
             </div>
           </div>
         </div>
@@ -301,39 +301,39 @@ export default function PatientDetailPage() {
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
-          
-          {/* Header */}
+        
+        {/* Header */}
           <div className="flex items-center gap-6 mb-8">
             <Button 
               variant="outline" 
               asChild 
               className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-4 py-2 rounded-xl"
             >
-              <Link href="/doctor/patients">
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            <Link href="/doctor/patients">
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
-              </Link>
-            </Button>
-            <div className="flex-1">
+            </Link>
+          </Button>
+          <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Client Details
-              </h1>
+            </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-2">
                   <UserIcon className="h-4 w-4" />
                   {patient.name || patient.email}
                 </span>
-                <span>•</span>
+              <span>•</span>
                 <span className="flex items-center gap-2">
                   <DocumentTextIcon className="h-4 w-4" />
                   {totalProtocols} protocols
                 </span>
-                <span>•</span>
+              <span>•</span>
                 <span className="flex items-center gap-2">
                   <CheckCircleIcon className="h-4 w-4" />
                   {activeProtocols.length} active
                 </span>
-                <span>•</span>
+              <span>•</span>
                 <span className="flex items-center gap-2">
                   <BookOpenIcon className="h-4 w-4" />
                   {totalCourses} courses
@@ -341,60 +341,60 @@ export default function PatientDetailPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
-                <DialogTrigger asChild>
+            <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
+              <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
                     className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
                   >
-                    <AcademicCapIcon className="h-4 w-4 mr-2" />
+                  <AcademicCapIcon className="h-4 w-4 mr-2" />
                     Assign Course
-                  </Button>
-                </DialogTrigger>
+                </Button>
+              </DialogTrigger>
                 <DialogContent className="bg-white border border-gray-200 shadow-xl rounded-2xl">
-                  <DialogHeader>
+                <DialogHeader>
                     <DialogTitle className="text-xl font-bold text-gray-900">Assign Course to Client</DialogTitle>
-                  </DialogHeader>
+                </DialogHeader>
                   <div className="space-y-6 p-2">
-                    <div>
+                  <div>
                       <label className="text-sm font-semibold text-gray-700 mb-3 block">
                         Select Course
-                      </label>
-                      <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                    </label>
+                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
                         <SelectTrigger className="border-gray-300 bg-white text-gray-900 h-12 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
                           <SelectValue placeholder="Choose a course..." />
-                        </SelectTrigger>
+                      </SelectTrigger>
                         <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
-                          {getAvailableCoursesForAssignment().map((course) => (
-                            <SelectItem 
-                              key={course.id} 
-                              value={course.id} 
+                        {getAvailableCoursesForAssignment().map((course) => (
+                          <SelectItem 
+                            key={course.id} 
+                            value={course.id} 
                               className="hover:bg-gray-50 focus:bg-gray-50 text-gray-900 cursor-pointer p-3"
-                            >
-                              <div>
+                          >
+                            <div>
                                 <div className="font-semibold text-gray-900">{course.name}</div>
                                 <div className="text-sm text-gray-600">
                                   {course._count?.modules || 0} modules • {course._count?.lessons || 0} lessons
-                                </div>
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                     <div className="flex justify-end gap-3 pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowCourseModal(false)}
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowCourseModal(false)}
                         className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
-                      >
+                    >
                         Cancel
-                      </Button>
-                      <Button 
-                        onClick={assignCourse}
-                        disabled={!selectedCourseId || isAssigningCourse}
+                    </Button>
+                    <Button 
+                      onClick={assignCourse}
+                      disabled={!selectedCourseId || isAssigningCourse}
                         className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                      >
+                    >
                         {isAssigningCourse ? (
                           <div className="flex items-center gap-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -403,77 +403,77 @@ export default function PatientDetailPage() {
                         ) : (
                           'Assign Course'
                         )}
-                      </Button>
-                    </div>
+                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
+                </div>
+              </DialogContent>
+            </Dialog>
               <Button 
                 asChild 
                 className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
               >
-                <Link href={`/doctor/patients/${patient.id}/assign`}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
+              <Link href={`/doctor/patients/${patient.id}/assign`}>
+                <PlusIcon className="h-4 w-4 mr-2" />
                   Assign Protocol
-                </Link>
-              </Button>
-            </div>
+              </Link>
+            </Button>
           </div>
+        </div>
 
           <div className="max-w-6xl mx-auto space-y-8">
-            
-            {/* Patient Info Card */}
+          
+          {/* Patient Info Card */}
             <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
               <CardContent className="p-8">
                 <div className="flex items-start gap-8">
-                  {/* Avatar */}
-                  <div className="flex-shrink-0">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
                     <div className="h-24 w-24 rounded-2xl bg-teal-100 flex items-center justify-center text-2xl font-bold text-teal-600">
-                      {getPatientInitials(patient.name)}
-                    </div>
+                    {getPatientInitials(patient.name)}
                   </div>
-                  
-                  {/* Patient Details */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
+                </div>
+                
+                {/* Patient Details */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">
                           {patient.name || 'Name not provided'}
-                        </h2>
+                      </h2>
                         <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
                           <EnvelopeIcon className="h-5 w-5" />
-                          <span>{patient.email}</span>
-                          {patient.emailVerified ? (
+                        <span>{patient.email}</span>
+                        {patient.emailVerified ? (
                             <Badge className="bg-green-50 text-green-700 border-green-200 flex items-center gap-2 px-3 py-1 rounded-full">
                               <ShieldCheckIcon className="h-4 w-4" />
                               Verified
-                            </Badge>
-                          ) : (
+                          </Badge>
+                        ) : (
                             <Badge className="bg-orange-50 text-orange-700 border-orange-200 flex items-center gap-2 px-3 py-1 rounded-full">
                               <ExclamationTriangleIcon className="h-4 w-4" />
                               Pending
-                            </Badge>
-                          )}
-                        </div>
-                        {patient.referralCode && (
+                          </Badge>
+                        )}
+                      </div>
+                      {patient.referralCode && (
                           <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
                             <ClipboardDocumentIcon className="h-5 w-5" />
                             <span>Referral code: <strong className="text-gray-900">{patient.referralCode}</strong></span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={copyReferralCode}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={copyReferralCode}
                               className="h-8 px-3 text-sm border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg"
-                            >
+                          >
                               Copy
-                            </Button>
-                          </div>
-                        )}
-                      </div>
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
                       <div className="text-center p-4 bg-gray-50 rounded-xl">
                         <div className="text-2xl font-bold text-gray-900">{totalProtocols}</div>
                         <div className="text-sm text-gray-600 font-medium">Protocols</div>
@@ -481,89 +481,89 @@ export default function PatientDetailPage() {
                       <div className="text-center p-4 bg-green-50 rounded-xl">
                         <div className="text-2xl font-bold text-green-600">{activeProtocols.length}</div>
                         <div className="text-sm text-gray-600 font-medium">P. Active</div>
-                      </div>
+                    </div>
                       <div className="text-center p-4 bg-blue-50 rounded-xl">
                         <div className="text-2xl font-bold text-blue-600">{completedProtocols.length}</div>
                         <div className="text-sm text-gray-600 font-medium">P. Completed</div>
-                      </div>
+                    </div>
                       <div className="text-center p-4 bg-teal-50 rounded-xl">
                         <div className="text-2xl font-bold text-teal-600">{totalCourses}</div>
                         <div className="text-sm text-gray-600 font-medium">Courses</div>
-                      </div>
+                    </div>
                       <div className="text-center p-4 bg-teal-50 rounded-xl">
                         <div className="text-2xl font-bold text-teal-600">{activeCourses.length}</div>
                         <div className="text-sm text-gray-600 font-medium">C. Active</div>
-                      </div>
+                    </div>
                       <div className="text-center p-4 bg-blue-50 rounded-xl">
                         <div className="text-2xl font-bold text-blue-600">{completedCourses.length}</div>
                         <div className="text-sm text-gray-600 font-medium">C. Completed</div>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
             <div className="grid lg:grid-cols-3 gap-8">
-              {/* Active Protocols */}
+            {/* Active Protocols */}
               <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="p-6 border-b border-gray-200">
                   <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                     <CheckCircleIcon className="h-6 w-6 text-green-600" />
                     Active Protocols
                     <Badge className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full text-sm font-semibold">
-                      {activeProtocols.length}
-                    </Badge>
-                  </CardTitle>
+                    {activeProtocols.length}
+                  </Badge>
+                </CardTitle>
                   <p className="text-sm text-gray-600 mt-2">Protocols in progress</p>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {activeProtocols.length === 0 ? (
+                {activeProtocols.length === 0 ? (
                     <div className="text-center py-12">
                       <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-lg font-medium text-gray-600 mb-4">
                         No active protocols
-                      </p>
+                    </p>
                       <Button 
                         asChild 
                         className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
                       >
-                        <Link href={`/doctor/patients/${patient.id}/assign`}>
-                          <PlusIcon className="h-4 w-4 mr-2" />
+                      <Link href={`/doctor/patients/${patient.id}/assign`}>
+                        <PlusIcon className="h-4 w-4 mr-2" />
                           Assign First Protocol
-                        </Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    activeProtocols.map((assignment) => {
-                      const progress = getProtocolProgress(assignment);
-                      
-                      return (
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  activeProtocols.map((assignment) => {
+                    const progress = getProtocolProgress(assignment);
+                    
+                    return (
                         <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
                                   <h3 className="text-base font-semibold text-gray-900">
-                                    {assignment.protocol.name}
-                                  </h3>
-                                  {getStatusBadge(assignment.status)}
-                                </div>
-                                {assignment.protocol.description && (
+                                  {assignment.protocol.name}
+                                </h3>
+                                {getStatusBadge(assignment.status)}
+                              </div>
+                              {assignment.protocol.description && (
                                   <p className="text-sm text-gray-600 mb-2">
-                                    {assignment.protocol.description}
-                                  </p>
-                                )}
+                                  {assignment.protocol.description}
+                                </p>
+                              )}
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1">
                                     <ClockIcon className="h-4 w-4" />
                                     <span>{assignment.protocol.duration} days</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
+                                </div>
+                                <div className="flex items-center gap-1">
                                     <CalendarDaysIcon className="h-4 w-4" />
-                                    <span>
+                                  <span>
                                       Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
-                                    </span>
+                                  </span>
                                   </div>
                                 </div>
                               </div>
@@ -573,88 +573,88 @@ export default function PatientDetailPage() {
                                 asChild 
                                 className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
                               >
-                                <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
+                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
                                   <EyeIcon className="h-4 w-4 mr-1" />
                                   View
-                                </Link>
-                              </Button>
-                            </div>
-                            
-                            {/* Progress Bar */}
-                            <div className="space-y-2">
+                              </Link>
+                            </Button>
+                          </div>
+                          
+                          {/* Progress Bar */}
+                          <div className="space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-600 font-medium">Progress</span>
                                 <span className="text-teal-600 font-semibold">{progress.progress}%</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className="bg-teal-600 h-2 rounded-full transition-all duration-500"
-                                  style={{ width: `${progress.progress}%` }}
-                                />
-                              </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </CardContent>
-              </Card>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                  className="bg-teal-600 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${progress.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Active Courses */}
+            {/* Active Courses */}
               <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="p-6 border-b border-gray-200">
                   <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
                     <AcademicCapIcon className="h-6 w-6 text-teal-600" />
                     Active Courses
                     <Badge className="bg-teal-50 text-teal-700 border-teal-200 px-3 py-1 rounded-full text-sm font-semibold">
-                      {activeCourses.length}
-                    </Badge>
-                  </CardTitle>
+                    {activeCourses.length}
+                  </Badge>
+                </CardTitle>
                   <p className="text-sm text-gray-600 mt-2">Courses in progress</p>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {activeCourses.length === 0 ? (
+                {activeCourses.length === 0 ? (
                     <div className="text-center py-12">
                       <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-lg font-medium text-gray-600 mb-4">
                         No active courses
-                      </p>
-                      <Button 
-                        onClick={() => setShowCourseModal(true)}
+                    </p>
+                    <Button 
+                      onClick={() => setShowCourseModal(true)}
                         className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
                         Assign First Course
-                      </Button>
-                    </div>
-                  ) : (
-                    activeCourses.map((assignment) => (
+                    </Button>
+                  </div>
+                ) : (
+                  activeCourses.map((assignment) => (
                       <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-base font-semibold text-gray-900">
-                                  {assignment.course.name}
-                                </h3>
-                                {getCourseStatusBadge(assignment.status)}
-                              </div>
-                              {assignment.course.description && (
+                                {assignment.course.name}
+                              </h3>
+                              {getCourseStatusBadge(assignment.status)}
+                            </div>
+                            {assignment.course.description && (
                                 <p className="text-sm text-gray-600 mb-2">
-                                  {assignment.course.description}
-                                </p>
-                              )}
+                                {assignment.course.description}
+                              </p>
+                            )}
                               <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1">
                                   <BookOpenIcon className="h-4 w-4" />
                                   <span>{assignment.course._count?.modules || 0} modules</span>
-                                </div>
-                                <div className="flex items-center gap-1">
+                              </div>
+                              <div className="flex items-center gap-1">
                                   <CalendarDaysIcon className="h-4 w-4" />
-                                  <span>
+                                <span>
                                     Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
-                                  </span>
+                                </span>
                                 </div>
                               </div>
                             </div>
@@ -664,18 +664,18 @@ export default function PatientDetailPage() {
                               asChild 
                               className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
                             >
-                              <Link href={`/doctor/courses/${assignment.course.id}`}>
+                            <Link href={`/doctor/courses/${assignment.course.id}`}>
                                 <EyeIcon className="h-4 w-4 mr-1" />
                                 View
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </CardContent>
+            </Card>
 
               {/* Complete History */}
               <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
@@ -684,102 +684,102 @@ export default function PatientDetailPage() {
                     <DocumentTextIcon className="h-6 w-6 text-gray-600" />
                     Complete History
                     <Badge className="bg-gray-50 text-gray-700 border-gray-200 px-3 py-1 rounded-full text-sm font-semibold">
-                      {totalProtocols + totalCourses}
-                    </Badge>
-                  </CardTitle>
+                    {totalProtocols + totalCourses}
+                  </Badge>
+                </CardTitle>
                   <p className="text-sm text-gray-600 mt-2">All assigned protocols and courses</p>
-                </CardHeader>
+              </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {totalProtocols === 0 && totalCourses === 0 ? (
+                {totalProtocols === 0 && totalCourses === 0 ? (
                     <div className="text-center py-12">
                       <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <p className="text-lg font-medium text-gray-600 mb-4">
                         No protocols or courses assigned yet
-                      </p>
+                    </p>
                       <div className="flex gap-3 justify-center">
                         <Button 
                           asChild 
                           className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
                         >
-                          <Link href={`/doctor/patients/${patient.id}/assign`}>
-                            <PlusIcon className="h-4 w-4 mr-2" />
-                            Assign Protocol
-                          </Link>
-                        </Button>
-                        <Button 
-                          onClick={() => setShowCourseModal(true)}
-                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                        >
+                        <Link href={`/doctor/patients/${patient.id}/assign`}>
                           <PlusIcon className="h-4 w-4 mr-2" />
+                            Assign Protocol
+                        </Link>
+                      </Button>
+                      <Button 
+                        onClick={() => setShowCourseModal(true)}
+                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                      >
+                        <PlusIcon className="h-4 w-4 mr-2" />
                           Assign Course
-                        </Button>
-                      </div>
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Protocol History */}
-                      {patient.assignedProtocols.map((assignment) => (
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Protocol History */}
+                    {patient.assignedProtocols.map((assignment) => (
                         <Card key={`protocol-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
                           <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                                  assignment.status === 'ACTIVE' 
-                                    ? 'bg-green-100 text-green-600' 
-                                    : assignment.status === 'INACTIVE'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'bg-orange-100 text-orange-600'
-                                }`}>
+                                assignment.status === 'ACTIVE' 
+                                  ? 'bg-green-100 text-green-600' 
+                                  : assignment.status === 'INACTIVE'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-orange-100 text-orange-600'
+                              }`}>
                                   <DocumentTextIcon className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
                                     <p className="text-base font-semibold text-gray-900">{assignment.protocol.name}</p>
-                                    {getStatusBadge(assignment.status)}
+                                  {getStatusBadge(assignment.status)}
                                     <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Protocol</Badge>
-                                  </div>
+                                </div>
                                   <p className="text-sm text-gray-600">
-                                    {assignment.status === 'INACTIVE' 
+                                  {assignment.status === 'INACTIVE' 
                                       ? `Completed ${format(new Date(assignment.endDate), 'MMM dd, yyyy', { locale: enUS })}`
                                       : `Started ${format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}`
-                                    }
-                                  </p>
-                                </div>
+                                  }
+                                </p>
                               </div>
+                            </div>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 asChild 
                                 className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
                               >
-                                <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
+                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
                                   <EyeIcon className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      
-                      {/* Course History */}
-                      {(patient.assignedCourses || []).map((assignment) => (
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    
+                    {/* Course History */}
+                    {(patient.assignedCourses || []).map((assignment) => (
                         <Card key={`course-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
                           <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4">
                                 <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                                  assignment.status === 'active' 
+                                assignment.status === 'active' 
                                     ? 'bg-teal-100 text-teal-600' 
-                                    : assignment.status === 'completed'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'bg-orange-100 text-orange-600'
-                                }`}>
+                                  : assignment.status === 'completed'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-orange-100 text-orange-600'
+                              }`}>
                                   <AcademicCapIcon className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
                                     <p className="text-base font-semibold text-gray-900">{assignment.course.name}</p>
-                                    {getCourseStatusBadge(assignment.status)}
+                                  {getCourseStatusBadge(assignment.status)}
                                     <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Course</Badge>
                                   </div>
                                   <p className="text-sm text-gray-600">
@@ -793,18 +793,18 @@ export default function PatientDetailPage() {
                                 asChild 
                                 className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
                               >
-                                <Link href={`/doctor/courses/${assignment.course.id}`}>
+                              <Link href={`/doctor/courses/${assignment.course.id}`}>
                                   <EyeIcon className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             </div>
           </div>
         </div>
