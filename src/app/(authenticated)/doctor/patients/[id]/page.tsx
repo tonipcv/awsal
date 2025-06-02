@@ -25,7 +25,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface ProtocolAssignment {
   id: string;
@@ -160,11 +160,11 @@ export default function PatientDetailPage() {
         setSelectedCourseId('');
       } else {
         const error = await response.json();
-        alert(`Erro ao atribuir curso: ${error.error}`);
+        alert(`Error assigning course: ${error.error}`);
       }
     } catch (error) {
       console.error('Error assigning course:', error);
-      alert('Erro ao atribuir curso');
+      alert('Error assigning course');
     } finally {
       setIsAssigningCourse(false);
     }
@@ -198,15 +198,15 @@ export default function PatientDetailPage() {
   const getCourseStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-700 border-green-200">Ativo</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>;
       case 'completed':
-        return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Concluído</Badge>;
+        return <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">Completed</Badge>;
       case 'paused':
-        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Pausado</Badge>;
-      case 'unavailable':
-        return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Indisponível</Badge>;
+        return <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">Paused</Badge>;
+      case 'inactive':
+        return <Badge className="bg-gray-50 text-gray-700 border-gray-200 text-xs">Inactive</Badge>;
       default:
-        return <Badge className="bg-slate-100 text-slate-700 border-slate-200">{status}</Badge>;
+        return <Badge className="bg-gray-50 text-gray-700 border-gray-200 text-xs">{status}</Badge>;
     }
   };
 
@@ -216,57 +216,75 @@ export default function PatientDetailPage() {
   };
 
   const getProtocolProgress = (assignment: ProtocolAssignment) => {
-    const today = new Date();
     const startDate = new Date(assignment.startDate);
     const endDate = new Date(assignment.endDate);
+    const currentDate = new Date();
     
-    if (today > endDate) {
-      return { status: 'completed', progress: 100 };
-    }
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    const elapsed = currentDate.getTime() - startDate.getTime();
     
-    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysPassed = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const progress = Math.min(Math.max((daysPassed / totalDays) * 100, 0), 100);
+    const progress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
     
-    return { status: 'active', progress: Math.round(progress) };
+    return {
+      progress: Math.round(progress),
+      daysRemaining: Math.max(Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)), 0)
+    };
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-green-100 text-green-700 border-green-200">Ativo</Badge>;
+        return <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>;
       case 'INACTIVE':
-        return <Badge className="bg-slate-100 text-slate-700 border-slate-200">Concluído</Badge>;
+        return <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">Completed</Badge>;
       case 'UNAVAILABLE':
-        return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Indisponível</Badge>;
+        return <Badge className="bg-orange-50 text-orange-700 border-orange-200 text-xs">Unavailable</Badge>;
       default:
-        return <Badge className="bg-slate-100 text-slate-700 border-slate-200">{status}</Badge>;
+        return <Badge className="bg-gray-50 text-gray-700 border-gray-200 text-xs">{status}</Badge>;
     }
   };
 
   const copyReferralCode = () => {
     if (patient?.referralCode) {
       navigator.clipboard.writeText(patient.referralCode);
-      alert('Código de indicação copiado para a área de transferência!');
+      alert('Referral code copied to clipboard!');
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <span className="text-sm text-slate-600">Carregando paciente...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
+              <div className="space-y-6">
+                <div className="h-32 bg-gray-100 rounded-2xl"></div>
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-64 bg-gray-100 rounded-2xl"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-medium mb-2 text-slate-800">Paciente não encontrado</h2>
-          <Button asChild className="bg-blue-600 hover:bg-blue-700">
-            <Link href="/doctor/patients">Voltar aos pacientes</Link>
-          </Button>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Client not found</h2>
+              <Button asChild className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl">
+                <Link href="/doctor/patients">Back to Clients</Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -274,471 +292,520 @@ export default function PatientDetailPage() {
 
   const activeProtocols = getActiveProtocols();
   const completedProtocols = getCompletedProtocols();
-  const unavailableProtocols = getUnavailableProtocols();
   const totalProtocols = patient.assignedProtocols.length;
-
   const activeCourses = getActiveCourses();
   const completedCourses = getCompletedCourses();
   const totalCourses = patient.assignedCourses?.length || 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6 lg:pl-72 lg:pl-72">
-        
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" size="sm" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-            <Link href="/doctor/patients">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Voltar
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-light text-slate-800">
-              Detalhes do Paciente
-            </h1>
-            <div className="flex items-center gap-2 text-xs text-slate-600 mt-1">
-              <UserIcon className="h-3 w-3" />
-              <span>{patient.name || patient.email}</span>
-              <span>•</span>
-              <DocumentTextIcon className="h-3 w-3" />
-              <span>{totalProtocols} protocolos</span>
-              <span>•</span>
-              <CheckCircleIcon className="h-3 w-3" />
-              <span>{activeProtocols.length} ativos</span>
-              <span>•</span>
-              <BookOpenIcon className="h-3 w-3" />
-              <span>{totalCourses} cursos</span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                  <AcademicCapIcon className="h-4 w-4 mr-2" />
-                  Atribuir Curso
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-white">
-                <DialogHeader>
-                  <DialogTitle className="text-slate-800">Atribuir Curso ao Paciente</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 mb-2 block">
-                      Selecionar Curso
-                    </label>
-                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                      <SelectTrigger className="border-slate-300 bg-white text-slate-800">
-                        <SelectValue placeholder="Escolha um curso..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200 shadow-lg">
-                        {getAvailableCoursesForAssignment().map((course) => (
-                          <SelectItem 
-                            key={course.id} 
-                            value={course.id} 
-                            className="hover:bg-slate-50 focus:bg-slate-50 text-slate-800 cursor-pointer"
-                          >
-                            <div>
-                              <div className="font-medium text-slate-800">{course.name}</div>
-                              <div className="text-xs text-slate-600">
-                                {course._count?.modules || 0} módulos • {course._count?.lessons || 0} aulas
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowCourseModal(false)}
-                      className="border-slate-300 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-700 hover:border-slate-400"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={assignCourse}
-                      disabled={!selectedCourseId || isAssigningCourse}
-                      className="bg-[#3455eb] hover:bg-[#2845d9] text-white"
-                    >
-                      {isAssigningCourse ? 'Atribuindo...' : 'Atribuir Curso'}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Link href={`/doctor/patients/${patient.id}/assign`}>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Atribuir Protocolo
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex items-center gap-6 mb-8">
+            <Button 
+              variant="outline" 
+              asChild 
+              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-4 py-2 rounded-xl"
+            >
+              <Link href="/doctor/patients">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back
               </Link>
             </Button>
-          </div>
-        </div>
-
-        <div className="max-w-6xl mx-auto space-y-6">
-          
-          {/* Patient Info Card */}
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                {/* Avatar */}
-                <div className="flex-shrink-0">
-                  <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center text-xl font-medium text-blue-600">
-                    {getPatientInitials(patient.name)}
-                  </div>
-                </div>
-                
-                {/* Patient Details */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Client Details
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span className="flex items-center gap-2">
+                  <UserIcon className="h-4 w-4" />
+                  {patient.name || patient.email}
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-2">
+                  <DocumentTextIcon className="h-4 w-4" />
+                  {totalProtocols} protocols
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-2">
+                  <CheckCircleIcon className="h-4 w-4" />
+                  {activeProtocols.length} active
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-2">
+                  <BookOpenIcon className="h-4 w-4" />
+                  {totalCourses} courses
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
+                  >
+                    <AcademicCapIcon className="h-4 w-4 mr-2" />
+                    Assign Course
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-white border border-gray-200 shadow-xl rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold text-gray-900">Assign Course to Client</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 p-2">
                     <div>
-                      <h2 className="text-xl font-medium text-slate-800 mb-1">
-                        {patient.name || 'Nome não informado'}
-                      </h2>
-                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-                        <EnvelopeIcon className="h-4 w-4" />
-                        <span>{patient.email}</span>
-                        {patient.emailVerified ? (
-                          <Badge className="bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
-                            <ShieldCheckIcon className="h-3 w-3" />
-                            Verificado
-                          </Badge>
+                      <label className="text-sm font-semibold text-gray-700 mb-3 block">
+                        Select Course
+                      </label>
+                      <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                        <SelectTrigger className="border-gray-300 bg-white text-gray-900 h-12 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                          <SelectValue placeholder="Choose a course..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
+                          {getAvailableCoursesForAssignment().map((course) => (
+                            <SelectItem 
+                              key={course.id} 
+                              value={course.id} 
+                              className="hover:bg-gray-50 focus:bg-gray-50 text-gray-900 cursor-pointer p-3"
+                            >
+                              <div>
+                                <div className="font-semibold text-gray-900">{course.name}</div>
+                                <div className="text-sm text-gray-600">
+                                  {course._count?.modules || 0} modules • {course._count?.lessons || 0} lessons
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowCourseModal(false)}
+                        className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={assignCourse}
+                        disabled={!selectedCourseId || isAssigningCourse}
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                      >
+                        {isAssigningCourse ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span>Assigning...</span>
+                          </div>
                         ) : (
-                          <Badge className="bg-orange-100 text-orange-700 border-orange-200 flex items-center gap-1">
-                            <ExclamationTriangleIcon className="h-3 w-3" />
-                            Pendente
-                          </Badge>
+                          'Assign Course'
                         )}
-                      </div>
-                      {patient.referralCode && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-                          <ClipboardDocumentIcon className="h-4 w-4" />
-                          <span>Código de indicação: <strong>{patient.referralCode}</strong></span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={copyReferralCode}
-                            className="h-6 px-2 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                          >
-                            Copiar
-                          </Button>
-                        </div>
-                      )}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Button 
+                asChild 
+                className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+              >
+                <Link href={`/doctor/patients/${patient.id}/assign`}>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Assign Protocol
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto space-y-8">
+            
+            {/* Patient Info Card */}
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-8">
+                <div className="flex items-start gap-8">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    <div className="h-24 w-24 rounded-2xl bg-teal-100 flex items-center justify-center text-2xl font-bold text-teal-600">
+                      {getPatientInitials(patient.name)}
                     </div>
                   </div>
                   
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                    <div className="text-center p-3 bg-slate-50 rounded-lg">
-                      <div className="text-lg font-semibold text-slate-800">{totalProtocols}</div>
-                      <div className="text-xs text-slate-600">Protocolos</div>
+                  {/* Patient Details */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                          {patient.name || 'Name not provided'}
+                        </h2>
+                        <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
+                          <EnvelopeIcon className="h-5 w-5" />
+                          <span>{patient.email}</span>
+                          {patient.emailVerified ? (
+                            <Badge className="bg-green-50 text-green-700 border-green-200 flex items-center gap-2 px-3 py-1 rounded-full">
+                              <ShieldCheckIcon className="h-4 w-4" />
+                              Verified
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-50 text-orange-700 border-orange-200 flex items-center gap-2 px-3 py-1 rounded-full">
+                              <ExclamationTriangleIcon className="h-4 w-4" />
+                              Pending
+                            </Badge>
+                          )}
+                        </div>
+                        {patient.referralCode && (
+                          <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
+                            <ClipboardDocumentIcon className="h-5 w-5" />
+                            <span>Referral code: <strong className="text-gray-900">{patient.referralCode}</strong></span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={copyReferralCode}
+                              className="h-8 px-3 text-sm border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg"
+                            >
+                              Copy
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-lg font-semibold text-green-600">{activeProtocols.length}</div>
-                      <div className="text-xs text-slate-600">P. Ativos</div>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-semibold text-blue-600">{completedProtocols.length}</div>
-                      <div className="text-xs text-slate-600">P. Concluídos</div>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-semibold text-[#3455eb]">{totalCourses}</div>
-                      <div className="text-xs text-slate-600">Cursos</div>
-                    </div>
-                    <div className="text-center p-3 bg-teal-50 rounded-lg">
-                      <div className="text-lg font-semibold text-teal-600">{activeCourses.length}</div>
-                      <div className="text-xs text-slate-600">C. Ativos</div>
-                    </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-semibold text-[#3455eb]">{completedCourses.length}</div>
-                      <div className="text-xs text-slate-600">C. Concluídos</div>
+                    
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                      <div className="text-center p-4 bg-gray-50 rounded-xl">
+                        <div className="text-2xl font-bold text-gray-900">{totalProtocols}</div>
+                        <div className="text-sm text-gray-600 font-medium">Protocols</div>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-xl">
+                        <div className="text-2xl font-bold text-green-600">{activeProtocols.length}</div>
+                        <div className="text-sm text-gray-600 font-medium">P. Active</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-xl">
+                        <div className="text-2xl font-bold text-blue-600">{completedProtocols.length}</div>
+                        <div className="text-sm text-gray-600 font-medium">P. Completed</div>
+                      </div>
+                      <div className="text-center p-4 bg-teal-50 rounded-xl">
+                        <div className="text-2xl font-bold text-teal-600">{totalCourses}</div>
+                        <div className="text-sm text-gray-600 font-medium">Courses</div>
+                      </div>
+                      <div className="text-center p-4 bg-teal-50 rounded-xl">
+                        <div className="text-2xl font-bold text-teal-600">{activeCourses.length}</div>
+                        <div className="text-sm text-gray-600 font-medium">C. Active</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-xl">
+                        <div className="text-2xl font-bold text-blue-600">{completedCourses.length}</div>
+                        <div className="text-sm text-gray-600 font-medium">C. Completed</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Active Protocols */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-800 flex items-center gap-2">
-                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                  Protocolos Ativos
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-                    {activeProtocols.length}
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-slate-600">Protocolos em andamento</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {activeProtocols.length === 0 ? (
-                  <div className="text-center py-8">
-                    <DocumentTextIcon className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 mb-4">
-                      Nenhum protocolo ativo
-                    </p>
-                    <Button size="sm" asChild className="bg-blue-600 hover:bg-blue-700">
-                      <Link href={`/doctor/patients/${patient.id}/assign`}>
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Active Protocols */}
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="p-6 border-b border-gray-200">
+                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                    Active Protocols
+                    <Badge className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full text-sm font-semibold">
+                      {activeProtocols.length}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">Protocols in progress</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {activeProtocols.length === 0 ? (
+                    <div className="text-center py-12">
+                      <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-gray-600 mb-4">
+                        No active protocols
+                      </p>
+                      <Button 
+                        asChild 
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                      >
+                        <Link href={`/doctor/patients/${patient.id}/assign`}>
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Assign First Protocol
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    activeProtocols.map((assignment) => {
+                      const progress = getProtocolProgress(assignment);
+                      
+                      return (
+                        <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="text-base font-semibold text-gray-900">
+                                    {assignment.protocol.name}
+                                  </h3>
+                                  {getStatusBadge(assignment.status)}
+                                </div>
+                                {assignment.protocol.description && (
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    {assignment.protocol.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <ClockIcon className="h-4 w-4" />
+                                    <span>{assignment.protocol.duration} days</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <CalendarDaysIcon className="h-4 w-4" />
+                                    <span>
+                                      Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                asChild 
+                                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
+                              >
+                                <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
+                                  <EyeIcon className="h-4 w-4 mr-1" />
+                                  View
+                                </Link>
+                              </Button>
+                            </div>
+                            
+                            {/* Progress Bar */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600 font-medium">Progress</span>
+                                <span className="text-teal-600 font-semibold">{progress.progress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-teal-600 h-2 rounded-full transition-all duration-500"
+                                  style={{ width: `${progress.progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Courses */}
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="p-6 border-b border-gray-200">
+                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    <AcademicCapIcon className="h-6 w-6 text-teal-600" />
+                    Active Courses
+                    <Badge className="bg-teal-50 text-teal-700 border-teal-200 px-3 py-1 rounded-full text-sm font-semibold">
+                      {activeCourses.length}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">Courses in progress</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {activeCourses.length === 0 ? (
+                    <div className="text-center py-12">
+                      <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-gray-600 mb-4">
+                        No active courses
+                      </p>
+                      <Button 
+                        onClick={() => setShowCourseModal(true)}
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                      >
                         <PlusIcon className="h-4 w-4 mr-2" />
-                        Atribuir Primeiro Protocolo
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  activeProtocols.map((assignment) => {
-                    const progress = getProtocolProgress(assignment);
-                    
-                    return (
-                      <Card key={assignment.id} className="bg-white border-slate-200">
+                        Assign First Course
+                      </Button>
+                    </div>
+                  ) : (
+                    activeCourses.map((assignment) => (
+                      <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-sm font-medium text-slate-800">
-                                  {assignment.protocol.name}
+                                <h3 className="text-base font-semibold text-gray-900">
+                                  {assignment.course.name}
                                 </h3>
-                                {getStatusBadge(assignment.status)}
+                                {getCourseStatusBadge(assignment.status)}
                               </div>
-                              {assignment.protocol.description && (
-                                <p className="text-xs text-slate-600 mb-2">
-                                  {assignment.protocol.description}
+                              {assignment.course.description && (
+                                <p className="text-sm text-gray-600 mb-2">
+                                  {assignment.course.description}
                                 </p>
                               )}
-                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
                                 <div className="flex items-center gap-1">
-                                  <ClockIcon className="h-3 w-3" />
-                                  <span>{assignment.protocol.duration} dias</span>
+                                  <BookOpenIcon className="h-4 w-4" />
+                                  <span>{assignment.course._count?.modules || 0} modules</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <CalendarDaysIcon className="h-3 w-3" />
+                                  <CalendarDaysIcon className="h-4 w-4" />
                                   <span>
-                                    Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                    Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <Button size="sm" variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
-                                <EyeIcon className="h-3 w-3 mr-1" />
-                                Ver
-                              </Link>
-                            </Button>
-                          </div>
-                          
-                          {/* Progress Bar */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-slate-600">Progresso</span>
-                              <span className="text-blue-600 font-medium">{progress.progress}%</span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${progress.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Active Courses */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-800 flex items-center gap-2">
-                  <AcademicCapIcon className="h-5 w-5 text-[#3455eb]" />
-                  Cursos Ativos
-                  <Badge variant="secondary" className="bg-blue-100 text-[#3455eb] border-blue-200">
-                    {activeCourses.length}
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-slate-600">Cursos em andamento</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {activeCourses.length === 0 ? (
-                  <div className="text-center py-8">
-                    <BookOpenIcon className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 mb-4">
-                      Nenhum curso ativo
-                    </p>
-                    <Button 
-                      size="sm" 
-                      onClick={() => setShowCourseModal(true)}
-                      className="bg-[#3455eb] hover:bg-[#2845d9]"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                      Atribuir Primeiro Curso
-                    </Button>
-                  </div>
-                ) : (
-                  activeCourses.map((assignment) => (
-                    <Card key={assignment.id} className="bg-white border-slate-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-sm font-medium text-slate-800">
-                                {assignment.course.name}
-                              </h3>
-                              {getCourseStatusBadge(assignment.status)}
-                            </div>
-                            {assignment.course.description && (
-                              <p className="text-xs text-slate-600 mb-2">
-                                {assignment.course.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-4 text-xs text-slate-500">
-                              <div className="flex items-center gap-1">
-                                <BookOpenIcon className="h-3 w-3" />
-                                <span>{assignment.course._count?.modules || 0} módulos</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <CalendarDaysIcon className="h-3 w-3" />
-                                <span>
-                                  Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline" asChild className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900">
-                            <Link href={`/doctor/courses/${assignment.course.id}`}>
-                              <EyeIcon className="h-3 w-3 mr-1" />
-                              Ver
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* All History */}
-            <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-lg text-slate-800 flex items-center gap-2">
-                  <DocumentTextIcon className="h-5 w-5 text-slate-600" />
-                  Histórico Completo
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
-                    {totalProtocols + totalCourses}
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-slate-600">Todos os protocolos e cursos atribuídos</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {totalProtocols === 0 && totalCourses === 0 ? (
-                  <div className="text-center py-8">
-                    <DocumentTextIcon className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 mb-4">
-                      Nenhum protocolo ou curso atribuído ainda
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      <Button size="sm" asChild className="bg-blue-600 hover:bg-blue-700">
-                        <Link href={`/doctor/patients/${patient.id}/assign`}>
-                          <PlusIcon className="h-4 w-4 mr-2" />
-                          Atribuir Protocolo
-                        </Link>
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={() => setShowCourseModal(true)}
-                        className="bg-[#3455eb] hover:bg-[#2845d9]"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Atribuir Curso
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Protocol History */}
-                    {patient.assignedProtocols.map((assignment) => (
-                      <Card key={`protocol-${assignment.id}`} className="bg-white border-slate-200">
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                                assignment.status === 'ACTIVE' 
-                                  ? 'bg-green-100 text-green-600' 
-                                  : assignment.status === 'INACTIVE'
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-orange-100 text-orange-600'
-                              }`}>
-                                <DocumentTextIcon className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-medium text-slate-800">{assignment.protocol.name}</p>
-                                  {getStatusBadge(assignment.status)}
-                                  <Badge variant="outline" className="text-xs">Protocolo</Badge>
-                                </div>
-                                <p className="text-xs text-slate-600">
-                                  {assignment.status === 'INACTIVE' 
-                                    ? `Concluído em ${format(new Date(assignment.endDate), 'dd/MM/yyyy', { locale: ptBR })}`
-                                    : `Iniciado em ${format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}`
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                            <Button size="sm" variant="ghost" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
-                                <EyeIcon className="h-3 w-3" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    
-                    {/* Course History */}
-                    {(patient.assignedCourses || []).map((assignment) => (
-                      <Card key={`course-${assignment.id}`} className="bg-white border-slate-200">
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                                assignment.status === 'active' 
-                                  ? 'bg-blue-100 text-[#3455eb]' 
-                                  : assignment.status === 'completed'
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-orange-100 text-orange-600'
-                              }`}>
-                                <AcademicCapIcon className="h-4 w-4" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-medium text-slate-800">{assignment.course.name}</p>
-                                  {getCourseStatusBadge(assignment.status)}
-                                  <Badge variant="outline" className="text-xs">Curso</Badge>
-                                </div>
-                                <p className="text-xs text-slate-600">
-                                  Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                </p>
-                              </div>
-                            </div>
-                            <Button size="sm" variant="ghost" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              asChild 
+                              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
+                            >
                               <Link href={`/doctor/courses/${assignment.course.id}`}>
-                                <EyeIcon className="h-3 w-3" />
+                                <EyeIcon className="h-4 w-4 mr-1" />
+                                View
                               </Link>
                             </Button>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Complete History */}
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="p-6 border-b border-gray-200">
+                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    <DocumentTextIcon className="h-6 w-6 text-gray-600" />
+                    Complete History
+                    <Badge className="bg-gray-50 text-gray-700 border-gray-200 px-3 py-1 rounded-full text-sm font-semibold">
+                      {totalProtocols + totalCourses}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">All assigned protocols and courses</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  {totalProtocols === 0 && totalCourses === 0 ? (
+                    <div className="text-center py-12">
+                      <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-lg font-medium text-gray-600 mb-4">
+                        No protocols or courses assigned yet
+                      </p>
+                      <div className="flex gap-3 justify-center">
+                        <Button 
+                          asChild 
+                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                        >
+                          <Link href={`/doctor/patients/${patient.id}/assign`}>
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            Assign Protocol
+                          </Link>
+                        </Button>
+                        <Button 
+                          onClick={() => setShowCourseModal(true)}
+                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
+                        >
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Assign Course
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Protocol History */}
+                      {patient.assignedProtocols.map((assignment) => (
+                        <Card key={`protocol-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                                  assignment.status === 'ACTIVE' 
+                                    ? 'bg-green-100 text-green-600' 
+                                    : assignment.status === 'INACTIVE'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'bg-orange-100 text-orange-600'
+                                }`}>
+                                  <DocumentTextIcon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-base font-semibold text-gray-900">{assignment.protocol.name}</p>
+                                    {getStatusBadge(assignment.status)}
+                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Protocol</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600">
+                                    {assignment.status === 'INACTIVE' 
+                                      ? `Completed ${format(new Date(assignment.endDate), 'MMM dd, yyyy', { locale: enUS })}`
+                                      : `Started ${format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}`
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                asChild 
+                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
+                              >
+                                <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
+                                  <EyeIcon className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      
+                      {/* Course History */}
+                      {(patient.assignedCourses || []).map((assignment) => (
+                        <Card key={`course-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
+                                  assignment.status === 'active' 
+                                    ? 'bg-teal-100 text-teal-600' 
+                                    : assignment.status === 'completed'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'bg-orange-100 text-orange-600'
+                                }`}>
+                                  <AcademicCapIcon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-base font-semibold text-gray-900">{assignment.course.name}</p>
+                                    {getCourseStatusBadge(assignment.status)}
+                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Course</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600">
+                                    Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                asChild 
+                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
+                              >
+                                <Link href={`/doctor/courses/${assignment.course.id}`}>
+                                  <EyeIcon className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

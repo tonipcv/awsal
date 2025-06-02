@@ -1,16 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (!session) {
+    // Aguardar até que o status da sessão seja definido
+    if (status === 'loading') {
+      return;
+    }
+
+    if (status === 'unauthenticated') {
       router.push('/auth/signin');
       return;
     }
@@ -19,8 +24,15 @@ export default function Home() {
       try {
         setIsChecking(true);
         
+        // Aguardar um pouco para garantir que a sessão está totalmente estabelecida
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Usar API específica para verificar role
-        const response = await fetch('/api/auth/role');
+        const response = await fetch('/api/auth/role', {
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         
         if (response.ok) {
           const data = await response.json();
@@ -32,23 +44,32 @@ export default function Home() {
           } else {
             router.push('/protocols');
           }
-        } else {
-          console.error('Error checking role:', response.status);
-          // Em caso de erro, redirecionar para signin
+        } else if (response.status === 401) {
+          console.log('Sessão inválida ou usuário não encontrado - fazendo logout');
+          // Sessão inválida ou usuário não existe no banco
+          // Limpar sessão e redirecionar para login
+          await signOut({ redirect: false });
           router.push('/auth/signin');
+        } else {
+          console.error('Error checking role:', response.status, await response.text());
+          // Para outros erros, assumir paciente como fallback
+          router.push('/protocols');
         }
       } catch (error) {
         console.error('Error during role detection:', error);
-        router.push('/auth/signin');
+        // Em caso de erro de rede, tentar redirecionar para protocols como fallback
+        router.push('/protocols');
       } finally {
         setIsChecking(false);
       }
     };
 
-    checkUserRole();
-  }, [session, router]);
+    if (session) {
+      checkUserRole();
+    }
+  }, [session, status, router]);
 
-  if (!session || isChecking) {
+  if (status === 'loading' || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">

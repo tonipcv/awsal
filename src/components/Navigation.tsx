@@ -17,7 +17,8 @@ import {
   ShieldCheckIcon,
   BuildingOfficeIcon,
   GiftIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -113,6 +114,7 @@ export default function Navigation() {
   const isProtocolsPage = pathname === '/protocols';
   const isChecklistPage = pathname?.startsWith('/checklist');
   const isSpecificCoursePage = pathname?.match(/^\/courses\/[^\/]+/) && pathname !== '/courses';
+  const isDoctorInfoPage = pathname === '/doctor-info';
   
   // Determinar role inicial baseado na URL para evitar flash
   const getInitialRole = () => {
@@ -122,7 +124,8 @@ export default function Navigation() {
   };
 
   // Determinar tema baseado no role do usuário e na URL
-  const shouldUseLightTheme = (isDoctorPage || isAdminPage) || (userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN');
+  // /doctor-info sempre usa tema escuro (paciente), mesmo que o usuário seja médico
+  const shouldUseLightTheme = !isDoctorInfoPage && ((isDoctorPage || isAdminPage) || (userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN'));
 
   // Detectar role do usuário
   useEffect(() => {
@@ -130,14 +133,17 @@ export default function Navigation() {
       if (session?.user?.id) {
         // Se já temos o userRole, não fazer nova chamada
         if (userRole) {
+          console.log('Navigation: Already have userRole:', userRole);
           return;
         }
 
         try {
           setIsLoadingRole(true);
+          console.log('Navigation: Fetching user role for:', session.user.email);
           const response = await fetch('/api/auth/role');
           if (response.ok) {
             const data = await response.json();
+            console.log('Navigation: Role detected:', data.role, 'for user:', session.user.email);
             setUserRole(data.role);
           } else {
             console.error('Error detecting user role:', response.status);
@@ -168,6 +174,7 @@ export default function Navigation() {
     '/circles',
     '/thoughts',
     '/profile',
+    '/doctor-info',
     '/doctor',
     '/admin',
     '/clinic',
@@ -319,9 +326,18 @@ export default function Navigation() {
   ];
 
   // Selecionar navegação baseada no role
-  const navSections = userRole === 'SUPER_ADMIN' ? superAdminNavSections :
+  // /doctor-info sempre usa navegação de paciente
+  const navSections = isDoctorInfoPage ? patientNavSections :
+                     userRole === 'SUPER_ADMIN' ? superAdminNavSections :
                      userRole === 'DOCTOR' ? doctorNavSections : 
                      patientNavSections;
+
+  // Debug function for profile URL
+  const getProfileUrl = () => {
+    const url = userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN' ? '/doctor/profile' : '/profile';
+    console.log('Navigation: Profile URL for role', userRole, ':', url);
+    return url;
+  };
 
   const NavButton = ({ item, className }: { item: typeof navSections[0]['items'][0], className?: string }) => (
     <Button
@@ -379,8 +395,8 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Desktop Navigation - Only for Doctors and Admins */}
-      {(userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN') && (
+      {/* Desktop Navigation - For Doctors/Admins (light theme) or Doctor Info page (dark theme) */}
+      {((userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN') && !isDoctorInfoPage) && (
         <nav className={cn(
           "fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40",
           "border-gray-200 bg-white" // Always light theme for doctors/admins
@@ -422,7 +438,7 @@ export default function Navigation() {
 
             {/* User Profile Section */}
             <div className="p-4 border-t border-gray-200">
-              <Link href="/profile">
+              <Link href={getProfileUrl()}>
                 <div className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-gray-100">
                   <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
                     <UserAvatar />
@@ -452,7 +468,7 @@ export default function Navigation() {
             : "border-gray-800 bg-[#111111]/95 supports-[backdrop-filter]:bg-[#111111]/90" // Patient pages - dark theme
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
-            {userRole === 'PATIENT' ? (
+            {(userRole === 'PATIENT' || isDoctorInfoPage) ? (
               // Patient Header - Always show logo, and doctor info when available
               <>
                 <div className="flex items-center gap-3">
@@ -469,7 +485,8 @@ export default function Navigation() {
                 </div>
                 <div className="flex items-center">
                   {doctorInfo && (
-                    <div className="flex items-center gap-2">
+                    <Link href="/doctor-info">
+                      <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="flex flex-col text-right">
                         <span className="text-xs text-gray-400">{doctorInfo.name}</span>
                       </div>
@@ -477,6 +494,7 @@ export default function Navigation() {
                         <DoctorAvatar doctor={doctorInfo} />
                       </div>
                     </div>
+                    </Link>
                   )}
                 </div>
               </>
@@ -493,7 +511,7 @@ export default function Navigation() {
                     />
                   </div>
                 </Link>
-                <Link href="/profile">
+                <Link href={getProfileUrl()}>
                   <div className={cn(
                     "h-8 w-8 flex items-center justify-center cursor-pointer rounded-full",
                     "bg-gray-100 hover:bg-gray-200"
@@ -507,7 +525,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar - Different styles for patients vs doctors/admins */}
-        {userRole === 'PATIENT' && !isChecklistPage && !isSpecificCoursePage ? (
+        {(userRole === 'PATIENT' || isDoctorInfoPage) && !isChecklistPage && !isSpecificCoursePage ? (
           // Patient Bottom Navigation - App Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 z-40">
             <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
@@ -532,19 +550,19 @@ export default function Navigation() {
                     </Link>
                   ))}
                   {/* Profile Button */}
-                  <Link href="/profile" className="flex-1 max-w-[50px]">
+                  <Link href={getProfileUrl()} className="flex-1 max-w-[50px]">
                     <Button
                       variant="ghost"
                       className={cn(
                         "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
-                        pathname === '/profile' 
+                        (pathname === '/profile' || pathname === '/doctor/profile')
                           ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
                           : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                       )}
                     >
                       <UserCircleIcon className={cn(
                         "h-4 w-4 stroke-current transition-all duration-300",
-                        pathname === '/profile' ? "drop-shadow-sm" : ""
+                        (pathname === '/profile' || pathname === '/doctor/profile') ? "drop-shadow-sm" : ""
                       )} />
                     </Button>
                   </Link>
@@ -552,7 +570,7 @@ export default function Navigation() {
               </div>
             </div>
           </nav>
-        ) : userRole !== 'PATIENT' ? (
+        ) : (userRole !== 'PATIENT' && !isDoctorInfoPage) ? (
           // Doctor/Admin Navigation - Original Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 border-t backdrop-blur z-40 border-gray-200 bg-white">
             <div className="py-2 px-2">
@@ -581,7 +599,7 @@ export default function Navigation() {
       </div>
 
       {/* Desktop Navigation for Patients - Sidebar Style */}
-      {userRole === 'PATIENT' && (
+      {(userRole === 'PATIENT' || isDoctorInfoPage) && (
         <>
           {/* Desktop Sidebar for Patients */}
           <nav className="fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40 border-gray-800 bg-[#111111]/95">
@@ -603,7 +621,8 @@ export default function Navigation() {
               {/* Doctor Info Section - if available */}
               {doctorInfo && (
                 <div className="p-4 border-b border-gray-800">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
+                  <Link href="/doctor-info">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer">
                     <div className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600">
                       <DoctorAvatar doctor={doctorInfo} />
                     </div>
@@ -614,6 +633,7 @@ export default function Navigation() {
                       </p>
                     </div>
                   </div>
+                  </Link>
                 </div>
               )}
 
@@ -651,7 +671,7 @@ export default function Navigation() {
 
               {/* User Profile Section */}
               <div className="p-4 border-t border-gray-800">
-                <Link href="/profile">
+                <Link href={getProfileUrl()}>
                   <div className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-gray-800/50">
                     <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700">
                       <UserAvatar />

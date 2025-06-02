@@ -40,6 +40,12 @@ export async function GET(
         image: true,
         referralCode: true,
         assignedProtocols: {
+          where: {
+            // Only include protocols that belong to the current doctor
+            protocol: {
+              doctorId: session.user.id
+            }
+          },
           select: {
             id: true,
             protocolId: true,

@@ -149,14 +149,115 @@ export default function ProtocolDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            className="w-16 h-16 mx-auto mb-6"
-          />
-          <p className="text-gray-600 font-medium">Carregando...</p>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+            
+            {/* Header Skeleton */}
+            <div className="flex items-center gap-6">
+              <div className="h-10 w-20 bg-gray-200 rounded-xl animate-pulse"></div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-8 w-64 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                </div>
+                <div className="h-5 w-96 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-12 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              
+              {/* Sidebar Skeleton */}
+              <div className="lg:col-span-1 space-y-8">
+                
+                {/* Stats Card Skeleton */}
+                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mb-6"></div>
+                  <div className="space-y-6">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <div className="h-11 w-11 bg-gray-200 rounded-xl animate-pulse"></div>
+                        <div className="flex-1">
+                          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2"></div>
+                          <div className="h-6 w-12 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Products Card Skeleton */}
+                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-6 w-8 bg-gray-200 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
+                            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
+                            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Patients Card Skeleton */}
+                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
+                        <div className="flex-1">
+                          <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-1"></div>
+                          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Protocol Days Skeleton */}
+              <div className="lg:col-span-2">
+                <div className="space-y-6">
+                  {[1, 2, 3].map((day) => (
+                    <div key={day} className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mb-6"></div>
+                      <div className="space-y-4">
+                        {[1, 2].map((task) => (
+                          <div key={task} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-3"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                              <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

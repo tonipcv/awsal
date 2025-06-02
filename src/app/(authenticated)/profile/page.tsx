@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [image, setImage] = useState('');
+  const [imageKey, setImageKey] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
   const [userStats, setUserStats] = useState<UserStats>({});
@@ -56,7 +57,10 @@ export default function ProfilePage() {
           // Set basic data from session
           setName(session.user.name || '');
           setEmail(session.user.email || '');
-          setImage(session.user.image || '');
+          // Add cache-busting to initial image load to ensure fresh image
+          const initialImage = session.user.image;
+          setImage(initialImage ? `${initialImage}?t=${Date.now()}` : '');
+          setImageKey(prev => prev + 1); // Force initial render
 
           // Detect user role
           const roleResponse = await fetch('/api/auth/role');
@@ -64,14 +68,14 @@ export default function ProfilePage() {
             const roleData = await roleResponse.json();
             setUserRole(roleData.role);
 
+            // Redirect doctors to their specific profile page
+            if (roleData.role === 'DOCTOR' || roleData.role === 'SUPER_ADMIN') {
+              router.push('/doctor/profile');
+              return;
+            }
+
             // Load stats based on role
-            if (roleData.role === 'DOCTOR') {
-              const statsResponse = await fetch('/api/doctor/stats');
-              if (statsResponse.ok) {
-                const stats = await statsResponse.json();
-                setUserStats(stats);
-              }
-            } else if (roleData.role === 'PATIENT') {
+            if (roleData.role === 'PATIENT') {
               const statsResponse = await fetch('/api/patient/stats');
               if (statsResponse.ok) {
                 const stats = await statsResponse.json();
@@ -96,11 +100,6 @@ export default function ProfilePage() {
   // Determine if should use light theme (doctors/admins) or dark theme (patients)
   const isLightTheme = userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN';
 
-  // Don't render anything until session is loaded to avoid theme flash
-  if (!session || loading) {
-    return null;
-  }
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -118,15 +117,27 @@ export default function ProfilePage() {
       if (!response.ok) throw new Error('Failed to upload image');
 
       const data = await response.json();
-      setImage(data.url);
+      
+      // Immediately update the image state with cache-busting
+      const imageUrlWithCacheBust = `${data.url}?t=${Date.now()}`;
+      setImage(imageUrlWithCacheBust);
+      setImageKey(prev => prev + 1); // Force re-render
       
       // Update session and save to database
-      await handleSave(data.url);
+      await handleSave(data.url); // Save original URL to database
       
-      // Force refresh to update navigation
+      // Force refresh to update navigation and other components
       router.refresh();
+      
+      // Add a small delay to ensure all components are updated
+      setTimeout(() => {
+        setImageKey(prev => prev + 1);
+      }, 100);
     } catch (error) {
       console.error('Upload error:', error);
+      // Reset file input on error
+      const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
     } finally {
       setIsUploading(false);
     }
@@ -145,7 +156,7 @@ export default function ProfilePage() {
 
       if (!response.ok) throw new Error('Failed to update profile');
 
-      // Update session
+      // Update session with fresh data
       await update({
         ...session,
         user: {
@@ -156,21 +167,25 @@ export default function ProfilePage() {
       });
 
       setIsEditing(false);
+      
+      // Force refresh of navigation component
+      router.refresh();
     } catch (error) {
       console.error('Save error:', error);
+      throw error; // Re-throw to handle in calling function
     }
   };
 
   const getRoleDisplay = () => {
     switch (userRole) {
       case 'DOCTOR':
-        return { label: 'Doctor', color: 'bg-blue-100 text-blue-800', icon: UserIcon };
+        return { label: 'Doctor', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: UserIcon };
       case 'SUPER_ADMIN':
-        return { label: 'Super Admin', color: 'bg-purple-100 text-purple-800', icon: ShieldCheckIcon };
+        return { label: 'Super Admin', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: ShieldCheckIcon };
       case 'PATIENT':
-        return { label: 'Patient', color: 'bg-green-100 text-green-800', icon: UsersIcon };
+        return { label: 'Paciente', color: 'bg-turquoise/20 text-turquoise border-turquoise/30', icon: UsersIcon };
       default:
-        return { label: 'User', color: 'bg-gray-100 text-gray-800', icon: UserIcon };
+        return { label: 'Usuário', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: UserIcon };
     }
   };
 
@@ -183,6 +198,105 @@ export default function ProfilePage() {
     });
   };
 
+  // Loading state
+  if (!session || loading) {
+    return (
+      <div className="min-h-screen bg-black">
+        {/* Padding para menu lateral no desktop e header no mobile */}
+        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-3 lg:px-6">
+            <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
+              
+              {/* Header Skeleton */}
+              <div className="py-4 lg:py-6">
+                <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-32 mb-2 animate-pulse"></div>
+                <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-64 animate-pulse"></div>
+              </div>
+
+              {/* Content Grid Skeleton */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                
+                {/* Main Profile Card Skeleton */}
+                <div className="lg:col-span-2">
+                  <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
+                    <div className="p-3 lg:p-4">
+                      <div className="h-5 lg:h-6 bg-gray-800/50 rounded w-48 mb-4 lg:mb-6 animate-pulse"></div>
+                      
+                      {/* Profile Image Skeleton */}
+                      <div className="flex flex-col items-center space-y-3 lg:space-y-4 mb-4 lg:mb-6">
+                        <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-800/50 rounded-xl animate-pulse"></div>
+                        <div className="h-6 bg-gray-800/50 rounded w-20 animate-pulse"></div>
+                      </div>
+
+                      {/* Form Fields Skeleton */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-700/50 rounded w-16 animate-pulse"></div>
+                          <div className="h-8 lg:h-9 bg-gray-800/50 rounded animate-pulse"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-700/50 rounded w-16 animate-pulse"></div>
+                          <div className="h-8 lg:h-9 bg-gray-800/50 rounded animate-pulse"></div>
+                        </div>
+                      </div>
+
+                      {/* Buttons Skeleton */}
+                      <div className="space-y-2 lg:space-y-3">
+                        <div className="h-7 lg:h-8 bg-gray-800/50 rounded w-32 animate-pulse"></div>
+                        <div className="h-7 lg:h-8 bg-gray-800/50 rounded w-full animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar Skeleton */}
+                <div className="space-y-3 lg:space-y-4">
+                  {/* Account Info Skeleton */}
+                  <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
+                    <div className="p-3 lg:p-4">
+                      <div className="h-4 lg:h-5 bg-gray-800/50 rounded w-40 mb-2 lg:mb-3 animate-pulse"></div>
+                      <div className="space-y-2 lg:space-y-3">
+                        <div className="flex justify-between">
+                          <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-24 animate-pulse"></div>
+                          <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-20 animate-pulse"></div>
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-24 animate-pulse"></div>
+                          <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-20 animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Skeleton */}
+                  <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
+                    <div className="p-3 lg:p-4">
+                      <div className="h-4 lg:h-5 bg-gray-800/50 rounded w-32 mb-2 lg:mb-3 animate-pulse"></div>
+                      <div className="space-y-2 lg:space-y-3">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="p-2 lg:p-3 bg-gray-800/30 rounded-lg">
+                            <div className="flex items-center space-x-2 lg:space-x-3">
+                              <div className="w-4 h-4 lg:w-5 lg:h-5 bg-gray-700/50 rounded animate-pulse"></div>
+                              <div className="flex-1">
+                                <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-8 mb-1 animate-pulse"></div>
+                                <div className="h-3 lg:h-4 bg-gray-700/50 rounded w-16 animate-pulse"></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const roleInfo = getRoleDisplay();
   const RoleIcon = roleInfo.icon;
 
@@ -191,17 +305,18 @@ export default function ProfilePage() {
       "min-h-screen", 
       isLightTheme ? "bg-white" : "bg-black"
     )}>
+      {/* Padding para menu lateral no desktop e header no mobile */}
       <div className={cn(
-        "container max-w-6xl mx-auto px-3 lg:px-6 pb-24 lg:pb-8",
         isLightTheme 
-          ? "pt-[88px] lg:pt-8 lg:ml-64"
+          ? "pt-[88px] lg:pt-8 lg:ml-64 pb-24 lg:pb-8"
           : "pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64"
       )}>
-        <div className="space-y-6 lg:space-y-8">
-          {/* Header Compacto */}
+        <div className="max-w-6xl mx-auto px-3 lg:px-6">
+          <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
+            {/* Header */}
           <div className="py-4 lg:py-6">
             <h1 className={cn(
-              "text-2xl lg:text-3xl font-light mb-2 tracking-tight",
+                "text-xl lg:text-2xl font-light mb-2 tracking-tight",
               isLightTheme ? "text-gray-900" : "text-white"
             )}>
               Perfil
@@ -215,7 +330,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            {/* Profile Card Compacto */}
+              {/* Profile Card */}
             <div className="lg:col-span-2">
               <Card className={cn(
                 "border backdrop-blur-sm",
@@ -223,35 +338,38 @@ export default function ProfilePage() {
                   ? "bg-white border-gray-200" 
                   : "bg-gray-900/40 border-gray-800/40"
               )}>
-                <CardHeader className="p-4 lg:p-6">
+                  <CardHeader className="p-3 lg:p-4">
                   <CardTitle className={cn(
-                    "text-lg lg:text-xl font-light",
+                      "text-base lg:text-lg font-light",
                     isLightTheme ? "text-gray-900" : "text-white"
                   )}>
                     Informações Pessoais
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 lg:p-6 pt-0 space-y-6 lg:space-y-8">
-                  {/* Profile Image Compacto */}
-                  <div className="flex flex-col items-center space-y-4 lg:space-y-6">
+                  <CardContent className="p-3 lg:p-4 pt-0 space-y-4 lg:space-y-6">
+                    {/* Profile Image */}
+                    <div className="flex flex-col items-center space-y-3 lg:space-y-4">
                     <div className="relative group">
                       <div className={cn(
-                        "relative w-24 h-24 lg:w-32 lg:h-32 rounded-xl overflow-hidden border-2",
+                          "relative w-20 h-20 lg:w-24 lg:h-24 rounded-xl overflow-hidden border-2",
                         isLightTheme 
                           ? "border-gray-200 bg-gray-100" 
                           : "border-gray-700/50 bg-gray-800/50"
                       )}>
                         {image ? (
                           <Image
+                              key={`profile-image-${imageKey}`}
                             src={image}
                             alt="Profile"
                             fill
                             className="object-cover"
+                              unoptimized={true}
+                              priority={true}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <CameraIcon className={cn(
-                              "h-8 w-8 lg:h-12 lg:w-12",
+                                "h-6 w-6 lg:h-8 lg:w-8",
                               isLightTheme ? "text-gray-400" : "text-gray-500"
                             )} />
                           </div>
@@ -261,7 +379,7 @@ export default function ProfilePage() {
                         className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-xl"
                         htmlFor="image-upload"
                       >
-                        <CameraIcon className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
+                          <CameraIcon className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                       </label>
                       <input
                         type="file"
@@ -273,11 +391,14 @@ export default function ProfilePage() {
                       />
                       {isUploading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                          <div className="animate-spin rounded-full h-6 w-6 lg:h-8 lg:w-8 border-b-2 border-teal-400"></div>
+                            <div className={cn(
+                              "animate-spin rounded-full h-5 w-5 lg:h-6 lg:w-6 border-b-2",
+                              isLightTheme ? "border-teal-400" : "border-turquoise"
+                            )}></div>
                         </div>
                       )}
                     </div>
-                    <div className="text-center space-y-2">
+                      <div className="text-center">
                       <Badge className={cn("rounded-lg px-3 py-1 text-xs", roleInfo.color)}>
                         <RoleIcon className="h-3 w-3 mr-1" />
                         {roleInfo.label}
@@ -285,9 +406,9 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Form Fields Compactos */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                    <div className="space-y-3">
+                    {/* Form Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
+                      <div className="space-y-2">
                       <label className={cn(
                         "text-xs lg:text-sm font-medium flex items-center space-x-2",
                         isLightTheme ? "text-gray-900" : "text-gray-300"
@@ -300,15 +421,15 @@ export default function ProfilePage() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           className={cn(
-                            "h-9 lg:h-10 rounded-lg text-sm font-medium",
+                              "h-8 lg:h-9 rounded-lg text-sm font-medium",
                             isLightTheme 
                               ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-400 focus:ring-teal-400" 
-                              : "border-gray-700/50 bg-gray-800/50 text-white placeholder:text-gray-400 focus:border-teal-400 focus:ring-teal-400"
+                                : "border-gray-700/50 bg-gray-800/50 text-white placeholder:text-gray-400 focus:border-turquoise focus:ring-turquoise"
                           )}
                         />
                       ) : (
                         <p className={cn(
-                          "text-sm lg:text-base font-medium p-2.5 lg:p-3 rounded-lg border",
+                            "text-sm lg:text-base font-medium p-2 lg:p-2.5 rounded-lg border",
                           isLightTheme 
                             ? "text-gray-900 bg-gray-50 border-gray-200" 
                             : "text-white bg-gray-800/50 border-gray-700/50"
@@ -318,7 +439,7 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    <div className="space-y-3">
+                      <div className="space-y-2">
                       <label className={cn(
                         "text-xs lg:text-sm font-medium flex items-center space-x-2",
                         isLightTheme ? "text-gray-900" : "text-gray-300"
@@ -327,7 +448,7 @@ export default function ProfilePage() {
                         <span>Email</span>
                       </label>
                       <p className={cn(
-                        "text-sm lg:text-base font-medium p-2.5 lg:p-3 rounded-lg border",
+                          "text-sm lg:text-base font-medium p-2 lg:p-2.5 rounded-lg border",
                         isLightTheme 
                           ? "text-gray-900 bg-gray-50 border-gray-200" 
                           : "text-white bg-gray-800/50 border-gray-700/50"
@@ -337,13 +458,18 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Action Buttons Compactos */}
-                  <div className="pt-4 lg:pt-6 space-y-3">
+                    {/* Action Buttons */}
+                    <div className="pt-2 lg:pt-3 space-y-2 lg:space-y-3">
                     {isEditing ? (
-                      <div className="flex gap-3">
+                        <div className="flex gap-2 lg:gap-3">
                         <Button 
                           onClick={() => handleSave()}
-                          className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black rounded-lg h-8 lg:h-9 px-4 lg:px-6 font-medium text-xs lg:text-sm"
+                            className={cn(
+                              "rounded-lg h-7 lg:h-8 px-3 lg:px-4 font-medium text-xs lg:text-sm",
+                              isLightTheme 
+                                ? "bg-teal-500 hover:bg-teal-600 text-white"
+                                : "bg-turquoise hover:bg-turquoise/90 text-black"
+                            )}
                         >
                           Salvar
                         </Button>
@@ -351,7 +477,7 @@ export default function ProfilePage() {
                           variant="outline" 
                           onClick={() => setIsEditing(false)}
                           className={cn(
-                            "rounded-lg h-8 lg:h-9 px-4 lg:px-6 font-medium text-xs lg:text-sm",
+                              "rounded-lg h-7 lg:h-8 px-3 lg:px-4 font-medium text-xs lg:text-sm",
                             isLightTheme 
                               ? "border-gray-300 text-gray-700 hover:bg-gray-50 bg-white" 
                               : "border-gray-700/50 text-gray-300 hover:bg-gray-800/50 bg-gray-900/40"
@@ -363,7 +489,12 @@ export default function ProfilePage() {
                     ) : (
                       <Button 
                         onClick={() => setIsEditing(true)}
-                        className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black rounded-lg h-8 lg:h-9 px-4 lg:px-6 font-medium text-xs lg:text-sm"
+                          className={cn(
+                            "rounded-lg h-7 lg:h-8 px-3 lg:px-4 font-medium text-xs lg:text-sm",
+                            isLightTheme 
+                              ? "bg-teal-500 hover:bg-teal-600 text-white"
+                              : "bg-turquoise hover:bg-turquoise/90 text-black"
+                          )}
                       >
                         Editar Perfil
                       </Button>
@@ -372,7 +503,7 @@ export default function ProfilePage() {
                     <Button 
                       variant="ghost" 
                       className={cn(
-                        "w-full rounded-lg h-8 lg:h-9 font-medium text-xs lg:text-sm",
+                          "w-full rounded-lg h-7 lg:h-8 font-medium text-xs lg:text-sm",
                         isLightTheme 
                           ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100" 
                           : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
@@ -387,26 +518,26 @@ export default function ProfilePage() {
               </Card>
             </div>
 
-            {/* Stats Sidebar Compacto */}
-            <div className="space-y-4 lg:space-y-6">
-              {/* Account Info Compacto */}
+              {/* Stats Sidebar */}
+              <div className="space-y-3 lg:space-y-4">
+                {/* Account Info */}
               <Card className={cn(
                 "border backdrop-blur-sm",
                 isLightTheme 
                   ? "bg-white border-gray-200" 
                   : "bg-gray-900/40 border-gray-800/40"
               )}>
-                <CardHeader className="p-4 lg:p-6">
+                  <CardHeader className="p-3 lg:p-4">
                   <CardTitle className={cn(
-                    "text-base lg:text-lg font-light flex items-center space-x-2",
+                      "text-sm lg:text-base font-light flex items-center space-x-2",
                     isLightTheme ? "text-gray-900" : "text-white"
                   )}>
                     <CalendarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
                     <span>Informações da Conta</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 lg:p-6 pt-0 space-y-3">
-                  <div className="space-y-3">
+                  <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
+                    <div className="space-y-2 lg:space-y-3">
                     <div className="flex justify-between items-center">
                       <span className={cn(
                         "text-xs lg:text-sm font-medium",
@@ -439,7 +570,7 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
 
-              {/* Stats Compactas */}
+                {/* Doctor Stats */}
               {userRole === 'DOCTOR' && (
                 <Card className={cn(
                   "border backdrop-blur-sm",
@@ -447,28 +578,28 @@ export default function ProfilePage() {
                     ? "bg-white border-gray-200" 
                     : "bg-gray-900/40 border-gray-800/40"
                 )}>
-                  <CardHeader className="p-4 lg:p-6">
+                    <CardHeader className="p-3 lg:p-4">
                     <CardTitle className={cn(
-                      "text-base lg:text-lg font-light flex items-center space-x-2",
+                        "text-sm lg:text-base font-light flex items-center space-x-2",
                       isLightTheme ? "text-gray-900" : "text-white"
                     )}>
                       <ChartBarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
                       <span>Estatísticas</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 lg:p-6 pt-0 space-y-3">
-                    <div className="grid grid-cols-1 gap-3">
+                    <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
+                      <div className="grid grid-cols-1 gap-2 lg:gap-3">
                       <div className={cn(
-                        "p-3 lg:p-4 rounded-lg border",
+                          "p-2 lg:p-3 rounded-lg border",
                         isLightTheme 
                           ? "bg-blue-50 border-blue-200" 
                           : "bg-blue-900/20 border-blue-800/40"
                       )}>
-                        <div className="flex items-center space-x-3">
-                          <UsersIcon className="h-5 w-5 lg:h-6 lg:w-6 text-blue-600" />
+                          <div className="flex items-center space-x-2 lg:space-x-3">
+                            <UsersIcon className="h-4 w-4 lg:h-5 lg:w-5 text-blue-600" />
                           <div>
                             <p className={cn(
-                              "text-lg lg:text-xl font-light",
+                                "text-base lg:text-lg font-light",
                               isLightTheme ? "text-gray-900" : "text-white"
                             )}>
                               {userStats.totalPatients || 0}
@@ -484,16 +615,16 @@ export default function ProfilePage() {
                       </div>
 
                       <div className={cn(
-                        "p-3 lg:p-4 rounded-lg border",
+                          "p-2 lg:p-3 rounded-lg border",
                         isLightTheme 
                           ? "bg-green-50 border-green-200" 
                           : "bg-green-900/20 border-green-800/40"
                       )}>
-                        <div className="flex items-center space-x-3">
-                          <DocumentTextIcon className="h-5 w-5 lg:h-6 lg:w-6 text-green-600" />
+                          <div className="flex items-center space-x-2 lg:space-x-3">
+                            <DocumentTextIcon className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
                           <div>
                             <p className={cn(
-                              "text-lg lg:text-xl font-light",
+                                "text-base lg:text-lg font-light",
                               isLightTheme ? "text-gray-900" : "text-white"
                             )}>
                               {userStats.totalProtocols || 0}
@@ -509,16 +640,16 @@ export default function ProfilePage() {
                       </div>
 
                       <div className={cn(
-                        "p-3 lg:p-4 rounded-lg border",
+                          "p-2 lg:p-3 rounded-lg border",
                         isLightTheme 
                           ? "bg-purple-50 border-purple-200" 
                           : "bg-purple-900/20 border-purple-800/40"
                       )}>
-                        <div className="flex items-center space-x-3">
-                          <StarIcon className="h-5 w-5 lg:h-6 lg:w-6 text-purple-600" />
+                          <div className="flex items-center space-x-2 lg:space-x-3">
+                            <StarIcon className="h-4 w-4 lg:h-5 lg:w-5 text-purple-600" />
                           <div>
                             <p className={cn(
-                              "text-lg lg:text-xl font-light",
+                                "text-base lg:text-lg font-light",
                               isLightTheme ? "text-gray-900" : "text-white"
                             )}>
                               {userStats.totalTemplates || 0}
@@ -537,6 +668,7 @@ export default function ProfilePage() {
                 </Card>
               )}
 
+                {/* Patient Stats */}
               {userRole === 'PATIENT' && (
                 <Card className={cn(
                   "border backdrop-blur-sm",
@@ -544,28 +676,28 @@ export default function ProfilePage() {
                     ? "bg-white border-gray-200" 
                     : "bg-gray-900/40 border-gray-800/40"
                 )}>
-                  <CardHeader className="p-4 lg:p-6">
+                    <CardHeader className="p-3 lg:p-4">
                     <CardTitle className={cn(
-                      "text-base lg:text-lg font-light flex items-center space-x-2",
+                        "text-sm lg:text-base font-light flex items-center space-x-2",
                       isLightTheme ? "text-gray-900" : "text-white"
                     )}>
                       <ChartBarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
                       <span>Meu Progresso</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 lg:p-6 pt-0 space-y-3">
-                    <div className="grid grid-cols-1 gap-3">
+                    <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
+                      <div className="grid grid-cols-1 gap-2 lg:gap-3">
                       <div className={cn(
-                        "p-3 lg:p-4 rounded-lg border",
+                          "p-2 lg:p-3 rounded-lg border",
                         isLightTheme 
                           ? "bg-green-50 border-green-200" 
                           : "bg-green-900/20 border-green-800/40"
                       )}>
-                        <div className="flex items-center space-x-3">
-                          <DocumentTextIcon className="h-5 w-5 lg:h-6 lg:w-6 text-green-600" />
+                          <div className="flex items-center space-x-2 lg:space-x-3">
+                            <DocumentTextIcon className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
                           <div>
                             <p className={cn(
-                              "text-lg lg:text-xl font-light",
+                                "text-base lg:text-lg font-light",
                               isLightTheme ? "text-gray-900" : "text-white"
                             )}>
                               {userStats.completedProtocols || 0}
@@ -581,16 +713,19 @@ export default function ProfilePage() {
                       </div>
 
                       <div className={cn(
-                        "p-3 lg:p-4 rounded-lg border",
+                          "p-2 lg:p-3 rounded-lg border",
                         isLightTheme 
                           ? "bg-blue-50 border-blue-200" 
-                          : "bg-blue-900/20 border-blue-800/40"
+                            : "bg-turquoise/15 border-turquoise/25"
                       )}>
-                        <div className="flex items-center space-x-3">
-                          <ClockIcon className="h-5 w-5 lg:h-6 lg:w-6 text-blue-600" />
+                          <div className="flex items-center space-x-2 lg:space-x-3">
+                            <ClockIcon className={cn(
+                              "h-4 w-4 lg:h-5 lg:w-5",
+                              isLightTheme ? "text-blue-600" : "text-turquoise"
+                            )} />
                           <div>
                             <p className={cn(
-                              "text-lg lg:text-xl font-light",
+                                "text-base lg:text-lg font-light",
                               isLightTheme ? "text-gray-900" : "text-white"
                             )}>
                               {userStats.activeProtocols || 0}
@@ -608,6 +743,7 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
               )}
+              </div>
             </div>
           </div>
         </div>

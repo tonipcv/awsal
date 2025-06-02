@@ -134,27 +134,10 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Se há um referrer válido, criar crédito pendente
-    if (referrer) {
-      await prisma.referralCredit.create({
-        data: {
-          userId: referrer.id,
-          amount: 1,
-          type: CREDIT_TYPE.SUCCESSFUL_REFERRAL,
-          referralLeadId: referralLead.id
-        }
-      });
-    }
-
-    // Enviar emails de notificação
-    try {
-      // Enviar notificação por email
-      await sendReferralNotification(referralLead.id);
-
-    } catch (emailError) {
-      console.error('Erro ao enviar emails:', emailError);
-      // Não falhar a requisição por erro de email
-    }
+    // Enviar notificações
+    sendReferralNotification(referralLead.id).catch(error => {
+      console.error('Erro ao enviar notificação de indicação:', error instanceof Error ? error.message : 'Erro desconhecido');
+    });
 
     return NextResponse.json({
       success: true,

@@ -129,17 +129,37 @@ export default function EditProtocolPage() {
   const loadProtocol = async (protocolId: string) => {
     try {
       setIsLoadingProtocol(true);
+      console.log('🔍 Loading protocol:', protocolId);
+      
       const response = await fetch(`/api/protocols/${protocolId}`);
+      console.log('📡 Protocol API response status:', response.status);
+      console.log('📡 Protocol API response ok:', response.ok);
+      console.log('📡 Protocol API response headers:', Object.fromEntries(response.headers.entries()));
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Protocol data loaded successfully:', data.name);
+        console.log('✅ Protocol data structure:', {
+          id: data.id,
+          name: data.name,
+          doctorId: data.doctorId,
+          daysCount: data.days?.length || 0
+        });
         
         // Carregar produtos do protocolo
         const productsResponse = await fetch(`/api/protocols/${protocolId}/products`);
+        console.log('📡 Products API response status:', productsResponse.status);
+        console.log('📡 Products API response ok:', productsResponse.ok);
+        
         let protocolProducts = [];
         if (productsResponse.ok) {
           protocolProducts = await productsResponse.json();
+          console.log('✅ Protocol products loaded:', protocolProducts.length);
+        } else {
+          console.log('⚠️ Products API failed, continuing without products');
         }
         
+        console.log('🔄 Setting protocol state...');
         setProtocol({
           name: data.name,
           duration: data.duration,
@@ -187,19 +207,27 @@ export default function EditProtocolPage() {
           })),
           products: protocolProducts
         });
+        
+        console.log('✅ Protocol state updated successfully');
       } else {
+        const errorData = await response.text();
+        console.error('❌ Protocol API failed:', response.status, errorData);
+        console.log('🔄 Redirecting to protocols list due to API error');
         router.push('/doctor/protocols');
       }
     } catch (error) {
-      console.error('Error loading protocol:', error);
+      console.error('❌ Error loading protocol:', error);
+      console.log('🔄 Redirecting to protocols list due to exception');
       router.push('/doctor/protocols');
     } finally {
+      console.log('🏁 Setting isLoadingProtocol to false');
       setIsLoadingProtocol(false);
     }
   };
 
   const loadAvailableProducts = async () => {
     try {
+      console.log('🔍 Loading available products...');
       const response = await fetch('/api/products', {
         method: 'GET',
         headers: {
@@ -208,12 +236,20 @@ export default function EditProtocolPage() {
         credentials: 'include'
       });
       
+      console.log('📡 Products API response status:', response.status);
+      console.log('📡 Products API response ok:', response.ok);
+      
       if (response.ok) {
         const products = await response.json();
+        console.log('✅ Products loaded successfully:', products.length);
+        console.log('✅ Products data:', products);
         setAvailableProducts(products);
+      } else {
+        const errorData = await response.text();
+        console.error('❌ Products API failed:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('❌ Error loading products:', error);
     }
   };
 
@@ -588,9 +624,181 @@ export default function EditProtocolPage() {
     return (
       <div className="min-h-screen bg-white">
         <div className="lg:ml-64">
-          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7]"></div>
+          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
+            
+            {/* Header Skeleton */}
+            <div className="flex items-center gap-6">
+              <div className="h-10 w-20 bg-gray-200 rounded-xl animate-pulse"></div>
+              <div className="flex-1">
+                <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse mb-2"></div>
+                <div className="flex items-center gap-4">
+                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-1 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-1 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="h-12 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
+            </div>
+
+            <div className="space-y-8">
+              
+              {/* Basic Info Card Skeleton */}
+              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-6"></div>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-20 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Config Card Skeleton */}
+              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                <div className="h-6 w-56 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-96 bg-gray-200 rounded animate-pulse mb-6"></div>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-36 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-20 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Products Card Skeleton */}
+              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse"></div>
+                </div>
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="border border-gray-200 rounded-xl bg-gray-50 p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
+                              <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
+                            </div>
+                            <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                                <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                              <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Protocol Days Card Skeleton */}
+              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
+                <div className="h-6 w-36 bg-gray-200 rounded animate-pulse mb-6"></div>
+                <div className="space-y-6">
+                  {[1, 2, 3].map((day) => (
+                    <div key={day} className="border border-gray-200 rounded-xl bg-gray-50 p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-10 w-32 bg-gray-200 rounded-xl animate-pulse"></div>
+                      </div>
+                      <div className="space-y-4">
+                        {[1, 2].map((session) => (
+                          <div key={session} className="border border-gray-200 rounded-xl bg-white p-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="h-5 w-24 bg-gray-200 rounded animate-pulse"></div>
+                              <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                              <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                            </div>
+                            <div className="space-y-3 mt-4">
+                              {[1, 2].map((task) => (
+                                <div key={task} className="border border-gray-200 rounded-xl bg-gray-50 p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+                                    <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                                    <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -606,6 +814,14 @@ export default function EditProtocolPage() {
   const availableProductsToAdd = availableProducts.filter(product => 
     !protocol.products.some(pp => pp.productId === product.id)
   );
+
+  console.log('🔍 Debug products state:', {
+    availableProducts: availableProducts.length,
+    protocolProducts: protocol.products.length,
+    availableProductsToAdd: availableProductsToAdd.length,
+    availableProductsData: availableProducts,
+    protocolProductsData: protocol.products
+  });
 
   const updateProductRequired = (protocolProductId: string, isRequired: boolean) => {
     updateProtocolProduct(protocolProductId, 'isRequired', isRequired);
@@ -1249,44 +1465,26 @@ export default function EditProtocolPage() {
                                       <div className="space-y-4 pl-6 border-l-2 border-[#5154e7]">
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                           <div className="space-y-2">
-                                            <Label className="text-gray-900 font-semibold">Título do Modal (opcional)</Label>
+                                            <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                                              <PlayIcon className="h-4 w-4" />
+                                              URL do Vídeo
+                                            </Label>
                                             <Input
-                                              value={task.modalTitle || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'modalTitle', e.target.value)}
-                                              placeholder="Ex: Como fazer este exercício"
+                                              value={task.videoUrl || ''}
+                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
                                               className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                                             />
                                           </div>
 
                                           <div className="space-y-2">
-                                            <Label className="text-gray-900 font-semibold">Texto do Botão (opcional)</Label>
-                                            <Input
-                                              value={task.modalButtonText || ''}
-                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonText', e.target.value)}
-                                              placeholder="Ex: Ver mais"
-                                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                            <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
+                                            <Textarea
+                                              value={task.fullExplanation || ''}
+                                              onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
+                                              placeholder="Explicação detalhada sobre como realizar esta tarefa..."
+                                              className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                                             />
                                           </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
-                                          <Input
-                                            value={task.videoUrl || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
-                                            placeholder="Ex: https://youtube.com/embed/..."
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                          />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
-                                          <Textarea
-                                            value={task.fullExplanation || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
-                                            placeholder="Explicação detalhada sobre como realizar esta tarefa..."
-                                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                          />
                                         </div>
 
                                         <div className="space-y-2">

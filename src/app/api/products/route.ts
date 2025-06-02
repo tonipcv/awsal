@@ -6,34 +6,49 @@ import { prisma } from '@/lib/prisma';
 // GET /api/products - Listar produtos
 export async function GET(request: Request) {
   try {
+    console.log('🔍 Products API called');
     const { searchParams } = new URL(request.url);
     const userEmail = searchParams.get('userEmail');
     
     let session;
     if (userEmail) {
+      console.log('📧 Using userEmail parameter:', userEmail);
       // Buscar usuário pelo email para casos especiais
       const user = await prisma.user.findUnique({
         where: { email: userEmail }
       });
       if (user) {
         session = { user: { id: user.id } };
+        console.log('✅ Session created from userEmail:', session.user.id);
+      } else {
+        console.log('❌ User not found for email:', userEmail);
       }
     } else {
+      console.log('🔐 Getting session from NextAuth');
       session = await getServerSession(authOptions);
+      console.log('📋 Session from NextAuth:', session ? { userId: session.user?.id, email: session.user?.email } : 'null');
     }
     
     if (!session?.user?.id) {
+      console.log('❌ No valid session found');
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
+
+    console.log('✅ Valid session found for user:', session.user.id);
 
     // Verificar se é médico
     const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
 
+    console.log('👤 User found:', user ? { id: user.id, email: user.email, role: user.role } : 'null');
+
     if (!user || user.role !== 'DOCTOR') {
+      console.log('❌ User is not a doctor or not found');
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem visualizar produtos.' }, { status: 403 });
     }
+
+    console.log('✅ User is a doctor, proceeding to fetch products');
 
     try {
       // Buscar produtos do médico atual
@@ -53,6 +68,8 @@ export async function GET(request: Request) {
         }
       });
 
+      console.log('📦 Products found:', products.length);
+
       // Transformar para o formato esperado pelo frontend
       const transformedProducts = products.map((product: any) => ({
         ...product,
@@ -70,6 +87,7 @@ export async function GET(request: Request) {
         }
       }));
 
+      console.log('✅ Returning transformed products:', transformedProducts.length);
       return NextResponse.json(transformedProducts);
     } catch (dbError) {
       console.error('❌ Erro ao buscar produtos:', dbError);

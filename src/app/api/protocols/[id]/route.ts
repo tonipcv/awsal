@@ -84,7 +84,43 @@ export async function GET(
       return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
     }
 
-    return NextResponse.json(protocol);
+    // Transform data to format expected by frontend (same as /api/protocols)
+    const transformedProtocol = {
+      ...protocol,
+      days: protocol.days.map(day => ({
+        ...day,
+        // Add direct tasks array by flattening session tasks for compatibility
+        tasks: day.sessions.flatMap(session => 
+          session.tasks.map(task => ({
+            ...task,
+            contents: task.ProtocolContent || []
+          }))
+        ),
+        contents: day.sessions.flatMap(session => 
+          session.tasks.flatMap(task => task.ProtocolContent || [])
+        ),
+        // Keep sessions structure intact for new UI
+        sessions: day.sessions.map(session => ({
+          ...session,
+          name: session.title, // Map title to name for compatibility
+          order: session.sessionNumber - 1, // Convert to 0-based index for compatibility
+          tasks: session.tasks.map(task => ({
+            ...task,
+            order: task.orderIndex,
+            contents: task.ProtocolContent || [],
+            // Add compatibility fields expected by frontend
+            hasMoreInfo: false,
+            videoUrl: '',
+            fullExplanation: '',
+            productId: '',
+            modalTitle: '',
+            modalButtonText: ''
+          }))
+        }))
+      }))
+    };
+
+    return NextResponse.json(transformedProtocol);
   } catch (error) {
     console.error('Error fetching protocol:', { error: error instanceof Error ? error.message : 'Unknown error' });
     return NextResponse.json({ error: 'Erro ao buscar protocolo' }, { status: 500 });
