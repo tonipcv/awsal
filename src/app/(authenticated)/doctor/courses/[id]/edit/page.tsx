@@ -21,7 +21,8 @@ import {
   TrashIcon,
   ArrowLeftIcon,
   BookOpenIcon,
-  XMarkIcon
+  XMarkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
@@ -90,7 +91,7 @@ export default function EditCoursePage() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalDescription, setModalDescription] = useState('');
   const [modalVideoUrl, setModalVideoUrl] = useState('');
-  const [modalButtonText, setModalButtonText] = useState('Saber mais');
+  const [modalButtonText, setModalButtonText] = useState('Learn more');
   const [modalButtonUrl, setModalButtonUrl] = useState('');
   
   // Course structure
@@ -118,7 +119,7 @@ export default function EditCoursePage() {
         setModalTitle(course.modalTitle || '');
         setModalDescription(course.modalDescription || '');
         setModalVideoUrl(course.modalVideoUrl || '');
-        setModalButtonText(course.modalButtonText || 'Saber mais');
+        setModalButtonText(course.modalButtonText || 'Learn more');
         setModalButtonUrl(course.modalButtonUrl || '');
         
         // Set modules and lessons
@@ -145,12 +146,12 @@ export default function EditCoursePage() {
           duration: lesson.duration || 0
         })));
       } else {
-        alert('Erro ao carregar curso');
+        alert('Error loading course');
         router.push('/doctor/courses');
       }
     } catch (error) {
       console.error('Error loading course:', error);
-      alert('Erro ao carregar curso');
+      alert('Error loading course');
       router.push('/doctor/courses');
     } finally {
       setIsLoadingCourse(false);
@@ -243,7 +244,7 @@ export default function EditCoursePage() {
     e.preventDefault();
     
     if (!name.trim()) {
-      alert('Nome do curso é obrigatório');
+      alert('Course name is required');
       return;
     }
 
@@ -261,7 +262,7 @@ export default function EditCoursePage() {
           modalTitle: modalTitle.trim() || null,
           modalDescription: modalDescription.trim() || null,
           modalVideoUrl: modalVideoUrl.trim() || null,
-          modalButtonText: modalButtonText.trim() || 'Saber mais',
+          modalButtonText: modalButtonText.trim() || 'Learn more',
           modalButtonUrl: modalButtonUrl.trim() || null,
           modules: modules.map(module => ({
             name: module.name,
@@ -276,11 +277,11 @@ export default function EditCoursePage() {
         router.push('/doctor/courses');
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao atualizar curso');
+        alert(error.error || 'Error updating course');
       }
     } catch (error) {
       console.error('Error updating course:', error);
-      alert('Erro ao atualizar curso');
+      alert('Error updating course');
     } finally {
       setIsLoading(false);
     }
@@ -297,11 +298,11 @@ export default function EditCoursePage() {
         router.push('/doctor/courses');
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao excluir curso');
+        alert(error.error || 'Error deleting course');
       }
     } catch (error) {
       console.error('Error deleting course:', error);
-      alert('Erro ao excluir curso');
+      alert('Error deleting course');
     } finally {
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
@@ -310,397 +311,517 @@ export default function EditCoursePage() {
 
   if (isLoadingCourse) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <span className="text-xs text-muted-foreground">Carregando curso...</span>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex items-center gap-6 mb-8">
+              <div className="w-20 h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+              <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="flex-1">
+                <div className="w-32 h-6 bg-gray-200 rounded-lg animate-pulse mb-2"></div>
+              </div>
+            </div>
+
+            {/* Form Skeleton */}
+            <div className="max-w-4xl mx-auto space-y-8">
+              
+              {/* Basic Information Skeleton */}
+              <div className="space-y-6">
+                <div className="w-48 h-6 bg-gray-200 rounded-lg animate-pulse border-b border-gray-200 pb-2"></div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Configuration Skeleton */}
+              <div className="space-y-6">
+                <div className="w-64 h-6 bg-gray-200 rounded-lg animate-pulse border-b border-gray-200 pb-2"></div>
+                <div className="h-4 bg-gray-100 rounded w-96 animate-pulse"></div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <div className="w-28 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modules Skeleton */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="w-20 h-6 bg-gray-200 rounded-lg animate-pulse border-b border-gray-200 pb-2"></div>
+                  <div className="w-36 h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                </div>
+                {[1, 2].map((i) => (
+                  <div key={i} className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-20 h-5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                        <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                        <div className="bg-gray-100 rounded-xl p-4">
+                          <div className="space-y-3">
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <div className="h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                              <div className="h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                            </div>
+                            <div className="h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                            <div className="h-16 bg-gray-200 rounded-xl animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Loading Indicator */}
+            <div className="fixed bottom-8 right-8 bg-white border border-gray-200 shadow-lg rounded-2xl p-4 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#5154e7] border-t-transparent"></div>
+              <span className="text-gray-700 font-medium">Loading course...</span>
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
-        {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 lg:pb-7 sticky top-0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 z-10 pt-[72px] lg:pt-4">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" asChild className="border-border/30 text-white/70 hover:bg-white/5">
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex items-center gap-6 mb-8">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href="/doctor/courses">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
-            <BookOpenIcon className="h-5 w-5 text-turquoise" />
-            <CardTitle className="text-xs font-normal text-white/70">
-              Editar Curso
-            </CardTitle>
+            <BookOpenIcon className="h-6 w-6 text-[#5154e7]" />
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Edit Course
+              </h1>
+            </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="pb-24 lg:pb-8">
           <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
             
             {/* Basic Information */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-light text-white border-b border-border/30 pb-2">
-                Informações Básicas
-              </h2>
-              
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm text-white/70">Nome do Curso *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Curso de Mindfulness"
-                    className="bg-background/10 border-border/20 text-white"
-                    required
-                  />
-                </div>
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-gray-900 font-semibold">Course Name *</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Mindfulness Course"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                      required
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-sm text-white/70">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Descreva o curso..."
-                    className="bg-background/10 border-border/20 text-white min-h-[100px]"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe the course..."
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[100px]"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Modal Configuration */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-light text-white border-b border-border/30 pb-2">
-                Configuração do Modal (Opcional)
-              </h2>
-              <p className="text-sm text-white/50">
-                Configure um modal informativo que será exibido quando o curso estiver indisponível para um paciente.
-              </p>
-              
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="modalTitle" className="text-sm text-white/70">Título do Modal</Label>
-                  <Input
-                    id="modalTitle"
-                    value={modalTitle}
-                    onChange={(e) => setModalTitle(e.target.value)}
-                    placeholder="Ex: Curso em Breve"
-                    className="bg-background/10 border-border/20 text-white"
-                  />
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration (Optional)</CardTitle>
+                <p className="text-sm text-gray-600 font-medium">
+                  Configure an informational modal that will be displayed when the course is unavailable to a patient.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
+                    <Input
+                      id="modalTitle"
+                      value={modalTitle}
+                      onChange={(e) => setModalTitle(e.target.value)}
+                      placeholder="e.g. Course Coming Soon"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
+                    <Input
+                      id="modalVideoUrl"
+                      value={modalVideoUrl}
+                      onChange={(e) => setModalVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/embed/..."
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    />
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="modalVideoUrl" className="text-sm text-white/70">URL do Vídeo</Label>
-                  <Input
-                    id="modalVideoUrl"
-                    value={modalVideoUrl}
-                    onChange={(e) => setModalVideoUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/embed/..."
-                    className="bg-background/10 border-border/20 text-white"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="modalDescription" className="text-sm text-white/70">Descrição do Modal</Label>
-                <Textarea
-                  id="modalDescription"
-                  value={modalDescription}
-                  onChange={(e) => setModalDescription(e.target.value)}
-                  placeholder="Mensagem para o paciente..."
-                  className="bg-background/10 border-border/20 text-white"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
+                  <Textarea
+                    id="modalDescription"
+                    value={modalDescription}
+                    onChange={(e) => setModalDescription(e.target.value)}
+                    placeholder="Message for the patient..."
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                  />
+                </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="modalButtonText" className="text-sm text-white/70">Texto do Botão</Label>
-                  <Input
-                    id="modalButtonText"
-                    value={modalButtonText}
-                    onChange={(e) => setModalButtonText(e.target.value)}
-                    placeholder="Saber mais"
-                    className="bg-background/10 border-border/20 text-white"
-                  />
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                    <Input
+                      id="modalButtonText"
+                      value={modalButtonText}
+                      onChange={(e) => setModalButtonText(e.target.value)}
+                      placeholder="Learn more"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
+                    <Input
+                      id="modalButtonUrl"
+                      value={modalButtonUrl}
+                      onChange={(e) => setModalButtonUrl(e.target.value)}
+                      placeholder="https://example.com"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    />
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="modalButtonUrl" className="text-sm text-white/70">URL do Botão</Label>
-                  <Input
-                    id="modalButtonUrl"
-                    value={modalButtonUrl}
-                    onChange={(e) => setModalButtonUrl(e.target.value)}
-                    placeholder="https://exemplo.com"
-                    className="bg-background/10 border-border/20 text-white"
-                  />
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Modules */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-light text-white border-b border-border/30 pb-2 flex-1">
-                  Módulos
-                </h2>
-                <Button
-                  type="button"
-                  onClick={addModule}
-                  className="bg-turquoise hover:bg-turquoise/90 text-background ml-4"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Adicionar Módulo
-                </Button>
-              </div>
-
-              {modules.map((module, moduleIndex) => (
-                <Card key={moduleIndex} className="bg-background/10 border-border/20">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm text-white">Módulo {moduleIndex + 1}</CardTitle>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeModule(moduleIndex)}
-                        className="text-red-400 border-red-500/30 hover:bg-red-500/10"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-white/70">Nome do Módulo</Label>
-                        <Input
-                          value={module.name}
-                          onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
-                          placeholder="Ex: Fundamentos"
-                          className="bg-background/10 border-border/20 text-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-white/70">Descrição</Label>
-                        <Input
-                          value={module.description}
-                          onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
-                          placeholder="Descrição do módulo"
-                          className="bg-background/10 border-border/20 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Module Lessons */}
-                    <div className="space-y-4">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold text-gray-900">Modules</CardTitle>
+                  <Button
+                    type="button"
+                    onClick={addModule}
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-4 py-2 font-semibold"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Module
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {modules.map((module, moduleIndex) => (
+                  <Card key={moduleIndex} className="bg-gray-50 border-gray-200 rounded-2xl">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium text-white/70">Aulas do Módulo</h4>
+                        <CardTitle className="text-sm font-semibold text-gray-900">Module {moduleIndex + 1}</CardTitle>
                         <Button
                           type="button"
+                          variant="outline"
                           size="sm"
-                          onClick={() => addLessonToModule(moduleIndex)}
-                          className="bg-turquoise/20 hover:bg-turquoise/30 text-turquoise border-turquoise/30"
+                          onClick={() => removeModule(moduleIndex)}
+                          className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
                         >
-                          <PlusIcon className="h-3 w-3 mr-1" />
-                          Aula
+                          <TrashIcon className="h-4 w-4" />
                         </Button>
                       </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Module Name</Label>
+                          <Input
+                            value={module.name}
+                            onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
+                            placeholder="e.g. Fundamentals"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Description</Label>
+                          <Input
+                            value={module.description}
+                            onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
+                            placeholder="Module description"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
+                      </div>
 
-                      {module.lessons.map((lesson, lessonIndex) => (
-                        <Card key={lessonIndex} className="bg-background/5 border-border/10">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-white/50">Aula {lessonIndex + 1}</span>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
-                                className="text-red-400 border-red-500/30 hover:bg-red-500/10 h-6 w-6 p-0"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            
-                            <div className="grid gap-3 md:grid-cols-2">
+                      {/* Module Lessons */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-gray-900">Module Lessons</h4>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addLessonToModule(moduleIndex)}
+                            className="bg-[#5154e7]/10 hover:bg-[#5154e7]/20 text-[#5154e7] border-[#5154e7]/30 rounded-xl"
+                          >
+                            <PlusIcon className="h-3 w-3 mr-1" />
+                            Lesson
+                          </Button>
+                        </div>
+
+                        {module.lessons.map((lesson, lessonIndex) => (
+                          <Card key={lessonIndex} className="bg-white border-gray-200 rounded-xl">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-600">Lesson {lessonIndex + 1}</span>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
+                                  className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl h-6 w-6 p-0"
+                                >
+                                  <TrashIcon className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Input
+                                  value={lesson.title}
+                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
+                                  placeholder="Lesson title"
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
+                                />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={lesson.duration}
+                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
+                                  placeholder="Duration (min)"
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
+                                />
+                              </div>
+                              
                               <Input
-                                value={lesson.title}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
-                                placeholder="Título da aula"
-                                className="bg-background/10 border-border/20 text-white text-sm"
+                                value={lesson.description}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
+                                placeholder="Lesson description"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
                               />
+                              
                               <Input
-                                type="number"
-                                min="0"
-                                value={lesson.duration}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
-                                placeholder="Duração (min)"
-                                className="bg-background/10 border-border/20 text-white text-sm"
+                                value={lesson.videoUrl}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
+                                placeholder="Video URL"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
                               />
-                            </div>
-                            
-                            <Input
-                              value={lesson.description}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
-                              placeholder="Descrição da aula"
-                              className="bg-background/10 border-border/20 text-white text-sm"
-                            />
-                            
-                            <Input
-                              value={lesson.videoUrl}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
-                              placeholder="URL do vídeo"
-                              className="bg-background/10 border-border/20 text-white text-sm"
-                            />
-                            
-                            <Textarea
-                              value={lesson.content}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
-                              placeholder="Conteúdo da aula"
-                              className="bg-background/10 border-border/20 text-white text-sm min-h-[60px]"
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                              
+                              <Textarea
+                                value={lesson.content}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
+                                placeholder="Lesson content"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm min-h-[60px]"
+                              />
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </CardContent>
+            </Card>
 
             {/* Direct Lessons */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-light text-white border-b border-border/30 pb-2 flex-1">
-                  Aulas Diretas (sem módulo)
-                </h2>
-                <Button
-                  type="button"
-                  onClick={addDirectLesson}
-                  className="bg-turquoise hover:bg-turquoise/90 text-background ml-4"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Adicionar Aula
-                </Button>
-              </div>
-
-              {directLessons.map((lesson, index) => (
-                <Card key={index} className="bg-background/10 border-border/20">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/70">Aula {index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeDirectLesson(index)}
-                        className="text-red-400 border-red-500/30 hover:bg-red-500/10"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid gap-4 md:grid-cols-2">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold text-gray-900">Direct Lessons (without module)</CardTitle>
+                  <Button
+                    type="button"
+                    onClick={addDirectLesson}
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-4 py-2 font-semibold"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Lesson
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {directLessons.map((lesson, index) => (
+                  <Card key={index} className="bg-gray-50 border-gray-200 rounded-2xl">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-900">Lesson {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeDirectLesson(index)}
+                          className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <Input
+                          value={lesson.title}
+                          onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
+                          placeholder="Lesson title"
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                        />
+                        <Input
+                          type="number"
+                          min="0"
+                          value={lesson.duration}
+                          onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
+                          placeholder="Duration (min)"
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                        />
+                      </div>
+                      
                       <Input
-                        value={lesson.title}
-                        onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
-                        placeholder="Título da aula"
-                        className="bg-background/10 border-border/20 text-white"
+                        value={lesson.description}
+                        onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
+                        placeholder="Lesson description"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                       />
+                      
                       <Input
-                        type="number"
-                        min="0"
-                        value={lesson.duration}
-                        onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
-                        placeholder="Duração (min)"
-                        className="bg-background/10 border-border/20 text-white"
+                        value={lesson.videoUrl}
+                        onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
+                        placeholder="Video URL"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                       />
-                    </div>
-                    
-                    <Input
-                      value={lesson.description}
-                      onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
-                      placeholder="Descrição da aula"
-                      className="bg-background/10 border-border/20 text-white"
-                    />
-                    
-                    <Input
-                      value={lesson.videoUrl}
-                      onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
-                      placeholder="URL do vídeo"
-                      className="bg-background/10 border-border/20 text-white"
-                    />
-                    
-                    <Textarea
-                      value={lesson.content}
-                      onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
-                      placeholder="Conteúdo da aula"
-                      className="bg-background/10 border-border/20 text-white min-h-[80px]"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      
+                      <Textarea
+                        value={lesson.content}
+                        onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
+                        placeholder="Lesson content"
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[80px]"
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </CardContent>
+            </Card>
 
             {/* Form Actions */}
-            <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6 border-t border-border/30">
-              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 sm:w-auto"
-                  >
-                    <TrashIcon className="h-4 w-4 mr-2" />
-                    Excluir Curso
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-background border-border/30">
-                  <DialogHeader>
-                    <DialogTitle className="text-white">Excluir Curso</DialogTitle>
-                    <DialogDescription className="text-white/70">
-                      Tem certeza que deseja excluir o curso "{name}"? 
-                      Esta ação não pode ser desfeita e todos os dados do curso serão perdidos permanentemente.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooter className="gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsDeleteDialogOpen(false)}
-                      className="border-border/30 text-white/70 hover:bg-white/5"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={deleteCourse}
-                      disabled={isDeleting}
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      {isDeleting ? 'Excluindo...' : 'Excluir Curso'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="border-red-300 text-red-600 hover:bg-red-50 rounded-xl px-6 font-semibold sm:w-auto"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-2" />
+                        Delete Course
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-white border-gray-200 rounded-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="text-gray-900">Delete Course</DialogTitle>
+                        <DialogDescription className="text-gray-600">
+                          Are you sure you want to delete the course "{name}"? 
+                          This action cannot be undone and all course data will be permanently lost.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsDeleteDialogOpen(false)}
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={deleteCourse}
+                          disabled={isDeleting}
+                          className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                        >
+                          {isDeleting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Deleting...
+                            </>
+                          ) : (
+                            'Delete Course'
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
-              <div className="flex gap-2 sm:ml-auto">
-                <Button variant="outline" asChild className="border-border/30 text-white/70 hover:bg-white/5">
-                  <Link href="/doctor/courses">
-                    Cancelar
-                  </Link>
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="bg-turquoise hover:bg-turquoise/90 text-background"
-                >
-                  {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-                </Button>
-              </div>
-            </div>
+                  <div className="flex gap-2 sm:ml-auto">
+                    <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 font-semibold">
+                      <Link href="/doctor/courses">
+                        Cancel
+                      </Link>
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isLoading}
+                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 font-semibold"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckIcon className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </form>
-        </CardContent>
-      </Card>
+
+        </div>
+      </div>
     </div>
   );
 } 
