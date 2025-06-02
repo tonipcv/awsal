@@ -93,7 +93,16 @@ export async function GET(
         tasks: day.sessions.flatMap(session => 
           session.tasks.map(task => ({
             ...task,
-            contents: task.ProtocolContent || []
+            order: task.orderIndex,
+            contents: task.ProtocolContent || [],
+            // Use actual database values for direct tasks too
+            hasMoreInfo: task.hasMoreInfo || false,
+            videoUrl: task.videoUrl || '',
+            fullExplanation: task.fullExplanation || '',
+            productId: task.productId || '',
+            modalTitle: task.modalTitle || '',
+            modalButtonText: task.modalButtonText || '',
+            modalButtonUrl: task.modalButtonUrl || ''
           }))
         ),
         contents: day.sessions.flatMap(session => 
@@ -108,13 +117,14 @@ export async function GET(
             ...task,
             order: task.orderIndex,
             contents: task.ProtocolContent || [],
-            // Add compatibility fields expected by frontend
-            hasMoreInfo: false,
-            videoUrl: '',
-            fullExplanation: '',
-            productId: '',
-            modalTitle: '',
-            modalButtonText: ''
+            // Use actual database values instead of defaults
+            hasMoreInfo: task.hasMoreInfo || false,
+            videoUrl: task.videoUrl || '',
+            fullExplanation: task.fullExplanation || '',
+            productId: task.productId || '',
+            modalTitle: task.modalTitle || '',
+            modalButtonText: task.modalButtonText || '',
+            modalButtonUrl: task.modalButtonUrl || ''
           }))
         }))
       }))

@@ -23,6 +23,7 @@ interface TaskInfoModalProps {
     videoUrl?: string;
     fullExplanation?: string;
     modalButtonText?: string;
+    modalButtonUrl?: string;
     product?: {
       id: string;
       name: string;
@@ -78,7 +79,6 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
           {/* Explicação Completa */}
           {task.fullExplanation && (
             <div className="space-y-3">
-              <h3 className="text-lg font-medium text-white">Explicação Detalhada</h3>
               <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
                 <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {task.fullExplanation}
@@ -149,7 +149,7 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
                     {task.product.purchaseUrl && (
                       <Button 
                         size="sm" 
-                        className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium shadow-lg shadow-teal-400/25"
+                        className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
                         asChild
                       >
                         <a 
@@ -171,12 +171,38 @@ export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
 
           {/* Botão de Ação */}
           <div className="flex justify-end pt-4">
-            <Button 
-              onClick={onClose}
-              className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700/50"
-            >
-              {buttonText}
-            </Button>
+            {task.modalButtonUrl ? (
+              <div className="flex gap-3">
+                <Button 
+                  onClick={onClose}
+                  variant="outline"
+                  className="bg-transparent border-gray-700/50 text-gray-300 hover:bg-gray-800/50 hover:text-white"
+                >
+                  Fechar
+                </Button>
+                <Button 
+                  className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
+                  asChild
+                >
+                  <a 
+                    href={task.modalButtonUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    {buttonText}
+                    <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                onClick={onClose}
+                className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700/50"
+              >
+                {buttonText}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

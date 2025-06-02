@@ -270,7 +270,8 @@ export async function GET(request: Request) {
               fullExplanation: task.fullExplanation || '',
               productId: task.productId || '',
               modalTitle: task.modalTitle || '',
-              modalButtonText: task.modalButtonText || ''
+              modalButtonText: task.modalButtonText || '',
+              modalButtonUrl: task.modalButtonUrl || ''
             }))
           })),
           // Remove the flattened tasks array to avoid duplication

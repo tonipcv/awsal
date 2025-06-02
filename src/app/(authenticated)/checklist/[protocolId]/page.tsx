@@ -96,6 +96,7 @@ interface ActiveProtocol {
           productId?: string;
           modalTitle?: string;
           modalButtonText?: string;
+          modalButtonUrl?: string;
           product?: {
             id: string;
             name: string;
