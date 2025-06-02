@@ -7,10 +7,15 @@ import {
   ArrowLeftIcon,
   CheckCircleIcon,
   ChevronRightIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  PlayIcon,
+  ClockIcon,
+  BookOpenIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { cn } from "@/lib/utils";
 
 interface Lesson {
   id: string;
@@ -41,9 +46,9 @@ interface Course {
   lessons: Lesson[];
   assignment: {
     id: string;
-    status: string;
-    startDate: string;
-    progress?: number;
+    enrolledAt: string;
+    completedAt?: string | null;
+    progress: number;
   };
 }
 
@@ -119,7 +124,15 @@ export default function PatientCourseViewPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+      return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return 'Data inválida';
+    }
   };
 
   const getAllLessonsInOrder = (): Lesson[] => {
@@ -182,97 +195,56 @@ export default function PatientCourseViewPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Ativo</Badge>;
-      case 'completed':
-        return <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-xs">Concluído</Badge>;
-      case 'paused':
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">Pausado</Badge>;
-      case 'unavailable':
-        return <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">Indisponível</Badge>;
-      default:
-        return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 text-xs">Inativo</Badge>;
+  const getStatusBadge = () => {
+    if (!course?.assignment) {
+      return <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 text-sm font-medium">Não Atribuído</Badge>;
     }
+    
+    if (course.assignment.completedAt) {
+      return <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-sm font-medium">Concluído</Badge>;
+    }
+    
+    return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-sm font-medium">Ativo</Badge>;
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
-        {/* Padding para menu lateral no desktop e header no mobile */}
         <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
-          <div className="max-w-6xl mx-auto px-3 lg:px-6 py-4 lg:py-6">
-            
-            {/* Header Skeleton */}
-            <div className="mb-4 lg:mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1">
-                  <div className="h-7 w-16 bg-gray-800/50 rounded animate-pulse"></div>
-                  <div className="h-3 w-px bg-gray-700"></div>
-                  <div className="h-6 bg-gray-800/50 rounded-lg w-48 animate-pulse"></div>
+          <div className="max-w-4xl mx-auto px-4 py-6 lg:px-6 lg:py-8">
+            <div className="animate-pulse space-y-8">
+              {/* Header skeleton */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-5 w-5 bg-gray-800/50 rounded"></div>
+                  <div className="h-6 w-px bg-gray-700/50"></div>
+                  <div className="h-6 bg-gray-800/50 rounded w-64"></div>
                 </div>
-                <div className="h-6 bg-gray-800/50 rounded w-20 animate-pulse"></div>
+                <div className="h-8 bg-gray-800/50 rounded w-96"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-48"></div>
               </div>
-            </div>
-
-            {/* Course Overview Skeleton */}
-            <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm mb-4 lg:mb-6">
-              <div className="space-y-3 lg:space-y-4">
-                <div>
-                  <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-64 mb-2 animate-pulse"></div>
-                  <div className="hidden lg:block h-4 bg-gray-700/50 rounded w-96 mb-2 animate-pulse"></div>
-                  <div className="h-3 bg-gray-700/30 rounded w-32 animate-pulse"></div>
-                </div>
-
-                {/* Stats Skeleton */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              
+              {/* Stats skeleton */}
+              <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 backdrop-blur-sm">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className={`text-center ${i > 2 ? 'hidden lg:block' : ''}`}>
-                      <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-12 mx-auto mb-1 animate-pulse"></div>
-                      <div className="h-3 bg-gray-700/50 rounded w-16 mx-auto animate-pulse"></div>
+                    <div key={i} className="text-center space-y-2">
+                      <div className="h-8 bg-gray-800/50 rounded w-12 mx-auto"></div>
+                      <div className="h-4 bg-gray-700/50 rounded w-16 mx-auto"></div>
                     </div>
                   ))}
                 </div>
-
-                {/* Progress Bar Skeleton */}
-                <div className="hidden lg:block space-y-1">
-                  <div className="flex justify-between">
-                    <div className="h-3 bg-gray-700/50 rounded w-24 animate-pulse"></div>
-                    <div className="h-3 bg-gray-700/50 rounded w-8 animate-pulse"></div>
-                  </div>
-                  <div className="w-full bg-gray-700/50 rounded-full h-1.5 animate-pulse"></div>
-                </div>
-
-                {/* Button Skeleton */}
-                <div className="flex justify-center pt-1">
-                  <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-32 animate-pulse"></div>
-                </div>
+                <div className="h-2 bg-gray-800/50 rounded-full w-full mb-4"></div>
+                <div className="h-10 bg-gray-800/50 rounded w-32"></div>
+              </div>
+              
+              {/* Content skeleton */}
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 bg-white/[0.02] border border-gray-800/60 rounded-2xl"></div>
+                ))}
               </div>
             </div>
-
-            {/* Modules Skeleton */}
-            <div className="space-y-3 lg:space-y-4">
-              <div className="h-6 lg:h-7 bg-gray-800/50 rounded w-20 animate-pulse"></div>
-              
-              {[1, 2].map((i) => (
-                <div key={i} className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
-                  <div className="p-3 lg:p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 lg:gap-3">
-                        <div className="w-7 h-7 lg:w-8 lg:h-8 bg-gray-800/50 rounded-full animate-pulse"></div>
-                        <div>
-                          <div className="h-4 lg:h-5 bg-gray-800/50 rounded w-32 mb-1 animate-pulse"></div>
-                          <div className="h-3 bg-gray-700/50 rounded w-48 animate-pulse"></div>
-                        </div>
-                      </div>
-                      <div className="h-4 w-4 bg-gray-700/50 rounded animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
           </div>
         </div>
       </div>
@@ -283,98 +255,70 @@ export default function PatientCourseViewPage() {
     return (
       <div className="min-h-screen bg-black">
         <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
-          <span className="text-gray-400">Curso não encontrado</span>
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-white mb-4">Curso não encontrado</h2>
+            <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold">
+              <Link href="/courses">Voltar aos Cursos</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
+  const totalLessons = getTotalLessons();
+  const completedLessons = getAllLessonsInOrder().filter(l => l.completed).length;
+  const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-black pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
-      {/* Header */}
-      <div className="sticky top-[88px] lg:top-0 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/80 z-10 border-b border-gray-800/40">
-        <div className="max-w-6xl mx-auto px-3 lg:px-6 py-2 lg:py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1">
-              <Button variant="ghost" size="sm" asChild className="text-gray-300 hover:text-white flex-shrink-0 h-7 px-2">
+    <div className="min-h-screen bg-black">
+      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="max-w-4xl mx-auto px-4 py-6 lg:px-6 lg:py-8">
+          
+          {/* Header Section */}
+          <div className="mb-8 lg:mb-12">
+            <div className="flex items-center gap-4 mb-6">
+              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
                 <Link href="/courses">
-                  <ArrowLeftIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
-                  <span className="hidden sm:inline text-xs lg:text-sm">Cursos</span>
+                  <ArrowLeftIcon className="h-5 w-5" />
                 </Link>
               </Button>
-              <div className="h-3 w-px bg-gray-500 flex-shrink-0" />
-              <h1 className="text-xs lg:text-base font-light text-white truncate">
+              <div className="h-6 w-px bg-gray-700/50" />
+              <h1 className="text-xl lg:text-2xl font-medium text-white tracking-tight">
                 {course.name}
               </h1>
             </div>
-            <div className="flex-shrink-0">
-              {getStatusBadge(course.assignment.status)}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-3 lg:px-6">
-        <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
-          {/* Course Overview */}
-          <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm">
-            <div className="space-y-3 lg:space-y-4">
-              <div>
-                <h2 className="text-base lg:text-lg font-light text-white mb-1">
-                  {course.name}
-                </h2>
-                {course.description && (
-                  <p className="hidden lg:block text-sm text-gray-300 leading-relaxed">
-                    {course.description}
-                  </p>
-                )}
-                <div className="mt-2 text-xs text-gray-400">
-                  Iniciado em {formatDate(course.assignment.startDate)}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                <div className="text-center">
-                  <div className="text-base lg:text-lg font-light text-turquoise">{course.assignment.progress || 0}%</div>
-                  <div className="text-xs text-gray-400">Progresso</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-base lg:text-lg font-light text-green-400">
-                    {getAllLessonsInOrder().filter(l => l.completed).length}
+            {/* Course Overview Card */}
+            <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 lg:p-8 backdrop-blur-sm mb-6">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1">
+                  {course.description && (
+                    <p className="text-lg text-gray-300 leading-relaxed mb-4">
+                      {course.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-400">
+                      Progresso: <span className="text-turquoise font-semibold">{course.assignment.progress}%</span>
+                    </div>
+                    <div className="h-4 w-px bg-gray-700/50"></div>
+                    <div className="text-sm text-gray-400">
+                      {completedLessons} de {totalLessons} aulas concluídas
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-400">Concluídas</div>
                 </div>
-                <div className="hidden lg:block text-center">
-                  <div className="text-lg font-light text-white">{getTotalLessons()}</div>
-                  <div className="text-xs text-gray-400">Aulas</div>
-                </div>
-                <div className="hidden lg:block text-center">
-                  <div className="text-lg font-light text-white">{formatDuration(getTotalDuration())}</div>
-                  <div className="text-xs text-gray-400">Duração</div>
+                <div className="ml-6">
+                  {getStatusBadge()}
                 </div>
               </div>
 
-              {/* Progress Bar - Hidden on mobile */}
-              <div className="hidden lg:block space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-300">Progresso do Curso</span>
-                  <span className="text-white">{course.assignment.progress || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-700/50 rounded-full h-1.5">
-                  <div 
-                    className="bg-turquoise h-1.5 rounded-full transition-all duration-500"
-                    style={{ width: `${course.assignment.progress || 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Start Course Button */}
+              {/* Action Button */}
               {getFirstLesson() && (
-                <div className="flex justify-center pt-1">
-                  <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium">
-                    <Link href={`/courses/${courseId}/lessons/${getFirstLesson()!.id}`}>
+                <div className="flex justify-center">
+                  <Button asChild size="lg" className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-8 py-3 text-base shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200">
+                    <Link href={`/courses/${courseId}/lessons/${getFirstLesson()!.id}`} className="flex items-center gap-2">
+                      <PlayIcon className="h-5 w-5" />
                       {getButtonText()}
                     </Link>
                   </Button>
@@ -384,50 +328,53 @@ export default function PatientCourseViewPage() {
           </div>
 
           {/* Course Content */}
-          <div className="space-y-4 lg:space-y-6">
+          <div className="space-y-6 lg:space-y-8">
+            
             {/* Modules */}
             {course.modules.length > 0 && (
-              <div className="space-y-3 lg:space-y-4">
-                <h3 className="text-base lg:text-lg font-light text-white">
-                  Módulos
-                </h3>
+              <div>
+                <h2 className="text-lg lg:text-xl font-semibold text-white mb-6 flex items-center gap-3">
+                  <BookOpenIcon className="h-6 w-6 text-turquoise" />
+                  Módulos do Curso
+                </h2>
                 
-                <div className="space-y-2 lg:space-y-3">
+                <div className="space-y-4">
                   {course.modules.map((module, index) => (
-                    <div key={module.id} className="bg-gray-900/40 border border-gray-800/40 rounded-lg backdrop-blur-sm">
+                    <div key={module.id} className="bg-white/[0.02] border border-gray-800/60 rounded-2xl overflow-hidden backdrop-blur-sm">
                       {/* Module Header */}
                       <div 
-                        className="p-3 lg:p-4 cursor-pointer hover:bg-gray-800/30 transition-colors"
+                        className="p-6 cursor-pointer hover:bg-white/[0.01] transition-colors"
                         onClick={() => toggleModule(module.id)}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 lg:gap-3">
-                            <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                          <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center text-lg font-semibold border-2 transition-all",
                               isModuleCompleted(module)
-                                ? 'bg-green-500 text-white'
-                                : 'bg-turquoise text-black'
-                            }`}>
+                                ? "bg-turquoise/15 border-turquoise/50 text-turquoise shadow-lg shadow-turquoise/10"
+                                : "bg-gray-800/50 border-gray-700/50 text-gray-300"
+                            )}>
                               {isModuleCompleted(module) ? (
-                                <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                                <CheckCircleIcon className="h-6 w-6" />
                               ) : (
                                 index + 1
                               )}
                             </div>
                             <div>
-                              <h4 className="text-sm lg:text-base font-light text-white">{module.name}</h4>
+                              <h3 className="text-lg font-semibold text-white mb-1">{module.name}</h3>
                               {module.description && (
-                                <p className="text-xs text-gray-400 mt-0.5">{module.description}</p>
+                                <p className="text-gray-400 mb-2">{module.description}</p>
                               )}
-                              <div className="flex items-center gap-2 lg:gap-3 mt-1 text-xs text-gray-500">
-                                <span>
-                                  {module.lessons.filter(l => l.completed).length}/{module.lessons.length} concluídas
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <span className="font-medium">
+                                  {module.lessons.filter(l => l.completed).length}/{module.lessons.length} aulas concluídas
                                 </span>
                                 <span>•</span>
                                 <span>{module.lessons.length} {module.lessons.length === 1 ? 'aula' : 'aulas'}</span>
                                 {getModuleProgress(module) > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span>{getModuleProgress(module)}%</span>
+                                    <span className="font-semibold text-turquoise">{getModuleProgress(module)}% completo</span>
                                   </>
                                 )}
                               </div>
@@ -436,9 +383,9 @@ export default function PatientCourseViewPage() {
                           
                           <div className="text-gray-400">
                             {expandedModules.has(module.id) ? (
-                              <ChevronDownIcon className="h-4 w-4" />
+                              <ChevronDownIcon className="h-5 w-5" />
                             ) : (
-                              <ChevronRightIcon className="h-4 w-4" />
+                              <ChevronRightIcon className="h-5 w-5" />
                             )}
                           </div>
                         </div>
@@ -446,46 +393,51 @@ export default function PatientCourseViewPage() {
                       
                       {/* Module Lessons */}
                       {expandedModules.has(module.id) && (
-                        <div className="border-t border-gray-600/30 p-3 lg:p-4 pt-2 lg:pt-3">
-                          <div className="space-y-2">
+                        <div className="border-t border-gray-800/40 bg-gray-800/20">
+                          <div className="p-6 space-y-3">
                             {module.lessons.map((lesson, lessonIndex) => (
                               <Link 
                                 key={lesson.id} 
                                 href={`/courses/${courseId}/lessons/${lesson.id}`}
-                                className="flex items-center justify-between p-2 lg:p-3 bg-gray-800/30 rounded-lg border border-gray-700/30 hover:border-turquoise/30 transition-colors"
+                                className="flex items-center justify-between p-4 lg:p-5 bg-gray-800/30 rounded-xl border border-gray-700/40 hover:border-turquoise/30 hover:bg-gray-800/40 transition-all duration-200"
                               >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full flex items-center justify-center text-xs ${
+                                <div className="flex items-center gap-3">
+                                  <div className={cn(
+                                    "w-8 h-8 rounded-xl flex items-center justify-center text-sm font-medium transition-all",
                                     lesson.completed 
-                                      ? 'bg-green-500 text-white' 
-                                      : 'bg-gray-600/50 text-gray-300'
-                                  }`}>
+                                      ? "bg-turquoise/15 border-turquoise/50 text-turquoise" 
+                                      : "bg-gray-700/50 text-gray-300"
+                                  )}>
                                     {lesson.completed ? (
-                                      <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                                      <CheckCircleIcon className="h-4 w-4" />
                                     ) : (
                                       lessonIndex + 1
                                     )}
                                   </div>
                                   <div>
-                                    <span className={`text-xs lg:text-sm ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
+                                    <div className={cn(
+                                      "font-medium",
+                                      lesson.completed ? "text-turquoise-light" : "text-white"
+                                    )}>
                                       {lesson.title}
-                                    </span>
+                                    </div>
                                     {lesson.description && (
-                                      <p className="text-xs text-gray-400 mt-0.5">{lesson.description}</p>
+                                      <div className="text-sm text-gray-400 mt-1">{lesson.description}</div>
                                     )}
                                   </div>
                                 </div>
                                 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                   {lesson.completed && (
-                                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                                    <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-xs">
                                       Concluída
                                     </Badge>
                                   )}
                                   {lesson.duration && (
-                                    <span className="text-xs text-gray-400">
+                                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                                      <ClockIcon className="h-4 w-4" />
                                       {lesson.duration}min
-                                    </span>
+                                    </div>
                                   )}
                                 </div>
                               </Link>
@@ -501,50 +453,56 @@ export default function PatientCourseViewPage() {
 
             {/* Direct Lessons */}
             {course.lessons.length > 0 && (
-              <div className="space-y-3 lg:space-y-4">
-                <h3 className="text-base lg:text-lg font-light text-white">
-                  Aulas
-                </h3>
+              <div>
+                <h2 className="text-lg lg:text-xl font-semibold text-white mb-6 flex items-center gap-3">
+                  <AcademicCapIcon className="h-6 w-6 text-turquoise" />
+                  Aulas do Curso
+                </h2>
                 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {course.lessons.map((lesson, index) => (
                     <Link 
                       key={lesson.id} 
                       href={`/courses/${courseId}/lessons/${lesson.id}`}
-                      className="flex items-center justify-between p-3 lg:p-4 bg-gray-900/40 border border-gray-800/40 rounded-lg hover:border-turquoise/30 transition-colors backdrop-blur-sm"
+                      className="flex items-center justify-between p-6 bg-white/[0.02] border border-gray-800/60 rounded-2xl hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200 backdrop-blur-sm"
                     >
-                      <div className="flex items-center gap-2 lg:gap-3">
-                        <div className={`w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center text-lg font-semibold border-2 transition-all",
                           lesson.completed 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-turquoise text-black'
-                        }`}>
+                            ? "bg-turquoise/15 border-turquoise/50 text-turquoise shadow-lg shadow-turquoise/10"
+                            : "bg-gray-800/50 border-gray-700/50 text-gray-300"
+                        )}>
                           {lesson.completed ? (
-                            <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                            <CheckCircleIcon className="h-6 w-6" />
                           ) : (
                             index + 1
                           )}
                         </div>
                         <div>
-                          <span className={`text-sm lg:text-base ${lesson.completed ? 'text-green-100' : 'text-white'}`}>
+                          <div className={cn(
+                            "text-lg font-semibold mb-1",
+                            lesson.completed ? "text-turquoise-light" : "text-white"
+                          )}>
                             {lesson.title}
-                          </span>
+                          </div>
                           {lesson.description && (
-                            <p className="text-xs text-gray-400 mt-0.5">{lesson.description}</p>
+                            <div className="text-gray-400">{lesson.description}</div>
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-4">
                         {lesson.completed && (
-                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                          <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30">
                             Concluída
                           </Badge>
                         )}
                         {lesson.duration && (
-                          <span className="text-xs text-gray-400">
-                            {lesson.duration}min
-                          </span>
+                          <div className="flex items-center gap-2 text-gray-400">
+                            <ClockIcon className="h-4 w-4" />
+                            <span className="font-medium">{lesson.duration}min</span>
+                          </div>
                         )}
                       </div>
                     </Link>
@@ -555,13 +513,14 @@ export default function PatientCourseViewPage() {
 
             {/* Empty State */}
             {course.modules.length === 0 && course.lessons.length === 0 && (
-              <div className="text-center py-12 lg:py-16">
+              <div className="text-center py-16">
                 <div className="max-w-md mx-auto">
-                  <h3 className="text-base lg:text-lg font-light text-white mb-2">
+                  <BookOpenIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">
                     Curso sem conteúdo
                   </h3>
-                  <p className="text-sm text-gray-300 leading-relaxed">
-                    Este curso ainda não possui conteúdo disponível.
+                  <p className="text-gray-400 leading-relaxed">
+                    Este curso ainda não possui conteúdo disponível. Entre em contato com seu instrutor para mais informações.
                   </p>
                 </div>
               </div>

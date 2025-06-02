@@ -1,0 +1,481 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { 
+  ChevronDownIcon,
+  PlusIcon,
+  TrashIcon,
+  InformationCircleIcon,
+  PlayIcon,
+  ShoppingBagIcon,
+  ArrowLeftIcon
+} from '@heroicons/react/24/outline';
+
+interface ProtocolDayEditorProps {
+  days: any[];
+  availableProducts: any[];
+  addTask: (dayNumber: number, sessionId?: string) => void;
+  removeTask: (dayNumber: number, taskId: string, sessionId?: string) => void;
+  updateTask: (dayNumber: number, taskId: string, field: string, value: any, sessionId?: string) => void;
+  addSession: (dayNumber: number) => void;
+  removeSession: (dayNumber: number, sessionId: string) => void;
+  updateSession: (dayNumber: number, sessionId: string, field: string, value: string) => void;
+  moveTaskToSession: (dayNumber: number, taskId: string, targetSessionId: string) => void;
+  moveTaskFromSession: (dayNumber: number, taskId: string, sourceSessionId: string) => void;
+  addDay: () => void;
+  removeDay: (dayNumber: number) => void;
+}
+
+export function ProtocolDayEditor({
+  days,
+  availableProducts,
+  addTask,
+  removeTask,
+  updateTask,
+  addSession,
+  removeSession,
+  updateSession,
+  moveTaskToSession,
+  moveTaskFromSession,
+  addDay,
+  removeDay
+}: ProtocolDayEditorProps) {
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+
+  const toggleDay = (dayId: string) => {
+    const newExpanded = new Set(expandedDays);
+    if (newExpanded.has(dayId)) {
+      newExpanded.delete(dayId);
+    } else {
+      newExpanded.add(dayId);
+    }
+    setExpandedDays(newExpanded);
+  };
+
+  const toggleSession = (sessionId: string) => {
+    const newExpanded = new Set(expandedSessions);
+    if (newExpanded.has(sessionId)) {
+      newExpanded.delete(sessionId);
+    } else {
+      newExpanded.add(sessionId);
+    }
+    setExpandedSessions(newExpanded);
+  };
+
+  const toggleTask = (taskId: string) => {
+    const newExpanded = new Set(expandedTasks);
+    if (newExpanded.has(taskId)) {
+      newExpanded.delete(taskId);
+    } else {
+      newExpanded.add(taskId);
+    }
+    setExpandedTasks(newExpanded);
+  };
+
+  const TaskEditor = ({ task, dayNumber, sessionId }: { task: any, dayNumber: number, sessionId?: string }) => (
+    <Collapsible open={expandedTasks.has(task.id)} onOpenChange={() => toggleTask(task.id)}>
+      <div className="border border-gray-200 rounded-xl bg-gray-50">
+        <CollapsibleTrigger asChild>
+          <div className="p-4 cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <ChevronDownIcon 
+                  className={`h-4 w-4 text-gray-500 transition-transform ${
+                    expandedTasks.has(task.id) ? 'rotate-180' : ''
+                  }`} 
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 truncate">
+                    {task.title || 'Tarefa sem título'}
+                  </p>
+                  {task.description && (
+                    <p className="text-sm text-gray-600 truncate">
+                      {task.description}
+                    </p>
+                  )}
+                </div>
+                {task.hasMoreInfo && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                    Conteúdo Extra
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeTask(dayNumber, task.id, sessionId);
+                }}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="px-4 pb-4 space-y-4 border-t border-gray-200">
+            {/* Campos Básicos */}
+            <div className="space-y-3 pt-4">
+              <Input
+                placeholder="Título da tarefa"
+                value={task.title}
+                onChange={(e) => updateTask(dayNumber, task.id, 'title', e.target.value, sessionId)}
+                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
+              />
+              <Textarea
+                placeholder="Descrição básica"
+                value={task.description}
+                onChange={(e) => updateTask(dayNumber, task.id, 'description', e.target.value, sessionId)}
+                rows={2}
+                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+              />
+            </div>
+
+            {/* Toggle para Conteúdo Extra */}
+            <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
+              <input
+                type="checkbox"
+                id={`hasMoreInfo-${task.id}`}
+                checked={task.hasMoreInfo || false}
+                onChange={(e) => updateTask(dayNumber, task.id, 'hasMoreInfo', e.target.checked, sessionId)}
+                className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+              />
+              <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
+                <InformationCircleIcon className="h-4 w-4" />
+                Adicionar conteúdo extra
+              </Label>
+            </div>
+
+            {/* Campos Extras */}
+            {task.hasMoreInfo && (
+              <div className="space-y-4 p-4 bg-white rounded-xl border border-gray-200">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                      <PlayIcon className="h-4 w-4" />
+                      URL do Vídeo
+                    </Label>
+                    <Input
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={task.videoUrl || ''}
+                      onChange={(e) => updateTask(dayNumber, task.id, 'videoUrl', e.target.value, sessionId)}
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                      <InformationCircleIcon className="h-4 w-4" />
+                      Explicação Completa
+                    </Label>
+                    <Textarea
+                      placeholder="Explicação detalhada da tarefa..."
+                      value={task.fullExplanation || ''}
+                      onChange={(e) => updateTask(dayNumber, task.id, 'fullExplanation', e.target.value, sessionId)}
+                      rows={3}
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
+                      <ShoppingBagIcon className="h-4 w-4" />
+                      Produto Relacionado (opcional)
+                    </Label>
+                    <Select 
+                      value={task.productId || 'none'} 
+                      onValueChange={(value) => updateTask(dayNumber, task.id, 'productId', value === 'none' ? '' : value, sessionId)}
+                    >
+                      <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
+                        <SelectValue placeholder="Selecione um produto..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum produto</SelectItem>
+                        {availableProducts.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{product.name}</span>
+                              {product.brand && (
+                                <span className="text-xs text-gray-500">({product.brand})</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-semibold">Título do Modal</Label>
+                      <Input
+                        placeholder="Título personalizado"
+                        value={task.modalTitle || ''}
+                        onChange={(e) => updateTask(dayNumber, task.id, 'modalTitle', e.target.value, sessionId)}
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-gray-900 font-semibold">Texto do Botão</Label>
+                      <Input
+                        placeholder="Saber mais"
+                        value={task.modalButtonText || ''}
+                        onChange={(e) => updateTask(dayNumber, task.id, 'modalButtonText', e.target.value, sessionId)}
+                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-900 font-semibold">Link do Botão</Label>
+                    <Input
+                      placeholder="https://exemplo.com"
+                      value={task.modalButtonUrl || ''}
+                      onChange={(e) => updateTask(dayNumber, task.id, 'modalButtonUrl', e.target.value, sessionId)}
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header com botão para adicionar dia */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900">Cronograma do Protocolo</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {days.length} {days.length === 1 ? 'dia configurado' : 'dias configurados'}
+          </p>
+        </div>
+        <Button
+          onClick={addDay}
+          className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
+        >
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Adicionar Dia
+        </Button>
+      </div>
+
+      {days.length === 0 && (
+        <div className="text-center py-12 bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl">
+          <div className="space-y-3">
+            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
+              <PlusIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900">Nenhum dia configurado</h4>
+              <p className="text-gray-600 mt-1">
+                Comece adicionando o primeiro dia do seu protocolo
+              </p>
+            </div>
+            <Button
+              onClick={addDay}
+              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Adicionar Primeiro Dia
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {days.map((day) => (
+        <Collapsible key={day.id} open={expandedDays.has(day.id)} onOpenChange={() => toggleDay(day.id)}>
+          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <ChevronDownIcon 
+                      className={`h-5 w-5 text-gray-500 transition-transform ${
+                        expandedDays.has(day.id) ? 'rotate-180' : ''
+                      }`} 
+                    />
+                    <div>
+                      <CardTitle className="text-lg font-bold text-gray-900">
+                        Dia {day.dayNumber}
+                      </CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {day.sessions.length} sessões • {day.sessions.reduce((total: number, session: any) => total + session.tasks.length, 0) + day.tasks.length} tarefas
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-[#5154e7] text-white">
+                      {day.sessions.length + (day.tasks.length > 0 ? 1 : 0)} seções
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addSession(day.dayNumber);
+                      }}
+                      className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 px-3 font-semibold"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      Sessão
+                    </Button>
+                    {days.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeDay(day.dayNumber);
+                        }}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <CardContent className="space-y-6">
+                {/* Sessões */}
+                {day.sessions.map((session: any) => (
+                  <Collapsible key={session.id} open={expandedSessions.has(session.id)} onOpenChange={() => toggleSession(session.id)}>
+                    <div className="border border-gray-200 rounded-xl bg-white">
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl cursor-pointer hover:bg-gray-100 transition-colors">
+                          <div className="flex items-center gap-3 flex-1">
+                            <ChevronDownIcon 
+                              className={`h-4 w-4 text-gray-500 transition-transform ${
+                                expandedSessions.has(session.id) ? 'rotate-180' : ''
+                              }`} 
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900">
+                                {session.name || `Sessão ${session.order + 1}`}
+                              </p>
+                              {session.description && (
+                                <p className="text-sm text-gray-600 truncate">
+                                  {session.description}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                {session.tasks.length} tarefas
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSession(day.dayNumber, session.id);
+                            }}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent>
+                        <div className="p-4 space-y-4">
+                          {/* Editar Sessão */}
+                          <div className="space-y-3 pb-4 border-b border-gray-200">
+                            <Input
+                              value={session.name}
+                              onChange={(e) => updateSession(day.dayNumber, session.id, 'name', e.target.value)}
+                              placeholder="Nome da sessão"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 font-semibold rounded-xl h-10"
+                            />
+                            <Input
+                              value={session.description || ''}
+                              onChange={(e) => updateSession(day.dayNumber, session.id, 'description', e.target.value)}
+                              placeholder="Descrição da sessão (opcional)"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-600 rounded-xl h-10"
+                            />
+                          </div>
+
+                          {/* Tarefas da Sessão */}
+                          <div className="space-y-4">
+                            {session.tasks.map((task: any) => (
+                              <TaskEditor 
+                                key={task.id} 
+                                task={task} 
+                                dayNumber={day.dayNumber} 
+                                sessionId={session.id} 
+                              />
+                            ))}
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addTask(day.dayNumber, session.id)}
+                              className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
+                            >
+                              <PlusIcon className="h-4 w-4 mr-2" />
+                              Adicionar Tarefa
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                ))}
+
+                {/* Tarefas Diretas */}
+                {day.tasks.length > 0 && (
+                  <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                    <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                        Tarefas Diretas
+                      </Badge>
+                    </h5>
+                    <div className="space-y-4">
+                      {day.tasks.map((task: any) => (
+                        <TaskEditor 
+                          key={task.id} 
+                          task={task} 
+                          dayNumber={day.dayNumber} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addTask(day.dayNumber)}
+                  className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Adicionar Tarefa Direta ao Dia {day.dayNumber}
+                </Button>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      ))}
+    </div>
+  );
+} 

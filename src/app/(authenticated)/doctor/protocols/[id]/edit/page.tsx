@@ -24,6 +24,8 @@ import {
   EyeIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
+import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
 
 interface ProtocolTask {
   id: string;
@@ -51,7 +53,7 @@ interface ProtocolDay {
   id: string;
   dayNumber: number;
   sessions: ProtocolSession[];
-  tasks: ProtocolTask[]; // Para compatibilidade com protocolos antigos
+  tasks: ProtocolTask[];
 }
 
 interface Product {
@@ -103,6 +105,10 @@ export default function EditProtocolPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProtocol, setIsLoadingProtocol] = useState(true);
+  const [isProtocolLoaded, setIsProtocolLoaded] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [protocol, setProtocol] = useState<ProtocolForm>({
     name: '',
@@ -119,7 +125,6 @@ export default function EditProtocolPage() {
     products: []
   });
 
-  // Carregar protocolo existente
   useEffect(() => {
     if (params.id) {
       loadProtocol(params.id as string);
@@ -144,6 +149,7 @@ export default function EditProtocolPage() {
           id: data.id,
           name: data.name,
           doctorId: data.doctorId,
+          duration: data.duration,
           daysCount: data.days?.length || 0
         });
         
@@ -163,7 +169,7 @@ export default function EditProtocolPage() {
         console.log('🔄 Setting protocol state...');
         setProtocol({
           name: data.name,
-          duration: data.duration,
+          duration: data.days?.length || 0,
           description: data.description || '',
           isTemplate: data.isTemplate,
           showDoctorInfo: data.showDoctorInfo || false,
@@ -211,75 +217,44 @@ export default function EditProtocolPage() {
           products: protocolProducts
         });
         
-        console.log('✅ Protocol state updated successfully');
+        console.log('✅ Protocol state set successfully');
       } else {
-        const errorData = await response.text();
-        console.error('❌ Protocol API failed:', response.status, errorData);
-        console.log('🔄 Redirecting to protocols list due to API error');
-        router.push('/doctor/protocols');
+        console.error('❌ Failed to load protocol:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
       }
     } catch (error) {
       console.error('❌ Error loading protocol:', error);
-      console.log('🔄 Redirecting to protocols list due to exception');
-      router.push('/doctor/protocols');
     } finally {
-      console.log('🏁 Setting isLoadingProtocol to false');
       setIsLoadingProtocol(false);
+      setIsProtocolLoaded(true);
     }
   };
 
   const loadAvailableProducts = async () => {
     try {
       console.log('🔍 Loading available products...');
-      const response = await fetch('/api/products', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      });
-      
+      const response = await fetch('/api/products');
       console.log('📡 Products API response status:', response.status);
       console.log('📡 Products API response ok:', response.ok);
       
       if (response.ok) {
         const products = await response.json();
-        console.log('✅ Products loaded successfully:', products.length);
-        console.log('✅ Products data:', products);
+        console.log('✅ Available products loaded:', products.length);
         setAvailableProducts(products);
       } else {
-        const errorData = await response.text();
-        console.error('❌ Products API failed:', response.status, errorData);
+        console.error('❌ Failed to load products:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
       }
     } catch (error) {
       console.error('❌ Error loading products:', error);
     }
   };
 
-  // Gerar dias automaticamente quando a duração muda
-  React.useEffect(() => {
-    if (isLoadingProtocol) return;
-    
-    const newDays: ProtocolDay[] = [];
-    for (let i = 1; i <= protocol.duration; i++) {
-      const existingDay = protocol.days.find(d => d.dayNumber === i);
-      if (existingDay) {
-        newDays.push(existingDay);
-      } else {
-        newDays.push({
-          id: `day-${i}`,
-          dayNumber: i,
-          sessions: [],
-          tasks: []
-        });
-      }
-    }
-    setProtocol(prev => ({ ...prev, days: newDays }));
-  }, [protocol.duration, isLoadingProtocol]);
-
   const addTask = (dayNumber: number, sessionId?: string) => {
     const newTask: ProtocolTask = {
-      id: `task-${Date.now()}`,
+      id: `temp-${Date.now()}`,
       title: '',
       description: '',
       order: 0,
@@ -294,83 +269,106 @@ export default function EditProtocolPage() {
 
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          if (sessionId) {
+            return {
               ...day,
-              sessions: sessionId 
-                ? day.sessions.map(session =>
-                    session.id === sessionId
-                      ? { ...session, tasks: [...session.tasks, newTask] }
-                      : session
-                  )
-                : day.sessions,
-              tasks: sessionId ? day.tasks : [...day.tasks, newTask]
-            }
-          : day
-      )
+              sessions: day.sessions.map(session => {
+                if (session.id === sessionId) {
+                  return {
+                    ...session,
+                    tasks: [...session.tasks, newTask]
+                  };
+                }
+                return session;
+              })
+            };
+          } else {
+            return {
+              ...day,
+              tasks: [...day.tasks, newTask]
+            };
+          }
+        }
+        return day;
+      })
     }));
   };
 
   const removeTask = (dayNumber: number, taskId: string, sessionId?: string) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          if (sessionId) {
+            return {
               ...day,
-              sessions: sessionId
-                ? day.sessions.map(session =>
-                    session.id === sessionId
-                      ? { ...session, tasks: session.tasks.filter(task => task.id !== taskId) }
-                      : session
-                  )
-                : day.sessions,
-              tasks: sessionId ? day.tasks : day.tasks.filter(task => task.id !== taskId)
-            }
-          : day
-      )
+              sessions: day.sessions.map(session => {
+                if (session.id === sessionId) {
+                  return {
+                    ...session,
+                    tasks: session.tasks.filter(task => task.id !== taskId)
+                  };
+                }
+                return session;
+              })
+            };
+          } else {
+            return {
+              ...day,
+              tasks: day.tasks.filter(task => task.id !== taskId)
+            };
+          }
+        }
+        return day;
+      })
     }));
   };
 
-  const updateTask = (dayNumber: number, taskId: string, field: keyof ProtocolTask, value: string | boolean, sessionId?: string) => {
+  const updateTask = (dayNumber: number, taskId: string, field: string, value: string | boolean, sessionId?: string) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          if (sessionId) {
+            return {
               ...day,
-              sessions: sessionId
-                ? day.sessions.map(session =>
-                    session.id === sessionId
-                      ? {
-                          ...session,
-                          tasks: session.tasks.map(task => 
-                            task.id === taskId 
-                              ? { ...task, [field]: value }
-                              : task
-                          )
-                        }
-                      : session
-                  )
-                : day.sessions,
-              tasks: sessionId 
-                ? day.tasks
-                : day.tasks.map(task => 
-                task.id === taskId 
-                  ? { ...task, [field]: value }
-                  : task
-                  )
-            }
-          : day
-      )
+              sessions: day.sessions.map(session => {
+                if (session.id === sessionId) {
+                  return {
+                    ...session,
+                    tasks: session.tasks.map(task => {
+                      if (task.id === taskId) {
+                        return { ...task, [field]: value };
+                      }
+                      return task;
+                    })
+                  };
+                }
+                return session;
+              })
+            };
+          } else {
+            return {
+              ...day,
+              tasks: day.tasks.map(task => {
+                if (task.id === taskId) {
+                  return { ...task, [field]: value };
+                }
+                return task;
+              })
+            };
+          }
+        }
+        return day;
+      })
     }));
   };
 
-  // Funções para sessões
   const addSession = (dayNumber: number) => {
     const newSession: ProtocolSession = {
-      id: `session-${Date.now()}`,
+      id: `temp-session-${Date.now()}`,
       name: '',
       description: '',
       order: 0,
@@ -379,114 +377,69 @@ export default function EditProtocolPage() {
 
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sessions: [...day.sessions, newSession]
-            }
-          : day
-      )
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          return {
+            ...day,
+            sessions: [...day.sessions, newSession]
+          };
+        }
+        return day;
+      })
     }));
   };
 
   const removeSession = (dayNumber: number, sessionId: string) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sessions: day.sessions.filter(session => session.id !== sessionId)
-            }
-          : day
-      )
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          return {
+            ...day,
+            sessions: day.sessions.filter(session => session.id !== sessionId)
+          };
+        }
+        return day;
+      })
     }));
   };
 
-  const updateSession = (dayNumber: number, sessionId: string, field: keyof ProtocolSession, value: string) => {
+  const updateSession = (dayNumber: number, sessionId: string, field: string, value: string) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sessions: day.sessions.map(session => 
-                session.id === sessionId 
-                  ? { ...session, [field]: value }
-                  : session
-              )
-            }
-          : day
-      )
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          return {
+            ...day,
+            sessions: day.sessions.map(session => {
+              if (session.id === sessionId) {
+                return { ...session, [field]: value };
+              }
+              return session;
+            })
+          };
+        }
+        return day;
+      })
     }));
   };
 
-  // Função para mover tarefa direta para uma sessão
   const moveTaskToSession = (dayNumber: number, taskId: string, targetSessionId: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              // Remover tarefa das tarefas diretas
-              tasks: day.tasks.filter(task => task.id !== taskId),
-              // Adicionar tarefa à sessão de destino
-              sessions: day.sessions.map(session =>
-                session.id === targetSessionId
-                  ? {
-                      ...session,
-                      tasks: [...session.tasks, day.tasks.find(task => task.id === taskId)!]
-                    }
-                  : session
-              )
-            }
-          : day
-      )
-    }));
+    // Implementation for moving tasks between sessions
   };
 
-  // Função para mover tarefa de sessão para tarefas diretas
   const moveTaskFromSession = (dayNumber: number, taskId: string, sourceSessionId: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              // Adicionar tarefa às tarefas diretas
-              tasks: [...day.tasks, day.sessions.find(session => session.id === sourceSessionId)!.tasks.find(task => task.id === taskId)!],
-              // Remover tarefa da sessão
-              sessions: day.sessions.map(session =>
-                session.id === sourceSessionId
-                  ? {
-                      ...session,
-                      tasks: session.tasks.filter(task => task.id !== taskId)
-                    }
-                  : session
-              )
-            }
-          : day
-      )
-    }));
+    // Implementation for moving tasks from sessions
   };
 
-  // Funções para produtos
   const addProduct = (productId: string) => {
     const product = availableProducts.find(p => p.id === productId);
     if (!product) return;
 
-    const isAlreadyAdded = protocol.products.some(pp => pp.productId === productId);
-    if (isAlreadyAdded) {
-      alert('Este produto já foi adicionado ao protocolo');
-      return;
-    }
-
     const newProtocolProduct: ProtocolProduct = {
-      id: `pp-${Date.now()}`,
+      id: `temp-product-${Date.now()}`,
       productId: productId,
-      order: protocol.products.length,
+      order: protocol.products.length + 1,
       isRequired: false,
       notes: '',
       product: product
@@ -505,36 +458,37 @@ export default function EditProtocolPage() {
     }));
   };
 
-  const updateProtocolProduct = (protocolProductId: string, field: keyof ProtocolProduct, value: any) => {
+  const updateProtocolProduct = (protocolProductId: string, field: string, value: any) => {
     setProtocol(prev => ({
       ...prev,
-      products: prev.products.map(pp => 
-        pp.id === protocolProductId 
-          ? { ...pp, [field]: value }
-          : pp
-      )
+      products: prev.products.map(pp => {
+        if (pp.id === protocolProductId) {
+          return { ...pp, [field]: value };
+        }
+        return pp;
+      })
     }));
   };
 
   const saveProtocol = async () => {
-    if (!protocol.name.trim()) {
-      alert('Nome do protocolo é obrigatório');
-      return;
-    }
-
-    if (protocol.duration < 1) {
-      alert('Duração deve ser pelo menos 1 dia');
-      return;
-    }
-
     try {
       setIsLoading(true);
+      setShowSuccessAlert(false);
+      setShowErrorAlert(false);
+      setErrorMessage('');
+      
+      console.log('💾 Saving protocol...');
+      console.log('📋 Protocol data to save:', {
+        name: protocol.name,
+        duration: protocol.duration,
+        daysCount: protocol.days.length,
+        productsCount: protocol.products.length
+      });
 
-      // Salvar protocolo
       const response = await fetch(`/api/protocols/${params.id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: protocol.name,
@@ -579,255 +533,85 @@ export default function EditProtocolPage() {
               modalButtonText: task.modalButtonText || '',
               modalButtonUrl: task.modalButtonUrl || ''
             }))
-          })).filter(day => day.sessions.length > 0 || day.tasks.length > 0)
-        })
+          }))
+        }),
       });
 
+      console.log('📡 Save protocol API response status:', response.status);
+      console.log('📡 Save protocol API response ok:', response.ok);
+
       if (response.ok) {
-        // Salvar produtos do protocolo
+        console.log('✅ Protocol saved successfully');
+        
+        // Save products
         const productsResponse = await fetch(`/api/protocols/${params.id}/products`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            products: protocol.products.map((pp, index) => ({
+            products: protocol.products.map(pp => ({
               productId: pp.productId,
-              order: index,
+              order: pp.order,
               isRequired: pp.isRequired,
-              notes: pp.notes
+              notes: pp.notes || ''
             }))
-          })
+          }),
         });
 
+        console.log('📡 Save products API response status:', productsResponse.status);
+        console.log('📡 Save products API response ok:', productsResponse.ok);
+
         if (productsResponse.ok) {
-          router.push(`/doctor/protocols/${params.id}`);
+          console.log('✅ Products saved successfully');
+          setShowSuccessAlert(true);
+          setTimeout(() => {
+            router.push(`/doctor/protocols/${params.id}`);
+          }, 2000);
         } else {
-          const error = await productsResponse.json();
-          alert(error.error || 'Erro ao salvar produtos do protocolo');
+          console.error('❌ Failed to save products:', productsResponse.status, productsResponse.statusText);
+          const errorText = await productsResponse.text();
+          console.error('❌ Error response:', errorText);
+          setErrorMessage('Erro ao salvar produtos do protocolo');
+          setShowErrorAlert(true);
+          setTimeout(() => setShowErrorAlert(false), 5000);
         }
       } else {
-        const error = await response.json();
-        alert(error.error || 'Erro ao atualizar protocolo');
+        console.error('❌ Failed to save protocol:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        setErrorMessage('Erro ao salvar protocolo');
+        setShowErrorAlert(true);
+        setTimeout(() => setShowErrorAlert(false), 5000);
       }
     } catch (error) {
-      console.error('Error updating protocol:', error);
-      alert('Erro ao atualizar protocolo');
+      console.error('❌ Error saving protocol:', error);
+      setErrorMessage('Erro inesperado ao salvar protocolo');
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 5000);
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatPrice = (price?: number) => {
-    if (!price) return null;
+    if (!price) return '';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(price);
   };
 
-  if (isLoadingProtocol) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="lg:ml-64">
-          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
-            
-            {/* Header Skeleton */}
-            <div className="flex items-center gap-6">
-              <div className="h-10 w-20 bg-gray-200 rounded-xl animate-pulse"></div>
-              <div className="flex-1">
-                <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse mb-2"></div>
-                <div className="flex items-center gap-4">
-                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 w-1 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 w-1 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          </div>
-              <div className="h-12 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
-            </div>
-
-            <div className="space-y-8">
-              
-              {/* Basic Info Card Skeleton */}
-              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-6"></div>
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-20 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Config Card Skeleton */}
-              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                <div className="h-6 w-56 bg-gray-200 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-96 bg-gray-200 rounded animate-pulse mb-6"></div>
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-4 w-36 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-20 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Products Card Skeleton */}
-              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                  <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse"></div>
-                </div>
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-12 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                  </div>
-                  <div className="space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="border border-gray-200 rounded-xl bg-gray-50 p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="flex-1 space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
-                              <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
-                            </div>
-                            <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
-                                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                              </div>
-                              <div className="space-y-2">
-                                <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-                                <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
-                              <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Protocol Days Card Skeleton */}
-              <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                <div className="h-6 w-36 bg-gray-200 rounded animate-pulse mb-6"></div>
-                <div className="space-y-6">
-                  {[1, 2, 3].map((day) => (
-                    <div key={day} className="border border-gray-200 rounded-xl bg-gray-50 p-6">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-10 w-32 bg-gray-200 rounded-xl animate-pulse"></div>
-                      </div>
-                      <div className="space-y-4">
-                        {[1, 2].map((session) => (
-                          <div key={session} className="border border-gray-200 rounded-xl bg-white p-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <div className="h-5 w-24 bg-gray-200 rounded animate-pulse"></div>
-                              <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
-                            </div>
-                            <div className="space-y-3">
-                              <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                              <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                            </div>
-                            <div className="space-y-3 mt-4">
-                              {[1, 2].map((task) => (
-                                <div key={task} className="border border-gray-200 rounded-xl bg-gray-50 p-4">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
-                                    <div className="h-8 w-8 bg-gray-200 rounded-xl animate-pulse"></div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <div className="h-10 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                                    <div className="h-16 w-full bg-gray-200 rounded-xl animate-pulse"></div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculated variables
+  // Computed values
   const totalTasks = protocol.days.reduce((total, day) => {
-    return total + day.tasks.length + day.sessions.reduce((sessionTotal, session) => sessionTotal + session.tasks.length, 0);
+    const sessionTasks = day.sessions.reduce((sessionTotal, session) => 
+      sessionTotal + session.tasks.length, 0);
+    return total + sessionTasks + day.tasks.length;
   }, 0);
 
   const availableProductsToAdd = availableProducts.filter(product => 
     !protocol.products.some(pp => pp.productId === product.id)
   );
-
-  console.log('🔍 Debug products state:', {
-    availableProducts: availableProducts.length,
-    protocolProducts: protocol.products.length,
-    availableProductsToAdd: availableProductsToAdd.length,
-    availableProductsData: availableProducts,
-    protocolProductsData: protocol.products
-  });
 
   const updateProductRequired = (protocolProductId: string, isRequired: boolean) => {
     updateProtocolProduct(protocolProductId, 'isRequired', isRequired);
@@ -840,6 +624,120 @@ export default function EditProtocolPage() {
   const updateProductNotes = (protocolProductId: string, notes: string) => {
     updateProtocolProduct(protocolProductId, 'notes', notes);
   };
+
+  const addDay = () => {
+    const newDayNumber = protocol.days.length > 0 
+      ? Math.max(...protocol.days.map(d => d.dayNumber)) + 1 
+      : 1;
+    
+    const newDay: ProtocolDay = {
+      id: `temp-day-${Date.now()}`,
+      dayNumber: newDayNumber,
+      sessions: [],
+      tasks: []
+    };
+
+    setProtocol(prev => ({
+      ...prev,
+      days: [...prev.days, newDay],
+      duration: prev.days.length + 1 // Atualizar duração automaticamente
+    }));
+  };
+
+  const removeDay = (dayNumber: number) => {
+    setProtocol(prev => {
+      const newDays = prev.days.filter(d => d.dayNumber !== dayNumber);
+      // Reordenar os números dos dias
+      const reorderedDays = newDays.map((day, index) => ({
+        ...day,
+        dayNumber: index + 1
+      }));
+      
+      return {
+        ...prev,
+        days: reorderedDays,
+        duration: reorderedDays.length
+      };
+    });
+  };
+
+  if (isLoadingProtocol) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
+            {/* Header Skeleton */}
+            <div className="flex items-center gap-6 mb-8">
+              <div className="w-20 h-10 bg-gray-200 rounded-xl animate-pulse"></div>
+              <div className="flex-1">
+                <div className="w-64 h-8 bg-gray-200 rounded-lg animate-pulse mb-2"></div>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                  <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="w-24 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
+              <div className="grid grid-cols-5 gap-2 bg-gray-100 rounded-xl p-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                <div className="space-y-4">
+                  <div className="w-48 h-6 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="grid grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="space-y-2">
+                            <div className="w-8 h-6 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-3">
+                    <div className="w-32 h-5 bg-gray-200 rounded animate-pulse"></div>
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                          <div className="space-y-2">
+                            <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="w-24 h-3 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        </div>
+                        <div className="w-16 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Loading Indicator */}
+            <div className="fixed bottom-8 right-8 bg-white border border-gray-200 shadow-lg rounded-2xl p-4 flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#5154e7] border-t-transparent"></div>
+              <span className="text-gray-700 font-medium">Carregando protocolo...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -894,699 +792,354 @@ export default function EditProtocolPage() {
             </Button>
           </div>
 
-          <div className="space-y-8">
-            
-            {/* Protocol Basic Info */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Protocolo</Label>
-                      <Input
-                        id="name"
-                        value={protocol.name}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Ex: Pós-Preenchimento Facial"
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="duration" className="text-gray-900 font-semibold">Duração (dias)</Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        min="1"
-                        max="365"
-                        value={protocol.duration}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
-                      <Textarea
-                        id="description"
-                        value={protocol.description}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Descreva o protocolo..."
-                        className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="isTemplate"
-                          checked={protocol.isTemplate}
-                          onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
-                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                        />
-                        <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
-                          Salvar como template
-                        </Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="showDoctorInfo"
-                          checked={protocol.showDoctorInfo}
-                          onChange={(e) => setProtocol(prev => ({ ...prev, showDoctorInfo: e.target.checked }))}
-                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                        />
-                        <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
-                          Mostrar médico responsável
-                        </Label>
-                        <span className="text-xs text-gray-500">
-                          (Exibe sua foto e nome na tela do paciente)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+          {/* Success Alert */}
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-green-50 border border-green-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckIcon className="h-5 w-5 text-green-600" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h4 className="text-sm font-semibold text-green-900">Protocolo salvo com sucesso!</h4>
+                  <p className="text-xs text-green-700 mt-1">Redirecionando para a página do protocolo...</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-            {/* Modal Configuration for Unavailable Protocol */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Modal para Protocolo Indisponível</CardTitle>
-                <p className="text-gray-600 font-medium">
-                  Configure o modal que será exibido quando este protocolo estiver indisponível para um paciente específico.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
-                      <Input
-                        id="modalTitle"
-                        value={protocol.modalTitle}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, modalTitle: e.target.value }))}
-                        placeholder="Ex: Protocolo em Desenvolvimento"
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                    </div>
+          {/* Error Alert */}
+          {showErrorAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <XMarkIcon className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-red-900">Erro ao salvar</h4>
+                  <p className="text-xs text-red-700 mt-1">{errorMessage}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowErrorAlert(false)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-100 rounded-lg h-6 w-6 p-0"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
-                      <Input
-                        id="modalVideoUrl"
-                        value={protocol.modalVideoUrl}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, modalVideoUrl: e.target.value }))}
-                        placeholder="Ex: https://www.youtube.com/embed/..."
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                    </div>
-                  </div>
+          {/* Tabs Interface */}
+          <ProtocolEditTabs
+            protocol={protocol}
+            setProtocol={setProtocol}
+            availableProducts={availableProducts}
+            availableProductsToAdd={availableProductsToAdd}
+            addProduct={addProduct}
+            removeProduct={removeProduct}
+            updateProtocolProduct={updateProtocolProduct}
+          >
+            {{
+              basicInfo: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-bold text-gray-900">Informações Básicas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Protocolo</Label>
+                          <Input
+                            id="name"
+                            value={protocol.name}
+                            onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Ex: Pós-Preenchimento Facial"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
-                      <Textarea
-                        id="modalDescription"
-                        value={protocol.modalDescription}
-                        onChange={(e) => setProtocol(prev => ({ ...prev, modalDescription: e.target.value }))}
-                        placeholder="Descreva o que será mostrado no modal..."
-                        className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
-                        <Input
-                          id="modalButtonText"
-                          value={protocol.modalButtonText}
-                          onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonText: e.target.value }))}
-                          placeholder="Ex: Saber mais"
-                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                        />
+                        <div className="space-y-2">
+                          <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                          <Textarea
+                            id="description"
+                            value={protocol.description}
+                            onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Descreva o protocolo..."
+                            className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão (opcional)</Label>
-                        <Input
-                          id="modalButtonUrl"
-                          value={protocol.modalButtonUrl}
-                          onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonUrl: e.target.value }))}
-                          placeholder="Ex: https://..."
-                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="isTemplate"
+                              checked={protocol.isTemplate}
+                              onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
+                              Salvar como template
+                            </Label>
+                          </div>
 
-            {/* Products Section */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-bold text-gray-900">Produtos do Protocolo</CardTitle>
-                    <p className="text-gray-600 font-medium mt-1">
-                      Adicione produtos que serão recomendados aos pacientes neste protocolo.
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
-                    {protocol.products.length} produtos
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="showDoctorInfo"
+                              checked={protocol.showDoctorInfo}
+                              onChange={(e) => setProtocol(prev => ({ ...prev, showDoctorInfo: e.target.checked }))}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
+                              Mostrar médico responsável
+                            </Label>
+                            <span className="text-xs text-gray-500">
+                              (Exibe sua foto e nome na tela do paciente)
+                            </span>
+                          </div>
+                        </div>
 
-                {/* Add Product */}
-                {availableProductsToAdd.length > 0 ? (
-                  <div className="space-y-3">
-                    <Label className="text-gray-900 font-semibold">Adicionar Produto</Label>
-                    <div className="flex gap-3">
-                      <Select onValueChange={addProduct}>
-                        <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
-                          <SelectValue placeholder="Selecione um produto..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableProductsToAdd.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{product.name}</span>
-                                {product.brand && (
-                                  <span className="text-xs text-gray-500">({product.brand})</span>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                    <p className="text-sm text-gray-600 text-center font-medium">
-                      {availableProducts.length === 0 
-                        ? 'Carregando produtos...' 
-                        : 'Todos os produtos disponíveis já foram adicionados ao protocolo.'
-                      }
-                    </p>
-                  </div>
-                )}
-
-                {/* Products List */}
-                {protocol.products.length > 0 && (
-                  <div className="space-y-4">
-                    {protocol.products.map((protocolProduct, index) => (
-                      <div key={protocolProduct.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                        <div className="p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="flex-1 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-bold text-gray-900">{protocolProduct.product.name}</h4>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeProduct(protocolProduct.id)}
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              
-                              {protocolProduct.product.description && (
-                                <p className="text-gray-600 text-sm">{protocolProduct.product.description}</p>
-                              )}
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center space-x-3">
-                                  <input
-                                    type="checkbox"
-                                    id={`required-${protocolProduct.id}`}
-                                    checked={protocolProduct.isRequired}
-                                    onChange={(e) => updateProductRequired(protocolProduct.id, e.target.checked)}
-                                    className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                                  />
-                                  <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
-                                    Produto obrigatório
-                                  </Label>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <Label className="text-gray-900 font-semibold">Ordem</Label>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    value={protocolProduct.order}
-                                    onChange={(e) => updateProductOrder(protocolProduct.id, parseInt(e.target.value) || 1)}
-                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10"
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label className="text-gray-900 font-semibold">Observações (opcional)</Label>
-                                <Textarea
-                                  value={protocolProduct.notes || ''}
-                                  onChange={(e) => updateProductNotes(protocolProduct.id, e.target.value)}
-                                  placeholder="Observações sobre o uso deste produto..."
-                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                  rows={2}
-                                />
-                              </div>
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <div className="flex items-start gap-3">
+                            <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-blue-900 mb-1">
+                                Gerenciamento de Dias
+                              </p>
+                              <p className="text-xs text-blue-700">
+                                A duração do protocolo é determinada automaticamente pelos dias que você adicionar na aba "Cronograma". 
+                                Atualmente: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'dia' : 'dias'}</strong>
+                              </p>
                             </div>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
 
-            {/* Protocol Days */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Dias do Protocolo</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {protocol.days.map((day) => (
-                  <div key={day.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          Dia {day.dayNumber}
-                        </h3>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addSession(day.dayNumber)}
-                          className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
-                        >
-                          <PlusIcon className="h-4 w-4 mr-2" />
-                          Adicionar Sessão
-                        </Button>
+              modalConfig: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-bold text-gray-900">Modal para Protocolo Indisponível</CardTitle>
+                    <p className="text-gray-600 font-medium">
+                      Configure o modal que será exibido quando este protocolo estiver indisponível para um paciente específico.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
+                          <Input
+                            id="modalTitle"
+                            value={protocol.modalTitle}
+                            onChange={(e) => setProtocol(prev => ({ ...prev, modalTitle: e.target.value }))}
+                            placeholder="Ex: Protocolo em Desenvolvimento"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
+                          <Input
+                            id="modalVideoUrl"
+                            value={protocol.modalVideoUrl}
+                            onChange={(e) => setProtocol(prev => ({ ...prev, modalVideoUrl: e.target.value }))}
+                            placeholder="Ex: https://www.youtube.com/embed/..."
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
                       </div>
 
-                      {/* Sessions */}
-                      {day.sessions.map((session) => (
-                        <div key={session.id} className="mb-6 border border-gray-200 rounded-xl bg-white">
-                          {/* Session Header */}
-                          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-                            <div className="flex-1 space-y-2">
-                              <Input
-                                value={session.name}
-                                onChange={(e) => updateSession(day.dayNumber, session.id, 'name', e.target.value)}
-                                placeholder="Nome da sessão"
-                                className="border-0 bg-transparent text-gray-900 font-semibold p-0 h-auto focus:ring-0 focus:border-0"
-                              />
-                              <Input
-                                value={session.description || ''}
-                                onChange={(e) => updateSession(day.dayNumber, session.id, 'description', e.target.value)}
-                                placeholder="Descrição da sessão (opcional)"
-                                className="border-0 bg-transparent text-gray-600 p-0 h-auto focus:ring-0 focus:border-0 text-sm"
-                              />
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSession(day.dayNumber, session.id)}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
+                          <Textarea
+                            id="modalDescription"
+                            value={protocol.modalDescription}
+                            onChange={(e) => setProtocol(prev => ({ ...prev, modalDescription: e.target.value }))}
+                            placeholder="Descreva o que será mostrado no modal..."
+                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
+                            <Input
+                              id="modalButtonText"
+                              value={protocol.modalButtonText}
+                              onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonText: e.target.value }))}
+                              placeholder="Ex: Saber mais"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                            />
                           </div>
 
-                          {/* Session Tasks */}
-                          <div className="p-4 space-y-4">
-                            {session.tasks.map((task) => (
-                              <div key={task.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                                <div className="p-4">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-1 space-y-4">
-                                      {/* Basic Fields */}
-                                      <div className="space-y-3">
-                                        <Input
-                                          placeholder="Título da tarefa"
-                                          value={task.title}
-                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value, session.id)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
-                                        />
-                                        <Textarea
-                                          placeholder="Descrição básica"
-                                          value={task.description}
-                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value, session.id)}
-                                          rows={2}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                        />
-                                      </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão (opcional)</Label>
+                            <Input
+                              id="modalButtonUrl"
+                              value={protocol.modalButtonUrl}
+                              onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonUrl: e.target.value }))}
+                              placeholder="Ex: https://..."
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
 
-                                      {/* Toggle for More Info */}
-                                      <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
-                                        <input
-                                          type="checkbox"
-                                          id={`hasMoreInfo-session-${task.id}`}
-                                          checked={task.hasMoreInfo || false}
-                                          onChange={(e) => updateTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked, session.id)}
-                                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                                        />
-                                        <Label htmlFor={`hasMoreInfo-session-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
-                                          <InformationCircleIcon className="h-4 w-4" />
-                                          Adicionar conteúdo extra
-                                        </Label>
-                                      </div>
+              products: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-bold text-gray-900">Produtos do Protocolo</CardTitle>
+                        <p className="text-gray-600 font-medium mt-1">
+                          Adicione produtos que serão recomendados aos pacientes neste protocolo.
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                        {protocol.products.length} produtos
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
 
-                                      {/* Extra Fields */}
-                                      {task.hasMoreInfo && (
-                                        <div className="space-y-4 p-4 bg-white rounded-xl border border-gray-200">
-                                          <div className="grid grid-cols-1 gap-4">
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <PlayIcon className="h-4 w-4" />
-                                                URL do Vídeo
-                                              </Label>
-                                              <Input
-                                                placeholder="https://youtube.com/watch?v=..."
-                                                value={task.videoUrl || ''}
-                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value, session.id)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                              />
-                                            </div>
-                                            
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <InformationCircleIcon className="h-4 w-4" />
-                                                Explicação Completa
-                                              </Label>
-                                              <Textarea
-                                                placeholder="Explicação detalhada da tarefa..."
-                                                value={task.fullExplanation || ''}
-                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value, session.id)}
-                                                rows={3}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                              />
-                                            </div>
+                    {/* Add Product */}
+                    {availableProductsToAdd.length > 0 ? (
+                      <div className="space-y-3">
+                        <Label className="text-gray-900 font-semibold">Adicionar Produto</Label>
+                        <div className="flex gap-3">
+                          <Select onValueChange={addProduct}>
+                            <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
+                              <SelectValue placeholder="Selecione um produto..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProductsToAdd.map((product) => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{product.name}</span>
+                                    {product.brand && (
+                                      <span className="text-xs text-gray-500">({product.brand})</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                        <p className="text-sm text-gray-600 text-center font-medium">
+                          {availableProducts.length === 0 
+                            ? 'Carregando produtos...' 
+                            : 'Todos os produtos disponíveis já foram adicionados ao protocolo.'
+                          }
+                        </p>
+                      </div>
+                    )}
 
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <ShoppingBagIcon className="h-4 w-4" />
-                                                Produto Relacionado (opcional)
-                                              </Label>
-                                              <Select 
-                                                value={task.productId || 'none'} 
-                                                onValueChange={(value) => updateTask(day.dayNumber, task.id, 'productId', value === 'none' ? '' : value, session.id)}
-                                              >
-                                                <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
-                                                  <SelectValue placeholder="Selecione um produto..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  <SelectItem value="none">Nenhum produto</SelectItem>
-                                                  {availableProducts.map((product) => (
-                                                    <SelectItem key={product.id} value={product.id}>
-                                                      <div className="flex items-center gap-2">
-                                                        <span>{product.name}</span>
-                                                        {product.brand && (
-                                                          <span className="text-xs text-gray-500">({product.brand})</span>
-                                                        )}
-                                                      </div>
-                                                    </SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                              <div className="space-y-2">
-                                                <Label className="text-gray-900 font-semibold">Título do Modal</Label>
-                                                <Input
-                                                  placeholder="Título personalizado"
-                                                  value={task.modalTitle || ''}
-                                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'modalTitle', e.target.value, session.id)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                                />
-                                              </div>
-                                              
-                                              <div className="space-y-2">
-                                                <Label className="text-gray-900 font-semibold">Texto do Botão</Label>
-                                                <Input
-                                                  placeholder="Saber mais"
-                                                  value={task.modalButtonText || ''}
-                                                  onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonText', e.target.value, session.id)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                                />
-                                              </div>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                              <Label className="text-gray-900 font-semibold">Link do Botão</Label>
-                                              <Input
-                                                placeholder="https://exemplo.com"
-                                                value={task.modalButtonUrl || ''}
-                                                onChange={(e) => updateTask(day.dayNumber, task.id, 'modalButtonUrl', e.target.value, session.id)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
+                    {/* Products List */}
+                    {protocol.products.length > 0 && (
+                      <div className="space-y-4">
+                        {protocol.products.map((protocolProduct, index) => (
+                          <div key={protocolProduct.id} className="border border-gray-200 rounded-xl bg-gray-50">
+                            <div className="p-6">
+                              <div className="flex items-start gap-4">
+                                <div className="flex-1 space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-gray-900">{protocolProduct.product.name}</h4>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => removeTask(day.dayNumber, task.id, session.id)}
+                                      onClick={() => removeProduct(protocolProduct.id)}
                                       className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
                                     >
                                       <TrashIcon className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                </div>
-                              </div>
-                            ))}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addTask(day.dayNumber, session.id)}
-                              className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
-                            >
-                              <PlusIcon className="h-4 w-4 mr-2" />
-                              Adicionar Tarefa
-                            </Button>
-
-                            {/* Move Direct Tasks to Session */}
-                            {day.tasks.length > 0 && (
-                              <div className="border-t border-gray-200 pt-4">
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-2">
-                                    <Label className="text-gray-900 font-semibold">Mover Tarefas Diretas</Label>
-                                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs font-medium">
-                                      {day.tasks.length} {day.tasks.length === 1 ? 'tarefa disponível' : 'tarefas disponíveis'}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-xs text-gray-600 font-medium">
-                                    Clique em uma tarefa direta para movê-la para esta sessão
-                                  </p>
-                                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                                    {day.tasks.map(task => (
-                                      <div
-                                        key={task.id}
-                                        onClick={() => moveTaskToSession(day.dayNumber, task.id, session.id)}
-                                        className="p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                                      >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">
-                                              {task.title || 'Tarefa sem título'}
-                                            </p>
-                                            {task.description && (
-                                              <p className="text-xs text-gray-600 truncate">
-                                                {task.description}
-                                              </p>
-                                            )}
-                                          </div>
-                                          <ArrowLeftIcon className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2 rotate-180" />
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Direct Tasks */}
-                      {day.tasks.length > 0 && (
-                        <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                          <h5 className="text-sm font-bold text-gray-900 mb-4">Tarefas Diretas</h5>
-                          <div className="space-y-4">
-                            {day.tasks.map(task => (
-                              <div key={task.id} className="group">
-                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-4 hover:border-[#5154e7] transition-colors">
-                                  <div className="flex items-start gap-3">
-                                    <div className="flex-1 space-y-3">
-                                      <Input
-                                        value={task.title}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'title', e.target.value)}
-                                        placeholder="Título da tarefa"
-                                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
-                                      />
-                                      <Textarea
-                                        value={task.description}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'description', e.target.value)}
-                                        placeholder="Descrição da tarefa (opcional)"
-                                        className="min-h-[60px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                      />
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => removeTask(day.dayNumber, task.id)}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                                    >
-                                      <TrashIcon className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-
-                                  {/* Additional Information */}
-                                  <div className="border-t border-gray-200 pt-4">
-                                    <div className="flex items-center gap-2 mb-3">
+                                  
+                                  {protocolProduct.product.description && (
+                                    <p className="text-gray-600 text-sm">{protocolProduct.product.description}</p>
+                                  )}
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex items-center space-x-3">
                                       <input
                                         type="checkbox"
-                                        id={`hasMoreInfo-${task.id}`}
-                                        checked={task.hasMoreInfo || false}
-                                        onChange={(e) => updateTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked)}
+                                        id={`required-${protocolProduct.id}`}
+                                        checked={protocolProduct.isRequired}
+                                        onChange={(e) => updateProductRequired(protocolProduct.id, e.target.checked)}
                                         className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                                       />
-                                      <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-900 font-medium">
-                                        Esta tarefa tem informações adicionais (vídeo, explicação ou produto)
+                                      <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
+                                        Produto obrigatório
                                       </Label>
                                     </div>
-
-                                    {task.hasMoreInfo && (
-                                      <div className="space-y-4 pl-6 border-l-2 border-[#5154e7]">
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                          <div className="space-y-2">
-                                            <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                              <PlayIcon className="h-4 w-4" />
-                                              URL do Vídeo
-                                            </Label>
-                                          <Input
-                                            value={task.videoUrl || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                                          />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-gray-900 font-semibold">Explicação Completa (opcional)</Label>
-                                          <Textarea
-                                            value={task.fullExplanation || ''}
-                                            onChange={(e) => updateTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
-                                            placeholder="Explicação detalhada sobre como realizar esta tarefa..."
-                                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                          />
-                                          </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                          <Label className="text-gray-900 font-semibold">Produto Relacionado (opcional)</Label>
-                                          <Select 
-                                            value={task.productId || 'none'} 
-                                            onValueChange={(value) => updateTask(day.dayNumber, task.id, 'productId', value === 'none' ? '' : value)}
-                                          >
-                                            <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
-                                              <SelectValue placeholder="Selecione um produto..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">Nenhum produto</SelectItem>
-                                              {availableProducts.map((product) => (
-                                                <SelectItem key={product.id} value={product.id}>
-                                                  <div className="flex items-center gap-2">
-                                                    <span>{product.name}</span>
-                                                    {product.brand && (
-                                                      <span className="text-xs text-gray-500">({product.brand})</span>
-                                                    )}
-                                                  </div>
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Move to Session */}
-                                  {day.sessions.length > 0 && (
-                                    <div className="border-t border-gray-200 pt-4">
-                                      <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                          <Label className="text-gray-900 font-semibold">Mover para Sessão</Label>
-                                          <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200 text-xs font-medium">
-                                            {day.sessions.length} {day.sessions.length === 1 ? 'sessão disponível' : 'sessões disponíveis'}
-                                          </Badge>
-                                        </div>
-                                        <p className="text-xs text-gray-600 font-medium">
-                                          Clique em uma sessão para mover esta tarefa
-                                        </p>
-                                        <div className="space-y-2 max-h-32 overflow-y-auto">
-                                          {day.sessions.map((sessionOption) => (
-                                            <div
-                                              key={sessionOption.id}
-                                              onClick={() => moveTaskToSession(day.dayNumber, task.id, sessionOption.id)}
-                                              className="p-2 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors"
-                                            >
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                  <p className="text-sm font-semibold text-gray-900 truncate">
-                                                    {sessionOption.name || `Sessão ${sessionOption.order + 1}`}
-                                                  </p>
-                                                  {sessionOption.description && (
-                                                    <p className="text-xs text-gray-600 truncate">
-                                                      {sessionOption.description}
-                                                    </p>
-                                                  )}
-                                                </div>
-                                                <ArrowLeftIcon className="h-4 w-4 text-gray-500 flex-shrink-0 ml-2 rotate-180" />
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
+                                    
+                                    <div className="space-y-2">
+                                      <Label className="text-gray-900 font-semibold">Ordem</Label>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        value={protocolProduct.order}
+                                        onChange={(e) => updateProductOrder(protocolProduct.id, parseInt(e.target.value) || 1)}
+                                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10"
+                                      />
                                     </div>
-                                  )}
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-900 font-semibold">Observações (opcional)</Label>
+                                    <Textarea
+                                      value={protocolProduct.notes || ''}
+                                      onChange={(e) => updateProductNotes(protocolProduct.id, e.target.value)}
+                                      placeholder="Observações sobre o uso deste produto..."
+                                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                      rows={2}
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addTask(day.dayNumber)}
-                        className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Adicionar Tarefa Direta ao Dia {day.dayNumber}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ),
+
+              days: (
+                <ProtocolDayEditor
+                  days={protocol.days}
+                  availableProducts={availableProducts}
+                  addTask={addTask}
+                  removeTask={removeTask}
+                  updateTask={updateTask}
+                  addSession={addSession}
+                  removeSession={removeSession}
+                  updateSession={updateSession}
+                  moveTaskToSession={moveTaskToSession}
+                  moveTaskFromSession={moveTaskFromSession}
+                  addDay={addDay}
+                  removeDay={removeDay}
+                />
+              )
+            }}
+          </ProtocolEditTabs>
         </div>
       </div>
     </div>

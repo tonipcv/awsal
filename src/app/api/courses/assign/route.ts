@@ -95,7 +95,13 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            description: true
+            description: true,
+            _count: {
+              select: {
+                modules: true,
+                assignments: true
+              }
+            }
           }
         },
         user: {
@@ -108,7 +114,23 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(assignment, { status: 201 });
+    // Transform to match frontend interface
+    const transformedAssignment = {
+      id: assignment.id,
+      startDate: assignment.enrolledAt,
+      status: 'active',
+      course: {
+        id: assignment.course.id,
+        name: assignment.course.title, // Map title to name
+        description: assignment.course.description,
+        _count: {
+          modules: assignment.course._count.modules,
+          lessons: 0 // Will need to calculate this properly if needed
+        }
+      }
+    };
+
+    return NextResponse.json(transformedAssignment, { status: 201 });
   } catch (error) {
     console.error('Error assigning course:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -159,7 +181,13 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            description: true
+            description: true,
+            _count: {
+              select: {
+                modules: true,
+                assignments: true
+              }
+            }
           }
         },
         user: {
@@ -175,7 +203,23 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(assignments);
+    // Transform to match frontend interface
+    const transformedAssignments = assignments.map(assignment => ({
+      id: assignment.id,
+      startDate: assignment.enrolledAt,
+      status: 'active', // Default status for now
+      course: {
+        id: assignment.course.id,
+        name: assignment.course.title, // Map title to name
+        description: assignment.course.description,
+        _count: {
+          modules: assignment.course._count.modules,
+          lessons: 0 // Will need to calculate this properly if needed
+        }
+      }
+    }));
+
+    return NextResponse.json(transformedAssignments);
   } catch (error) {
     console.error('Error fetching course assignments:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

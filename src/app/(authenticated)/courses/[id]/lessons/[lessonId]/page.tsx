@@ -7,10 +7,12 @@ import {
   ArrowLeftIcon,
   CheckCircleIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { cn } from "@/lib/utils";
 
 interface Lesson {
   id: string;
@@ -254,67 +256,39 @@ export default function LessonPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
-        {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
-          <div className="max-w-6xl mx-auto px-3 lg:px-6 py-4 lg:py-6">
+        <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64">
+          <div className="max-w-4xl mx-auto px-4 py-4 lg:px-6 lg:py-6">
             
             {/* Header Skeleton */}
-            <div className="mb-4 lg:mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="h-3 bg-gray-700/50 rounded w-24 animate-pulse"></div>
-                  <div className="h-3 bg-gray-700/50 rounded w-2 animate-pulse"></div>
-                  <div className="h-3 bg-gray-700/50 rounded w-32 animate-pulse"></div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="h-4 bg-gray-700/50 rounded w-12 animate-pulse"></div>
-                  <div className="h-6 bg-gray-800/50 rounded w-20 animate-pulse"></div>
-                </div>
+            <div className="mb-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-5 w-5 bg-gray-800/50 rounded animate-pulse"></div>
+                <div className="h-6 w-px bg-gray-700/50"></div>
+                <div className="h-5 bg-gray-800/50 rounded w-48 animate-pulse"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="h-7 bg-gray-800/50 rounded w-80 animate-pulse"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-64 animate-pulse"></div>
               </div>
             </div>
 
-            {/* Lesson Header Skeleton */}
-            <div className="space-y-2 lg:space-y-3 mb-4 lg:mb-6">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="h-7 lg:h-9 bg-gray-800/50 rounded w-80 animate-pulse"></div>
-                </div>
-                <div className="h-7 w-16 bg-gray-800/50 rounded animate-pulse"></div>
-              </div>
-              <div className="h-4 lg:h-5 bg-gray-700/50 rounded w-96 animate-pulse"></div>
-              <div className="h-3 bg-gray-700/30 rounded w-24 animate-pulse"></div>
-            </div>
-
-            {/* Video Player Skeleton */}
-            <div className="flex justify-center mb-4 lg:mb-6">
-              <div className="w-full max-w-4xl bg-gray-900/40 border border-gray-800/40 rounded-lg overflow-hidden backdrop-blur-sm">
-                <div className="aspect-video bg-gray-800/50 animate-pulse"></div>
-              </div>
+            {/* Video Skeleton */}
+            <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 mb-6 backdrop-blur-sm">
+              <div className="aspect-video bg-gray-800/50 rounded-lg animate-pulse"></div>
             </div>
 
             {/* Content Skeleton */}
-            <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm mb-4 lg:mb-6">
-              <div className="h-5 bg-gray-800/50 rounded w-32 mb-2 lg:mb-3 animate-pulse"></div>
+            <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 mb-6 backdrop-blur-sm">
+              <div className="h-5 bg-gray-800/50 rounded w-32 mb-3 animate-pulse"></div>
               <div className="space-y-2">
                 <div className="h-4 bg-gray-700/50 rounded w-full animate-pulse"></div>
                 <div className="h-4 bg-gray-700/50 rounded w-5/6 animate-pulse"></div>
-                <div className="h-4 bg-gray-700/50 rounded w-4/5 animate-pulse"></div>
               </div>
             </div>
 
             {/* Action Button Skeleton */}
-            <div className="flex justify-center pt-2 mb-4 lg:mb-6">
-              <div className="h-8 lg:h-9 bg-gray-800/50 rounded w-40 animate-pulse"></div>
-            </div>
-
-            {/* Navigation Skeleton */}
-            <div className="flex justify-between gap-2 lg:gap-3 pt-3 lg:pt-4 border-t border-gray-800/40">
-              <div className="flex-1">
-                <div className="h-12 lg:h-16 bg-gray-800/30 rounded w-full animate-pulse"></div>
-              </div>
-              <div className="flex-1">
-                <div className="h-12 lg:h-16 bg-gray-800/30 rounded w-full animate-pulse"></div>
-              </div>
+            <div className="flex justify-center mb-6">
+              <div className="h-10 bg-gray-800/50 rounded w-48 animate-pulse"></div>
             </div>
 
           </div>
@@ -326,8 +300,13 @@ export default function LessonPage() {
   if (!course || !currentLesson) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
-          <span className="text-gray-400">Aula não encontrada</span>
+        <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-white mb-4">Aula não encontrada</h2>
+            <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold">
+              <Link href={`/courses/${courseId}`}>Voltar ao Curso</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -336,72 +315,61 @@ export default function LessonPage() {
   const currentModule = getCurrentModule();
 
   return (
-    <div className="min-h-screen bg-black pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
-      {/* Header */}
-      <div className="sticky top-[88px] lg:top-0 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/80 z-10 border-b border-gray-800/40">
-        <div className="max-w-6xl mx-auto px-3 lg:px-6 py-2 lg:py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400 min-w-0 flex-1">
-              <span className="truncate">{course.name}</span>
-              {currentModule && (
-                <>
-                  <span>•</span>
-                  <span className="truncate">{currentModule.name}</span>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {currentLesson.duration && (
-                <span className="text-xs text-gray-400 hidden sm:inline">
-                  {formatDuration(currentLesson.duration)}
-                </span>
-              )}
-              {isCompleted && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                  Concluída
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-3 lg:px-6">
-        <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
+    <div className="min-h-screen bg-black">
+      <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="max-w-4xl mx-auto px-4 py-4 lg:px-6 lg:py-6">
           
-          {/* Lesson Header */}
-          <div className="space-y-2 lg:space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-lg lg:text-2xl font-light text-white leading-tight">
-                  {currentLesson.title}
-                </h1>
-              </div>
-              <Button variant="ghost" size="sm" asChild className="text-gray-300 hover:text-white flex-shrink-0 h-7 px-2">
+          {/* Header Section */}
+          <div className="mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
                 <Link href={`/courses/${courseId}`}>
-                  <ArrowLeftIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
-                  <span className="hidden sm:inline text-xs lg:text-sm">Voltar</span>
+                  <ArrowLeftIcon className="h-5 w-5" />
                 </Link>
               </Button>
-            </div>
-            {currentLesson.description && (
-              <p className="text-sm lg:text-base text-gray-300 leading-relaxed">
-                {currentLesson.description}
-              </p>
-            )}
-            {currentLesson.duration && (
-              <div className="text-xs text-gray-400">
-                Duração: {formatDuration(currentLesson.duration)}
+              <div className="h-6 w-px bg-gray-700/50" />
+              <div className="flex items-center gap-2 text-sm text-gray-400 min-w-0 flex-1">
+                <span className="truncate">{course.name}</span>
+                {currentModule && (
+                  <>
+                    <span>•</span>
+                    <span className="truncate">{currentModule.name}</span>
+                  </>
+                )}
               </div>
-            )}
+              <div className="flex items-center gap-3">
+                {currentLesson.duration && (
+                  <div className="flex items-center gap-1 text-sm text-gray-400">
+                    <ClockIcon className="h-4 w-4" />
+                    {formatDuration(currentLesson.duration)}
+                  </div>
+                )}
+                {isCompleted && (
+                  <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-sm">
+                    Concluída
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Lesson Title and Description */}
+            <div className="space-y-3">
+              <h1 className="text-xl lg:text-2xl font-medium text-white leading-tight">
+                {currentLesson.title}
+              </h1>
+              {currentLesson.description && (
+                <p className="text-gray-300 leading-relaxed">
+                  {currentLesson.description}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Video Player */}
           {currentLesson.videoUrl && (
-            <div className="flex justify-center">
-              <div className="w-full max-w-4xl bg-gray-900/40 border border-gray-800/40 rounded-lg overflow-hidden backdrop-blur-sm relative">
-                <div className="aspect-video relative">
+            <div className="mb-6">
+              <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 lg:p-6 backdrop-blur-sm">
+                <div className="aspect-video rounded-lg overflow-hidden bg-gray-900/50">
                   <iframe
                     src={processYouTubeUrl(currentLesson.videoUrl)}
                     className="w-full h-full"
@@ -411,21 +379,6 @@ export default function LessonPage() {
                     sandbox="allow-scripts allow-same-origin allow-presentation"
                     referrerPolicy="no-referrer"
                   />
-                  {/* Overlay to prevent right-click and other interactions */}
-                  <div 
-                    className="absolute inset-0 bg-transparent"
-                    onContextMenu={(e) => e.preventDefault()}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onDragStart={(e) => e.preventDefault()}
-                    style={{ 
-                      zIndex: 1,
-                      pointerEvents: 'none',
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      MozUserSelect: 'none',
-                      msUserSelect: 'none'
-                    }}
-                  />
                 </div>
               </div>
             </div>
@@ -433,37 +386,94 @@ export default function LessonPage() {
 
           {/* Lesson Content */}
           {currentLesson.content && (
-            <div className="bg-gray-900/40 border border-gray-800/40 rounded-lg p-3 lg:p-4 backdrop-blur-sm">
-              <h3 className="text-sm lg:text-base font-light text-white mb-2 lg:mb-3">Conteúdo da Aula</h3>
-              <div className="prose prose-sm lg:prose-base prose-invert max-w-none">
-                <p className="text-gray-300 whitespace-pre-wrap leading-relaxed text-xs lg:text-sm">
-                  {currentLesson.content}
-                </p>
+            <div className="mb-6">
+              <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 lg:p-6 backdrop-blur-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-white">
+                    Conteúdo da Aula
+                  </h3>
+                  {/* Button only visible on desktop */}
+                  <Button 
+                    onClick={markAsCompleted}
+                    disabled={isCompleted || isMarkingComplete}
+                    size="sm"
+                    className={cn(
+                      "hidden lg:flex px-4 py-2 text-sm font-medium transition-all duration-200",
+                      isCompleted 
+                        ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
+                        : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
+                    )}
+                  >
+                    {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
+                  </Button>
+                </div>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {currentLesson.content}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-center pt-2">
+          {/* Button for mobile (always) and desktop (only when no content) */}
+          <div className="flex justify-center mb-6 lg:hidden">
             <Button 
               onClick={markAsCompleted}
               disabled={isCompleted || isMarkingComplete}
-              className="bg-turquoise hover:bg-turquoise/90 text-black disabled:opacity-50 px-4 lg:px-6 py-1.5 lg:py-2 text-xs lg:text-sm font-medium"
+              size="sm"
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-all duration-200",
+                isCompleted 
+                  ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
+                  : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
+              )}
             >
-              {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Aula Concluída' : 'Marcar como Concluída'}
+              {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
             </Button>
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between gap-2 lg:gap-3 pt-3 lg:pt-4 border-t border-gray-800/40">
-            <div className="flex-1">
+          {/* If no content, show button separately on desktop */}
+          {!currentLesson.content && (
+            <div className="hidden lg:flex justify-center mb-6">
+              <Button 
+                onClick={markAsCompleted}
+                disabled={isCompleted || isMarkingComplete}
+                size="sm"
+                className={cn(
+                  "px-4 py-2 text-sm font-medium transition-all duration-200",
+                  isCompleted 
+                    ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
+                    : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
+                )}
+              >
+                {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
+              </Button>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Fixed Navigation at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-gray-800/60 lg:ml-64 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-3 lg:px-6">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Previous Lesson */}
+            <div>
               {navigation.previous ? (
-                <Button variant="ghost" asChild className="w-full text-gray-300 hover:text-white hover:bg-gray-800/30 p-2 lg:p-3 h-auto justify-start">
+                <Button 
+                  variant="ghost" 
+                  asChild 
+                  className="w-full h-auto p-3 text-left bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
+                >
                   <Link href={`/courses/${courseId}/lessons/${navigation.previous.id}`}>
-                    <ChevronLeftIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2 flex-shrink-0" />
-                    <div className="text-left min-w-0">
-                      <div className="text-xs text-gray-400 hidden sm:block">Anterior</div>
-                      <div className="text-xs lg:text-sm font-light truncate">{navigation.previous.title}</div>
+                    <div className="flex items-center gap-2">
+                      <ChevronLeftIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs text-turquoise font-medium">Anterior</div>
+                        <div className="text-sm text-white font-medium truncate">{navigation.previous.title}</div>
+                      </div>
                     </div>
                   </Link>
                 </Button>
@@ -471,26 +481,39 @@ export default function LessonPage() {
                 <div></div>
               )}
             </div>
-            
-            <div className="flex-1">
+
+            {/* Next Lesson */}
+            <div>
               {navigation.next ? (
-                <Button variant="ghost" asChild className="w-full text-gray-300 hover:text-white hover:bg-gray-800/30 p-2 lg:p-3 h-auto justify-end">
+                <Button 
+                  variant="ghost" 
+                  asChild 
+                  className="w-full h-auto p-3 text-right bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
+                >
                   <Link href={`/courses/${courseId}/lessons/${navigation.next.id}`}>
-                    <div className="text-right min-w-0">
-                      <div className="text-xs text-gray-400 hidden sm:block">Próxima</div>
-                      <div className="text-xs lg:text-sm font-light truncate">{navigation.next.title}</div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <div className="min-w-0">
+                        <div className="text-xs text-turquoise font-medium">Próxima</div>
+                        <div className="text-sm text-white font-medium truncate">{navigation.next.title}</div>
+                      </div>
+                      <ChevronRightIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
                     </div>
-                    <ChevronRightIcon className="h-3 w-3 lg:h-4 lg:w-4 ml-1 lg:ml-2 flex-shrink-0" />
                   </Link>
                 </Button>
               ) : (
-                <Button variant="ghost" asChild className="w-full text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 p-2 lg:p-3 h-auto justify-end">
+                <Button 
+                  variant="ghost" 
+                  asChild 
+                  className="w-full h-auto p-3 text-right bg-turquoise/10 border border-turquoise/30 rounded-lg hover:bg-turquoise/20 transition-all duration-200"
+                >
                   <Link href={`/courses/${courseId}`}>
-                    <div className="text-right">
-                      <div className="text-xs text-turquoise hidden sm:block">Finalizar</div>
-                      <div className="text-xs lg:text-sm font-light">Voltar ao Curso</div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <div className="min-w-0">
+                        <div className="text-xs text-turquoise font-medium">Finalizar</div>
+                        <div className="text-sm text-turquoise font-medium">Voltar ao Curso</div>
+                      </div>
+                      <CheckCircleIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
                     </div>
-                    <CheckCircleIcon className="h-3 w-3 lg:h-4 lg:w-4 ml-1 lg:ml-2 flex-shrink-0" />
                   </Link>
                 </Button>
               )}

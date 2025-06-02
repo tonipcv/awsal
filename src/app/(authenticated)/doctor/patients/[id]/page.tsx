@@ -211,8 +211,25 @@ export default function PatientDetailPage() {
   };
 
   const getAvailableCoursesForAssignment = () => {
-    const assignedCourseIds = patient?.assignedCourses?.map(ac => ac.course.id) || [];
-    return availableCourses.filter(course => !assignedCourseIds.includes(course.id));
+    if (!patient) return [];
+    return availableCourses.filter(course => 
+      !patient.assignedCourses?.some(assignment => assignment.course.id === course.id)
+    );
+  };
+
+  const safeFormatDate = (dateValue: any, fallback: string = 'Invalid date') => {
+    if (!dateValue) return fallback;
+    
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) {
+        return fallback;
+      }
+      return format(date, 'MMM dd, yyyy', { locale: enUS });
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Value:', dateValue);
+      return fallback;
+    }
   };
 
   const getProtocolProgress = (assignment: ProtocolAssignment) => {
@@ -562,7 +579,7 @@ export default function PatientDetailPage() {
                                 <div className="flex items-center gap-1">
                                     <CalendarDaysIcon className="h-4 w-4" />
                                   <span>
-                                      Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
+                                      Started {safeFormatDate(assignment.startDate)}
                                   </span>
                                   </div>
                                 </div>
@@ -653,7 +670,7 @@ export default function PatientDetailPage() {
                               <div className="flex items-center gap-1">
                                   <CalendarDaysIcon className="h-4 w-4" />
                                 <span>
-                                    Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
+                                    Started {safeFormatDate(assignment.startDate)}
                                 </span>
                                 </div>
                               </div>
@@ -740,8 +757,8 @@ export default function PatientDetailPage() {
                                 </div>
                                   <p className="text-sm text-gray-600">
                                   {assignment.status === 'INACTIVE' 
-                                      ? `Completed ${format(new Date(assignment.endDate), 'MMM dd, yyyy', { locale: enUS })}`
-                                      : `Started ${format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}`
+                                      ? `Completed ${safeFormatDate(assignment.endDate)}`
+                                      : `Started ${safeFormatDate(assignment.startDate)}`
                                   }
                                 </p>
                               </div>
@@ -783,7 +800,7 @@ export default function PatientDetailPage() {
                                     <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Course</Badge>
                                   </div>
                                   <p className="text-sm text-gray-600">
-                                    Started {format(new Date(assignment.startDate), 'MMM dd, yyyy', { locale: enUS })}
+                                    Started {safeFormatDate(assignment.startDate)}
                                   </p>
                                 </div>
                               </div>
