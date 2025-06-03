@@ -518,8 +518,8 @@ export default function ProtocolChecklistPage() {
           <div className="mb-8 lg:mb-12">
             <div className="flex items-center gap-4 mb-4">
               <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
-                <Link href="/protocols">
-                  <ArrowLeftIcon className="h-5 w-5" />
+                <Link href="/patient/protocols">
+                  <ArrowLeftIcon className="h-4 w-4" />
                 </Link>
               </Button>
               <div className="h-6 w-px bg-gray-700/50" />

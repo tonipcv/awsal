@@ -36,6 +36,7 @@ export default function PatientAIChatPage() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [doctorId, setDoctorId] = useState<string>('');
+  const [isLoadingDoctor, setIsLoadingDoctor] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function PatientAIChatPage() {
 
   const loadDoctorInfo = async () => {
     try {
+      setIsLoadingDoctor(true);
       const response = await fetch('/api/patient/profile');
       if (response.ok) {
         const data = await response.json();
@@ -64,6 +66,8 @@ export default function PatientAIChatPage() {
       }
     } catch (error) {
       console.error('Error loading doctor info:', error);
+    } finally {
+      setIsLoadingDoctor(false);
     }
   };
 
@@ -165,6 +169,147 @@ export default function PatientAIChatPage() {
     });
   };
 
+  // Skeleton Loading Component
+  const ChatSkeleton = () => (
+    <div className="min-h-screen bg-black">
+      {/* Mobile Skeleton */}
+      <div className="lg:hidden fixed inset-0 bg-black flex flex-col">
+        {/* Header Skeleton */}
+        <div className="flex-shrink-0 pt-[100px] px-4 pb-6">
+          <div className="text-center">
+            <div className="h-8 bg-gray-800/50 rounded-lg w-48 mx-auto mb-3 animate-pulse"></div>
+            <div className="h-5 bg-gray-800/30 rounded-lg w-32 mx-auto animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Messages Skeleton */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full flex flex-col">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {/* Assistant message skeleton */}
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-gray-800/50 animate-pulse">
+                  <div className="h-4 bg-gray-700/50 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-700/30 rounded w-16"></div>
+                </div>
+              </div>
+              
+              {/* User message skeleton */}
+              <div className="flex justify-end">
+                <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-gray-700/30 animate-pulse">
+                  <div className="h-4 bg-gray-600/50 rounded w-full mb-2"></div>
+                  <div className="h-3 bg-gray-600/30 rounded w-16"></div>
+                </div>
+              </div>
+
+              {/* Another assistant message skeleton */}
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-gray-800/50 animate-pulse">
+                  <div className="h-4 bg-gray-700/50 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-gray-700/30 rounded w-16"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input Skeleton */}
+            <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/50 backdrop-blur-sm p-4 pb-[100px]">
+              <div className="flex gap-3">
+                <div className="flex-1 h-12 bg-gray-800/50 rounded-2xl animate-pulse"></div>
+                <div className="w-12 h-12 bg-gray-700/50 rounded-2xl animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Skeleton */}
+      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64">
+        <div className="max-w-6xl mx-auto px-6">
+          
+          {/* Hero Skeleton */}
+          <div className="relative overflow-hidden mb-6">
+            <div className="relative py-6">
+              <div className="text-center max-w-3xl mx-auto">
+                <div className="h-10 bg-gray-800/50 rounded-lg w-64 mx-auto mb-4 animate-pulse"></div>
+                <div className="h-6 bg-gray-800/30 rounded-lg w-96 mx-auto mb-6 animate-pulse"></div>
+                
+                {/* Stats Skeleton */}
+                <div className="flex items-center justify-center gap-8">
+                  <div className="text-center">
+                    <div className="h-8 bg-gray-800/50 rounded w-8 mx-auto mb-1 animate-pulse"></div>
+                    <div className="h-4 bg-gray-800/30 rounded w-16 mx-auto animate-pulse"></div>
+                  </div>
+                  <div className="w-px h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="h-8 bg-gray-800/50 rounded w-8 mx-auto mb-1 animate-pulse"></div>
+                    <div className="h-4 bg-gray-800/30 rounded w-16 mx-auto animate-pulse"></div>
+                  </div>
+                  <div className="w-px h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="h-8 bg-gray-800/50 rounded w-8 mx-auto mb-1 animate-pulse"></div>
+                    <div className="h-4 bg-gray-800/30 rounded w-16 mx-auto animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Container Skeleton */}
+          <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden shadow-lg">
+            
+            {/* Messages Area Skeleton */}
+            <div className="h-[400px] overflow-y-auto p-6 space-y-4">
+              {/* Assistant message skeleton */}
+              <div className="flex justify-start">
+                <div className="max-w-[70%] rounded-2xl px-4 py-3 bg-gray-800/50 animate-pulse">
+                  <div className="h-4 bg-gray-700/50 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-700/30 rounded w-16"></div>
+                </div>
+              </div>
+              
+              {/* User message skeleton */}
+              <div className="flex justify-end">
+                <div className="max-w-[70%] rounded-2xl px-4 py-3 bg-gray-700/30 animate-pulse">
+                  <div className="h-4 bg-gray-600/50 rounded w-full mb-2"></div>
+                  <div className="h-3 bg-gray-600/30 rounded w-16"></div>
+                </div>
+              </div>
+
+              {/* Another assistant message skeleton */}
+              <div className="flex justify-start">
+                <div className="max-w-[70%] rounded-2xl px-4 py-3 bg-gray-800/50 animate-pulse">
+                  <div className="h-4 bg-gray-700/50 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-1/2 mb-2"></div>
+                  <div className="h-3 bg-gray-700/30 rounded w-16"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input Area Skeleton */}
+            <div className="border-t border-gray-800/50 bg-gray-800/30 p-6">
+              <div className="flex gap-3">
+                <div className="flex-1 h-12 bg-gray-800/50 rounded-xl animate-pulse"></div>
+                <div className="w-12 h-12 bg-gray-700/50 rounded-xl animate-pulse"></div>
+              </div>
+              <div className="h-3 bg-gray-800/30 rounded w-48 mx-auto mt-2 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Show skeleton while loading doctor info
+  if (isLoadingDoctor) {
+    return <ChatSkeleton />;
+  }
+
+  // Show unavailable message only after loading is complete and no doctor found
   if (!doctorId) {
     return (
       <div className="min-h-screen bg-black">

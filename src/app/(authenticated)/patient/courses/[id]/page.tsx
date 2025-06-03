@@ -78,12 +78,12 @@ export default function PatientCourseViewPage() {
         }
       } else {
         alert('Erro ao carregar curso');
-        router.push('/courses');
+        router.push('/patient/courses');
       }
     } catch (error) {
       console.error('Error loading course:', error);
       alert('Erro ao carregar curso');
-      router.push('/courses');
+      router.push('/patient/courses');
     } finally {
       setIsLoading(false);
     }
@@ -258,7 +258,7 @@ export default function PatientCourseViewPage() {
           <div className="text-center">
             <h2 className="text-xl font-semibold text-white mb-4">Curso não encontrado</h2>
             <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold">
-              <Link href="/courses">Voltar aos Cursos</Link>
+              <Link href="/patient/courses">Voltar aos Cursos</Link>
             </Button>
           </div>
         </div>
@@ -279,15 +279,15 @@ export default function PatientCourseViewPage() {
           <div className="mb-8 lg:mb-12">
             <div className="flex items-center gap-4 mb-6">
               <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
-                <Link href="/courses">
-                  <ArrowLeftIcon className="h-5 w-5" />
+                <Link href="/patient/courses">
+                  <ArrowLeftIcon className="h-4 w-4" />
                 </Link>
               </Button>
               <div className="h-6 w-px bg-gray-700/50" />
               <h1 className="text-xl lg:text-2xl font-medium text-white tracking-tight">
                 {course.name}
               </h1>
-      </div>
+            </div>
 
             {/* Course Overview Card */}
             <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 lg:p-8 backdrop-blur-sm mb-6">
@@ -317,7 +317,7 @@ export default function PatientCourseViewPage() {
               {getFirstLesson() && (
                 <div className="flex justify-center">
                   <Button asChild size="lg" className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-8 py-3 text-base shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200">
-                    <Link href={`/courses/${courseId}/lessons/${getFirstLesson()!.id}`} className="flex items-center gap-2">
+                    <Link href={`/patient/courses/${courseId}/lessons/${getFirstLesson()!.id}`} className="flex items-center gap-2">
                       <PlayIcon className="h-5 w-5" />
                       {getButtonText()}
                     </Link>
@@ -398,7 +398,7 @@ export default function PatientCourseViewPage() {
                             {module.lessons.map((lesson, lessonIndex) => (
                               <Link 
                                 key={lesson.id} 
-                                href={`/courses/${courseId}/lessons/${lesson.id}`}
+                                href={`/patient/courses/${courseId}/lessons/${lesson.id}`}
                                 className="flex items-center justify-between p-4 lg:p-5 bg-gray-800/30 rounded-xl border border-gray-700/40 hover:border-turquoise/30 hover:bg-gray-800/40 transition-all duration-200"
                               >
                                 <div className="flex items-center gap-3">
@@ -463,7 +463,7 @@ export default function PatientCourseViewPage() {
                   {course.lessons.map((lesson, index) => (
                     <Link 
                       key={lesson.id} 
-                      href={`/courses/${courseId}/lessons/${lesson.id}`}
+                      href={`/patient/courses/${courseId}/lessons/${lesson.id}`}
                       className="flex items-center justify-between p-6 bg-white/[0.02] border border-gray-800/60 rounded-2xl hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200 backdrop-blur-sm"
                     >
                       <div className="flex items-center gap-4">

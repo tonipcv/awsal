@@ -309,7 +309,7 @@ export default function CoursesPage() {
                             {/* Action Button Compacto */}
                             <div className="pt-1">
                               <Button asChild className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200">
-                                <Link href={`/courses/${course.id}`}>
+                                <Link href={`/patient/courses/${course.id}`}>
                                   <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
                                   Ver Curso
                                 </Link>

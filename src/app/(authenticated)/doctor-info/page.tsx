@@ -335,23 +335,17 @@ export default function DoctorInfoPage() {
                 <CardContent className="p-6 pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     
-                    <Link href="/protocols">
-                      <Button 
-                        variant="ghost"
-                        className="w-full justify-start h-12 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-lg"
-                      >
-                        <CheckCircleIcon className="h-5 w-5 mr-3 text-turquoise" />
-                        Meus Protocolos
+                    <Link href="/patient/protocols">
+                      <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
+                        <CheckCircleIcon className="h-5 w-5 mr-2" />
+                        Ver Protocolos
                       </Button>
                     </Link>
 
-                    <Link href="/courses">
-                      <Button 
-                        variant="ghost"
-                        className="w-full justify-start h-12 text-gray-300 hover:bg-gray-800/50 hover:text-white rounded-lg"
-                      >
-                        <BookOpenIcon className="h-5 w-5 mr-3 text-turquoise" />
-                        Meus Cursos
+                    <Link href="/patient/courses">
+                      <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300">
+                        <BookOpenIcon className="h-5 w-5 mr-2" />
+                        Ver Cursos
                       </Button>
                     </Link>
 

@@ -42,7 +42,7 @@ export default function Home() {
           } else if (data.role === 'DOCTOR') {
             router.push('/doctor/dashboard');
           } else {
-            router.push('/protocols');
+            router.push('/patient/protocols');
           }
         } else if (response.status === 401) {
           console.log('Sessão inválida ou usuário não encontrado - fazendo logout');
@@ -53,12 +53,12 @@ export default function Home() {
         } else {
           console.error('Error checking role:', response.status, await response.text());
           // Para outros erros, assumir paciente como fallback
-          router.push('/protocols');
+          router.push('/patient/protocols');
         }
       } catch (error) {
         console.error('Error during role detection:', error);
         // Em caso de erro de rede, tentar redirecionar para protocols como fallback
-        router.push('/protocols');
+        router.push('/patient/protocols');
       } finally {
         setIsChecking(false);
       }

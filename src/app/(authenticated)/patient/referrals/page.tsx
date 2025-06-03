@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,7 +100,13 @@ export default function PatientReferralsPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [stats, setStats] = useState<PatientStats | null>(null);
+  const [stats, setStats] = useState<PatientStats>({
+    totalReferrals: 0,
+    convertedReferrals: 0,
+    totalCreditsEarned: 0,
+    totalCreditsUsed: 0,
+    currentBalance: 0
+  });
   const [creditsHistory, setCreditsHistory] = useState<Credit[]>([]);
   const [referralsMade, setReferralsMade] = useState<Referral[]>([]);
   const [availableRewards, setAvailableRewards] = useState<Reward[]>([]);
@@ -108,51 +114,12 @@ export default function PatientReferralsPage() {
   const [creditsBalance, setCreditsBalance] = useState(0);
   const [referralCode, setReferralCode] = useState('');
   const [doctorId, setDoctorId] = useState('');
-  const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
 
-  // Verificar role do usuário
+  // Carregar dados do dashboard quando o componente montar
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (session?.user?.id) {
-        try {
-          const response = await fetch('/api/auth/role');
-          if (response.ok) {
-            const data = await response.json();
-            setUserRole(data.role);
-            
-            // Redirecionar médicos para a página correta
-            if (data.role === 'DOCTOR') {
-              window.location.href = '/doctor/referrals';
-              return;
-            }
-            
-            // Redirecionar admins para a página correta
-            if (data.role === 'SUPER_ADMIN') {
-              window.location.href = '/admin';
-              return;
-            }
-            
-            // Se for paciente, carregar dados
-            if (data.role === 'PATIENT') {
-              loadDashboard();
-            } else {
-              setAccessDenied(true);
-              setLoading(false);
-            }
-          } else {
-            setAccessDenied(true);
-            setLoading(false);
-          }
-        } catch (error) {
-          console.error('Erro ao verificar role:', error);
-          setAccessDenied(true);
-          setLoading(false);
-        }
-      }
-    };
-
-    checkUserRole();
+    if (session?.user?.id) {
+      loadDashboard();
+    }
   }, [session]);
 
   // Carregar dados do dashboard
@@ -179,7 +146,7 @@ export default function PatientReferralsPage() {
         });
       } else {
         if (response.status === 403) {
-          setAccessDenied(true);
+          console.error('Access denied to referrals');
         } else {
           console.error('Erro ao carregar dashboard:', data.error);
         }
@@ -484,23 +451,6 @@ export default function PatientReferralsPage() {
             </div>
 
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (accessDenied) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-          <p className="text-gray-400 mb-6">Esta página é exclusiva para pacientes.</p>
-          <Button 
-            onClick={() => window.location.href = '/'}
-            className="bg-turquoise hover:bg-turquoise/90 text-black"
-          >
-            Voltar ao Início
-          </Button>
         </div>
       </div>
     );

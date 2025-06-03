@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext, useMemo } from 'react';
 
 interface NavItem {
   href: string;
@@ -46,6 +46,69 @@ interface DoctorInfo {
   name: string;
   image: string | null;
   email: string;
+}
+
+// Contexto para compartilhar o role do usuário
+interface UserRoleContextType {
+  userRole: 'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null;
+  isLoadingRole: boolean;
+}
+
+const UserRoleContext = createContext<UserRoleContextType>({
+  userRole: null,
+  isLoadingRole: true
+});
+
+// Provider do contexto de role
+export function UserRoleProvider({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
+  const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
+  const [isLoadingRole, setIsLoadingRole] = useState(true);
+
+  useEffect(() => {
+    const detectUserRole = async () => {
+      if (session?.user?.id) {
+        try {
+          setIsLoadingRole(true);
+          console.log('UserRoleProvider: Fetching user role for:', session.user.email);
+          const response = await fetch('/api/auth/role', {
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            console.log('UserRoleProvider: Role detected:', data.role, 'for user:', session.user.email);
+            setUserRole(data.role);
+          } else {
+            console.error('Error detecting user role:', response.status);
+            setUserRole(null);
+          }
+        } catch (error) {
+          console.error('Error detecting user role:', error);
+          setUserRole(null);
+        } finally {
+          setIsLoadingRole(false);
+        }
+      } else {
+        setUserRole(null);
+        setIsLoadingRole(false);
+      }
+    };
+
+    detectUserRole();
+  }, [session]);
+
+  return (
+    <UserRoleContext.Provider value={{ userRole, isLoadingRole }}>
+      {children}
+    </UserRoleContext.Provider>
+  );
+}
+
+// Hook para usar o contexto de role
+export function useUserRole() {
+  return useContext(UserRoleContext);
 }
 
 // Hook para buscar informações do médico dos protocolos ativos
@@ -107,107 +170,29 @@ function useDoctorInfo() {
 export default function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
-  const [isLoadingRole, setIsLoadingRole] = useState(true);
   const { doctorInfo } = useDoctorInfo();
-
-  // Detectar se está em páginas do médico ou admin
-  const isDoctorPage = pathname?.startsWith('/doctor') || pathname?.startsWith('/clinic');
-  const isAdminPage = pathname?.startsWith('/admin');
-  const isProtocolsPage = pathname === '/protocols';
-  const isChecklistPage = pathname?.startsWith('/checklist');
-  const isSpecificCoursePage = pathname?.match(/^\/courses\/[^\/]+/) && pathname !== '/courses';
-  const isDoctorInfoPage = pathname === '/doctor-info';
+  const { userRole, isLoadingRole } = useUserRole();
   
-  // Determinar role inicial baseado na URL para evitar flash
-  const getInitialRole = () => {
-    if (isAdminPage) return 'SUPER_ADMIN';
-    if (isDoctorPage) return 'DOCTOR';
-    return 'PATIENT';
-  };
-
-  // Determinar tema baseado no role do usuário e na URL
-  // /doctor-info sempre usa tema escuro (paciente), mesmo que o usuário seja médico
-  const shouldUseLightTheme = !isDoctorInfoPage && ((isDoctorPage || isAdminPage) || (userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN'));
-
-  // Detectar role do usuário
+  // Estado para controlar hidratação e evitar erros de SSR
+  const [isHydrated, setIsHydrated] = useState(false);
+  
   useEffect(() => {
-    const detectUserRole = async () => {
-      if (session?.user?.id) {
-        // Se já temos o userRole, não fazer nova chamada
-        if (userRole) {
-          console.log('Navigation: Already have userRole:', userRole);
-          return;
-        }
+    setIsHydrated(true);
+  }, []);
 
-        try {
-          setIsLoadingRole(true);
-          console.log('Navigation: Fetching user role for:', session.user.email);
-          const response = await fetch('/api/auth/role');
-          if (response.ok) {
-            const data = await response.json();
-            console.log('Navigation: Role detected:', data.role, 'for user:', session.user.email);
-            setUserRole(data.role);
-          } else {
-            console.error('Error detecting user role:', response.status);
-            setUserRole(getInitialRole()); // Use URL-based fallback
-          }
-        } catch (error) {
-          console.error('Error detecting user role:', error);
-          setUserRole(getInitialRole()); // Use URL-based fallback
-        } finally {
-          setIsLoadingRole(false);
-        }
-      } else {
-        // Se não há sessão, use role baseado na URL
-        setUserRole(getInitialRole());
-        setIsLoadingRole(false);
-      }
-    };
-
-    detectUserRole();
-  }, [session]); // Removido pathname da dependência
-
-  // Lista de rotas protegidas onde a navegação deve aparecer
-  const protectedRoutes = [
-    '/protocols',
-    '/courses',
-    '/checklist',
-    '/oneweek',
-    '/circles',
-    '/thoughts',
-    '/profile',
-    '/doctor-info',
-    '/doctor',
-    '/admin',
-    '/clinic',
-    '/patient'
-  ];
-
-  // Só mostrar navegação em rotas protegidas
-  const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route));
-  if (!isProtectedRoute) {
-    return null;
-  }
-
-  // Se ainda está carregando o role, não renderizar nada para evitar flash
-  if (isLoadingRole) {
-    return null;
-  }
-
-  // Navegação para pacientes
-  const patientNavSections: NavSection[] = [
+  // Navegação para pacientes - memoizada para evitar re-renderizações
+  const patientNavSections: NavSection[] = useMemo(() => [
     {
       title: "Planning",
       items: [
         {
-          href: '/protocols',
+          href: '/patient/protocols',
           label: 'Protocols',
           icon: CheckCircleIcon,
           description: 'My medical protocols'
         },
         {
-          href: '/courses',
+          href: '/patient/courses',
           label: 'Courses',
           icon: BookOpenIcon,
           description: 'My courses'
@@ -231,10 +216,10 @@ export default function Navigation() {
         }
       ]
     }
-  ];
+  ], []);
 
-  // Navegação para médicos
-  const doctorNavSections: NavSection[] = [
+  // Navegação para médicos - memoizada para evitar re-renderizações
+  const doctorNavSections: NavSection[] = useMemo(() => [
     {
       title: "Management",
       items: [
@@ -328,10 +313,10 @@ export default function Navigation() {
         }
       ]
     }
-  ];
+  ], []);
 
-  // Navegação para Super Admin
-  const superAdminNavSections: NavSection[] = [
+  // Navegação para Super Admin - memoizada para evitar re-renderizações
+  const superAdminNavSections: NavSection[] = useMemo(() => [
     {
       title: "Administration",
       items: [
@@ -373,20 +358,77 @@ export default function Navigation() {
         }
       ]
     }
+  ], []);
+
+  // Detectar se está em páginas específicas
+  const isDoctorPage = pathname?.startsWith('/doctor') || pathname?.startsWith('/clinic');
+  const isAdminPage = pathname?.startsWith('/admin');
+  const isProtocolsPage = pathname === '/patient/protocols';
+  const isChecklistPage = pathname?.startsWith('/patient/checklist');
+  const isSpecificCoursePage = pathname?.match(/^\/patient\/courses\/[^\/]+/) && pathname !== '/patient/courses';
+  const isDoctorInfoPage = pathname === '/doctor-info';
+  
+  // ESTRATÉGIA AGRESSIVA: Se ainda não temos role, assumir PATIENT como padrão
+  // Isso evita qualquer flash ou skeleton
+  const effectiveRole = userRole || 'PATIENT';
+  
+  // Determinar tema baseado no role do usuário e na URL
+  // /doctor-info sempre usa tema escuro (paciente), mesmo que o usuário seja médico
+  const shouldUseLightTheme = !isDoctorInfoPage && ((isDoctorPage || isAdminPage) || (effectiveRole === 'DOCTOR' || effectiveRole === 'SUPER_ADMIN'));
+
+  // Selecionar navegação baseada no role - memoizada
+  const navSections = useMemo(() => {
+    if (isDoctorInfoPage) return patientNavSections;
+    if (effectiveRole === 'SUPER_ADMIN') return superAdminNavSections;
+    if (effectiveRole === 'DOCTOR') return doctorNavSections;
+    return patientNavSections;
+  }, [effectiveRole, isDoctorInfoPage, patientNavSections, doctorNavSections, superAdminNavSections]);
+
+  // Profile URL - memoizada
+  const profileUrl = useMemo(() => {
+    return effectiveRole === 'DOCTOR' || effectiveRole === 'SUPER_ADMIN' ? '/doctor/profile' : '/patient/profile';
+  }, [effectiveRole]);
+  
+  // Não renderizar até que esteja hidratado
+  if (!isHydrated) {
+    return null;
+  }
+
+  // Se não há sessão, não mostrar navegação
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  // Lista de rotas protegidas onde a navegação deve aparecer
+  const protectedRoutes = [
+    '/patient/protocols',
+    '/patient/courses',
+    '/patient/checklist',
+    '/patient/oneweek',
+    '/patient/circles',
+    '/patient/thoughts',
+    '/patient/profile',
+    '/patient',
+    '/doctor-info',
+    '/doctor',
+    '/admin',
+    '/clinic'
   ];
 
-  // Selecionar navegação baseada no role
-  // /doctor-info sempre usa navegação de paciente
-  const navSections = isDoctorInfoPage ? patientNavSections :
-                     userRole === 'SUPER_ADMIN' ? superAdminNavSections :
-                     userRole === 'DOCTOR' ? doctorNavSections : 
-                     patientNavSections;
+  // Só mostrar navegação em rotas protegidas
+  const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route));
+  if (!isProtectedRoute) {
+    return null;
+  }
 
-  // Debug function for profile URL
+  // Se não há role detectado após muito tempo, não mostrar navegação
+  if (!isLoadingRole && !userRole) {
+    return null;
+  }
+
   const getProfileUrl = () => {
-    const url = userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN' ? '/doctor/profile' : '/profile';
-    console.log('Navigation: Profile URL for role', userRole, ':', url);
-    return url;
+    console.log('Navigation: Profile URL for role', effectiveRole, ':', profileUrl);
+    return profileUrl;
   };
 
   const NavButton = ({ item, className }: { item: typeof navSections[0]['items'][0], className?: string }) => (
@@ -446,7 +488,7 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation - For Doctors/Admins (light theme) or Doctor Info page (dark theme) */}
-      {((userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN') && !isDoctorInfoPage) && (
+      {((effectiveRole === 'DOCTOR' || effectiveRole === 'SUPER_ADMIN') && !isDoctorInfoPage) && (
         <nav className={cn(
           "fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40",
           "border-gray-200 bg-white" // Always light theme for doctors/admins
@@ -518,7 +560,7 @@ export default function Navigation() {
             : "border-gray-800 bg-[#111111]/95 supports-[backdrop-filter]:bg-[#111111]/90" // Patient pages - dark theme
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
-            {(userRole === 'PATIENT' || isDoctorInfoPage) ? (
+            {(effectiveRole === 'PATIENT' || isDoctorInfoPage) ? (
               // Patient Header - Always show logo, and doctor info when available
               <>
                 <div className="flex items-center gap-3">
@@ -575,7 +617,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar - Different styles for patients vs doctors/admins */}
-        {(userRole === 'PATIENT' || isDoctorInfoPage) && !isChecklistPage && !isSpecificCoursePage ? (
+        {(effectiveRole === 'PATIENT' || isDoctorInfoPage) && !isChecklistPage && !isSpecificCoursePage ? (
           // Patient Bottom Navigation - App Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 z-40">
             <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
@@ -605,14 +647,14 @@ export default function Navigation() {
                       variant="ghost"
                       className={cn(
                         "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
-                        (pathname === '/profile' || pathname === '/doctor/profile')
+                        (pathname === '/patient/profile' || pathname === '/doctor/profile')
                           ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
                           : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                       )}
                     >
                       <UserCircleIcon className={cn(
                         "h-4 w-4 stroke-current transition-all duration-300",
-                        (pathname === '/profile' || pathname === '/doctor/profile') ? "drop-shadow-sm" : ""
+                        (pathname === '/patient/profile' || pathname === '/doctor/profile') ? "drop-shadow-sm" : ""
                       )} />
                     </Button>
                   </Link>
@@ -620,28 +662,100 @@ export default function Navigation() {
               </div>
             </div>
           </nav>
-        ) : (userRole !== 'PATIENT' && !isDoctorInfoPage) ? (
-          // Doctor/Admin Navigation - Original Style (Mobile Only)
+        ) : (effectiveRole !== 'PATIENT' && !isDoctorInfoPage) ? (
+          // Doctor/Admin Navigation - Horizontal Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 border-t backdrop-blur z-40 border-gray-200 bg-white">
             <div className="py-2 px-2">
-              <div className="flex items-center justify-around gap-1">
-                {navSections.flatMap(section => section.items).slice(0, 5).map((item) => (
-                  <Link key={item.href} href={item.href} className="flex-1">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full h-16 flex flex-col items-center justify-center gap-1 rounded-lg",
-                        "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                        pathname === item.href 
-                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]"
-                          : ""
-                      )}
-                    >
-                      <item.icon className="h-6 w-6 stroke-current" />
-                      <span className="text-xs font-medium">{item.label}</span>
-                    </Button>
-                  </Link>
-                ))}
+              <div className="flex items-center justify-around">
+                {/* Dashboard */}
+                <Link href="/doctor/dashboard" className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      pathname === '/doctor/dashboard' 
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <PresentationChartBarIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      pathname === '/doctor/dashboard' ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
+                
+                {/* Patients */}
+                <Link href="/doctor/patients" className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      pathname === '/doctor/patients' 
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <UsersIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      pathname === '/doctor/patients' ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
+                
+                {/* Protocols */}
+                <Link href="/doctor/protocols" className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      pathname === '/doctor/protocols' 
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <DocumentTextIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      pathname === '/doctor/protocols' ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
+                
+                {/* Clinic */}
+                <Link href="/clinic" className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      pathname === '/clinic' 
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <BuildingOfficeIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      pathname === '/clinic' ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
+                
+                {/* Profile */}
+                <Link href={getProfileUrl()} className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      (pathname === '/doctor/profile')
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <UserCircleIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      (pathname === '/doctor/profile') ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
               </div>
             </div>
           </nav>
@@ -649,7 +763,7 @@ export default function Navigation() {
       </div>
 
       {/* Desktop Navigation for Patients - Sidebar Style */}
-      {(userRole === 'PATIENT' || isDoctorInfoPage) && (
+      {(effectiveRole === 'PATIENT' || isDoctorInfoPage) && (
         <>
           {/* Desktop Sidebar for Patients */}
           <nav className="fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40 border-gray-800 bg-[#111111]/95">
@@ -704,7 +818,7 @@ export default function Navigation() {
                                 "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
                                 "text-white/70 hover:bg-white/5 hover:text-white",
                                 pathname === item.href 
-                                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400 border border-blue-500/30" 
+                                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400" 
                                   : ""
                               )}
                             >
@@ -764,31 +878,10 @@ export default function Navigation() {
 // Page Wrapper Component for automatic padding adjustment
 export function PageWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   const { data: session } = useSession();
-  const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
-  const [isLoadingRole, setIsLoadingRole] = useState(true);
+  const { userRole, isLoadingRole } = useUserRole();
 
-  useEffect(() => {
-    const detectUserRole = async () => {
-      if (session?.user?.id) {
-        try {
-          setIsLoadingRole(true);
-          const response = await fetch('/api/auth/role');
-          if (response.ok) {
-            const data = await response.json();
-            setUserRole(data.role);
-          } else {
-            setUserRole('PATIENT');
-          }
-        } catch (error) {
-          setUserRole('PATIENT');
-        } finally {
-          setIsLoadingRole(false);
-        }
-      }
-    };
-
-    detectUserRole();
-  }, [session]);
+  // Usar fallback para paciente se ainda estiver carregando
+  const effectiveRole = userRole || 'PATIENT';
 
   return (
     <div className={cn(
@@ -798,7 +891,7 @@ export function PageWrapper({ children, className }: { children: React.ReactNode
     )}>
       <div className={cn(
         "p-4 lg:pl-6 lg:pr-4",
-        userRole === 'PATIENT' 
+        effectiveRole === 'PATIENT' 
           ? "pt-[88px] pb-24 lg:pt-[88px] lg:pb-4" // Patients: mobile header + desktop header, mobile bottom nav only
           : "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Doctors/Admins: mobile header, no desktop header
       )}>

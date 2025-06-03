@@ -304,7 +304,7 @@ export default function LessonPage() {
           <div className="text-center">
             <h2 className="text-xl font-semibold text-white mb-4">Aula não encontrada</h2>
             <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold">
-              <Link href={`/courses/${courseId}`}>Voltar ao Curso</Link>
+              <Link href={`/patient/courses/${courseId}`}>Voltar ao Curso</Link>
             </Button>
           </div>
         </div>
@@ -323,7 +323,7 @@ export default function LessonPage() {
           <div className="mb-6">
             <div className="flex items-center gap-4 mb-4">
               <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
-                <Link href={`/courses/${courseId}`}>
+                <Link href={`/patient/courses/${courseId}`}>
                   <ArrowLeftIcon className="h-5 w-5" />
                 </Link>
               </Button>
@@ -467,7 +467,7 @@ export default function LessonPage() {
                   asChild 
                   className="w-full h-auto p-3 text-left bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
                 >
-                  <Link href={`/courses/${courseId}/lessons/${navigation.previous.id}`}>
+                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.previous.id}`}>
                     <div className="flex items-center gap-2">
                       <ChevronLeftIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
                       <div className="min-w-0">
@@ -490,7 +490,7 @@ export default function LessonPage() {
                   asChild 
                   className="w-full h-auto p-3 text-right bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
                 >
-                  <Link href={`/courses/${courseId}/lessons/${navigation.next.id}`}>
+                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.next.id}`}>
                     <div className="flex items-center gap-2 justify-end">
                       <div className="min-w-0">
                         <div className="text-xs text-turquoise font-medium">Próxima</div>
@@ -506,7 +506,7 @@ export default function LessonPage() {
                   asChild 
                   className="w-full h-auto p-3 text-right bg-turquoise/10 border border-turquoise/30 rounded-lg hover:bg-turquoise/20 transition-all duration-200"
                 >
-                  <Link href={`/courses/${courseId}`}>
+                  <Link href={`/patient/courses/${courseId}`}>
                     <div className="flex items-center gap-2 justify-end">
                       <div className="min-w-0">
                         <div className="text-xs text-turquoise font-medium">Finalizar</div>

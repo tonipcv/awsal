@@ -697,9 +697,11 @@ export default function ClinicDashboard() {
                     </Link>
                   </Button>
                   <Button variant="outline" className="w-full justify-start border-gray-200 text-gray-700 hover:bg-gray-50 bg-white rounded-xl h-12 font-semibold" asChild>
-                    <Link href="/protocols">
-                      <FileText className="h-4 w-4 mr-3" />
-                      Manage Protocols
+                    <Link href="/patient/protocols">
+                      <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
+                        <CheckCircle className="h-5 w-5 mr-2" />
+                        Ver Protocolos
+                      </Button>
                     </Link>
                   </Button>
                   {isAdmin && (
