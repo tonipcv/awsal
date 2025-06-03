@@ -9,6 +9,10 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const doctorId = resolvedParams.doctorId;
+    
+    // Extrair código de indicação da URL
+    const { searchParams } = new URL(request.url);
+    const referrerCode = searchParams.get('code');
 
     // Buscar informações do médico
     const doctor = await prisma.user.findFirst({
@@ -31,6 +35,25 @@ export async function GET(
       );
     }
 
+    // Buscar informações do paciente que está indicando (se houver código)
+    let referrer = null;
+    if (referrerCode) {
+      const referrerUser = await prisma.user.findUnique({
+        where: {
+          referralCode: referrerCode
+        },
+        select: {
+          name: true
+        }
+      });
+      
+      if (referrerUser) {
+        referrer = {
+          name: referrerUser.name
+        };
+      }
+    }
+
     // Buscar estatísticas básicas (opcional)
     const stats = await prisma.user.aggregate({
       where: {
@@ -50,7 +73,8 @@ export async function GET(
       },
       stats: {
         totalPatients: stats._count.id
-      }
+      },
+      referrer
     });
 
   } catch (error) {

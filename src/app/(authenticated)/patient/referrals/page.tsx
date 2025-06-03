@@ -216,22 +216,20 @@ export default function PatientReferralsPage() {
     }
   };
 
-  const generateReferralLink = () => {
+  const generateReferralLink = (style = 'default') => {
     if (!doctorId || !referralCode) {
       console.log('Missing data for link generation:', { doctorId, referralCode });
       return '';
     }
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    const link = `${baseUrl}/referral/${doctorId}?code=${referralCode}`;
+    const link = `${baseUrl}/referral/${doctorId}?code=${referralCode}&style=${style}`;
     console.log('Generated referral link:', link);
     return link;
   };
 
   const copyReferralLink = async () => {
-    const link = generateReferralLink();
+    const link = generateReferralLink('default');
     console.log('Attempting to copy link:', link);
-    console.log('Is HTTPS:', window.location.protocol === 'https:');
-    console.log('Has clipboard API:', !!navigator.clipboard);
     
     if (!link) {
       toast.error('Não foi possível gerar o link de indicação');
