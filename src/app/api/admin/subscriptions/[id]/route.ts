@@ -11,23 +11,23 @@ export async function GET(
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verificar se é super admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { role: true }
     });
 
     if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const resolvedParams = await params;
     const subscriptionId = resolvedParams.id;
 
-    // Buscar a subscription
+    // Find the subscription
     const subscription = await prisma.doctorSubscription.findUnique({
       where: { id: subscriptionId },
       include: {
@@ -55,13 +55,13 @@ export async function GET(
     });
 
     if (!subscription) {
-      return NextResponse.json({ error: 'Subscription não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
     return NextResponse.json({ subscription });
   } catch (error) {
-    console.error('Erro ao buscar subscription:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error fetching subscription:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -73,17 +73,17 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verificar se é super admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { role: true }
     });
 
     if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const resolvedParams = await params;
@@ -91,30 +91,30 @@ export async function PUT(
     const body = await request.json();
     const { planId, status, endDate, trialEndDate, autoRenew } = body;
 
-    // Validações
+    // Validations
     if (!planId || !status) {
-      return NextResponse.json({ error: 'Plano e status são obrigatórios' }, { status: 400 });
+      return NextResponse.json({ error: 'Plan and status are required' }, { status: 400 });
     }
 
-    // Verificar se o plano existe
+    // Check if plan exists
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: planId }
     });
 
     if (!plan) {
-      return NextResponse.json({ error: 'Plano não encontrado' }, { status: 400 });
+      return NextResponse.json({ error: 'Plan not found' }, { status: 400 });
     }
 
-    // Verificar se a subscription existe
+    // Check if subscription exists
     const existingSubscription = await prisma.doctorSubscription.findUnique({
       where: { id: subscriptionId }
     });
 
     if (!existingSubscription) {
-      return NextResponse.json({ error: 'Subscription não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
-    // Preparar dados para atualização
+    // Prepare update data
     const updateData: any = {
       planId,
       status,
@@ -122,7 +122,7 @@ export async function PUT(
       updatedAt: new Date()
     };
 
-    // Configurar datas baseado no status
+    // Configure dates based on status
     if (status === 'TRIAL') {
       if (trialEndDate) {
         updateData.trialEndDate = new Date(trialEndDate);
@@ -134,12 +134,12 @@ export async function PUT(
       }
       updateData.trialEndDate = null;
     } else {
-      // Para outros status (SUSPENDED, CANCELLED, EXPIRED)
+      // For other statuses (SUSPENDED, CANCELLED, EXPIRED)
       updateData.endDate = null;
       updateData.trialEndDate = null;
     }
 
-    // Atualizar a subscription
+    // Update the subscription
     const updatedSubscription = await prisma.doctorSubscription.update({
       where: { id: subscriptionId },
       data: updateData,
@@ -163,11 +163,11 @@ export async function PUT(
     return NextResponse.json({ 
       success: true, 
       subscription: updatedSubscription,
-      message: 'Subscription atualizada com sucesso'
+      message: 'Subscription updated successfully'
     });
 
   } catch (error) {
-    console.error('Erro ao atualizar subscription:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error updating subscription:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

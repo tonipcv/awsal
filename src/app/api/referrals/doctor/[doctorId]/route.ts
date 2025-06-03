@@ -9,7 +9,7 @@ export async function GET(
   try {
     const resolvedParams = await params;
     const doctorId = resolvedParams.doctorId;
-    
+
     // Extrair código de indicação da URL
     const { searchParams } = new URL(request.url);
     const referrerCode = searchParams.get('code');

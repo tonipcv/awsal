@@ -277,10 +277,10 @@ export default function PatientReferralsPage() {
 
       // Usar clipboard API moderna
       console.log('Using modern clipboard API');
-      await navigator.clipboard.writeText(link);
-      toast.success('Link copiado para a área de transferência!');
+        await navigator.clipboard.writeText(link);
+        toast.success('Link copiado para a área de transferência!');
       console.log('Link copied successfully');
-    } catch (error) {
+      } catch (error) {
       console.error('Error copying link:', error);
       
       // Tentar fallback se clipboard API falhar
@@ -341,7 +341,7 @@ export default function PatientReferralsPage() {
         return;
       }
 
-      await navigator.clipboard.writeText(referralCode);
+        await navigator.clipboard.writeText(referralCode);
       toast.success('Código copiado para a área de transferência!');
     } catch (error) {
       console.error('Error copying code:', error);

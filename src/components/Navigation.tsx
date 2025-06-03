@@ -18,7 +18,8 @@ import {
   BuildingOfficeIcon,
   GiftIcon,
   UserPlusIcon,
-  UserIcon
+  UserIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -295,6 +296,17 @@ export default function Navigation() {
           description: 'Configure rewards'
         }
       ]
+    },
+    {
+      title: "Partnerships",
+      items: [
+        {
+          href: '/doctor/refer-clinic',
+          label: 'Refer Clinic',
+          icon: BuildingOfficeIcon,
+          description: 'Refer clinics and earn rewards'
+        }
+      ]
     }
   ];
 
@@ -316,10 +328,28 @@ export default function Navigation() {
           description: 'Manage doctors'
         },
         {
+          href: '/admin/clinics',
+          label: 'Clinics',
+          icon: BuildingOfficeIcon,
+          description: 'Manage clinics'
+        },
+        {
+          href: '/admin/clinic-referrals',
+          label: 'Clinic Referrals',
+          icon: UserPlusIcon,
+          description: 'Manage clinic referrals'
+        },
+        {
           href: '/admin/subscriptions',
           label: 'Subscriptions',
           icon: ShieldCheckIcon,
           description: 'Manage subscriptions'
+        },
+        {
+          href: '/admin/plans',
+          label: 'Plans',
+          icon: CreditCardIcon,
+          description: 'Manage subscription plans'
         }
       ]
     }

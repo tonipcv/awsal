@@ -219,6 +219,7 @@ model User {
   subscriptions                                                    subscriptions?
   assignedCourses                                                  UserCourse[]
   lessonProgress                                                   UserLesson[]
+  clinicReferrals                                                  ClinicReferral[]         @relation("ClinicReferrals")
 }
 
 model Protocol {
@@ -799,4 +800,28 @@ model subscriptions {
   updatedAt          DateTime         @default(now())
   subscription_plans SubscriptionPlan @relation(fields: [planId], references: [id])
   User               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClinicReferral {
+  id            String   @id @default(cuid())
+  clinicName    String
+  contactName   String
+  contactEmail  String
+  contactPhone  String?
+  clinicAddress String?
+  specialties   String?
+  notes         String?
+  status        String   @default("PENDING") // PENDING, CONTACTED, CONVERTED, REJECTED
+  rewardStatus  String   @default("PENDING") // PENDING, APPROVED, CREDITED
+  rewardMonths  Int?     @default(1)
+  referredById  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+  
+  referredBy    User     @relation("ClinicReferrals", fields: [referredById], references: [id], onDelete: Cascade)
+  
+  @@unique([referredById, contactEmail])
+  @@index([referredById])
+  @@index([status])
+  @@map("clinic_referrals")
 }

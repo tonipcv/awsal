@@ -264,7 +264,7 @@ export default function CourseViewPage() {
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           
-          {/* Header */}
+        {/* Header */}
           <div className="flex items-center gap-6 mb-8">
             <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href="/doctor/courses">
@@ -275,23 +275,23 @@ export default function CourseViewPage() {
             <BookOpenIcon className="h-6 w-6 text-[#5154e7]" />
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900">
-                {course.name}
+              {course.name}
               </h1>
-            </div>
-            <div className="flex items-center gap-2">
+          </div>
+          <div className="flex items-center gap-2">
               <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl">
-                <Link href={`/doctor/courses/${courseId}/edit`}>
+              <Link href={`/doctor/courses/${courseId}/edit`}>
                   Edit
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={deleteCourse}
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={deleteCourse}
                 className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl"
-              >
-                <TrashIcon className="h-4 w-4 mr-2" />
+            >
+              <TrashIcon className="h-4 w-4 mr-2" />
                 Delete
-              </Button>
+            </Button>
             </div>
           </div>
 
@@ -300,49 +300,49 @@ export default function CourseViewPage() {
             {/* Course Info */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardContent className="p-6 space-y-6">
-                <div>
-                  {course.description && (
+              <div>
+                {course.description && (
                     <p className="text-gray-700 text-lg mb-4">{course.description}</p>
-                  )}
+                )}
                   <p className="text-sm text-gray-500 font-medium">
                     Created on {formatDate(course.createdAt)}
-                  </p>
-                </div>
+                </p>
+              </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardContent className="p-4 text-center">
+                  <CardContent className="p-4 text-center">
                       <BookOpenIcon className="h-6 w-6 text-[#5154e7] mx-auto mb-2" />
                       <div className="text-lg font-bold text-gray-900">{course.modules.length}</div>
                       <div className="text-sm text-gray-600 font-medium">Modules</div>
-                    </CardContent>
-                  </Card>
-                  
+                  </CardContent>
+                </Card>
+                
                   <Card className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardContent className="p-4 text-center">
+                  <CardContent className="p-4 text-center">
                       <PlayIcon className="h-6 w-6 text-[#5154e7] mx-auto mb-2" />
                       <div className="text-lg font-bold text-gray-900">{getTotalLessons()}</div>
                       <div className="text-sm text-gray-600 font-medium">Lessons</div>
-                    </CardContent>
-                  </Card>
-                  
+                  </CardContent>
+                </Card>
+                
                   <Card className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardContent className="p-4 text-center">
+                  <CardContent className="p-4 text-center">
                       <ClockIcon className="h-6 w-6 text-[#5154e7] mx-auto mb-2" />
                       <div className="text-lg font-bold text-gray-900">{formatDuration(getTotalDuration())}</div>
                       <div className="text-sm text-gray-600 font-medium">Duration</div>
-                    </CardContent>
-                  </Card>
-                  
+                  </CardContent>
+                </Card>
+                
                   <Card className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardContent className="p-4 text-center">
+                  <CardContent className="p-4 text-center">
                       <UsersIcon className="h-6 w-6 text-[#5154e7] mx-auto mb-2" />
                       <div className="text-lg font-bold text-gray-900">{course.assignments.length}</div>
                       <div className="text-sm text-gray-600 font-medium">Students</div>
-                    </CardContent>
-                  </Card>
-                </div>
+                  </CardContent>
+                </Card>
+              </div>
               </CardContent>
             </Card>
 
@@ -355,33 +355,33 @@ export default function CourseViewPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {course.modalTitle && (
-                    <div>
+                    {course.modalTitle && (
+                      <div>
                       <span className="text-sm font-semibold text-gray-900">Title:</span>
                       <p className="text-gray-700 mt-1">{course.modalTitle}</p>
-                    </div>
-                  )}
-                  {course.modalDescription && (
-                    <div>
+                      </div>
+                    )}
+                    {course.modalDescription && (
+                      <div>
                       <span className="text-sm font-semibold text-gray-900">Description:</span>
                       <p className="text-gray-700 mt-1">{course.modalDescription}</p>
-                    </div>
-                  )}
-                  {course.modalVideoUrl && (
-                    <div>
+                      </div>
+                    )}
+                    {course.modalVideoUrl && (
+                      <div>
                       <span className="text-sm font-semibold text-gray-900">Video:</span>
                       <p className="text-gray-600 break-all mt-1 font-mono text-sm">{course.modalVideoUrl}</p>
-                    </div>
-                  )}
+                      </div>
+                    )}
                   <div className="flex items-center gap-4 text-sm">
                     <span className="font-semibold text-gray-900">Button:</span>
                     <span className="text-gray-700">{course.modalButtonText || 'Learn more'}</span>
-                    {course.modalButtonUrl && (
+                      {course.modalButtonUrl && (
                       <span className="text-gray-600 break-all font-mono">{course.modalButtonUrl}</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
             )}
 
             {/* Modules */}
@@ -503,16 +503,16 @@ export default function CourseViewPage() {
                   <BookOpenIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
                     Course without content
-                  </h3>
+                </h3>
                   <p className="text-sm text-gray-600 mb-6 font-medium">
                     This course does not have modules or lessons yet.
-                  </p>
+                </p>
                   <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 font-semibold">
-                    <Link href={`/doctor/courses/${courseId}/edit`}>
-                      <PencilIcon className="h-4 w-4 mr-2" />
+                  <Link href={`/doctor/courses/${courseId}/edit`}>
+                    <PencilIcon className="h-4 w-4 mr-2" />
                       Add Content
-                    </Link>
-                  </Button>
+                  </Link>
+                </Button>
                 </CardContent>
               </Card>
             )}

@@ -415,7 +415,7 @@ export default function EditCoursePage() {
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           
-          {/* Header */}
+        {/* Header */}
           <div className="flex items-center gap-6 mb-8">
             <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href="/doctor/courses">
@@ -440,29 +440,29 @@ export default function EditCoursePage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="name" className="text-gray-900 font-semibold">Course Name *</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Mindfulness Course"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      required
-                    />
-                  </div>
+                    required
+                  />
+                </div>
 
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                       placeholder="Describe the course..."
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[100px]"
-                    />
-                  </div>
+                  />
                 </div>
+              </div>
               </CardContent>
             </Card>
 
@@ -472,274 +472,274 @@ export default function EditCoursePage() {
                 <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration (Optional)</CardTitle>
                 <p className="text-sm text-gray-600 font-medium">
                   Configure an informational modal that will be displayed when the course is unavailable to a patient.
-                </p>
+              </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
                     <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
-                    <Input
-                      id="modalTitle"
-                      value={modalTitle}
-                      onChange={(e) => setModalTitle(e.target.value)}
+                  <Input
+                    id="modalTitle"
+                    value={modalTitle}
+                    onChange={(e) => setModalTitle(e.target.value)}
                       placeholder="e.g. Course Coming Soon"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
-                    <Input
-                      id="modalVideoUrl"
-                      value={modalVideoUrl}
-                      onChange={(e) => setModalVideoUrl(e.target.value)}
-                      placeholder="https://www.youtube.com/embed/..."
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
-                  <Textarea
-                    id="modalDescription"
-                    value={modalDescription}
-                    onChange={(e) => setModalDescription(e.target.value)}
-                    placeholder="Message for the patient..."
-                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                   />
                 </div>
+                
+                <div className="space-y-2">
+                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
+                  <Input
+                    id="modalVideoUrl"
+                    value={modalVideoUrl}
+                    onChange={(e) => setModalVideoUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/embed/..."
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                  />
+                </div>
+              </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
+              <div className="space-y-2">
+                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
+                <Textarea
+                  id="modalDescription"
+                  value={modalDescription}
+                  onChange={(e) => setModalDescription(e.target.value)}
+                    placeholder="Message for the patient..."
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                />
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
                     <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
-                    <Input
-                      id="modalButtonText"
-                      value={modalButtonText}
-                      onChange={(e) => setModalButtonText(e.target.value)}
+                  <Input
+                    id="modalButtonText"
+                    value={modalButtonText}
+                    onChange={(e) => setModalButtonText(e.target.value)}
                       placeholder="Learn more"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
+                  />
+                </div>
+                
+                <div className="space-y-2">
                     <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
-                    <Input
-                      id="modalButtonUrl"
-                      value={modalButtonUrl}
-                      onChange={(e) => setModalButtonUrl(e.target.value)}
+                  <Input
+                    id="modalButtonUrl"
+                    value={modalButtonUrl}
+                    onChange={(e) => setModalButtonUrl(e.target.value)}
                       placeholder="https://example.com"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
+                  />
                 </div>
+              </div>
               </CardContent>
             </Card>
 
             {/* Modules */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-gray-900">Modules</CardTitle>
-                  <Button
-                    type="button"
-                    onClick={addModule}
+                <Button
+                  type="button"
+                  onClick={addModule}
                     className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-4 py-2 font-semibold"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
                     Add Module
-                  </Button>
-                </div>
+                </Button>
+              </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {modules.map((module, moduleIndex) => (
+              {modules.map((module, moduleIndex) => (
                   <Card key={moduleIndex} className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
                         <CardTitle className="text-sm font-semibold text-gray-900">Module {moduleIndex + 1}</CardTitle>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeModule(moduleIndex)}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeModule(moduleIndex)}
                           className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
                           <Label className="text-gray-900 font-semibold">Module Name</Label>
-                          <Input
-                            value={module.name}
-                            onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
+                        <Input
+                          value={module.name}
+                          onChange={(e) => updateModule(moduleIndex, 'name', e.target.value)}
                             placeholder="e.g. Fundamentals"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                          />
-                        </div>
-                        <div className="space-y-2">
+                        />
+                      </div>
+                      <div className="space-y-2">
                           <Label className="text-gray-900 font-semibold">Description</Label>
-                          <Input
-                            value={module.description}
-                            onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
+                        <Input
+                          value={module.description}
+                          onChange={(e) => updateModule(moduleIndex, 'description', e.target.value)}
                             placeholder="Module description"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                          />
-                        </div>
+                        />
+                      </div>
+                    </div>
+
+                    {/* Module Lessons */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-gray-900">Module Lessons</h4>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => addLessonToModule(moduleIndex)}
+                            className="bg-[#5154e7]/10 hover:bg-[#5154e7]/20 text-[#5154e7] border-[#5154e7]/30 rounded-xl"
+                        >
+                          <PlusIcon className="h-3 w-3 mr-1" />
+                            Lesson
+                        </Button>
                       </div>
 
-                      {/* Module Lessons */}
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-semibold text-gray-900">Module Lessons</h4>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => addLessonToModule(moduleIndex)}
-                            className="bg-[#5154e7]/10 hover:bg-[#5154e7]/20 text-[#5154e7] border-[#5154e7]/30 rounded-xl"
-                          >
-                            <PlusIcon className="h-3 w-3 mr-1" />
-                            Lesson
-                          </Button>
-                        </div>
-
-                        {module.lessons.map((lesson, lessonIndex) => (
+                      {module.lessons.map((lesson, lessonIndex) => (
                           <Card key={lessonIndex} className="bg-white border-gray-200 rounded-xl">
-                            <CardContent className="p-4 space-y-3">
-                              <div className="flex items-center justify-between">
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center justify-between">
                                 <span className="text-xs font-medium text-gray-600">Lesson {lessonIndex + 1}</span>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeLessonFromModule(moduleIndex, lessonIndex)}
                                   className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl h-6 w-6 p-0"
-                                >
-                                  <TrashIcon className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              
-                              <div className="grid gap-3 md:grid-cols-2">
-                                <Input
-                                  value={lesson.title}
-                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
+                              >
+                                <TrashIcon className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <Input
+                                value={lesson.title}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
                                   placeholder="Lesson title"
                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                                />
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={lesson.duration}
-                                  onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
+                              />
+                              <Input
+                                type="number"
+                                min="0"
+                                value={lesson.duration}
+                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
                                   placeholder="Duration (min)"
                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                                />
-                              </div>
-                              
-                              <Input
-                                value={lesson.description}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
+                              />
+                            </div>
+                            
+                            <Input
+                              value={lesson.description}
+                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
                                 placeholder="Lesson description"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                              />
-                              
-                              <Input
-                                value={lesson.videoUrl}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
+                            />
+                            
+                            <Input
+                              value={lesson.videoUrl}
+                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'videoUrl', e.target.value)}
                                 placeholder="Video URL"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                              />
-                              
-                              <Textarea
-                                value={lesson.content}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
+                            />
+                            
+                            <Textarea
+                              value={lesson.content}
+                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
                                 placeholder="Lesson content"
                                 className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm min-h-[60px]"
-                              />
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                            />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
               </CardContent>
             </Card>
 
             {/* Direct Lessons */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-gray-900">Direct Lessons (without module)</CardTitle>
-                  <Button
-                    type="button"
-                    onClick={addDirectLesson}
+                <Button
+                  type="button"
+                  onClick={addDirectLesson}
                     className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-4 py-2 font-semibold"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
                     Add Lesson
-                  </Button>
-                </div>
+                </Button>
+              </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {directLessons.map((lesson, index) => (
+              {directLessons.map((lesson, index) => (
                   <Card key={index} className="bg-gray-50 border-gray-200 rounded-2xl">
-                    <CardContent className="p-4 space-y-4">
-                      <div className="flex items-center justify-between">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-gray-900">Lesson {index + 1}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeDirectLesson(index)}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeDirectLesson(index)}
                           className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <Input
-                          value={lesson.title}
-                          onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Input
+                        value={lesson.title}
+                        onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
                           placeholder="Lesson title"
                           className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          value={lesson.duration}
-                          onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
+                      />
+                      <Input
+                        type="number"
+                        min="0"
+                        value={lesson.duration}
+                        onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
                           placeholder="Duration (min)"
                           className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <Input
-                        value={lesson.description}
-                        onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
+                      />
+                    </div>
+                    
+                    <Input
+                      value={lesson.description}
+                      onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
                         placeholder="Lesson description"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                      
-                      <Input
-                        value={lesson.videoUrl}
-                        onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
+                    />
+                    
+                    <Input
+                      value={lesson.videoUrl}
+                      onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
                         placeholder="Video URL"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                      
-                      <Textarea
-                        value={lesson.content}
-                        onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
+                    />
+                    
+                    <Textarea
+                      value={lesson.content}
+                      onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
                         placeholder="Lesson content"
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[80px]"
-                      />
-                    </CardContent>
-                  </Card>
-                ))}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
               </CardContent>
             </Card>
 
@@ -747,37 +747,37 @@ export default function EditCoursePage() {
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
+              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
                         className="border-red-300 text-red-600 hover:bg-red-50 rounded-xl px-6 font-semibold sm:w-auto"
-                      >
-                        <TrashIcon className="h-4 w-4 mr-2" />
+                  >
+                    <TrashIcon className="h-4 w-4 mr-2" />
                         Delete Course
-                      </Button>
-                    </DialogTrigger>
+                  </Button>
+                </DialogTrigger>
                     <DialogContent className="bg-white border-gray-200 rounded-2xl">
-                      <DialogHeader>
+                  <DialogHeader>
                         <DialogTitle className="text-gray-900">Delete Course</DialogTitle>
                         <DialogDescription className="text-gray-600">
                           Are you sure you want to delete the course "{name}"? 
                           This action cannot be undone and all course data will be permanently lost.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter className="gap-2">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsDeleteDialogOpen(false)}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsDeleteDialogOpen(false)}
                           className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl"
-                        >
+                    >
                           Cancel
-                        </Button>
-                        <Button 
-                          onClick={deleteCourse}
-                          disabled={isDeleting}
+                    </Button>
+                    <Button 
+                      onClick={deleteCourse}
+                      disabled={isDeleting}
                           className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
-                        >
+                    >
                           {isDeleting ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -786,22 +786,22 @@ export default function EditCoursePage() {
                           ) : (
                             'Delete Course'
                           )}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-
-                  <div className="flex gap-2 sm:ml-auto">
-                    <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 font-semibold">
-                      <Link href="/doctor/courses">
-                        Cancel
-                      </Link>
                     </Button>
-                    <Button 
-                      type="submit"
-                      disabled={isLoading}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <div className="flex gap-2 sm:ml-auto">
+                    <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 font-semibold">
+                  <Link href="/doctor/courses">
+                        Cancel
+                  </Link>
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isLoading}
                       className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 font-semibold"
-                    >
+                >
                       {isLoading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -813,9 +813,9 @@ export default function EditCoursePage() {
                           Save Changes
                         </>
                       )}
-                    </Button>
-                  </div>
-                </div>
+                </Button>
+              </div>
+            </div>
               </CardContent>
             </Card>
           </form>

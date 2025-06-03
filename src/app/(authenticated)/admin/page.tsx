@@ -1,450 +1,429 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, FileText, BookOpen, Package, Crown, TrendingUp, AlertTriangle, Building2 } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { 
+  UsersIcon, 
+  CheckIcon,
+  DocumentTextIcon, 
+  BookOpenIcon, 
+  ShoppingBagIcon, 
+  StarIcon, 
+  ChartBarIcon, 
+  ExclamationTriangleIcon, 
+  BuildingOffice2Icon,
+  PlusIcon,
+  EyeIcon
+} from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
-async function getSystemMetrics() {
-  try {
-    // Fazer queries sequenciais para reduzir pressão no connection pool
-    const totalDoctors = await prisma.user.count({ where: { role: 'DOCTOR' } });
-    const totalPatients = await prisma.user.count({ where: { role: 'PATIENT' } });
-    const totalProtocols = await prisma.protocol.count();
-    const totalCourses = await prisma.course.count();
-    const totalProducts = await prisma.products.count();
-    const totalClinics = await prisma.clinic.count();
-    const activeSubscriptions = await prisma.doctorSubscription.count({ where: { status: 'ACTIVE' } });
-    const trialSubscriptions = await prisma.doctorSubscription.count({ where: { status: 'TRIAL' } });
-    const activeClinicSubscriptions = await prisma.clinicSubscription.count({ where: { status: 'ACTIVE' } });
-    const trialClinicSubscriptions = await prisma.clinicSubscription.count({ where: { status: 'TRIAL' } });
-    const expiringSoon = await prisma.doctorSubscription.count({
-      where: {
-        status: 'TRIAL',
-        trialEndDate: {
-          lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 dias
+interface SystemMetrics {
+  totalDoctors: number;
+  totalPatients: number;
+  totalProtocols: number;
+  totalCourses: number;
+  totalProducts: number;
+  totalClinics: number;
+  activeSubscriptions: number;
+  trialSubscriptions: number;
+  activeClinicSubscriptions: number;
+  trialClinicSubscriptions: number;
+  expiringSoon: number;
+}
+
+interface RecentDoctor {
+  id: string;
+  name: string;
+  email: string;
+  subscription?: {
+    status: string;
+    plan: { name: string };
+  };
+}
+
+export default function AdminDashboard() {
+  const { data: session } = useSession();
+  const [metrics, setMetrics] = useState<SystemMetrics>({
+    totalDoctors: 0,
+    totalPatients: 0,
+    totalProtocols: 0,
+    totalCourses: 0,
+    totalProducts: 0,
+    totalClinics: 0,
+    activeSubscriptions: 0,
+    trialSubscriptions: 0,
+    activeClinicSubscriptions: 0,
+    trialClinicSubscriptions: 0,
+    expiringSoon: 0
+  });
+  const [recentDoctors, setRecentDoctors] = useState<RecentDoctor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Load metrics (you can implement a specific API)
+        const response = await fetch('/api/admin/dashboard-metrics');
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics(data.metrics || metrics);
+          setRecentDoctors(data.recentDoctors || []);
         }
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
       }
-    });
-
-    return {
-      totalDoctors,
-      totalPatients,
-      totalProtocols,
-      totalCourses,
-      totalProducts,
-      totalClinics,
-      activeSubscriptions,
-      trialSubscriptions,
-      activeClinicSubscriptions,
-      trialClinicSubscriptions,
-      expiringSoon
     };
-  } catch (error) {
-    console.error('Error fetching system metrics:', error);
-    // Retornar valores padrão em caso de erro
-    return {
-      totalDoctors: 0,
-      totalPatients: 0,
-      totalProtocols: 0,
-      totalCourses: 0,
-      totalProducts: 0,
-      totalClinics: 0,
-      activeSubscriptions: 0,
-      trialSubscriptions: 0,
-      activeClinicSubscriptions: 0,
-      trialClinicSubscriptions: 0,
-      expiringSoon: 0
-    };
-  }
-}
 
-async function getRecentDoctors() {
-  try {
-    return await prisma.user.findMany({
-      where: { role: 'DOCTOR' },
-      select: {
-        id: true,
-        name: true,
-        email: true
-      },
-      orderBy: { id: 'desc' },
-      take: 5
-    });
-  } catch (error) {
-    console.error('Error fetching recent doctors:', error);
-    return [];
-  }
-}
-
-export default async function AdminDashboard() {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    // Buscar dados sequencialmente para minimizar uso do connection pool
-    const metrics = await getSystemMetrics();
-    const recentDoctors = await getRecentDoctors();
-
-    // Buscar subscriptions separadamente para evitar sobrecarga
-    let doctorSubscriptions: Array<{
-      doctorId: string;
-      status: string;
-      plan: { name: string };
-    }> = [];
-    try {
-      if (recentDoctors.length > 0) {
-        doctorSubscriptions = await prisma.doctorSubscription.findMany({
-          where: {
-            doctorId: { in: recentDoctors.map(d => d.id) }
-          },
-          include: {
-            plan: { select: { name: true } }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching doctor subscriptions:', error);
+    if (session) {
+      loadDashboardData();
     }
+  }, [session]);
 
-    let user = null;
-    try {
-      if (session?.user?.email) {
-        user = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: { role: true, name: true }
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error);
+  const getDoctorInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800';
+      case 'TRIAL': return 'bg-blue-100 text-blue-800';
+      case 'EXPIRED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
+  };
 
+  if (isLoading) {
     return (
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-light text-slate-800">Dashboard Administrativo</h1>
-            <p className="text-sm text-slate-600">Bem-vindo, {user?.name || 'Administrador'}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              asChild
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Link href="/admin/doctors">
-                <Users className="h-4 w-4 mr-2" />
-                Gerenciar Médicos
-              </Link>
-            </Button>
-            <Button 
-              asChild
-              variant="outline"
-              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-            >
-              <Link href="/admin/clinics">
-                <Building2 className="h-4 w-4 mr-2" />
-                Clínicas
-              </Link>
-            </Button>
-            <Button 
-              asChild
-              variant="outline"
-              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-            >
-              <Link href="/admin/subscriptions">
-                <Crown className="h-4 w-4 mr-2" />
-                Subscriptions
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Métricas Principais */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <UserCheck className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Total de Médicos</p>
-                  <p className="text-xl font-light text-slate-800">{metrics.totalDoctors}</p>
-                  <p className="text-xs text-slate-500">
-                    {metrics.activeSubscriptions} ativos, {metrics.trialSubscriptions} em trial
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Users className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Total de Pacientes</p>
-                  <p className="text-xl font-light text-slate-800">{metrics.totalPatients}</p>
-                  <p className="text-xs text-slate-500">
-                    Média de {Math.round(metrics.totalPatients / Math.max(metrics.totalDoctors, 1))} por médico
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Building2 className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Total de Clínicas</p>
-                  <p className="text-xl font-light text-slate-800">{metrics.totalClinics}</p>
-                  <p className="text-xs text-slate-500">
-                    {metrics.activeClinicSubscriptions} ativas, {metrics.trialClinicSubscriptions} em trial
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FileText className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Protocolos Criados</p>
-                  <p className="text-xl font-light text-slate-800">{metrics.totalProtocols}</p>
-                  <p className="text-xs text-slate-500">
-                    Média de {Math.round(metrics.totalProtocols / Math.max(metrics.totalDoctors, 1))} por médico
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-teal-100 rounded-lg">
-                  <BookOpen className="h-5 w-5 text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600">Cursos Disponíveis</p>
-                  <p className="text-xl font-light text-slate-800">{metrics.totalCourses}</p>
-                  <p className="text-xs text-slate-500">
-                    {metrics.totalProducts} produtos cadastrados
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Alertas */}
-        {metrics.expiringSoon > 0 && (
-          <Card className="mb-6 bg-red-50/80 border-red-200/50 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-red-800">Trials Expirando</p>
-                  <p className="text-xs text-red-700">
-                    {metrics.expiringSoon} médicos têm trial expirando nos próximos 3 dias.
-                  </p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild
-                  className="border-red-300 text-red-700 hover:bg-red-100"
-                >
-                  <Link href="/admin/subscriptions?filter=expiring">
-                    Ver Detalhes
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Médicos Recentes e Status das Subscriptions */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-normal text-slate-800 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Médicos Recentes
-              </CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                <Link href="/admin/doctors">Ver todos</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
               <div className="space-y-3">
-                {recentDoctors.map((doctor) => {
-                  const subscription = doctorSubscriptions.find(s => s.doctorId === doctor.id);
-                  return (
-                    <div key={doctor.id} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-lg border border-slate-200/50">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-600">
-                          {doctor.name?.charAt(0) || 'M'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-800">{doctor.name || 'Sem nome'}</p>
-                          <p className="text-xs text-slate-600">{doctor.email}</p>
+                <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-48 animate-pulse"></div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-200 rounded-xl w-36 animate-pulse"></div>
+                <div className="h-10 bg-gray-100 rounded-xl w-32 animate-pulse"></div>
+                <div className="h-10 bg-gray-100 rounded-xl w-36 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl animate-pulse">
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                      <div className="h-7 bg-gray-100 rounded w-12 animate-pulse"></div>
+                      <div className="h-3 bg-gray-100 rounded w-24 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Left Card Skeleton */}
+              <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <div className="flex flex-row items-center justify-between p-6 pb-4">
+                  <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
+                  <div className="h-8 bg-gray-100 rounded-xl w-24 animate-pulse"></div>
+                </div>
+                <div className="p-6 pt-0 space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-40 animate-pulse"></div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs border ${
-                          subscription?.status === 'ACTIVE' 
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                        }`}>
-                          {subscription?.status === 'ACTIVE' ? 'Ativo' : 'Trial'}
-                        </span>
-                        {subscription?.plan && (
-                          <p className="text-xs text-slate-500 mt-1">
-                            {subscription.plan.name}
-                          </p>
-                        )}
+                      <div className="h-6 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Card Skeleton */}
+              <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <div className="flex flex-row items-center justify-between p-6 pb-4">
+                  <div className="h-6 bg-gray-200 rounded w-36 animate-pulse"></div>
+                  <div className="h-8 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                </div>
+                <div className="p-6 pt-0 space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-28 animate-pulse"></div>
+                        <div className="h-3 bg-gray-100 rounded w-36 animate-pulse"></div>
+                        <div className="h-3 bg-gray-100 rounded w-24 animate-pulse"></div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-normal text-slate-800 flex items-center gap-2">
-                <Crown className="h-4 w-4" />
-                Status das Subscriptions
-              </CardTitle>
-              <Button variant="ghost" size="sm" asChild className="text-slate-600 hover:text-slate-800 hover:bg-slate-100">
-                <Link href="/admin/subscriptions">Ver todas</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-green-50/80 rounded-lg border border-green-200/50">
-                  <div>
-                    <p className="text-sm font-medium text-green-800">Subscriptions Ativas</p>
-                    <p className="text-xs text-green-600">Médicos pagantes</p>
-                  </div>
-                  <div className="text-xl font-light text-green-800">
-                    {metrics.activeSubscriptions}
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 bg-yellow-50/80 rounded-lg border border-yellow-200/50">
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">Trials Ativos</p>
-                    <p className="text-xs text-yellow-600">Período de teste</p>
-                  </div>
-                  <div className="text-xl font-light text-yellow-800">
-                    {metrics.trialSubscriptions}
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center p-3 bg-blue-50/80 rounded-lg border border-blue-200/50">
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">Taxa de Conversão</p>
-                    <p className="text-xs text-blue-600">Trial para pago</p>
-                  </div>
-                  <div className="text-xl font-light text-blue-800">
-                    {metrics.totalDoctors > 0 
-                      ? Math.round((metrics.activeSubscriptions / metrics.totalDoctors) * 100)
-                      : 0}%
-                  </div>
+                  ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Ações Rápidas */}
-        <Card className="mt-6 bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-sm font-normal text-slate-800">Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div>
+              <h1 className="text-3xl font-light text-gray-900 tracking-tight">
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Welcome, {session?.user?.name || 'Administrator'}
+              </p>
+            </div>
+            <div className="flex gap-3">
               <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 asChild
+                className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
               >
-                <Link href="/admin/doctors">
-                  <Users className="h-6 w-6" />
-                  <span className="text-xs">Gerenciar Médicos</span>
+                <Link href="/admin/doctors/new">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  New Doctor
                 </Link>
               </Button>
-              
               <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 asChild
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-sm"
               >
                 <Link href="/admin/clinics">
-                  <Building2 className="h-6 w-6" />
-                  <span className="text-xs">Gerenciar Clínicas</span>
+                  <BuildingOffice2Icon className="h-4 w-4 mr-2" />
+                  Clinics
                 </Link>
               </Button>
-              
               <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 asChild
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-sm"
               >
                 <Link href="/admin/subscriptions">
-                  <Crown className="h-6 w-6" />
-                  <span className="text-xs">Subscriptions</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                asChild
-              >
-                <Link href="/admin/doctors">
-                  <TrendingUp className="h-6 w-6" />
-                  <span className="text-xs">Relatórios</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                asChild
-              >
-                <Link href="/admin/subscriptions">
-                  <AlertTriangle className="h-6 w-6" />
-                  <span className="text-xs">Alertas</span>
+                  <StarIcon className="h-4 w-4 mr-2" />
+                  Subscriptions
                 </Link>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Main Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <CheckIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Doctors</p>
+                    <p className="text-2xl font-light text-gray-900">{metrics.totalDoctors}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {metrics.activeSubscriptions} active, {metrics.trialSubscriptions} trial
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-xl">
+                    <UsersIcon className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Patients</p>
+                    <p className="text-2xl font-light text-gray-900">{metrics.totalPatients}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Average of {Math.round(metrics.totalPatients / Math.max(metrics.totalDoctors, 1))} per doctor
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-purple-100 rounded-xl">
+                    <DocumentTextIcon className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Protocols</p>
+                    <p className="text-2xl font-light text-gray-900">{metrics.totalProtocols}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Created by doctors
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-orange-100 rounded-xl">
+                    <BuildingOffice2Icon className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Clinics</p>
+                    <p className="text-2xl font-light text-gray-900">{metrics.totalClinics}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {metrics.activeClinicSubscriptions} active
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-100 rounded-xl">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Expiring</p>
+                    <p className="text-2xl font-light text-gray-900">{metrics.expiringSoon}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Next 3 days
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Recent Doctors */}
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Recent Doctors
+                </CardTitle>
+                <Button 
+                  asChild
+                  variant="outline" 
+                  size="sm"
+                  className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  <Link href="/admin/doctors">
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    View All
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  {recentDoctors.length > 0 ? (
+                    recentDoctors.slice(0, 5).map((doctor) => (
+                      <div key={doctor.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 bg-turquoise rounded-xl flex items-center justify-center text-black font-semibold">
+                            {getDoctorInitials(doctor.name)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{doctor.name}</p>
+                            <p className="text-sm text-gray-600">{doctor.email}</p>
+                          </div>
+                        </div>
+                        {doctor.subscription && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(doctor.subscription.status)}`}>
+                            {doctor.subscription.status}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <CheckIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No doctors found</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-4">
+                  <Link 
+                    href="/admin/doctors/new"
+                    className="flex items-center gap-4 p-4 bg-turquoise/10 rounded-xl border border-turquoise/20 hover:bg-turquoise/20 transition-colors group"
+                  >
+                    <div className="p-3 bg-turquoise rounded-xl group-hover:scale-110 transition-transform">
+                      <PlusIcon className="h-6 w-6 text-black" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Create New Doctor</p>
+                      <p className="text-sm text-gray-600">Add doctor to the system</p>
+                    </div>
+                  </Link>
+
+                  <Link 
+                    href="/admin/clinics"
+                    className="flex items-center gap-4 p-4 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors group"
+                  >
+                    <div className="p-3 bg-blue-500 rounded-xl group-hover:scale-110 transition-transform">
+                      <BuildingOffice2Icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Manage Clinics</p>
+                      <p className="text-sm text-gray-600">View and edit clinics</p>
+                    </div>
+                  </Link>
+
+                  <Link 
+                    href="/admin/subscriptions"
+                    className="flex items-center gap-4 p-4 bg-purple-50 rounded-xl border border-purple-200 hover:bg-purple-100 transition-colors group"
+                  >
+                    <div className="p-3 bg-purple-500 rounded-xl group-hover:scale-110 transition-transform">
+                      <StarIcon className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Subscriptions</p>
+                      <p className="text-sm text-gray-600">Manage plans and subscriptions</p>
+                    </div>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
-    );
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    return (
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
-        <p className="text-red-500">Erro ao carregar o dashboard. Por favor, tente novamente mais tarde.</p>
-      </div>
-    );
-  }
+    </div>
+  );
 } 

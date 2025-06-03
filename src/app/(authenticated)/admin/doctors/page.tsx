@@ -1,78 +1,82 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Crown, Calendar, Mail, User, AlertTriangle } from 'lucide-react';
+import { 
+  UsersIcon, 
+  CheckIcon,
+  CalendarIcon, 
+  EnvelopeIcon, 
+  UserIcon, 
+  ExclamationTriangleIcon,
+  StarIcon,
+  EyeIcon,
+  PlusIcon,
+  ArrowLeftIcon
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-async function getDoctors() {
-  const doctors = await prisma.user.findMany({
-    where: { role: 'DOCTOR' },
-    select: {
-      id: true,
-      name: true,
-      email: true
-    },
-    orderBy: { id: 'desc' }
-  });
-
-  // Buscar subscriptions separadamente
-  const subscriptions = await prisma.doctorSubscription.findMany({
-    where: {
-      doctorId: { in: doctors.map(d => d.id) }
-    },
-    include: {
-      plan: {
-        select: {
-          name: true,
-          maxPatients: true,
-          maxProtocols: true,
-          maxCourses: true,
-          maxProducts: true
-        }
-      }
-    }
-  });
-
-  // Buscar contagem de pacientes por médico
-  const patientCounts = await Promise.all(
-    doctors.map(async (doctor) => ({
-      doctorId: doctor.id,
-      count: await prisma.user.count({
-        where: { 
-          role: 'PATIENT',
-          doctorId: doctor.id
-        }
-      })
-    }))
-  );
-
-  return doctors.map(doctor => {
-    const subscription = subscriptions.find(s => s.doctorId === doctor.id);
-    const patientCount = patientCounts.find(p => p.doctorId === doctor.id)?.count || 0;
-    
-    return {
-      ...doctor,
-      subscription,
-      patientCount
-    };
-  });
+interface DoctorSubscription {
+  status: string;
+  trialEndDate?: string;
+  plan?: {
+    name: string;
+    maxPatients: number;
+    maxProtocols: number;
+    maxCourses: number;
+    maxProducts: number;
+  };
 }
 
-export default async function DoctorsPage() {
-  const session = await getServerSession(authOptions);
-  const doctors = await getDoctors();
+interface Doctor {
+  id: string;
+  name: string;
+  email: string;
+  subscription?: DoctorSubscription;
+  patientCount: number;
+}
 
-  const user = await prisma.user.findUnique({
-    where: { email: session?.user?.email! },
-    select: { role: true }
-  });
+export default function DoctorsPage() {
+  const { data: session } = useSession();
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (user?.role !== 'SUPER_ADMIN') {
-    return <div>Acesso negado</div>;
-  }
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/admin/doctors');
+        if (response.ok) {
+          const data = await response.json();
+          setDoctors(data.doctors || []);
+        }
+      } catch (error) {
+        console.error('Error loading doctors:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (session) {
+      loadDoctors();
+    }
+  }, [session]);
+
+  const getDoctorInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800';
+      case 'TRIAL': return 'bg-blue-100 text-blue-800';
+      case 'EXPIRED': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const activeDoctors = doctors.filter(d => d.subscription?.status === 'ACTIVE').length;
   const trialDoctors = doctors.filter(d => d.subscription?.status === 'TRIAL').length;
@@ -82,220 +86,302 @@ export default async function DoctorsPage() {
     return daysLeft <= 3;
   }).length;
 
-  return (
-    <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-light text-slate-800">Gerenciar Médicos</h1>
-          <p className="text-sm text-slate-600">Visualize e gerencie todos os médicos cadastrados</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            asChild
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Link href="/admin/doctors/new">
-              Adicionar Médico
-            </Link>
-          </Button>
-          <Button 
-            asChild
-            variant="outline"
-            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-          >
-            <Link href="/admin">
-              Voltar ao Dashboard
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Estatísticas Rápidas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-5 w-5 text-blue-600" />
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-80 animate-pulse"></div>
               </div>
-              <div>
-                <p className="text-xs text-slate-600">Total de Médicos</p>
-                <p className="text-xl font-light text-slate-800">{doctors.length}</p>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-200 rounded-xl w-36 animate-pulse"></div>
+                <div className="h-10 bg-gray-100 rounded-xl w-40 animate-pulse"></div>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Crown className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-600">Subscriptions Ativas</p>
-                <p className="text-xl font-light text-green-600">{activeDoctors}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Calendar className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-600">Em Trial</p>
-                <p className="text-xl font-light text-yellow-600">{trialDoctors}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-600">Expirando</p>
-                <p className="text-xl font-light text-red-600">{expiringSoon}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de Médicos */}
-      <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="text-sm font-normal text-slate-800">Lista de Médicos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {doctors.map((doctor) => {
-              const subscription = doctor.subscription;
-              const isExpiringSoon = subscription?.status === 'TRIAL' && subscription.trialEndDate && 
-                Math.ceil((new Date(subscription.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 3;
-
-              return (
-                <div key={doctor.id} className={`p-4 rounded-lg border ${
-                  isExpiringSoon 
-                    ? 'border-red-200/50 bg-red-50/80' 
-                    : 'border-slate-200/50 bg-slate-50/80'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-slate-800">
-                          {doctor.name || 'Sem nome'}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                          <Mail className="h-3 w-3" />
-                          <span>{doctor.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                          <Users className="h-3 w-3" />
-                          <span>{doctor.patientCount} pacientes</span>
-                        </div>
-                      </div>
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gray-100 rounded-xl animate-pulse">
+                      <div className="h-6 w-6 bg-gray-200 rounded animate-pulse"></div>
                     </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+                      <div className="h-7 bg-gray-100 rounded w-12 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                    <div className="flex items-center gap-4">
-                      {/* Status da Subscription */}
-                      <div className="text-right">
-                        {subscription ? (
-                          <>
-                            <Badge 
-                              variant={subscription.status === 'ACTIVE' ? 'default' : 'secondary'}
-                              className={subscription.status === 'ACTIVE' 
-                                ? 'bg-green-100 text-green-700 border-green-200' 
-                                : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                              }
-                            >
-                              {subscription.status === 'ACTIVE' ? 'Ativo' : 'Trial'}
-                            </Badge>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {subscription.plan?.name || 'Plano Básico'}
-                            </p>
-                            {subscription.status === 'TRIAL' && subscription.trialEndDate && (
-                              <p className={`text-xs mt-1 ${isExpiringSoon ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
-                                Expira em {Math.ceil((new Date(subscription.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} dias
-                              </p>
-                            )}
-                          </>
-                        ) : (
-                          <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-200">
-                            Sem Subscription
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Limites do Plano */}
-                      {subscription?.plan && (
-                        <div className="text-xs text-slate-500 text-right">
-                          <div>Máx: {subscription.plan.maxPatients} pacientes</div>
-                          <div>{subscription.plan.maxProtocols} protocolos</div>
-                          <div>{subscription.plan.maxCourses} cursos</div>
+            {/* Doctors List Skeleton */}
+            <div className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+              <div className="p-6 pb-4">
+                <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+              </div>
+              <div className="p-6 pt-0 space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-40 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-24 animate-pulse"></div>
                         </div>
-                      )}
-
-                      {/* Ações */}
-                      <div className="flex gap-2">
-                        <Link href={`/admin/doctors/${doctor.id}`}>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                          >
-                            Ver Detalhes
-                          </Button>
-                        </Link>
-                        <Link href={`/admin/subscriptions?doctorId=${doctor.id}`}>
-                          <Button 
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            <Crown className="h-3 w-3 mr-1" />
-                            Subscription
-                          </Button>
-                        </Link>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="space-y-2">
+                          <div className="h-6 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                          <div className="h-3 bg-gray-100 rounded w-20 animate-pulse"></div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-gray-100 rounded-xl w-24 animate-pulse"></div>
+                          <div className="h-8 bg-gray-200 rounded-xl w-28 animate-pulse"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Alerta para trials expirando */}
-                  {isExpiringSoon && (
-                    <div className="mt-3 p-2 bg-red-100/80 border border-red-200/50 rounded text-xs text-red-700">
-                      <div className="flex items-center">
-                        <AlertTriangle className="h-3 w-3 mr-2" />
-                        Trial expirando em breve! Considere entrar em contato com o médico.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {doctors.length === 0 && (
-              <div className="text-center py-8 text-slate-500">
-                <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                <p className="text-sm">Nenhum médico cadastrado ainda.</p>
+                ))}
               </div>
-            )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div>
+              <h1 className="text-3xl font-light text-gray-900 tracking-tight">
+                Manage Doctors
+              </h1>
+              <p className="text-gray-600 mt-1">
+                View and manage all registered doctors
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button 
+                asChild
+                className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
+              >
+                <Link href="/admin/doctors/new">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Doctor
+                </Link>
+              </Button>
+              <Button 
+                asChild
+                variant="outline"
+                className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-sm"
+              >
+                <Link href="/admin">
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Statistics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <UsersIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Total Doctors</p>
+                    <p className="text-2xl font-light text-gray-900">{doctors.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-xl">
+                    <CheckIcon className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Active Subscriptions</p>
+                    <p className="text-2xl font-light text-green-600">{activeDoctors}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-yellow-100 rounded-xl">
+                    <CalendarIcon className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">On Trial</p>
+                    <p className="text-2xl font-light text-yellow-600">{trialDoctors}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-100 rounded-xl">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 font-medium">Expiring Soon</p>
+                    <p className="text-2xl font-light text-red-600">{expiringSoon}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Doctors List */}
+          <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Doctors List
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                {doctors.length > 0 ? (
+                  doctors.map((doctor) => {
+                    const subscription = doctor.subscription;
+                    const isExpiringSoon = subscription?.status === 'TRIAL' && subscription.trialEndDate && 
+                      Math.ceil((new Date(subscription.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= 3;
+
+                    return (
+                      <div key={doctor.id} className={`p-4 rounded-xl border transition-colors ${
+                        isExpiringSoon 
+                          ? 'border-red-200 bg-red-50' 
+                          : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 bg-turquoise rounded-xl flex items-center justify-center text-black font-semibold">
+                              {getDoctorInitials(doctor.name || 'Unknown')}
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-medium text-gray-900">
+                                {doctor.name || 'No name'}
+                              </h3>
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <EnvelopeIcon className="h-4 w-4" />
+                                <span>{doctor.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <UsersIcon className="h-4 w-4" />
+                                <span>{doctor.patientCount} patients</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6">
+                            {/* Subscription Status */}
+                            <div className="text-right">
+                              {subscription ? (
+                                <>
+                                  <Badge 
+                                    className={`${getStatusColor(subscription.status)} border-0`}
+                                  >
+                                    {subscription.status === 'ACTIVE' ? 'Active' : 'Trial'}
+                                  </Badge>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {subscription.plan?.name || 'Basic Plan'}
+                                  </p>
+                                  {subscription.status === 'TRIAL' && subscription.trialEndDate && (
+                                    <p className={`text-xs mt-1 ${isExpiringSoon ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                                      Expires in {Math.ceil((new Date(subscription.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days
+                                    </p>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge className="bg-red-100 text-red-800 border-0">
+                                  No Subscription
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Plan Limits */}
+                            {subscription?.plan && (
+                              <div className="text-xs text-gray-500 text-right">
+                                <div>Max: {subscription.plan.maxPatients} patients</div>
+                                <div>{subscription.plan.maxProtocols} protocols</div>
+                                <div>{subscription.plan.maxCourses} courses</div>
+                              </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              <Link href={`/admin/doctors/${doctor.id}`}>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                >
+                                  <EyeIcon className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Button>
+                              </Link>
+                              <Link href={`/admin/subscriptions?doctorId=${doctor.id}`}>
+                                <Button 
+                                  size="sm"
+                                  className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold"
+                                >
+                                  <StarIcon className="h-4 w-4 mr-1" />
+                                  Subscription
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Expiring Alert */}
+                        {isExpiringSoon && (
+                          <div className="mt-3 p-3 bg-red-100 border border-red-200 rounded-lg">
+                            <div className="flex items-center text-sm text-red-700">
+                              <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                              Trial expiring soon! Consider contacting the doctor.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12">
+                    <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg">No doctors registered yet.</p>
+                    <p className="text-gray-500 text-sm mt-2">Add your first doctor to get started.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 } 

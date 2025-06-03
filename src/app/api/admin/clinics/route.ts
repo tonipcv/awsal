@@ -8,20 +8,20 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verificar se é super admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { role: true }
     });
 
     if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Buscar todas as clínicas com detalhes
+    // Fetch all clinics with related data
     const clinics = await prisma.clinic.findMany({
       include: {
         owner: {
@@ -32,14 +32,12 @@ export async function GET(request: NextRequest) {
           }
         },
         members: {
-          where: { isActive: true },
           include: {
             user: {
               select: {
                 id: true,
                 name: true,
-                email: true,
-                role: true
+                email: true
               }
             }
           }
@@ -48,56 +46,30 @@ export async function GET(request: NextRequest) {
           include: {
             plan: {
               select: {
+                id: true,
                 name: true,
-                maxPatients: true,
-                maxProtocols: true,
-                maxCourses: true,
-                maxProducts: true,
                 price: true
               }
             }
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
-    // Calcular estatísticas para cada clínica
-    const clinicsWithStats = await Promise.all(
-      clinics.map(async (clinic) => {
-        const memberIds = clinic.members.map(m => m.user.id);
-        
-        const [protocolCount, patientCount, courseCount] = await Promise.all([
-          prisma.protocol.count({
-            where: { doctorId: { in: memberIds } }
-          }),
-          prisma.user.count({
-            where: {
-              role: 'PATIENT',
-              doctorId: { in: memberIds }
-            }
-          }),
-          prisma.course.count({
-            where: { doctorId: { in: memberIds } }
-          })
-        ]);
+    return NextResponse.json({ 
+      clinics,
+      total: clinics.length 
+    });
 
-        return {
-          ...clinic,
-          stats: {
-            totalDoctors: clinic.members.length,
-            totalPatients: patientCount,
-            totalProtocols: protocolCount,
-            totalCourses: courseCount
-          }
-        };
-      })
-    );
-
-    return NextResponse.json({ clinics: clinicsWithStats });
   } catch (error) {
-    console.error('Erro ao buscar clínicas:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error fetching clinics:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -106,86 +78,151 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verificar se é super admin
+    // Check if user is super admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { role: true }
     });
 
     if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const { name, description, ownerEmail } = await request.json();
+    const {
+      name,
+      description,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      zipCode,
+      country,
+      website,
+      ownerId,
+      planId,
+      subscriptionStatus
+    } = await request.json();
 
-    if (!name || !ownerEmail) {
-      return NextResponse.json({ error: 'Nome e email do proprietário são obrigatórios' }, { status: 400 });
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Clinic name is required' }, { status: 400 });
     }
 
-    // Verificar se o proprietário existe e é médico
+    if (!ownerId) {
+      return NextResponse.json({ error: 'Clinic owner is required' }, { status: 400 });
+    }
+
+    // Verify that the owner exists
     const owner = await prisma.user.findUnique({
-      where: { email: ownerEmail }
+      where: { id: ownerId }
     });
 
     if (!owner) {
-      return NextResponse.json({ error: 'Médico proprietário não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: 'Selected owner not found' }, { status: 404 });
     }
 
-    if (owner.role !== 'DOCTOR') {
-      return NextResponse.json({ error: 'Proprietário deve ser um médico' }, { status: 400 });
-    }
-
-    // Verificar se o médico já possui uma clínica
+    // Check if the owner already has a clinic
     const existingClinic = await prisma.clinic.findFirst({
       where: { ownerId: owner.id }
     });
 
     if (existingClinic) {
-      return NextResponse.json({ error: 'Este médico já possui uma clínica' }, { status: 400 });
+      return NextResponse.json({ error: 'This user already owns a clinic' }, { status: 400 });
     }
 
-    // Buscar plano padrão
-    const defaultPlan = await prisma.subscriptionPlan.findFirst({
-      where: { isDefault: true }
-    });
-
-    if (!defaultPlan) {
-      return NextResponse.json({ error: 'Plano padrão não encontrado' }, { status: 500 });
-    }
-
-    // Criar clínica
+    // Create clinic
     const clinic = await prisma.clinic.create({
       data: {
-        name,
-        description,
-        ownerId: owner.id
+        name: name.trim(),
+        description: description?.trim() || null,
+        email: email?.trim() || null,
+        phone: phone?.trim() || null,
+        address: address?.trim() || null,
+        city: city?.trim() || null,
+        state: state?.trim() || null,
+        zipCode: zipCode?.trim() || null,
+        country: country?.trim() || null,
+        website: website?.trim() || null,
+        ownerId: owner.id,
+        isActive: true
       }
     });
 
-    // Criar subscription trial para a clínica
-    const now = new Date();
-    const trialDays = defaultPlan.trialDays || 7; // Default to 7 days if null
-    await prisma.clinicSubscription.create({
-      data: {
-        clinicId: clinic.id,
-        planId: defaultPlan.id,
-        status: 'TRIAL',
-        maxDoctors: 3, // Padrão para trial
-        trialEndDate: new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000)
+    // Create subscription if plan is selected
+    if (planId) {
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { id: planId }
+      });
+
+      if (plan) {
+        const now = new Date();
+        const subscriptionData: any = {
+          clinicId: clinic.id,
+          planId: plan.id,
+          status: subscriptionStatus || 'TRIAL',
+          maxDoctors: plan.maxDoctors,
+          startDate: now
+        };
+
+        // Set trial end date if status is TRIAL
+        if (subscriptionStatus === 'TRIAL') {
+          const trialDays = plan.trialDays || 7;
+          subscriptionData.trialEndDate = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        }
+
+        await prisma.clinicSubscription.create({
+          data: subscriptionData
+        });
+      }
+    }
+
+    // Fetch the created clinic with all related data
+    const createdClinic = await prisma.clinic.findUnique({
+      where: { id: clinic.id },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        },
+        subscription: {
+          include: {
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                price: true
+              }
+            }
+          }
+        }
       }
     });
 
     return NextResponse.json({ 
       success: true, 
-      clinic,
-      message: 'Clínica criada com sucesso'
+      clinic: createdClinic,
+      message: 'Clinic created successfully'
     });
 
   } catch (error) {
-    console.error('Erro ao criar clínica:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error creating clinic:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

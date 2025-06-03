@@ -20,12 +20,94 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is super admin
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { role: true }
+    });
+
+    if (user?.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // Fetch doctors
+    const doctors = await prisma.user.findMany({
+      where: { role: 'DOCTOR' },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Fetch subscriptions separately
+    const subscriptions = await prisma.doctorSubscription.findMany({
+      where: {
+        doctorId: { in: doctors.map(d => d.id) }
+      },
+      include: {
+        plan: {
+          select: {
+            name: true,
+            maxPatients: true,
+            maxProtocols: true,
+            maxCourses: true,
+            maxProducts: true
+          }
+        }
+      }
+    });
+
+    // Fetch patient counts per doctor
+    const patientCounts = await Promise.all(
+      doctors.map(async (doctor) => ({
+        doctorId: doctor.id,
+        count: await prisma.user.count({
+          where: { 
+            role: 'PATIENT',
+            doctorId: doctor.id
+          }
+        })
+      }))
+    );
+
+    // Combine data
+    const doctorsWithData = doctors.map(doctor => {
+      const subscription = subscriptions.find(s => s.doctorId === doctor.id);
+      const patientCount = patientCounts.find(p => p.doctorId === doctor.id)?.count || 0;
+      
+      return {
+        ...doctor,
+        subscription,
+        patientCount
+      };
+    });
+
+    return NextResponse.json({ 
+      doctors: doctorsWithData
+    });
+
+  } catch (error) {
+    console.error('Error fetching doctors:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verificar se é super admin
@@ -35,7 +117,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -43,12 +125,12 @@ export async function POST(request: NextRequest) {
 
     // Validações
     if (!name || !email) {
-      return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
     // Validar tipo de subscription (padrão é TRIAL)
     if (!['TRIAL', 'ACTIVE'].includes(subscriptionType)) {
-      return NextResponse.json({ error: 'Tipo de subscription inválido' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid subscription type' }, { status: 400 });
     }
 
     // Verificar se o email já existe
@@ -57,7 +139,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'Este email já está em uso' }, { status: 400 });
+      return NextResponse.json({ error: 'This email is already in use' }, { status: 400 });
     }
 
     // Buscar o plano padrão (Básico)
@@ -66,7 +148,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!defaultPlan) {
-      return NextResponse.json({ error: 'Plano padrão não encontrado' }, { status: 500 });
+      return NextResponse.json({ error: 'Default plan not found' }, { status: 500 });
     }
 
     // Gerar token para definir senha
@@ -127,53 +209,53 @@ export async function POST(request: NextRequest) {
           address: process.env.SMTP_FROM as string
         },
         to: email,
-        subject: 'Convite para AwLov - Defina sua senha',
+        subject: 'Invitation to AwLov - Set your password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Bem-vindo ao AwLov!</h1>
+            <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Welcome to AwLov!</h1>
             
             <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-              Olá <strong>${name}</strong>,
+              Hello <strong>${name}</strong>,
             </p>
             
             <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-              Você foi convidado para se juntar à plataforma AwLov como médico. Para começar a usar a plataforma, você precisa definir sua senha.
+              You have been invited to join the AwLov platform as a doctor. To start using the platform, you need to set your password.
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${inviteUrl}" 
                  style="display: inline-block; padding: 15px 30px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                Definir Senha e Acessar
+                Set Password and Access
               </a>
             </div>
             
             <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #059669; margin: 0 0 10px 0;">🎉 ${subscriptionType === 'TRIAL' ? 'Seu Trial Gratuito' : 'Sua Subscription Ativa'}</h3>
+              <h3 style="color: #059669; margin: 0 0 10px 0;">🎉 ${subscriptionType === 'TRIAL' ? 'Your Free Trial' : 'Your Active Subscription'}</h3>
               <p style="color: #475569; margin: 0; font-size: 14px;">
-                Sua conta já está configurada com o plano Básico ${subscriptionType === 'TRIAL' ? 'em período de trial' : 'ativo'} que inclui:
+                Your account is already configured with the Basic plan ${subscriptionType === 'TRIAL' ? 'in trial period' : 'active'} which includes:
               </p>
               <ul style="color: #475569; font-size: 14px; margin: 10px 0;">
-                <li>Até 50 pacientes</li>
-                <li>Até 10 protocolos</li>
-                <li>Até 5 cursos</li>
-                <li>Até 30 produtos</li>
-                ${subscriptionType === 'TRIAL' ? `<li>${trialDays} dias de trial gratuito</li>` : '<li>Subscription ativa imediatamente</li>'}
+                <li>Up to 50 patients</li>
+                <li>Up to 10 protocols</li>
+                <li>Up to 5 courses</li>
+                <li>Up to 30 products</li>
+                ${subscriptionType === 'TRIAL' ? `<li>${trialDays} days free trial</li>` : '<li>Active subscription immediately</li>'}
               </ul>
             </div>
             
             <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-              <strong>Importante:</strong> Este link é válido por 7 dias. Se você não definir sua senha dentro deste prazo, será necessário solicitar um novo convite.
+              <strong>Important:</strong> This link is valid for 7 days. If you don't set your password within this period, you'll need to request a new invite.
             </p>
             
             <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-              Se você não solicitou este convite, pode ignorar este email com segurança.
+              If you didn't request this invite, you can safely ignore this email.
             </p>
             
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
             
             <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-              AwLov - Plataforma Médica<br>
-              Este é um email automático, não responda.
+              AwLov - Medical Platform<br>
+              This is an automated email, please do not reply.
             </p>
           </div>
         `
@@ -188,7 +270,7 @@ export async function POST(request: NextRequest) {
       await prisma.user.delete({
         where: { id: doctor.id }
       });
-      throw new Error('Erro ao enviar email de convite');
+      throw new Error('Error sending invite email');
     }
 
     return NextResponse.json({ 
@@ -198,13 +280,13 @@ export async function POST(request: NextRequest) {
         name: doctor.name,
         email: doctor.email
       },
-      message: 'Médico criado com sucesso e convite enviado por email'
+      message: 'Doctor created successfully and invite sent by email'
     });
 
   } catch (error) {
-    console.error('Erro ao criar médico:', error);
+    console.error('Error creating doctor:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Erro interno do servidor' 
+      error: error instanceof Error ? error.message : 'Internal server error' 
     }, { status: 500 });
   }
 } 

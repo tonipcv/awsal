@@ -21,14 +21,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Fetch all plans
-    const plans = await prisma.subscriptionPlan.findMany({
-      orderBy: { price: 'asc' }
+    // Fetch all subscriptions with related data
+    const subscriptions = await prisma.doctorSubscription.findMany({
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            maxPatients: true,
+            maxProtocols: true,
+            maxCourses: true,
+            maxProducts: true,
+            trialDays: true,
+            isDefault: true
+          }
+        }
+      },
+      orderBy: { startDate: 'desc' }
     });
 
-    return NextResponse.json({ plans });
+    return NextResponse.json({ 
+      subscriptions
+    });
+
   } catch (error) {
-    console.error('Error fetching plans:', error);
+    console.error('Error fetching subscriptions:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

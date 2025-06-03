@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, UserPlus, Loader2, Info, Mail } from 'lucide-react';
+import { ArrowLeftIcon, UserPlusIcon, InformationCircleIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function NewDoctorPage() {
@@ -64,174 +65,216 @@ export default function NewDoctorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-4 lg:p-6 pt-[88px] lg:pt-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-light text-slate-800">Adicionar Novo Médico</h1>
-            <p className="text-sm text-slate-600">Crie uma nova conta de médico (padrão: trial gratuito)</p>
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div>
+              <h1 className="text-3xl font-light text-gray-900 tracking-tight">
+                Create New Doctor
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Add a new doctor to the system with trial subscription
+              </p>
+            </div>
+            <Button 
+              asChild
+              variant="outline"
+              className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 shadow-sm"
+            >
+              <Link href="/admin/doctors">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                Back to Doctors
+              </Link>
+            </Button>
           </div>
-          <Button 
-            asChild
-            variant="outline"
-            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-          >
-            <Link href="/admin/doctors">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Link>
-          </Button>
-        </div>
 
-        {/* Formulário */}
-        <div className="max-w-2xl mx-auto">
-          <Card className="bg-white/80 border-slate-200/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-sm font-normal text-slate-800 flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Informações do Médico
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {error && (
-                <div className="mb-4 p-3 bg-red-50/80 border border-red-200/50 rounded-lg text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-
-              {/* Informação sobre o convite por email */}
-              <div className="mb-6 p-3 bg-blue-50/80 border border-blue-200/50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 bg-blue-100 rounded-lg">
-                    <Mail className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-800 mb-1">Convite por Email</h4>
-                    <p className="text-xs text-blue-700 mb-2">
-                      Um email será enviado para o médico com um link para definir a senha e acessar a plataforma.
-                    </p>
-                    <div className="text-xs text-green-700">
-                      ✓ Processo seguro e automatizado
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informação sobre o plano padrão */}
-              <div className="mb-6 p-3 bg-green-50/80 border border-green-200/50 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="p-1 bg-green-100 rounded-lg">
-                    <Info className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-green-800 mb-1">Plano Básico Incluído</h4>
-                    <p className="text-xs text-green-700 mb-2">
-                      Todos os novos médicos começam com o plano Básico que inclui:
-                    </p>
-                    <div className="grid grid-cols-2 gap-1 text-xs text-green-700">
-                      <div>• Até 50 pacientes</div>
-                      <div>• Até 10 protocolos</div>
-                      <div>• Até 5 cursos</div>
-                      <div>• Até 30 produtos</div>
-                    </div>
-                    <div className="mt-2 text-xs text-blue-700">
-                      ✓ Padrão: 7 dias de trial gratuito
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Main Content */}
+          <div className="max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-3 gap-8">
               
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Informações Pessoais */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-slate-700">Dados Pessoais</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name" className="text-xs text-slate-600">Nome Completo</Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        placeholder="Dr. João Silva"
-                        required
-                        className="mt-1 bg-white border-slate-300 text-slate-800 placeholder:text-slate-400"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="email" className="text-xs text-slate-600">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder="joao@exemplo.com"
-                        required
-                        className="mt-1 bg-white border-slate-300 text-slate-800 placeholder:text-slate-400"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Configuração da Subscription */}
-                <div className="space-y-4 pt-4 border-t border-slate-200">
-                  <h3 className="text-sm font-medium text-slate-700">Configuração da Subscription</h3>
-                  
-                  <div>
-                    <Label htmlFor="subscriptionType" className="text-xs text-slate-600">Tipo de Subscription</Label>
-                    <select
-                      id="subscriptionType"
-                      value={formData.subscriptionType}
-                      onChange={(e) => handleInputChange('subscriptionType', e.target.value)}
-                      className="mt-1 w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="TRIAL">Trial Gratuito (Padrão)</option>
-                      <option value="ACTIVE">Subscription Ativa</option>
-                    </select>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {formData.subscriptionType === 'TRIAL' 
-                        ? 'O médico terá 7 dias para testar todas as funcionalidades gratuitamente.'
-                        : 'O médico começará com subscription ativa e será cobrado imediatamente.'
-                      }
-                    </p>
-                  </div>
-                </div>
-
-                {/* Botões */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Criando e Enviando Convite...
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Criar Médico e Enviar Convite
-                      </>
+              {/* Form Section */}
+              <div className="lg:col-span-2">
+                <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <UserPlusIcon className="h-5 w-5 text-turquoise" />
+                      Doctor Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {error && (
+                      <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                        {error}
+                      </div>
                     )}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.push('/admin/doctors')}
-                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      {/* Personal Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Personal Details</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <Label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</Label>
+                            <Input
+                              id="name"
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) => handleInputChange('name', e.target.value)}
+                              placeholder="Dr. John Smith"
+                              required
+                              className="mt-2 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-turquoise focus:ring-turquoise"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => handleInputChange('email', e.target.value)}
+                              placeholder="john@example.com"
+                              required
+                              className="mt-2 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-turquoise focus:ring-turquoise"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subscription Configuration */}
+                      <div className="space-y-4 pt-6 border-t border-gray-200">
+                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Subscription Settings</h3>
+                        
+                        <div>
+                          <Label htmlFor="subscriptionType" className="text-sm font-medium text-gray-700">Subscription Type</Label>
+                          <select
+                            id="subscriptionType"
+                            value={formData.subscriptionType}
+                            onChange={(e) => handleInputChange('subscriptionType', e.target.value)}
+                            className="mt-2 w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-turquoise focus:border-turquoise"
+                          >
+                            <option value="TRIAL">Trial (7 days free)</option>
+                            <option value="ACTIVE">Active Subscription</option>
+                          </select>
+                          <p className="text-xs text-gray-500 mt-2">
+                            {formData.subscriptionType === 'TRIAL' 
+                              ? 'Doctor will have 7 days to test all features for free.'
+                              : 'Doctor will start with an active subscription and be charged immediately.'
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-4 pt-6">
+                        <Button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-1 bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Creating Doctor...
+                            </>
+                          ) : (
+                            <>
+                              <UserPlusIcon className="h-4 w-4 mr-2" />
+                              Create Doctor & Send Invite
+                            </>
+                          )}
+                        </Button>
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => router.push('/admin/doctors')}
+                          className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Information Sidebar */}
+              <div className="space-y-6">
+                
+                {/* Email Invitation Info */}
+                <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <EnvelopeIcon className="h-5 w-5 text-blue-600" />
+                      Email Invitation
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <EnvelopeIcon className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Automatic Invitation</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            An email will be sent to the doctor with a secure link to set their password and access the platform.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-green-700 bg-green-50 p-2 rounded-lg">
+                        ✓ Secure and automated process
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Trial Plan Info */}
+                <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <InformationCircleIcon className="h-5 w-5 text-green-600" />
+                      Trial Benefits
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        All new doctors start with a 7-day trial that includes:
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 text-xs text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Up to 50 patients
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Up to 10 protocols
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Up to 5 courses
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Up to 30 products
+                        </div>
+                      </div>
+                      <div className="text-xs text-turquoise bg-turquoise/10 p-2 rounded-lg font-medium">
+                        ✓ Full access for 7 days
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

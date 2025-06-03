@@ -301,7 +301,7 @@ export default function ReferralPage() {
               {error}
             </p>
           </div>
-        </div>
+            </div>
       </div>
     );
   }
@@ -323,14 +323,14 @@ export default function ReferralPage() {
             </h2>
             <p className={`${styleConfig.subtitleClass} mb-8`}>
               {t.contactSoon}
-            </p>
-            
+              </p>
+              
             <div className="bg-gray-100/50 backdrop-blur-sm border border-gray-300/30 rounded-xl p-4 mb-8">
               <p className="bg-gradient-to-b from-gray-600 to-gray-500 bg-clip-text text-transparent text-sm">
                 {t.redirectingIn(countdown)}
-              </p>
-            </div>
-            
+                </p>
+              </div>
+              
             <div className="space-y-4">
               <button 
                 onClick={() => {
@@ -404,7 +404,7 @@ export default function ReferralPage() {
                     className="relative w-full h-full rounded-full object-cover border-4 border-white/30 shadow-2xl"
                   />
                 </div>
-              ) : (
+                ) : (
                 <div className="relative w-32 h-32 mx-auto">
                   <div className="absolute inset-0 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full opacity-75 blur-lg" />
                   <div className="relative w-full h-full rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center border-4 border-white/30 shadow-2xl">
@@ -412,8 +412,8 @@ export default function ReferralPage() {
                       {doctor.name.charAt(0)}
                     </span>
                   </div>
-                </div>
-              )}
+                  </div>
+                )}
             </div>
             
             <div className="space-y-3">
@@ -422,93 +422,93 @@ export default function ReferralPage() {
               </p>
               <h1 className={`text-xl md:text-2xl font-semibold ${styleConfig.titleClass}`}>
                 {doctor.name}
-              </h1>
+                  </h1>
               <p className={`text-base md:text-lg font-light ${styleConfig.titleClass}`}>
                 {t.withPriority}
-              </p>
-              {stats && (
+                  </p>
+                  {stats && (
                 <p className={`text-xs md:text-sm ${styleConfig.subtitleClass} opacity-80`}>
                   {t.patientsServed(stats.totalPatients)}
                 </p>
-              )}
-            </div>
-          </div>
+                  )}
+                </div>
+              </div>
         )}
 
         {/* Formulário moderno */}
         <div className={`${styleConfig.cardClass} rounded-3xl p-8 shadow-2xl`}>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-5">
-              <div>
+                  <div>
                 <label htmlFor="name" className={`block text-xs md:text-sm font-medium ${styleConfig.titleClass} mb-2 opacity-90`}>
                   {t.fullName}
                 </label>
                 <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
                   className="w-full px-4 py-3 bg-gray-50/80 backdrop-blur-sm border border-gray-300/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                   placeholder={t.fullNamePlaceholder}
-                />
-              </div>
+                    />
+                  </div>
 
-              <div>
+                  <div>
                 <label htmlFor="email" className={`block text-xs md:text-sm font-medium ${styleConfig.titleClass} mb-2 opacity-90`}>
                   {t.email}
                 </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
                   className="w-full px-4 py-3 bg-gray-50/80 backdrop-blur-sm border border-gray-300/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                   placeholder={t.emailPlaceholder}
-                />
-              </div>
+                    />
+                </div>
 
-              <div>
+                <div>
                 <label htmlFor="phone" className={`block text-xs md:text-sm font-medium ${styleConfig.titleClass} mb-2 opacity-90`}>
                   {t.phone}
                 </label>
                 <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
                   className="w-full px-4 py-3 bg-gray-50/80 backdrop-blur-sm border border-gray-300/50 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                   placeholder={t.phonePlaceholder}
-                />
-              </div>
-            </div>
+                  />
+                </div>
+                </div>
 
-            {error && (
+                {error && (
               <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 text-red-100 text-sm p-4 rounded-xl">
-                {error}
-              </div>
-            )}
+                    {error}
+                  </div>
+                )}
 
             <button
-              type="submit"
-              disabled={submitting}
+                  type="submit" 
+                  disabled={submitting}
               className={`w-full ${styleConfig.buttonClass} py-4 px-6 rounded-xl font-medium text-base md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {submitting ? (
+                >
+                  {submitting ? (
                 <div className="flex items-center justify-center gap-2">
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   {t.sending}
                 </div>
-              ) : (
+                  ) : (
                 t.scheduleConsultation
-              )}
+                  )}
             </button>
-          </form>
-        </div>
+              </form>
+              </div>
 
         {/* Footer minimalista */}
         <div className="text-center mt-12">
