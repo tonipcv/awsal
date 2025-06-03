@@ -167,119 +167,278 @@ export default function PatientAIChatPage() {
 
   if (!doctorId) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="w-20 h-20 bg-teal-400/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <span className="text-3xl">🩺</span>
+      <div className="min-h-screen bg-black">
+        {/* Mobile: Full screen layout */}
+        <div className="lg:hidden fixed inset-0 bg-black flex items-center justify-center">
+          <div className="text-center p-8">
+            <div className="w-20 h-20 bg-teal-400/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <span className="text-3xl">🩺</span>
+            </div>
+            <h3 className="text-xl font-light text-white mb-3">
+              Assistant Unavailable
+            </h3>
+            <p className="text-gray-400 leading-relaxed max-w-md">
+              You need to be linked to a doctor to use the AI assistant.
+            </p>
           </div>
-          <h3 className="text-xl font-light text-white mb-3">
-            Assistant Unavailable
-          </h3>
-          <p className="text-gray-400 leading-relaxed max-w-md">
-            You need to be linked to a doctor to use the AI assistant.
-          </p>
+        </div>
+
+        {/* Desktop: Standard layout */}
+        <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className="text-center p-8">
+              <div className="w-20 h-20 bg-teal-400/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <span className="text-3xl">🩺</span>
+              </div>
+              <h3 className="text-xl font-light text-white mb-3">
+                Assistant Unavailable
+              </h3>
+              <p className="text-gray-300 leading-relaxed max-w-md mx-auto">
+                You need to be linked to a doctor to use the AI assistant.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Header fixo - minimalista */}
-      <div className="flex-shrink-0 pt-[100px] lg:pt-8 lg:ml-64 px-4 lg:px-6 pb-6">
-        <div className="text-center">
-          <h1 className="text-3xl lg:text-4xl font-light text-white mb-2 tracking-tight">
-            Medical Assistant
-          </h1>
-          <p className="text-gray-300 text-base lg:text-lg font-light">
-            Available 24/7 to help you
-          </p>
+    <div className="min-h-screen bg-black">
+      {/* Mobile: Full screen chat layout */}
+      <div className="lg:hidden fixed inset-0 bg-black flex flex-col">
+        {/* Header fixo - minimalista */}
+        <div className="flex-shrink-0 pt-[100px] px-4 pb-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-light text-white mb-2 tracking-tight">
+              Medical Assistant
+            </h1>
+            <p className="text-gray-300 text-base font-light">
+              Available 24/7 to help you
+            </p>
+          </div>
+        </div>
+
+        {/* Área de mensagens - ocupa todo o espaço disponível */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full flex flex-col">
+            
+            {/* Messages container */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                      message.role === 'user'
+                        ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black'
+                        : 'bg-gray-800/80 text-white border border-gray-700/50'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap leading-relaxed text-base">
+                      {message.content}
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+                      <span>{formatTime(message.createdAt)}</span>
+                      {message.role === 'assistant' && (
+                        <div className="flex items-center gap-2">
+                          {message.isFromFAQ && (
+                            <Badge className="bg-teal-400/20 text-teal-300 border-teal-400/30 text-xs">
+                              Quick
+                            </Badge>
+                          )}
+                          {message.needsReview && (
+                            <Badge className="bg-amber-400/20 text-amber-300 border-amber-400/30 text-xs">
+                              Review
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-800/80 rounded-2xl px-4 py-3 border border-gray-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                      <span className="text-gray-300 text-sm">Typing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input fixo na parte inferior - com padding para mobile menu */}
+            <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/50 backdrop-blur-sm p-4 pb-[100px]">
+              <div className="flex gap-3">
+                <Input
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your question..."
+                  disabled={loading}
+                  className="flex-1 bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-400 rounded-2xl px-4 py-3 text-base focus:border-teal-400/50 focus:ring-teal-400/20 focus:bg-gray-800/80"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={loading || !currentMessage.trim()}
+                  size="icon"
+                  className="rounded-2xl w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black shadow-lg disabled:opacity-50"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                This assistant uses AI and may make mistakes
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Área de mensagens - ocupa todo o espaço disponível */}
-      <div className="flex-1 overflow-hidden lg:ml-64">
-        <div className="h-full flex flex-col">
+      {/* Desktop: Standard layout like courses page */}
+      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64">
+        <div className="max-w-6xl mx-auto px-6">
           
-          {/* Messages container */}
-          <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] lg:max-w-[70%] rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
-                      ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black'
-                      : 'bg-gray-800/80 text-white border border-gray-700/50'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap leading-relaxed text-base">
-                    {message.content}
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-xs opacity-70">
-                    <span>{formatTime(message.createdAt)}</span>
-                    {message.role === 'assistant' && (
-                      <div className="flex items-center gap-2">
-                        {message.isFromFAQ && (
-                          <Badge className="bg-teal-400/20 text-teal-300 border-teal-400/30 text-xs">
-                            Quick
-                          </Badge>
-                        )}
-                        {message.needsReview && (
-                          <Badge className="bg-amber-400/20 text-amber-300 border-amber-400/30 text-xs">
-                            Review
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-800/80 rounded-2xl px-4 py-3 border border-gray-700/50">
-                  <div className="flex items-center gap-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          {/* Hero Section */}
+          <div className="relative overflow-hidden mb-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20" />
+            <div className="relative py-6">
+              <div className="text-center max-w-3xl mx-auto">
+                <h1 className="text-4xl font-light text-white mb-3 tracking-tight">
+                  Medical Assistant
+                </h1>
+                <p className="text-lg text-gray-300 mb-4 font-light leading-relaxed">
+                  Available 24/7 to help you with your healthcare questions
+                </p>
+                
+                {/* Stats */}
+                <div className="flex items-center justify-center gap-8">
+                  <div className="text-center">
+                    <div className="text-2xl font-light text-white mb-0.5">
+                      {messages.length}
                     </div>
-                    <span className="text-gray-300 text-sm">Typing...</span>
+                    <div className="text-sm text-gray-400">
+                      Messages
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="text-2xl font-light text-teal-400 mb-0.5">
+                      24/7
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Available
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-gray-700" />
+                  <div className="text-center">
+                    <div className="text-2xl font-light text-white mb-0.5">
+                      AI
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Powered
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-            
-            <div ref={messagesEndRef} />
+            </div>
           </div>
 
-          {/* Input fixo na parte inferior - com padding para mobile menu */}
-          <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/50 backdrop-blur-sm p-4 lg:p-6 pb-[100px] lg:pb-8">
-            <div className="flex gap-3">
-              <Input
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your question..."
-                disabled={loading}
-                className="flex-1 bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-400 rounded-2xl px-4 py-3 text-base focus:border-teal-400/50 focus:ring-teal-400/20 focus:bg-gray-800/80"
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={loading || !currentMessage.trim()}
-                size="icon"
-                className="rounded-2xl w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black shadow-lg disabled:opacity-50"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
+          {/* Chat Container */}
+          <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden shadow-lg">
+            
+            {/* Messages Area - Altura reduzida */}
+            <div className="h-[400px] overflow-y-auto p-6 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                      message.role === 'user'
+                        ? 'bg-gradient-to-r from-teal-400 to-teal-500 text-black'
+                        : 'bg-gray-800/80 text-white border border-gray-700/50'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                      {message.content}
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-xs opacity-70">
+                      <span>{formatTime(message.createdAt)}</span>
+                      {message.role === 'assistant' && (
+                        <div className="flex items-center gap-2">
+                          {message.isFromFAQ && (
+                            <Badge className="bg-teal-400/20 text-teal-300 border-teal-400/30 text-xs">
+                              Quick
+                            </Badge>
+                          )}
+                          {message.needsReview && (
+                            <Badge className="bg-amber-400/20 text-amber-300 border-amber-400/30 text-xs">
+                              Review
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-800/80 rounded-2xl px-4 py-3 border border-gray-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                      <span className="text-gray-300 text-sm">Typing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              This assistant uses AI and may make mistakes
-            </p>
+
+            {/* Input Area - Mais visível */}
+            <div className="border-t border-gray-800/50 bg-gray-800/30 p-6">
+              <div className="flex gap-3">
+                <Input
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your question..."
+                  disabled={loading}
+                  className="flex-1 bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-teal-400/50 focus:ring-teal-400/20 focus:bg-gray-800/80"
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={loading || !currentMessage.trim()}
+                  size="icon"
+                  className="rounded-xl w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black shadow-lg disabled:opacity-50"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                This assistant uses AI and may make mistakes
+              </p>
+            </div>
           </div>
         </div>
       </div>
