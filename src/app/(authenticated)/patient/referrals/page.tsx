@@ -170,6 +170,13 @@ export default function PatientReferralsPage() {
         setCreditsBalance(data.creditsBalance);
         setReferralCode(data.referralCode || '');
         setDoctorId(data.doctorId || '');
+        
+        // Debug logging
+        console.log('Dashboard data loaded:', {
+          doctorId: data.doctorId,
+          referralCode: data.referralCode,
+          hasReferrals: data.referralsMade?.length > 0
+        });
       } else {
         if (response.status === 403) {
           setAccessDenied(true);
@@ -210,30 +217,154 @@ export default function PatientReferralsPage() {
   };
 
   const generateReferralLink = () => {
-    if (!doctorId || !referralCode) return '';
+    if (!doctorId || !referralCode) {
+      console.log('Missing data for link generation:', { doctorId, referralCode });
+      return '';
+    }
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    return `${baseUrl}/referral/${doctorId}?code=${referralCode}`;
+    const link = `${baseUrl}/referral/${doctorId}?code=${referralCode}`;
+    console.log('Generated referral link:', link);
+    return link;
   };
 
   const copyReferralLink = async () => {
     const link = generateReferralLink();
-    if (link) {
+    console.log('Attempting to copy link:', link);
+    console.log('Is HTTPS:', window.location.protocol === 'https:');
+    console.log('Has clipboard API:', !!navigator.clipboard);
+    
+    if (!link) {
+      toast.error('Não foi possível gerar o link de indicação');
+      return;
+    }
+
+    try {
+      // Verificar se o navegador suporta clipboard API
+      if (!navigator.clipboard) {
+        console.log('Using fallback method (no clipboard API)');
+        // Fallback para navegadores mais antigos
+        const textArea = document.createElement('textarea');
+        textArea.value = link;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const success = document.execCommand('copy');
+          console.log('Fallback copy result:', success);
+          if (success) {
+            toast.success('Link copiado para a área de transferência!');
+          } else {
+            toast.error('Erro ao copiar link. Tente novamente.');
+          }
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          toast.error('Erro ao copiar link. Tente novamente.');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+        return;
+      }
+
+      // Verificar permissões do clipboard
       try {
-        await navigator.clipboard.writeText(link);
-        toast.success('Link copiado para a área de transferência!');
-      } catch (error) {
-        toast.error('Erro ao copiar link');
+        const permission = await navigator.permissions.query({ name: 'clipboard-write' as PermissionName });
+        console.log('Clipboard permission:', permission.state);
+      } catch (permError) {
+        console.log('Could not check clipboard permissions:', permError);
+      }
+
+      // Usar clipboard API moderna
+      console.log('Using modern clipboard API');
+      await navigator.clipboard.writeText(link);
+      toast.success('Link copiado para a área de transferência!');
+      console.log('Link copied successfully');
+    } catch (error) {
+      console.error('Error copying link:', error);
+      
+      // Tentar fallback se clipboard API falhar
+      try {
+        console.log('Trying fallback after clipboard API failed');
+        const textArea = document.createElement('textarea');
+        textArea.value = link;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const success = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (success) {
+          toast.success('Link copiado para a área de transferência!');
+        } else {
+          toast.error('Erro ao copiar link. Tente copiar manualmente: ' + link);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        toast.error('Erro ao copiar link. Tente copiar manualmente: ' + link);
       }
     }
   };
 
   const copyReferralCode = async () => {
-    if (referralCode) {
+    if (!referralCode) {
+      toast.error('Código de indicação não disponível');
+      return;
+    }
+
+    try {
+      // Verificar se o navegador suporta clipboard API
+      if (!navigator.clipboard) {
+        // Fallback para navegadores mais antigos
+        const textArea = document.createElement('textarea');
+        textArea.value = referralCode;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          toast.success('Código copiado para a área de transferência!');
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          toast.error('Erro ao copiar código. Tente novamente.');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+        return;
+      }
+
+      await navigator.clipboard.writeText(referralCode);
+      toast.success('Código copiado para a área de transferência!');
+    } catch (error) {
+      console.error('Error copying code:', error);
+      
+      // Tentar fallback se clipboard API falhar
       try {
-        await navigator.clipboard.writeText(referralCode);
+        const textArea = document.createElement('textarea');
+        textArea.value = referralCode;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
         toast.success('Código copiado para a área de transferência!');
-      } catch (error) {
-        toast.error('Erro ao copiar código');
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+        toast.error('Erro ao copiar código. Tente copiar manualmente: ' + referralCode);
       }
     }
   };

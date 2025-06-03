@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getUserCreditsBalance } from '@/lib/referral-utils';
+import { getUserCreditsBalance, ensureUserHasReferralCode } from '@/lib/referral-utils';
 
 // GET - Dashboard do paciente (créditos, indicações, recompensas)
 export async function GET() {
@@ -28,6 +28,30 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+
+    console.log('=== DEBUG REFERRAL CODE ===');
+    console.log('User ID:', userId);
+    console.log('User from DB:', user);
+
+    // Garantir que o usuário tenha um código de indicação
+    let referralCode;
+    try {
+      referralCode = await ensureUserHasReferralCode(userId);
+      console.log('Generated/Retrieved referral code:', referralCode);
+      
+      // Verificar se foi salvo no banco
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { referralCode: true }
+      });
+      console.log('User after ensureUserHasReferralCode:', updatedUser);
+      
+    } catch (referralError) {
+      console.error('Erro ao gerar código de indicação:', referralError instanceof Error ? referralError.message : String(referralError));
+      // Se falhar, usar o código existente do usuário ou null
+      referralCode = user?.referralCode || null;
+      console.log('Fallback referral code:', referralCode);
+    }
 
     // Buscar saldo de créditos atual
     const creditsBalance = await getUserCreditsBalance(userId);
@@ -94,6 +118,11 @@ export async function GET() {
       currentBalance: creditsBalance
     };
 
+    console.log('=== FINAL RESPONSE DATA ===');
+    console.log('Doctor ID:', user?.doctorId);
+    console.log('Referral Code:', referralCode);
+    console.log('==============================');
+
     return NextResponse.json({
       stats,
       creditsBalance,
@@ -142,7 +171,7 @@ export async function GET() {
         }
       })),
       doctorId: user?.doctorId,
-      referralCode: user?.referralCode
+      referralCode: referralCode
     });
 
   } catch (error) {

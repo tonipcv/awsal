@@ -97,14 +97,21 @@ export async function getUserByReferralCode(referralCode: string) {
  * Gerar código de indicação para usuário se não tiver
  */
 export async function ensureUserHasReferralCode(userId: string): Promise<string> {
+  console.log('ensureUserHasReferralCode called with userId:', userId);
+  
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { referralCode: true }
   });
 
+  console.log('User found:', user);
+
   if (user?.referralCode) {
+    console.log('User already has referral code:', user.referralCode);
     return user.referralCode;
   }
+
+  console.log('User does not have referral code, generating new one...');
 
   // Gerar código único
   let referralCode;
@@ -113,25 +120,34 @@ export async function ensureUserHasReferralCode(userId: string): Promise<string>
 
   while (!isUnique && attempts < 10) {
     referralCode = generateReferralCode();
+    console.log(`Attempt ${attempts + 1}: Generated code ${referralCode}`);
     
     const existing = await prisma.user.findUnique({
       where: { referralCode }
     });
     
+    console.log('Existing user with this code:', existing);
+    
     if (!existing) {
       isUnique = true;
+      console.log('Code is unique!');
     }
     attempts++;
   }
 
   if (!isUnique) {
+    console.error('Failed to generate unique code after 10 attempts');
     throw new Error('Não foi possível gerar código único');
   }
 
-  await prisma.user.update({
+  console.log('Updating user with referral code:', referralCode);
+  
+  const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: { referralCode }
   });
+
+  console.log('User updated successfully:', updatedUser);
 
   return referralCode!;
 }

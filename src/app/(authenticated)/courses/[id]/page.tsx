@@ -222,8 +222,8 @@ export default function PatientCourseViewPage() {
                 </div>
                 <div className="h-8 bg-gray-800/50 rounded w-96"></div>
                 <div className="h-4 bg-gray-700/50 rounded w-48"></div>
-              </div>
-              
+            </div>
+
               {/* Stats skeleton */}
               <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 backdrop-blur-sm">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -237,13 +237,13 @@ export default function PatientCourseViewPage() {
                 <div className="h-2 bg-gray-800/50 rounded-full w-full mb-4"></div>
                 <div className="h-10 bg-gray-800/50 rounded w-32"></div>
               </div>
-              
+
               {/* Content skeleton */}
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-24 bg-white/[0.02] border border-gray-800/60 rounded-2xl"></div>
                 ))}
-              </div>
+                </div>
             </div>
           </div>
         </div>
@@ -287,25 +287,25 @@ export default function PatientCourseViewPage() {
               <h1 className="text-xl lg:text-2xl font-medium text-white tracking-tight">
                 {course.name}
               </h1>
-            </div>
+      </div>
 
             {/* Course Overview Card */}
             <div className="bg-white/[0.02] border border-gray-800/60 rounded-2xl p-6 lg:p-8 backdrop-blur-sm mb-6">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
-                  {course.description && (
+                {course.description && (
                     <p className="text-lg text-gray-300 leading-relaxed mb-4">
-                      {course.description}
-                    </p>
-                  )}
+                    {course.description}
+                  </p>
+                )}
                   <div className="flex items-center gap-4">
                     <div className="text-sm text-gray-400">
                       Progresso: <span className="text-turquoise font-semibold">{course.assignment.progress}%</span>
-                    </div>
+                </div>
                     <div className="h-4 w-px bg-gray-700/50"></div>
                     <div className="text-sm text-gray-400">
                       {completedLessons} de {totalLessons} aulas concluídas
-                    </div>
+                </div>
                   </div>
                 </div>
                 <div className="ml-6">

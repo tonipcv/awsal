@@ -329,40 +329,40 @@ export default function LessonPage() {
               </Button>
               <div className="h-6 w-px bg-gray-700/50" />
               <div className="flex items-center gap-2 text-sm text-gray-400 min-w-0 flex-1">
-                <span className="truncate">{course.name}</span>
-                {currentModule && (
-                  <>
-                    <span>•</span>
-                    <span className="truncate">{currentModule.name}</span>
-                  </>
-                )}
-              </div>
+              <span className="truncate">{course.name}</span>
+              {currentModule && (
+                <>
+                  <span>•</span>
+                  <span className="truncate">{currentModule.name}</span>
+                </>
+              )}
+            </div>
               <div className="flex items-center gap-3">
-                {currentLesson.duration && (
+              {currentLesson.duration && (
                   <div className="flex items-center gap-1 text-sm text-gray-400">
                     <ClockIcon className="h-4 w-4" />
-                    {formatDuration(currentLesson.duration)}
+                  {formatDuration(currentLesson.duration)}
                   </div>
-                )}
-                {isCompleted && (
+              )}
+              {isCompleted && (
                   <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-sm">
-                    Concluída
-                  </Badge>
-                )}
-              </div>
+                  Concluída
+                </Badge>
+              )}
             </div>
+          </div>
 
             {/* Lesson Title and Description */}
             <div className="space-y-3">
               <h1 className="text-xl lg:text-2xl font-medium text-white leading-tight">
-                {currentLesson.title}
-              </h1>
-              {currentLesson.description && (
+                  {currentLesson.title}
+                </h1>
+            {currentLesson.description && (
                 <p className="text-gray-300 leading-relaxed">
-                  {currentLesson.description}
-                </p>
-              )}
-            </div>
+                {currentLesson.description}
+              </p>
+            )}
+              </div>
           </div>
 
           {/* Video Player */}
@@ -409,8 +409,8 @@ export default function LessonPage() {
                 </div>
                 <div className="prose prose-invert max-w-none">
                   <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                    {currentLesson.content}
-                  </p>
+                  {currentLesson.content}
+                </p>
                 </div>
               </div>
             </div>
@@ -481,7 +481,7 @@ export default function LessonPage() {
                 <div></div>
               )}
             </div>
-
+            
             {/* Next Lesson */}
             <div>
               {navigation.next ? (
