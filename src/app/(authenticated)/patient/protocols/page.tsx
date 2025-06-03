@@ -474,7 +474,7 @@ export default function ProtocolsPage() {
                                 asChild
                                   className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200"
                               >
-                                <Link href={`/checklist/${assignment.protocolId}`}>
+                                <Link href={`/patient/checklist/${assignment.protocolId}`}>
                                     <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
                                   Continuar
                                 </Link>
