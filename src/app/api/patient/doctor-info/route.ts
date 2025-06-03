@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
                 state: true,
                 zipCode: true,
                 country: true,
-                website: true,
-                logo: true
+                website: true
               }
             }
           },

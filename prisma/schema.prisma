@@ -220,6 +220,12 @@ model User {
   assignedCourses                                                  UserCourse[]
   lessonProgress                                                   UserLesson[]
   clinicReferrals                                                  ClinicReferral[]         @relation("ClinicReferrals")
+  // FAQ System Relations
+  doctorFAQs                                                       DoctorFAQ[]              @relation("DoctorFAQs")
+  patientConversations                                             PatientAIConversation[]  @relation("PatientConversations")
+  doctorConversations                                              PatientAIConversation[]  @relation("DoctorConversations")
+  reviewedMessages                                                 PatientAIMessage[]       @relation("MessageReviewer")
+  aiAssistantSettings                                              AIAssistantSettings?     @relation("DoctorAISettings")
 }
 
 model Protocol {
@@ -543,27 +549,27 @@ model SystemMetrics {
 }
 
 model Clinic {
-  id           String              @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
-  description  String?
-  ownerId      String
-  isActive     Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @default(now()) @updatedAt
-  email        String?
-  phone        String?
   address      String?
   city         String?
   state        String?
   zipCode      String?
   country      String?
+  phone        String?
+  email        String?
   website      String?
-  logo         String?
+  description  String?
+  specialties  String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @default(now()) @updatedAt
+  ownerId      String
+  owner        User               @relation("ClinicOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members      ClinicMember[]
   subscription ClinicSubscription?
-  owner        User                @relation("ClinicOwner", fields: [ownerId], references: [id])
 
-  @@map("clinics")
+  @@index([ownerId])
 }
 
 model ClinicMember {
@@ -824,4 +830,76 @@ model ClinicReferral {
   @@index([referredById])
   @@index([status])
   @@map("clinic_referrals")
+}
+
+// FAQ System for AI Doctor Assistant
+model DoctorFAQ {
+  id          String             @id @default(cuid())
+  doctorId    String
+  question    String
+  answer      String
+  category    String?            @default("general") // general, protocol, medication, emergency, etc.
+  isActive    Boolean            @default(true)
+  priority    Int                @default(0) // Higher number = higher priority
+  tags        String?            // JSON array of tags for better matching
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @default(now()) @updatedAt
+  doctor      User               @relation("DoctorFAQs", fields: [doctorId], references: [id], onDelete: Cascade)
+  messages    PatientAIMessage[] // Added inverse relation
+
+  @@index([doctorId, isActive])
+  @@index([category])
+}
+
+model PatientAIConversation {
+  id          String                    @id @default(cuid())
+  patientId   String
+  doctorId    String
+  title       String?                   @default("Nova Conversa")
+  isActive    Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @default(now()) @updatedAt
+  patient     User                      @relation("PatientConversations", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      User                      @relation("DoctorConversations", fields: [doctorId], references: [id], onDelete: Cascade)
+  messages    PatientAIMessage[]
+
+  @@index([patientId, doctorId])
+  @@index([isActive])
+}
+
+model PatientAIMessage {
+  id             String                  @id @default(cuid())
+  conversationId String
+  role           String                  // "user" or "assistant"
+  content        String
+  isFromFAQ      Boolean                 @default(false)
+  faqId          String?                 // Reference to FAQ if answer came from FAQ
+  confidence     Float?                  // AI confidence score (0-1)
+  needsReview    Boolean                 @default(false) // Flag for doctor review
+  reviewedAt     DateTime?
+  reviewedBy     String?                 // Doctor who reviewed
+  createdAt      DateTime                @default(now())
+  conversation   PatientAIConversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  faq            DoctorFAQ?              @relation(fields: [faqId], references: [id], onDelete: SetNull)
+  reviewer       User?                   @relation("MessageReviewer", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([needsReview])
+}
+
+model AIAssistantSettings {
+  id                    String   @id @default(cuid())
+  doctorId              String   @unique
+  isEnabled             Boolean  @default(true)
+  autoReplyEnabled      Boolean  @default(true)
+  confidenceThreshold   Float    @default(0.8) // Minimum confidence to auto-reply
+  businessHoursOnly     Boolean  @default(false)
+  businessHoursStart    String?  @default("09:00")
+  businessHoursEnd      String?  @default("18:00")
+  welcomeMessage        String?  @default("Olá! Sou o assistente de IA do Dr. {doctorName}. Como posso ajudá-lo hoje?")
+  fallbackMessage       String?  @default("Desculpe, não consegui encontrar uma resposta adequada. Sua pergunta foi encaminhada para o médico.")
+  maxDailyMessages      Int?     @default(50) // Limit per patient per day
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+  doctor                User     @relation("DoctorAISettings", fields: [doctorId], references: [id], onDelete: Cascade)
 }

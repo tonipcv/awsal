@@ -19,8 +19,10 @@ import {
   GiftIcon,
   UserPlusIcon,
   UserIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import { Bot } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
@@ -209,6 +211,12 @@ export default function Navigation() {
           label: 'Courses',
           icon: BookOpenIcon,
           description: 'My courses'
+        },
+        {
+          href: '/patient/ai-chat',
+          label: 'AI Assistant',
+          icon: Bot,
+          description: 'Chat with AI assistant'
         }
       ]
     },
@@ -253,6 +261,18 @@ export default function Navigation() {
           label: 'Protocols',
           icon: DocumentTextIcon,
           description: 'Create and manage protocols'
+        },
+        {
+          href: '/doctor/ai-assistant',
+          label: 'AI Assistant',
+          icon: Bot,
+          description: 'Configure AI assistant and FAQs'
+        },
+        {
+          href: '/doctor/ai-conversations',
+          label: 'AI Conversations',
+          icon: ChatBubbleLeftRightIcon,
+          description: 'Monitor patient AI conversations'
         },
         {
           href: '/doctor/products',
