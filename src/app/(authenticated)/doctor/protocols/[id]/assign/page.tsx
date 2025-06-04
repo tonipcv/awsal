@@ -55,7 +55,7 @@ interface Patient {
   }>;
 }
 
-// Componente para card de paciente
+// Component for patient card
 const PatientCard = ({ 
   patient, 
   protocol,
@@ -100,14 +100,14 @@ const PatientCard = ({
               {activeProtocol && (
                 <div className="flex items-center gap-1 mt-1">
                   <CheckIcon className="h-3 w-3 text-green-400" />
-                  <span className="text-xs text-green-400">Já atribuído</span>
+                  <span className="text-xs text-green-400">Already assigned</span>
                 </div>
               )}
               {hasActiveProtocol && !activeProtocol && (
                 <div className="flex items-center gap-1 mt-1">
                   <DocumentTextIcon className="h-3 w-3 text-orange-400" />
                   <span className="text-xs text-orange-400">
-                    {patient.assignedProtocols.filter(ap => ap.isActive).length} protocolo(s) ativo(s)
+                    {patient.assignedProtocols.filter(ap => ap.isActive).length} active protocol(s)
                   </span>
                 </div>
               )}
@@ -138,7 +138,7 @@ const PatientCard = ({
                   ) : (
                     <>
                       <PlusIcon className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Atribuir</span>
+                      <span className="hidden sm:inline">Assign</span>
                     </>
                   )}
                 </Button>
@@ -152,7 +152,7 @@ const PatientCard = ({
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <ClockIcon className="h-3 w-3" />
-                {protocol.duration} dias
+                {protocol.duration} days
               </span>
               <span className="flex items-center gap-1">
                 <CalendarDaysIcon className="h-3 w-3" />
@@ -210,13 +210,13 @@ export default function AssignProtocolToPatientPage() {
 
       if (!protocolResponse.ok) {
         if (protocolResponse.status === 404) {
-          setError('Protocolo não encontrado ou você não tem permissão para acessá-lo');
+          setError('Protocol not found or you do not have permission to access it');
         } else if (protocolResponse.status === 401) {
-          setError('Sessão expirada. Faça login novamente');
+          setError('Session expired. Please log in again');
           setTimeout(() => router.push('/auth/signin'), 2000);
           return;
         } else {
-          setError('Erro ao carregar dados do protocolo');
+          setError('Error loading protocol data');
         }
         return;
       }
@@ -228,7 +228,7 @@ export default function AssignProtocolToPatientPage() {
         const patientsData = await patientsResponse.json();
         setPatients(Array.isArray(patientsData) ? patientsData : []);
       } else {
-        setError('Erro ao carregar lista de pacientes');
+        setError('Error loading patient list');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -254,11 +254,11 @@ export default function AssignProtocolToPatientPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Protocolo atribuído com sucesso!');
+        setSuccessMessage('Protocol assigned successfully!');
         await loadData(params.id as string);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Erro ao atribuir protocolo');
+        setError(errorData.error || 'Error assigning protocol');
       }
     } catch (error) {
       console.error('Error assigning protocol:', error);
@@ -287,7 +287,7 @@ export default function AssignProtocolToPatientPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <ArrowPathIcon className="h-8 w-8 text-turquoise animate-spin mx-auto mb-4" />
-          <span className="text-sm text-muted-foreground">Carregando dados...</span>
+          <span className="text-sm text-muted-foreground">Loading data...</span>
         </div>
       </div>
     );
@@ -305,7 +305,7 @@ export default function AssignProtocolToPatientPage() {
               Tentar Novamente
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/doctor/protocols">Voltar aos Protocolos</Link>
+              <Link href="/doctor/protocols">Back to Protocols</Link>
             </Button>
           </div>
         </div>
@@ -322,18 +322,18 @@ export default function AssignProtocolToPatientPage() {
             <Button variant="ghost" size="sm" asChild className="text-white/70 hover:text-white">
               <Link href={`/doctor/protocols/${protocol?.id}`}>
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
             <div>
-              <CardTitle className="text-lg font-light text-white">Atribuir Protocolo</CardTitle>
+              <CardTitle className="text-lg font-light text-white">Assign Protocol</CardTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 <DocumentTextIcon className="h-4 w-4" />
                 <span>{protocol?.name}</span>
                 <span className="text-turquoise">•</span>
-                <span>{assignedPatients.length} atribuído(s)</span>
+                <span>{assignedPatients.length} assigned</span>
                 <span className="text-turquoise">•</span>
-                <span>{availablePatients.length} disponível(eis)</span>
+                <span>{availablePatients.length} available</span>
               </div>
             </div>
           </div>
@@ -387,15 +387,15 @@ export default function AssignProtocolToPatientPage() {
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <ClockIcon className="h-4 w-4" />
-                          {protocol.duration} dias
+                          {protocol.duration} days
                         </span>
                         <span className="flex items-center gap-1">
                           <DocumentTextIcon className="h-4 w-4" />
-                          {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tarefas
+                          {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tasks
                         </span>
                         <span className="flex items-center gap-1">
                           <UsersIcon className="h-4 w-4" />
-                          {assignedPatients.length} paciente(s) ativo(s)
+                          {assignedPatients.length} active patient(s)
                         </span>
                       </div>
                     </div>
@@ -410,7 +410,7 @@ export default function AssignProtocolToPatientPage() {
                 <div className="relative">
                   <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar pacientes..."
+                    placeholder="Search patients..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-12 h-12 bg-background/20 border-border/30 focus:border-turquoise/50 text-white placeholder:text-white/50 text-base"
@@ -425,14 +425,14 @@ export default function AssignProtocolToPatientPage() {
             </Card>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Pacientes Disponíveis */}
+              {/* Available Patients */}
               <Card className="bg-background/10 border-border/20">
                 <CardHeader>
                   <CardTitle className="text-base font-normal text-white flex items-center gap-2">
                     <PlusIcon className="h-5 w-5 text-turquoise" />
-                    Pacientes Disponíveis ({availablePatients.length})
+                    Available Patients ({availablePatients.length})
                   </CardTitle>
-                  <p className="text-xs text-muted-foreground">Pacientes que podem receber este protocolo</p>
+                  <p className="text-xs text-muted-foreground">Patients who can receive this protocol</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {availablePatients.length === 0 ? (
@@ -440,18 +440,18 @@ export default function AssignProtocolToPatientPage() {
                       <UsersIcon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground mb-2">
                         {searchTerm 
-                          ? `Nenhum paciente encontrado para "${searchTerm}"` 
+                          ? `No patient found for "${searchTerm}"` 
                           : patients.length === 0
-                            ? 'Nenhum paciente cadastrado ainda'
-                            : 'Todos os pacientes já possuem este protocolo'}
+                            ? 'No patients registered yet'
+                            : 'All patients already have this protocol'}
                       </p>
                       {patients.length === 0 ? (
                         <Button asChild className="bg-turquoise hover:bg-turquoise/90" size="sm">
-                          <Link href="/doctor/patients">Cadastrar Pacientes</Link>
+                          <Link href="/doctor/patients">Register Patients</Link>
                         </Button>
                       ) : searchTerm ? (
                         <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
-                          Limpar busca
+                          Clear search
                         </Button>
                       ) : null}
                     </div>
@@ -472,20 +472,20 @@ export default function AssignProtocolToPatientPage() {
                 </CardContent>
               </Card>
 
-              {/* Pacientes com Protocolo Atribuído */}
+              {/* Patients with Assigned Protocol */}
               <Card className="bg-background/10 border-border/20">
                 <CardHeader>
                   <CardTitle className="text-base font-normal text-white flex items-center gap-2">
                     <CheckIcon className="h-5 w-5 text-green-400" />
-                    Protocolo Atribuído ({assignedPatients.length})
+                    Assigned Protocol ({assignedPatients.length})
                   </CardTitle>
-                  <p className="text-xs text-muted-foreground">Pacientes que já possuem este protocolo ativo</p>
+                  <p className="text-xs text-muted-foreground">Patients who already have this active protocol</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {assignedPatients.length === 0 ? (
                     <div className="text-center py-8">
                       <CheckIcon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Nenhum paciente com este protocolo ainda</p>
+                      <p className="text-sm text-muted-foreground">No patients with this protocol yet</p>
                     </div>
                   ) : (
                     assignedPatients.map((patient) => (

@@ -18,7 +18,7 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
-// Hook personalizado para debounce
+// Custom hook for debounce
 function createDebounce<T extends (...args: any[]) => void>(callback: T, delay: number): T & { cancel: () => void } {
   let timeoutId: NodeJS.Timeout | null = null;
   
@@ -107,15 +107,15 @@ export function ProtocolDayEditor({
   };
 
   const TaskEditor = React.memo(({ task, dayNumber, sessionId }: { task: any, dayNumber: number, sessionId?: string }) => {
-    // Estados locais para os inputs de texto
+    // Local states for text inputs
     const [localTitle, setLocalTitle] = useState(task.title || '');
     const [localDescription, setLocalDescription] = useState(task.description || '');
     
-    // Refs para evitar re-criação das funções debounced
+    // Refs to avoid re-creating debounced functions
     const debouncedUpdateTitleRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
     const debouncedUpdateDescriptionRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
     
-    // Criar funções debounced apenas uma vez
+    // Create debounced functions only once
     useEffect(() => {
       // Cleanup previous debounced functions
       if (debouncedUpdateTitleRef.current) {
@@ -144,7 +144,7 @@ export function ProtocolDayEditor({
       };
     }, [dayNumber, task.id, sessionId, updateTask]);
     
-    // Atualizar estados locais apenas quando a task mudar externamente
+    // Update local states only when task changes externally
     useEffect(() => {
       setLocalTitle(task.title || '');
       setLocalDescription(task.description || '');
@@ -170,13 +170,13 @@ export function ProtocolDayEditor({
 
     return (
       <div className="border border-gray-200 rounded-xl bg-gray-50">
-        {/* Header sempre visível */}
+        {/* Header always visible */}
         <div className="p-4 bg-gray-100 rounded-t-xl border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900 truncate">
-                  {localTitle || 'Tarefa sem título'}
+                  {localTitle || 'Untitled Task'}
                 </p>
                 {localDescription && (
                   <p className="text-sm text-gray-600 truncate">
@@ -186,7 +186,7 @@ export function ProtocolDayEditor({
               </div>
               {task.hasMoreInfo && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                  Conteúdo Extra
+                  Extra Content
                 </Badge>
               )}
             </div>
@@ -211,16 +211,16 @@ export function ProtocolDayEditor({
           </div>
         </div>
 
-        {/* Campos Básicos sempre visíveis */}
+        {/* Basic Fields always visible */}
         <div className="p-4 space-y-3 bg-white">
           <Input
-            placeholder="Título da tarefa"
+            placeholder="Task title"
             value={localTitle}
             onChange={handleTitleChange}
             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
           />
           <Textarea
-            placeholder="Descrição básica"
+            placeholder="Basic description"
             value={localDescription}
             onChange={handleDescriptionChange}
             rows={2}
@@ -228,10 +228,10 @@ export function ProtocolDayEditor({
           />
         </div>
 
-        {/* Campos extras - visibilidade controlada por estado */}
+        {/* Extra fields - visibility controlled by state */}
         {isExpanded && (
           <div className="px-4 pb-4 space-y-4 border-t border-gray-200 bg-white rounded-b-xl">
-            {/* Toggle para Conteúdo Extra */}
+            {/* Toggle for Extra Content */}
             <div className="flex items-center space-x-3 pt-4">
               <input
                 type="checkbox"
@@ -242,18 +242,18 @@ export function ProtocolDayEditor({
               />
               <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
                 <InformationCircleIcon className="h-4 w-4" />
-                Adicionar conteúdo extra
+                Add extra content
               </Label>
             </div>
 
-            {/* Campos Extras */}
+            {/* Extra Fields */}
             {task.hasMoreInfo && (
               <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                       <PlayIcon className="h-4 w-4" />
-                      URL do Vídeo
+                      Video URL
                     </Label>
                     <Input
                       placeholder="https://youtube.com/watch?v=..."
@@ -266,10 +266,10 @@ export function ProtocolDayEditor({
                   <div>
                     <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                       <InformationCircleIcon className="h-4 w-4" />
-                      Explicação Completa
+                      Full Explanation
                     </Label>
                     <Textarea
-                      placeholder="Explicação detalhada da tarefa..."
+                      placeholder="Detailed task explanation..."
                       value={task.fullExplanation || ''}
                       onChange={(e) => updateTask(dayNumber, task.id, 'fullExplanation', e.target.value, sessionId)}
                       rows={3}
@@ -280,17 +280,17 @@ export function ProtocolDayEditor({
                   <div>
                     <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
                       <ShoppingBagIcon className="h-4 w-4" />
-                      Produto Relacionado (opcional)
+                      Related Product (optional)
                     </Label>
                     <Select 
                       value={task.productId || 'none'} 
                       onValueChange={(value) => updateTask(dayNumber, task.id, 'productId', value === 'none' ? '' : value, sessionId)}
                     >
                       <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10">
-                        <SelectValue placeholder="Selecione um produto..." />
+                        <SelectValue placeholder="Select a product..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Nenhum produto</SelectItem>
+                        <SelectItem value="none">No product</SelectItem>
                         {availableProducts.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             <div className="flex items-center gap-2">
@@ -307,9 +307,9 @@ export function ProtocolDayEditor({
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-gray-900 font-semibold">Título do Modal</Label>
+                      <Label className="text-gray-900 font-semibold">Modal Title</Label>
                       <Input
-                        placeholder="Título personalizado"
+                        placeholder="Custom title"
                         value={task.modalTitle || ''}
                         onChange={(e) => updateTask(dayNumber, task.id, 'modalTitle', e.target.value, sessionId)}
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
@@ -317,9 +317,9 @@ export function ProtocolDayEditor({
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-gray-900 font-semibold">Texto do Botão</Label>
+                      <Label className="text-gray-900 font-semibold">Button Text</Label>
                       <Input
-                        placeholder="Saber mais"
+                        placeholder="Learn more"
                         value={task.modalButtonText || ''}
                         onChange={(e) => updateTask(dayNumber, task.id, 'modalButtonText', e.target.value, sessionId)}
                         className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
@@ -328,9 +328,9 @@ export function ProtocolDayEditor({
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-gray-900 font-semibold">Link do Botão</Label>
+                    <Label className="text-gray-900 font-semibold">Button Link</Label>
                     <Input
-                      placeholder="https://exemplo.com"
+                      placeholder="https://example.com"
                       value={task.modalButtonUrl || ''}
                       onChange={(e) => updateTask(dayNumber, task.id, 'modalButtonUrl', e.target.value, sessionId)}
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
@@ -346,15 +346,15 @@ export function ProtocolDayEditor({
   });
 
   const SessionEditor = ({ session, dayNumber }: { session: any, dayNumber: number }) => {
-    // Estados locais para os inputs de texto
+    // Local states for text inputs
     const [localName, setLocalName] = useState(session.name);
     const [localDescription, setLocalDescription] = useState(session.description || '');
     
-    // Refs para as funções debounced
+    // Refs for debounced functions
     const debouncedUpdateNameRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
     const debouncedUpdateDescriptionRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
     
-    // Criar funções debounced com cleanup
+    // Create debounced functions with cleanup
     useEffect(() => {
       // Cleanup previous debounced functions
       if (debouncedUpdateNameRef.current) {
@@ -383,7 +383,7 @@ export function ProtocolDayEditor({
       };
     }, [dayNumber, session.id, updateSession]);
     
-    // Atualizar estados locais quando a session mudar
+    // Update local states when session changes
     useEffect(() => {
       setLocalName(session.name);
       setLocalDescription(session.description || '');
@@ -409,13 +409,13 @@ export function ProtocolDayEditor({
 
     return (
       <div className="border border-gray-200 rounded-xl bg-white">
-        {/* Header sempre visível */}
+        {/* Header always visible */}
         <div className="p-4 bg-gray-50 rounded-t-xl border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-900">
-                  {localName || `Sessão ${session.order + 1}`}
+                  {localName || `Session ${session.order + 1}`}
                 </p>
                 {localDescription && (
                   <p className="text-sm text-gray-600 truncate">
@@ -423,7 +423,7 @@ export function ProtocolDayEditor({
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  {session.tasks.length} tarefas
+                  {session.tasks.length} tasks
                 </p>
               </div>
             </div>
@@ -448,26 +448,26 @@ export function ProtocolDayEditor({
           </div>
         </div>
 
-        {/* Campos básicos sempre visíveis */}
+        {/* Basic fields always visible */}
         <div className="p-4 space-y-3 bg-white">
           <Input
             value={localName}
             onChange={handleNameChange}
-            placeholder="Nome da sessão"
+            placeholder="Session name"
             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 font-semibold rounded-xl h-10"
           />
           <Input
             value={localDescription}
             onChange={handleDescriptionChange}
-            placeholder="Descrição da sessão (opcional)"
+            placeholder="Session description (optional)"
             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-600 rounded-xl h-10"
           />
         </div>
 
-        {/* Tarefas - visibilidade controlada por estado */}
+        {/* Tasks - visibility controlled by state */}
         {isExpanded && (
           <div className="p-4 space-y-4 border-t border-gray-200 bg-white rounded-b-xl">
-            {/* Tarefas da Sessão */}
+            {/* Session Tasks */}
             <div className="space-y-4">
               {session.tasks.map((task: any) => (
                 <TaskEditor 
@@ -485,7 +485,7 @@ export function ProtocolDayEditor({
                 className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Adicionar Tarefa
+                Add Task
               </Button>
             </div>
           </div>
@@ -496,12 +496,12 @@ export function ProtocolDayEditor({
 
   return (
     <div className="space-y-6">
-      {/* Header com botão para adicionar dia */}
+      {/* Header with button to add day */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">Cronograma do Protocolo</h3>
+          <h3 className="text-lg font-bold text-gray-900">Protocol Schedule</h3>
           <p className="text-sm text-gray-600 mt-1">
-            {days.length} {days.length === 1 ? 'dia configurado' : 'dias configurados'}
+            {days.length} {days.length === 1 ? 'day configured' : 'days configured'}
           </p>
         </div>
         <Button
@@ -509,7 +509,7 @@ export function ProtocolDayEditor({
           className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Adicionar Dia
+          Add Day
         </Button>
       </div>
 
@@ -520,9 +520,9 @@ export function ProtocolDayEditor({
               <PlusIcon className="h-8 w-8 text-gray-400" />
             </div>
             <div>
-              <h4 className="text-lg font-semibold text-gray-900">Nenhum dia configurado</h4>
+              <h4 className="text-lg font-semibold text-gray-900">No days configured</h4>
               <p className="text-gray-600 mt-1">
-                Comece adicionando o primeiro dia do seu protocolo
+                Start by adding the first day of your protocol
               </p>
             </div>
             <Button
@@ -530,7 +530,7 @@ export function ProtocolDayEditor({
               className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Adicionar Primeiro Dia
+              Add First Day
             </Button>
           </div>
         </div>
@@ -555,16 +555,16 @@ export function ProtocolDayEditor({
                     />
                     <div>
                       <CardTitle className="text-lg font-bold text-gray-900">
-                        Dia {day.dayNumber}
+                        Day {day.dayNumber}
                       </CardTitle>
                       <p className="text-sm text-gray-600 mt-1">
-                        {day.sessions.length} sessões • {day.sessions.reduce((total: number, session: any) => total + session.tasks.length, 0) + day.tasks.length} tarefas
+                        {day.sessions.length} sessions • {day.sessions.reduce((total: number, session: any) => total + session.tasks.length, 0) + day.tasks.length} tasks
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="bg-[#5154e7] text-white">
-                      {day.sessions.length + (day.tasks.length > 0 ? 1 : 0)} seções
+                      {day.sessions.length + (day.tasks.length > 0 ? 1 : 0)} sections
                     </Badge>
                     <Button
                       variant="outline"
@@ -576,7 +576,7 @@ export function ProtocolDayEditor({
                       className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-8 px-3 font-semibold"
                     >
                       <PlusIcon className="h-4 w-4 mr-1" />
-                      Sessão
+                      Session
                     </Button>
                     {days.length > 1 && (
                       <Button
@@ -597,7 +597,7 @@ export function ProtocolDayEditor({
 
               {isDayExpanded && (
                 <CardContent className="space-y-6">
-                  {/* Sessões */}
+                  {/* Sessions */}
                   {day.sessions.map((session: any) => (
                     <SessionEditor 
                       key={session.id} 
@@ -606,12 +606,12 @@ export function ProtocolDayEditor({
                     />
                   ))}
 
-                  {/* Tarefas Diretas */}
+                  {/* Direct Tasks */}
                   {day.tasks.length > 0 && (
                     <div className="p-4 bg-white border border-gray-200 rounded-xl">
                       <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                         <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                          Tarefas Diretas
+                          Direct Tasks
                         </Badge>
                       </h5>
                       <div className="space-y-4">
@@ -633,7 +633,7 @@ export function ProtocolDayEditor({
                     className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
                   >
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Adicionar Tarefa Direta ao Dia {day.dayNumber}
+                    Add Direct Task to Day {day.dayNumber}
                   </Button>
                 </CardContent>
               )}

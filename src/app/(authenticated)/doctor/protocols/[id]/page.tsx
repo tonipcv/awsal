@@ -270,10 +270,9 @@ export default function ProtocolDetailPage() {
           <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Protocolo não encontrado</h2>
-                <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
-                  <Link href="/doctor/protocols">Voltar aos protocolos</Link>
-                </Button>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Protocol not found</h2>
+                <p className="text-gray-600 mb-6">The protocol you're looking for doesn't exist or you don't have permission to access it.</p>
+                <Link href="/doctor/protocols">Back to protocols</Link>
               </div>
             </div>
           </div>
@@ -294,7 +293,7 @@ export default function ProtocolDetailPage() {
             <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href="/doctor/protocols">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
             <div className="flex-1">
@@ -309,13 +308,13 @@ export default function ProtocolDetailPage() {
                 )}
               </div>
               <p className="text-gray-600 font-medium">
-                {protocol.description || 'Sem descrição'}
+                {protocol.description || 'No description'}
               </p>
             </div>
             <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
               <Link href={`/doctor/protocols/${protocol.id}/edit`}>
                 <PencilIcon className="h-4 w-4 mr-2" />
-                Editar
+                Edit
               </Link>
             </Button>
           </div>
@@ -328,7 +327,7 @@ export default function ProtocolDetailPage() {
               {/* Stats */}
               <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900">Estatísticas</CardTitle>
+                  <CardTitle className="text-lg font-bold text-gray-900">Statistics</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4">
@@ -336,8 +335,8 @@ export default function ProtocolDetailPage() {
                       <CalendarDaysIcon className="h-5 w-5 text-teal-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Duração</p>
-                      <p className="text-lg font-bold text-gray-900">{protocol.duration} dias</p>
+                      <p className="text-sm text-gray-600 font-medium">Duration</p>
+                      <p className="text-lg font-bold text-gray-900">{protocol.duration} days</p>
                     </div>
                   </div>
                   
@@ -346,7 +345,7 @@ export default function ProtocolDetailPage() {
                       <UsersIcon className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Pacientes Ativos</p>
+                      <p className="text-sm text-gray-600 font-medium">Active Patients</p>
                       <p className="text-lg font-bold text-gray-900">{activeAssignments.length}</p>
                     </div>
                   </div>
@@ -356,14 +355,14 @@ export default function ProtocolDetailPage() {
                       <CheckCircleIcon className="h-5 w-5 text-[#5154e7]" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Total de Tarefas</p>
+                      <p className="text-sm text-gray-600 font-medium">Total Tasks</p>
                       <p className="text-lg font-bold text-gray-900">
                         {protocol.days.reduce((acc, day) => {
-                          // Contar tarefas das sessões
+                          // Count session tasks
                           const sessionTasks = day.sessions?.reduce((sessionAcc, session) => 
                             sessionAcc + (session.tasks?.length || 0), 0) || 0;
                           
-                          // Contar tarefas diretas do dia (se existirem)
+                          // Count direct day tasks (if any)
                           const directTasks = day.tasks?.length || 0;
                           
                           return acc + sessionTasks + directTasks;
@@ -374,7 +373,7 @@ export default function ProtocolDetailPage() {
                   
                   <div className="pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-600 font-medium">
-                      Criado em {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
+                      Created on {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   </div>
                 </CardContent>
@@ -386,7 +385,7 @@ export default function ProtocolDetailPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
                       <ShoppingBagIcon className="h-5 w-5" />
-                      Produtos Recomendados
+                      Recommended Products
                     </CardTitle>
                     {protocol.products && protocol.products.length > 0 && (
                       <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
@@ -400,7 +399,7 @@ export default function ProtocolDetailPage() {
                     <div className="text-center py-8">
                       <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 font-medium">
-                        Nenhum produto configurado
+                        No products configured
                       </p>
                     </div>
                   ) : (
@@ -458,7 +457,7 @@ export default function ProtocolDetailPage() {
                                     
                                     {protocolProduct.isRequired && (
                                       <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-200 font-semibold">
-                                        Obrigatório
+                                        Required
                                       </Badge>
                                     )}
                                   </div>
@@ -484,7 +483,7 @@ export default function ProtocolDetailPage() {
                                         rel="noopener noreferrer"
                                       >
                                         <LinkIcon className="h-4 w-4 mr-2" />
-                                        Comprar
+                                        Buy
                                       </a>
                                     </Button>
                                   </div>
@@ -502,11 +501,11 @@ export default function ProtocolDetailPage() {
               <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-bold text-gray-900">Pacientes Ativos</CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-900">Active Patients</CardTitle>
                     <Button size="sm" variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold">
                       <Link href={`/doctor/protocols/${protocol.id}/assign`}>
                         <UserPlusIcon className="h-4 w-4 mr-2" />
-                        Atribuir
+                        Assign
                       </Link>
                     </Button>
                   </div>
@@ -516,7 +515,7 @@ export default function ProtocolDetailPage() {
                     <div className="text-center py-8">
                       <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-600 font-medium">
-                        Nenhum paciente ativo
+                        No active patients
                       </p>
                     </div>
                   ) : (
@@ -527,9 +526,9 @@ export default function ProtocolDetailPage() {
                             {getPatientInitials(assignment.user.name)}
                           </div>
                           <div className="flex-1">
-                            <p className="font-bold text-gray-900">{assignment.user.name || 'Sem nome'}</p>
+                            <p className="font-bold text-gray-900">{assignment.user.name || 'No name'}</p>
                             <p className="text-sm text-gray-600 font-medium">
-                              Iniciado em {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                              Started on {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
                             </p>
                           </div>
                         </div>
@@ -548,14 +547,11 @@ export default function ProtocolDetailPage() {
                     <CardContent className="p-8">
                       <div className="text-center">
                         <CalendarDaysIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Nenhum dia configurado</h3>
-                        <p className="text-gray-600 font-medium mb-6">
-                          Este protocolo ainda não possui dias ou tarefas configuradas.
-                        </p>
+                        <h3 className="text-xl font-bold text-gray-900 mb-3">This protocol doesn't have any configured days or tasks yet.</h3>
                         <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
                           <Link href={`/doctor/protocols/${protocol.id}/edit`}>
                             <PencilIcon className="h-4 w-4 mr-2" />
-                            Editar Protocolo
+                            Edit Protocol
                           </Link>
                         </Button>
                       </div>
@@ -568,20 +564,20 @@ export default function ProtocolDetailPage() {
                       <Card key={day.id} className="bg-white border-gray-200 shadow-lg rounded-2xl">
                         <CardHeader className="pb-4">
                           <CardTitle className="text-lg font-bold text-[#5154e7]">
-                            Dia {day.dayNumber}
+                            Day {day.dayNumber}
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           {(!day.tasks || day.tasks.length === 0) && (!day.sessions || day.sessions.length === 0) ? (
                             <p className="text-gray-600 font-medium text-center py-8">
-                              Nenhuma tarefa configurada para este dia
+                              No tasks configured for this day
                             </p>
                           ) : (
                             <div className="space-y-4">
-                              {/* Renderizar tarefas diretas do dia */}
+                              {/* Render direct day tasks */}
                               {day.tasks && day.tasks.length > 0 && (
                                 <div className="space-y-4">
-                                  <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Tarefas do Dia</h5>
+                                  <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Day Tasks</h5>
                                   {day.tasks
                                     .sort((a, b) => a.order - b.order)
                                     .map((task) => (
@@ -595,7 +591,7 @@ export default function ProtocolDetailPage() {
                                 </div>
                               )}
                               
-                              {/* Renderizar sessões e suas tarefas */}
+                              {/* Render sessions and their tasks */}
                               {day.sessions && day.sessions.length > 0 && (
                                 <div className="space-y-6">
                                   {day.sessions.map((session) => (
@@ -617,7 +613,7 @@ export default function ProtocolDetailPage() {
                                             ))}
                                         </div>
                                       ) : (
-                                        <p className="text-gray-500 text-sm italic">Nenhuma tarefa nesta sessão</p>
+                                        <p className="text-gray-500 text-sm italic">No tasks in this session</p>
                                       )}
                                     </div>
                                   ))}

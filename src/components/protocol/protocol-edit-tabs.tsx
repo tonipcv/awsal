@@ -42,7 +42,7 @@ export function ProtocolEditTabs({
 }: ProtocolEditTabsProps) {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Calcular estatísticas para o overview
+  // Calculate statistics for overview
   const totalTasks = protocol.days.reduce((total: number, day: any) => {
     const sessionTasks = day.sessions.reduce((sessionTotal: number, session: any) => 
       sessionTotal + session.tasks.length, 0);
@@ -61,21 +61,21 @@ export function ProtocolEditTabs({
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <EyeIcon className="h-4 w-4" />
-            Visão Geral
+            Overview
           </TabsTrigger>
           <TabsTrigger 
             value="basic" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <InformationCircleIcon className="h-4 w-4" />
-            Básico
+            Basic
           </TabsTrigger>
           <TabsTrigger 
             value="products" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <ShoppingBagIcon className="h-4 w-4" />
-            Produtos
+            Products
             <Badge variant="secondary" className="bg-[#5154e7] text-white text-xs">
               {protocol.products.length}
             </Badge>
@@ -85,7 +85,7 @@ export function ProtocolEditTabs({
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <CalendarDaysIcon className="h-4 w-4" />
-            Cronograma
+            Schedule
             <Badge variant="secondary" className="bg-[#5154e7] text-white text-xs">
               {protocol.days.length}
             </Badge>
@@ -105,18 +105,18 @@ export function ProtocolEditTabs({
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
               <EyeIcon className="h-6 w-6 text-[#5154e7]" />
-              Visão Geral do Protocolo
+              Protocol Overview
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Estatísticas Principais */}
+            {/* Main Statistics */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
                 <div className="flex items-center gap-3">
                   <ClockIcon className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-2xl font-bold text-blue-900">{protocol.duration}</p>
-                    <p className="text-sm text-blue-700 font-medium">Dias</p>
+                    <p className="text-sm text-blue-700 font-medium">Days</p>
                   </div>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export function ProtocolEditTabs({
                   <DocumentTextIcon className="h-8 w-8 text-green-600" />
                   <div>
                     <p className="text-2xl font-bold text-green-900">{totalTasks}</p>
-                    <p className="text-sm text-green-700 font-medium">Tarefas</p>
+                    <p className="text-sm text-green-700 font-medium">Tasks</p>
                   </div>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function ProtocolEditTabs({
                   <CalendarDaysIcon className="h-8 w-8 text-purple-600" />
                   <div>
                     <p className="text-2xl font-bold text-purple-900">{totalSessions}</p>
-                    <p className="text-sm text-purple-700 font-medium">Sessões</p>
+                    <p className="text-sm text-purple-700 font-medium">Sessions</p>
                   </div>
                 </div>
               </div>
@@ -146,15 +146,15 @@ export function ProtocolEditTabs({
                   <ShoppingBagIcon className="h-8 w-8 text-orange-600" />
                   <div>
                     <p className="text-2xl font-bold text-orange-900">{protocol.products.length}</p>
-                    <p className="text-sm text-orange-700 font-medium">Produtos</p>
+                    <p className="text-sm text-orange-700 font-medium">Products</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Resumo por Dia */}
+            {/* Daily Summary */}
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Resumo por Dia</h3>
+              <h3 className="text-lg font-bold text-gray-900">Daily Summary</h3>
               <div className="grid gap-3">
                 {protocol.days.map((day: any) => {
                   const dayTasks = day.sessions.reduce((total: number, session: any) => 
@@ -167,9 +167,9 @@ export function ProtocolEditTabs({
                           {day.dayNumber}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">Dia {day.dayNumber}</p>
+                          <p className="font-semibold text-gray-900">Day {day.dayNumber}</p>
                           <p className="text-sm text-gray-600">
-                            {day.sessions.length} sessões • {dayTasks} tarefas
+                            {day.sessions.length} sessions • {dayTasks} tasks
                           </p>
                         </div>
                       </div>
@@ -179,7 +179,7 @@ export function ProtocolEditTabs({
                         onClick={() => setActiveTab('days')}
                         className="text-[#5154e7] border-[#5154e7] hover:bg-[#5154e7] hover:text-white"
                       >
-                        Editar
+                        Edit
                       </Button>
                     </div>
                   );

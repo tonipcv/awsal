@@ -153,7 +153,7 @@ export default function EditProtocolPage() {
           daysCount: data.days?.length || 0
         });
         
-        // Carregar produtos do protocolo
+        // Load protocol products
         const productsResponse = await fetch(`/api/protocols/${protocolId}/products`);
         console.log('📡 Products API response status:', productsResponse.status);
         console.log('📡 Products API response ok:', productsResponse.ok);
@@ -530,7 +530,7 @@ export default function EditProtocolPage() {
         productsCount: protocol.products.length
       });
 
-      // Log detalhado das sessões antes de enviar
+      // Detailed session logs before sending
       protocol.days.forEach((day, dayIndex) => {
         console.log(`📅 Day ${day.dayNumber}:`, {
           sessionsCount: day.sessions.length,
@@ -632,7 +632,7 @@ export default function EditProtocolPage() {
           console.error('❌ Failed to save products:', productsResponse.status, productsResponse.statusText);
           const errorText = await productsResponse.text();
           console.error('❌ Error response:', errorText);
-          setErrorMessage('Erro ao salvar produtos do protocolo');
+          setErrorMessage('Error saving protocol products');
           setShowErrorAlert(true);
           setTimeout(() => setShowErrorAlert(false), 5000);
         }
@@ -640,13 +640,13 @@ export default function EditProtocolPage() {
         console.error('❌ Failed to save protocol:', response.status, response.statusText);
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
-        setErrorMessage('Erro ao salvar protocolo');
+        setErrorMessage('Error saving protocol');
         setShowErrorAlert(true);
         setTimeout(() => setShowErrorAlert(false), 5000);
       }
     } catch (error) {
       console.error('❌ Error saving protocol:', error);
-      setErrorMessage('Erro inesperado ao salvar protocolo');
+      setErrorMessage('Unexpected error saving protocol');
       setShowErrorAlert(true);
       setTimeout(() => setShowErrorAlert(false), 5000);
     } finally {
@@ -709,14 +709,14 @@ export default function EditProtocolPage() {
     setProtocol(prev => ({
       ...prev,
       days: [...prev.days, newDay],
-      duration: prev.days.length + 1 // Atualizar duração automaticamente
+      duration: prev.days.length + 1 // Update duration automatically
     }));
   };
 
   const removeDay = (dayNumber: number) => {
     setProtocol(prev => {
       const newDays = prev.days.filter(d => d.dayNumber !== dayNumber);
-      // Reordenar os números dos dias
+      // Reorder day numbers
       const reorderedDays = newDays.map((day, index) => ({
         ...day,
         dayNumber: index + 1
@@ -800,7 +800,7 @@ export default function EditProtocolPage() {
             {/* Loading Indicator */}
             <div className="fixed bottom-8 right-8 bg-white border border-gray-200 shadow-lg rounded-2xl p-4 flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#5154e7] border-t-transparent"></div>
-              <span className="text-gray-700 font-medium">Carregando protocolo...</span>
+              <span className="text-gray-700 font-medium">Loading protocol...</span>
             </div>
           </div>
         </div>
@@ -818,27 +818,27 @@ export default function EditProtocolPage() {
             <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href={`/doctor/protocols/${params.id}`}>
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Voltar
+                Back
               </Link>
             </Button>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900">
-                Editar Protocolo
+                Edit Protocol
               </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-2 font-medium">
                 <div className="flex items-center gap-2">
                   <ClockIcon className="h-4 w-4" />
-                  <span>{protocol.duration} dias</span>
+                  <span>{protocol.duration} days</span>
                 </div>
                 <span>•</span>
                 <div className="flex items-center gap-2">
                   <DocumentTextIcon className="h-4 w-4" />
-                  <span>{totalTasks} tarefas</span>
+                  <span>{totalTasks} tasks</span>
                 </div>
                 <span>•</span>
                 <div className="flex items-center gap-2">
                   <ShoppingBagIcon className="h-4 w-4" />
-                  <span>{protocol.products.length} produtos</span>
+                  <span>{protocol.products.length} products</span>
                 </div>
               </div>
             </div>
@@ -850,12 +850,12 @@ export default function EditProtocolPage() {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Salvando...
+                  Saving...
                 </>
               ) : (
                 <>
                   <CheckIcon className="h-4 w-4 mr-2" />
-                  Salvar
+                  Save
                 </>
               )}
             </Button>
@@ -869,8 +869,8 @@ export default function EditProtocolPage() {
                   <CheckIcon className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-green-900">Protocolo salvo com sucesso!</h4>
-                  <p className="text-xs text-green-700 mt-1">Todas as alterações foram salvas.</p>
+                  <h4 className="text-sm font-semibold text-green-900">Protocol saved successfully!</h4>
+                  <p className="text-xs text-green-700 mt-1">All changes have been saved.</p>
                 </div>
               </div>
             </div>
@@ -884,7 +884,7 @@ export default function EditProtocolPage() {
                   <XMarkIcon className="h-5 w-5 text-red-600" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-red-900">Erro ao salvar</h4>
+                  <h4 className="text-sm font-semibold text-red-900">Error saving</h4>
                   <p className="text-xs text-red-700 mt-1">{errorMessage}</p>
                 </div>
                 <Button
@@ -913,29 +913,29 @@ export default function EditProtocolPage() {
               basicInfo: (
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-lg font-bold text-gray-900">Informações Básicas</CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-900">Basic Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name" className="text-gray-900 font-semibold">Nome do Protocolo</Label>
+                          <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
                           <Input
                             id="name"
                             value={protocol.name}
                             onChange={(e) => updateProtocolField('name', e.target.value)}
-                            placeholder="Ex: Pós-Preenchimento Facial"
+                            placeholder="Ex: Post-Facial Filler"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="description" className="text-gray-900 font-semibold">Descrição</Label>
+                          <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
                           <Textarea
                             id="description"
                             value={protocol.description}
                             onChange={(e) => updateProtocolField('description', e.target.value)}
-                            placeholder="Descreva o protocolo..."
+                            placeholder="Describe the protocol..."
                             className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
                         </div>
@@ -952,7 +952,7 @@ export default function EditProtocolPage() {
                               className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                             />
                             <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
-                              Salvar como template
+                              Save as template
                             </Label>
                           </div>
 
@@ -965,10 +965,10 @@ export default function EditProtocolPage() {
                               className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                             />
                             <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
-                              Mostrar médico responsável
+                              Show responsible doctor
                             </Label>
                             <span className="text-xs text-gray-500">
-                              (Exibe sua foto e nome na tela do paciente)
+                              (Shows your photo and name on patient screen)
                             </span>
                           </div>
                         </div>
@@ -978,11 +978,11 @@ export default function EditProtocolPage() {
                             <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="text-sm font-medium text-blue-900 mb-1">
-                                Gerenciamento de Dias
+                                Day Management
                               </p>
                               <p className="text-xs text-blue-700">
-                                A duração do protocolo é determinada automaticamente pelos dias que você adicionar na aba "Cronograma". 
-                                Atualmente: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'dia' : 'dias'}</strong>
+                                The protocol duration is automatically determined by the days you add in the "Schedule" tab. 
+                                Currently: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'day' : 'days'}</strong>
                               </p>
                             </div>
                           </div>
@@ -996,27 +996,27 @@ export default function EditProtocolPage() {
               modalConfig: (
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-lg font-bold text-gray-900">Modal para Protocolo Indisponível</CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-900">Modal for Unavailable Protocol</CardTitle>
                     <p className="text-gray-600 font-medium">
-                      Configure o modal que será exibido quando este protocolo estiver indisponível para um paciente específico.
+                      Configure the modal that will be displayed when this protocol is unavailable for a specific patient.
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Título do Modal</Label>
+                          <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
                           <Input
                             id="modalTitle"
                             value={protocol.modalTitle}
                             onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
-                            placeholder="Ex: Protocolo em Desenvolvimento"
+                            placeholder="Ex: Protocol in Development"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">URL do Vídeo (opcional)</Label>
+                          <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
                           <Input
                             id="modalVideoUrl"
                             value={protocol.modalVideoUrl}
@@ -1029,30 +1029,30 @@ export default function EditProtocolPage() {
 
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Descrição do Modal</Label>
+                          <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
                           <Textarea
                             id="modalDescription"
                             value={protocol.modalDescription}
                             onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
-                            placeholder="Descreva o que será mostrado no modal..."
+                            placeholder="Describe what will be shown in the modal..."
                             className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
-                            <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Texto do Botão</Label>
+                            <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
                             <Input
                               id="modalButtonText"
                               value={protocol.modalButtonText}
                               onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
-                              placeholder="Ex: Saber mais"
+                              placeholder="Ex: Learn more"
                               className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                             />
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">URL do Botão (opcional)</Label>
+                            <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL (optional)</Label>
                             <Input
                               id="modalButtonUrl"
                               value={protocol.modalButtonUrl}
@@ -1073,13 +1073,13 @@ export default function EditProtocolPage() {
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-lg font-bold text-gray-900">Produtos do Protocolo</CardTitle>
+                        <CardTitle className="text-lg font-bold text-gray-900">Protocol Products</CardTitle>
                         <p className="text-gray-600 font-medium mt-1">
-                          Adicione produtos que serão recomendados aos pacientes neste protocolo.
+                          Add products that will be recommended to patients in this protocol.
                         </p>
                       </div>
                       <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
-                        {protocol.products.length} produtos
+                        {protocol.products.length} products
                       </Badge>
                     </div>
                   </CardHeader>
@@ -1088,11 +1088,11 @@ export default function EditProtocolPage() {
                     {/* Add Product */}
                     {availableProductsToAdd.length > 0 ? (
                       <div className="space-y-3">
-                        <Label className="text-gray-900 font-semibold">Adicionar Produto</Label>
+                        <Label className="text-gray-900 font-semibold">Add Product</Label>
                         <div className="flex gap-3">
                           <Select onValueChange={addProduct}>
                             <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
-                              <SelectValue placeholder="Selecione um produto..." />
+                              <SelectValue placeholder="Select a product..." />
                             </SelectTrigger>
                             <SelectContent>
                               {availableProductsToAdd.map((product) => (
@@ -1113,8 +1113,8 @@ export default function EditProtocolPage() {
                       <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
                         <p className="text-sm text-gray-600 text-center font-medium">
                           {availableProducts.length === 0 
-                            ? 'Carregando produtos...' 
-                            : 'Todos os produtos disponíveis já foram adicionados ao protocolo.'
+                            ? 'Loading products...' 
+                            : 'All available products have already been added to the protocol.'
                           }
                         </p>
                       </div>
@@ -1154,12 +1154,12 @@ export default function EditProtocolPage() {
                                         className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                                       />
                                       <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
-                                        Produto obrigatório
+                                        Required product
                                       </Label>
                                     </div>
                                     
                                     <div className="space-y-2">
-                                      <Label className="text-gray-900 font-semibold">Ordem</Label>
+                                      <Label className="text-gray-900 font-semibold">Order</Label>
                                       <Input
                                         type="number"
                                         min="1"
@@ -1171,11 +1171,11 @@ export default function EditProtocolPage() {
                                   </div>
                                   
                                   <div className="space-y-2">
-                                    <Label className="text-gray-900 font-semibold">Observações (opcional)</Label>
+                                    <Label className="text-gray-900 font-semibold">Notes (optional)</Label>
                                     <Textarea
                                       value={protocolProduct.notes || ''}
                                       onChange={(e) => updateProductNotes(protocolProduct.id, e.target.value)}
-                                      placeholder="Observações sobre o uso deste produto..."
+                                      placeholder="Notes about using this product..."
                                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                                       rows={2}
                                     />
