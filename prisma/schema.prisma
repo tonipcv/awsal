@@ -560,7 +560,7 @@ model Clinic {
   email        String?
   website      String?
   description  String?
-  specialties  String?
+  logo         String?
   isActive     Boolean            @default(true)
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @default(now()) @updatedAt
@@ -570,6 +570,7 @@ model Clinic {
   subscription ClinicSubscription?
 
   @@index([ownerId])
+  @@map("clinics")
 }
 
 model ClinicMember {

@@ -741,9 +741,9 @@ export default function Navigation() {
                 
                 {/* Profile */}
                 <Link href={getProfileUrl()} className="flex-1 max-w-[50px]">
-                  <Button
-                    variant="ghost"
-                    className={cn(
+                    <Button
+                      variant="ghost"
+                      className={cn(
                       "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
                       (pathname === '/doctor/profile')
                         ? "bg-[#5154e7] text-white shadow-lg scale-110" 
@@ -754,8 +754,8 @@ export default function Navigation() {
                       "h-4 w-4 stroke-current transition-all duration-300",
                       (pathname === '/doctor/profile') ? "drop-shadow-sm" : ""
                     )} />
-                  </Button>
-                </Link>
+                    </Button>
+                  </Link>
               </div>
             </div>
           </nav>
@@ -791,7 +791,7 @@ export default function Navigation() {
                       <DoctorAvatar doctor={doctorInfo} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-400">Médico responsável</p>
+                      <p className="text-xs text-gray-400">Practicioner</p>
                       <p className="text-sm font-medium text-white truncate">
                         {doctorInfo.name}
                       </p>

@@ -59,7 +59,7 @@ export default function RootLayout({
         >
           <NextAuthProvider>
             <UserRoleProvider>
-              {children}
+            {children}
             </UserRoleProvider>
           </NextAuthProvider>
         </ThemeProvider>
