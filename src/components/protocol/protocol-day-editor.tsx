@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +17,31 @@ import {
   ShoppingBagIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+
+// Hook personalizado para debounce
+function createDebounce<T extends (...args: any[]) => void>(callback: T, delay: number): T & { cancel: () => void } {
+  let timeoutId: NodeJS.Timeout | null = null;
+  
+  const debouncedFn = ((...args: Parameters<T>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    timeoutId = setTimeout(() => {
+      callback(...args);
+      timeoutId = null;
+    }, delay);
+  }) as T & { cancel: () => void };
+
+  debouncedFn.cancel = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+  
+  return debouncedFn;
+}
 
 interface ProtocolDayEditorProps {
   days: any[];
@@ -82,70 +106,133 @@ export function ProtocolDayEditor({
     setExpandedTasks(newExpanded);
   };
 
-  const TaskEditor = ({ task, dayNumber, sessionId }: { task: any, dayNumber: number, sessionId?: string }) => (
-    <Collapsible open={expandedTasks.has(task.id)} onOpenChange={() => toggleTask(task.id)}>
+  const TaskEditor = React.memo(({ task, dayNumber, sessionId }: { task: any, dayNumber: number, sessionId?: string }) => {
+    // Estados locais para os inputs de texto
+    const [localTitle, setLocalTitle] = useState(task.title || '');
+    const [localDescription, setLocalDescription] = useState(task.description || '');
+    
+    // Refs para evitar re-criação das funções debounced
+    const debouncedUpdateTitleRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
+    const debouncedUpdateDescriptionRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
+    
+    // Criar funções debounced apenas uma vez
+    useEffect(() => {
+      // Cleanup previous debounced functions
+      if (debouncedUpdateTitleRef.current) {
+        debouncedUpdateTitleRef.current.cancel();
+      }
+      if (debouncedUpdateDescriptionRef.current) {
+        debouncedUpdateDescriptionRef.current.cancel();
+      }
+
+      debouncedUpdateTitleRef.current = createDebounce((value: string) => {
+        updateTask(dayNumber, task.id, 'title', value, sessionId);
+      }, 500);
+      
+      debouncedUpdateDescriptionRef.current = createDebounce((value: string) => {
+        updateTask(dayNumber, task.id, 'description', value, sessionId);
+      }, 500);
+
+      // Cleanup on unmount
+      return () => {
+        if (debouncedUpdateTitleRef.current) {
+          debouncedUpdateTitleRef.current.cancel();
+        }
+        if (debouncedUpdateDescriptionRef.current) {
+          debouncedUpdateDescriptionRef.current.cancel();
+        }
+      };
+    }, [dayNumber, task.id, sessionId, updateTask]);
+    
+    // Atualizar estados locais apenas quando a task mudar externamente
+    useEffect(() => {
+      setLocalTitle(task.title || '');
+      setLocalDescription(task.description || '');
+    }, [task.title, task.description]);
+    
+    const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setLocalTitle(value);
+      if (debouncedUpdateTitleRef.current) {
+        debouncedUpdateTitleRef.current(value);
+      }
+    }, []);
+    
+    const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setLocalDescription(value);
+      if (debouncedUpdateDescriptionRef.current) {
+        debouncedUpdateDescriptionRef.current(value);
+      }
+    }, []);
+
+    const isExpanded = expandedTasks.has(task.id);
+
+    return (
       <div className="border border-gray-200 rounded-xl bg-gray-50">
-        <CollapsibleTrigger asChild>
-          <div className="p-4 cursor-pointer hover:bg-gray-100 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <ChevronDownIcon 
-                  className={`h-4 w-4 text-gray-500 transition-transform ${
-                    expandedTasks.has(task.id) ? 'rotate-180' : ''
-                  }`} 
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
-                    {task.title || 'Tarefa sem título'}
+        {/* Header sempre visível */}
+        <div className="p-4 bg-gray-100 rounded-t-xl border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">
+                  {localTitle || 'Tarefa sem título'}
+                </p>
+                {localDescription && (
+                  <p className="text-sm text-gray-600 truncate">
+                    {localDescription}
                   </p>
-                  {task.description && (
-                    <p className="text-sm text-gray-600 truncate">
-                      {task.description}
-                    </p>
-                  )}
-                </div>
-                {task.hasMoreInfo && (
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
-                    Conteúdo Extra
-                  </Badge>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeTask(dayNumber, task.id, sessionId);
-                }}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+              {task.hasMoreInfo && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                  Conteúdo Extra
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleTask(task.id)}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-colors"
+              >
+                <ChevronDownIcon 
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              <button
+                onClick={() => removeTask(dayNumber, task.id, sessionId)}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-colors"
               >
                 <TrashIcon className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
           </div>
-        </CollapsibleTrigger>
+        </div>
 
-        <CollapsibleContent>
-          <div className="px-4 pb-4 space-y-4 border-t border-gray-200">
-            {/* Campos Básicos */}
-            <div className="space-y-3 pt-4">
-              <Input
-                placeholder="Título da tarefa"
-                value={task.title}
-                onChange={(e) => updateTask(dayNumber, task.id, 'title', e.target.value, sessionId)}
-                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
-              />
-              <Textarea
-                placeholder="Descrição básica"
-                value={task.description}
-                onChange={(e) => updateTask(dayNumber, task.id, 'description', e.target.value, sessionId)}
-                rows={2}
-                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-              />
-            </div>
+        {/* Campos Básicos sempre visíveis */}
+        <div className="p-4 space-y-3 bg-white">
+          <Input
+            placeholder="Título da tarefa"
+            value={localTitle}
+            onChange={handleTitleChange}
+            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
+          />
+          <Textarea
+            placeholder="Descrição básica"
+            value={localDescription}
+            onChange={handleDescriptionChange}
+            rows={2}
+            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+          />
+        </div>
 
+        {/* Campos extras - visibilidade controlada por estado */}
+        {isExpanded && (
+          <div className="px-4 pb-4 space-y-4 border-t border-gray-200 bg-white rounded-b-xl">
             {/* Toggle para Conteúdo Extra */}
-            <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
+            <div className="flex items-center space-x-3 pt-4">
               <input
                 type="checkbox"
                 id={`hasMoreInfo-${task.id}`}
@@ -161,7 +248,7 @@ export function ProtocolDayEditor({
 
             {/* Campos Extras */}
             {task.hasMoreInfo && (
-              <div className="space-y-4 p-4 bg-white rounded-xl border border-gray-200">
+              <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
@@ -253,10 +340,159 @@ export function ProtocolDayEditor({
               </div>
             )}
           </div>
-        </CollapsibleContent>
+        )}
       </div>
-    </Collapsible>
-  );
+    );
+  });
+
+  const SessionEditor = ({ session, dayNumber }: { session: any, dayNumber: number }) => {
+    // Estados locais para os inputs de texto
+    const [localName, setLocalName] = useState(session.name);
+    const [localDescription, setLocalDescription] = useState(session.description || '');
+    
+    // Refs para as funções debounced
+    const debouncedUpdateNameRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
+    const debouncedUpdateDescriptionRef = useRef<((value: string) => void) & { cancel: () => void } | null>(null);
+    
+    // Criar funções debounced com cleanup
+    useEffect(() => {
+      // Cleanup previous debounced functions
+      if (debouncedUpdateNameRef.current) {
+        debouncedUpdateNameRef.current.cancel();
+      }
+      if (debouncedUpdateDescriptionRef.current) {
+        debouncedUpdateDescriptionRef.current.cancel();
+      }
+
+      debouncedUpdateNameRef.current = createDebounce((value: string) => {
+        updateSession(dayNumber, session.id, 'name', value);
+      }, 300);
+      
+      debouncedUpdateDescriptionRef.current = createDebounce((value: string) => {
+        updateSession(dayNumber, session.id, 'description', value);
+      }, 300);
+
+      // Cleanup on unmount
+      return () => {
+        if (debouncedUpdateNameRef.current) {
+          debouncedUpdateNameRef.current.cancel();
+        }
+        if (debouncedUpdateDescriptionRef.current) {
+          debouncedUpdateDescriptionRef.current.cancel();
+        }
+      };
+    }, [dayNumber, session.id, updateSession]);
+    
+    // Atualizar estados locais quando a session mudar
+    useEffect(() => {
+      setLocalName(session.name);
+      setLocalDescription(session.description || '');
+    }, [session.name, session.description]);
+    
+    const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setLocalName(value);
+      if (debouncedUpdateNameRef.current) {
+        debouncedUpdateNameRef.current(value);
+      }
+    }, []);
+    
+    const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setLocalDescription(value);
+      if (debouncedUpdateDescriptionRef.current) {
+        debouncedUpdateDescriptionRef.current(value);
+      }
+    }, []);
+
+    const isExpanded = expandedSessions.has(session.id);
+
+    return (
+      <div className="border border-gray-200 rounded-xl bg-white">
+        {/* Header sempre visível */}
+        <div className="p-4 bg-gray-50 rounded-t-xl border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900">
+                  {localName || `Sessão ${session.order + 1}`}
+                </p>
+                {localDescription && (
+                  <p className="text-sm text-gray-600 truncate">
+                    {localDescription}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  {session.tasks.length} tarefas
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toggleSession(session.id)}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-xl h-8 w-8 p-0 flex items-center justify-center transition-colors"
+              >
+                <ChevronDownIcon 
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              <button
+                onClick={() => removeSession(dayNumber, session.id)}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0 flex items-center justify-center transition-colors"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Campos básicos sempre visíveis */}
+        <div className="p-4 space-y-3 bg-white">
+          <Input
+            value={localName}
+            onChange={handleNameChange}
+            placeholder="Nome da sessão"
+            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 font-semibold rounded-xl h-10"
+          />
+          <Input
+            value={localDescription}
+            onChange={handleDescriptionChange}
+            placeholder="Descrição da sessão (opcional)"
+            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-600 rounded-xl h-10"
+          />
+        </div>
+
+        {/* Tarefas - visibilidade controlada por estado */}
+        {isExpanded && (
+          <div className="p-4 space-y-4 border-t border-gray-200 bg-white rounded-b-xl">
+            {/* Tarefas da Sessão */}
+            <div className="space-y-4">
+              {session.tasks.map((task: any) => (
+                <TaskEditor 
+                  key={task.id} 
+                  task={task} 
+                  dayNumber={dayNumber} 
+                  sessionId={session.id} 
+                />
+              ))}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => addTask(dayNumber, session.id)}
+                className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Adicionar Tarefa
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -300,16 +536,21 @@ export function ProtocolDayEditor({
         </div>
       )}
 
-      {days.map((day) => (
-        <Collapsible key={day.id} open={expandedDays.has(day.id)} onOpenChange={() => toggleDay(day.id)}>
-          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors">
+      {days.map((day) => {
+        const isDayExpanded = expandedDays.has(day.id);
+        
+        return (
+          <div key={day.id}>
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader 
+                className="pb-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleDay(day.id)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <ChevronDownIcon 
                       className={`h-5 w-5 text-gray-500 transition-transform ${
-                        expandedDays.has(day.id) ? 'rotate-180' : ''
+                        isDayExpanded ? 'rotate-180' : ''
                       }`} 
                     />
                     <div>
@@ -353,129 +594,53 @@ export function ProtocolDayEditor({
                   </div>
                 </div>
               </CardHeader>
-            </CollapsibleTrigger>
 
-            <CollapsibleContent>
-              <CardContent className="space-y-6">
-                {/* Sessões */}
-                {day.sessions.map((session: any) => (
-                  <Collapsible key={session.id} open={expandedSessions.has(session.id)} onOpenChange={() => toggleSession(session.id)}>
-                    <div className="border border-gray-200 rounded-xl bg-white">
-                      <CollapsibleTrigger asChild>
-                        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl cursor-pointer hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center gap-3 flex-1">
-                            <ChevronDownIcon 
-                              className={`h-4 w-4 text-gray-500 transition-transform ${
-                                expandedSessions.has(session.id) ? 'rotate-180' : ''
-                              }`} 
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900">
-                                {session.name || `Sessão ${session.order + 1}`}
-                              </p>
-                              {session.description && (
-                                <p className="text-sm text-gray-600 truncate">
-                                  {session.description}
-                                </p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                {session.tasks.length} tarefas
-                              </p>
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSession(day.dayNumber, session.id);
-                            }}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CollapsibleTrigger>
+              {isDayExpanded && (
+                <CardContent className="space-y-6">
+                  {/* Sessões */}
+                  {day.sessions.map((session: any) => (
+                    <SessionEditor 
+                      key={session.id} 
+                      session={session} 
+                      dayNumber={day.dayNumber} 
+                    />
+                  ))}
 
-                      <CollapsibleContent>
-                        <div className="p-4 space-y-4">
-                          {/* Editar Sessão */}
-                          <div className="space-y-3 pb-4 border-b border-gray-200">
-                            <Input
-                              value={session.name}
-                              onChange={(e) => updateSession(day.dayNumber, session.id, 'name', e.target.value)}
-                              placeholder="Nome da sessão"
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 font-semibold rounded-xl h-10"
-                            />
-                            <Input
-                              value={session.description || ''}
-                              onChange={(e) => updateSession(day.dayNumber, session.id, 'description', e.target.value)}
-                              placeholder="Descrição da sessão (opcional)"
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-600 rounded-xl h-10"
-                            />
-                          </div>
-
-                          {/* Tarefas da Sessão */}
-                          <div className="space-y-4">
-                            {session.tasks.map((task: any) => (
-                              <TaskEditor 
-                                key={task.id} 
-                                task={task} 
-                                dayNumber={day.dayNumber} 
-                                sessionId={session.id} 
-                              />
-                            ))}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addTask(day.dayNumber, session.id)}
-                              className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 rounded-xl h-10 font-semibold"
-                            >
-                              <PlusIcon className="h-4 w-4 mr-2" />
-                              Adicionar Tarefa
-                            </Button>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
+                  {/* Tarefas Diretas */}
+                  {day.tasks.length > 0 && (
+                    <div className="p-4 bg-white border border-gray-200 rounded-xl">
+                      <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                          Tarefas Diretas
+                        </Badge>
+                      </h5>
+                      <div className="space-y-4">
+                        {day.tasks.map((task: any) => (
+                          <TaskEditor 
+                            key={task.id} 
+                            task={task} 
+                            dayNumber={day.dayNumber} 
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </Collapsible>
-                ))}
-
-                {/* Tarefas Diretas */}
-                {day.tasks.length > 0 && (
-                  <div className="p-4 bg-white border border-gray-200 rounded-xl">
-                    <h5 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                        Tarefas Diretas
-                      </Badge>
-                    </h5>
-                    <div className="space-y-4">
-                      {day.tasks.map((task: any) => (
-                        <TaskEditor 
-                          key={task.id} 
-                          task={task} 
-                          dayNumber={day.dayNumber} 
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addTask(day.dayNumber)}
-                  className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Adicionar Tarefa Direta ao Dia {day.dayNumber}
-                </Button>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      ))}
+                  )}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addTask(day.dayNumber)}
+                    className="w-full border-dashed border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-700 rounded-xl h-12 font-semibold"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Tarefa Direta ao Dia {day.dayNumber}
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+          </div>
+        );
+      })}
     </div>
   );
 } 

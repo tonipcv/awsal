@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -326,45 +326,56 @@ export default function EditProtocolPage() {
     }));
   };
 
-  const updateTask = (dayNumber: number, taskId: string, field: string, value: string | boolean, sessionId?: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => {
-        if (day.dayNumber === dayNumber) {
-          if (sessionId) {
-            return {
-              ...day,
-              sessions: day.sessions.map(session => {
-                if (session.id === sessionId) {
-                  return {
-                    ...session,
-                    tasks: session.tasks.map(task => {
-                      if (task.id === taskId) {
-                        return { ...task, [field]: value };
-                      }
-                      return task;
-                    })
-                  };
-                }
-                return session;
-              })
-            };
-          } else {
-            return {
-              ...day,
-              tasks: day.tasks.map(task => {
-                if (task.id === taskId) {
-                  return { ...task, [field]: value };
-                }
-                return task;
-              })
-            };
-          }
-        }
-        return day;
-      })
-    }));
-  };
+  const updateTask = useCallback((dayNumber: number, taskId: string, field: string, value: string | boolean, sessionId?: string) => {
+    setProtocol(prev => {
+      // Find the day index first to avoid unnecessary iterations
+      const dayIndex = prev.days.findIndex(day => day.dayNumber === dayNumber);
+      if (dayIndex === -1) return prev;
+
+      const day = prev.days[dayIndex];
+      
+      if (sessionId) {
+        // Update task in session
+        const sessionIndex = day.sessions.findIndex(session => session.id === sessionId);
+        if (sessionIndex === -1) return prev;
+
+        const session = day.sessions[sessionIndex];
+        const taskIndex = session.tasks.findIndex(task => task.id === taskId);
+        if (taskIndex === -1) return prev;
+
+        // Only update if the value actually changed
+        if (session.tasks[taskIndex][field as keyof ProtocolTask] === value) return prev;
+
+        // Create new arrays only for the parts that changed
+        const newTasks = [...session.tasks];
+        newTasks[taskIndex] = { ...newTasks[taskIndex], [field]: value };
+
+        const newSessions = [...day.sessions];
+        newSessions[sessionIndex] = { ...newSessions[sessionIndex], tasks: newTasks };
+
+        const newDays = [...prev.days];
+        newDays[dayIndex] = { ...day, sessions: newSessions };
+
+        return { ...prev, days: newDays };
+      } else {
+        // Update task in day
+        const taskIndex = day.tasks.findIndex(task => task.id === taskId);
+        if (taskIndex === -1) return prev;
+
+        // Only update if the value actually changed
+        if (day.tasks[taskIndex][field as keyof ProtocolTask] === value) return prev;
+
+        // Create new arrays only for the parts that changed
+        const newTasks = [...day.tasks];
+        newTasks[taskIndex] = { ...newTasks[taskIndex], [field]: value };
+
+        const newDays = [...prev.days];
+        newDays[dayIndex] = { ...day, tasks: newTasks };
+
+        return { ...prev, days: newDays };
+      }
+    });
+  }, []);
 
   const addSession = (dayNumber: number) => {
     const newSession: ProtocolSession = {
@@ -418,37 +429,39 @@ export default function EditProtocolPage() {
     });
   };
 
-  const updateSession = (dayNumber: number, sessionId: string, field: string, value: string) => {
+  const updateSession = useCallback((dayNumber: number, sessionId: string, field: string, value: string) => {
     console.log('✏️ Updating session:', { dayNumber, sessionId, field, value });
     setProtocol(prev => {
-      const newProtocol = {
-        ...prev,
-        days: prev.days.map(day => {
-          if (day.dayNumber === dayNumber) {
-            const newDay = {
-              ...day,
-              sessions: day.sessions.map(session => {
-                if (session.id === sessionId) {
-                  const updatedSession = { ...session, [field]: value };
-                  console.log('✏️ Session updated:', { 
-                    sessionId, 
-                    field, 
-                    oldValue: session[field as keyof ProtocolSession], 
-                    newValue: value 
-                  });
-                  return updatedSession;
-                }
-                return session;
-              })
-            };
-            return newDay;
-          }
-          return day;
-        })
-      };
-      return newProtocol;
+      // Find the day index first to avoid unnecessary iterations
+      const dayIndex = prev.days.findIndex(day => day.dayNumber === dayNumber);
+      if (dayIndex === -1) return prev;
+
+      const day = prev.days[dayIndex];
+      const sessionIndex = day.sessions.findIndex(session => session.id === sessionId);
+      if (sessionIndex === -1) return prev;
+
+      const session = day.sessions[sessionIndex];
+      
+      // Only update if the value actually changed
+      if (session[field as keyof ProtocolSession] === value) return prev;
+
+      // Create new arrays only for the parts that changed
+      const newSessions = [...day.sessions];
+      newSessions[sessionIndex] = { ...session, [field]: value };
+
+      const newDays = [...prev.days];
+      newDays[dayIndex] = { ...day, sessions: newSessions };
+
+      console.log('✏️ Session updated:', { 
+        sessionId, 
+        field, 
+        oldValue: session[field as keyof ProtocolSession], 
+        newValue: value 
+      });
+
+      return { ...prev, days: newDays };
     });
-  };
+  }, []);
 
   const moveTaskToSession = (dayNumber: number, taskId: string, targetSessionId: string) => {
     // Implementation for moving tasks between sessions
@@ -484,17 +497,23 @@ export default function EditProtocolPage() {
     }));
   };
 
-  const updateProtocolProduct = (protocolProductId: string, field: string, value: any) => {
-    setProtocol(prev => ({
-      ...prev,
-      products: prev.products.map(pp => {
-        if (pp.id === protocolProductId) {
-          return { ...pp, [field]: value };
-        }
-        return pp;
-      })
-    }));
-  };
+  const updateProtocolProduct = useCallback((protocolProductId: string, field: string, value: any) => {
+    setProtocol(prev => {
+      const productIndex = prev.products.findIndex(pp => pp.id === protocolProductId);
+      if (productIndex === -1) return prev;
+
+      const product = prev.products[productIndex];
+      
+      // Only update if the value actually changed
+      if (product[field as keyof ProtocolProduct] === value) return prev;
+
+      // Create new array only for the part that changed
+      const newProducts = [...prev.products];
+      newProducts[productIndex] = { ...product, [field]: value };
+
+      return { ...prev, products: newProducts };
+    });
+  }, []);
 
   const saveProtocol = async () => {
     try {
@@ -653,6 +672,15 @@ export default function EditProtocolPage() {
   const availableProductsToAdd = availableProducts.filter(product => 
     !protocol.products.some(pp => pp.productId === product.id)
   );
+
+  // Optimized update functions for main protocol fields
+  const updateProtocolField = useCallback((field: keyof ProtocolForm, value: any) => {
+    setProtocol(prev => {
+      // Only update if the value actually changed
+      if (prev[field] === value) return prev;
+      return { ...prev, [field]: value };
+    });
+  }, []);
 
   const updateProductRequired = (protocolProductId: string, isRequired: boolean) => {
     updateProtocolProduct(protocolProductId, 'isRequired', isRequired);
@@ -895,7 +923,7 @@ export default function EditProtocolPage() {
                           <Input
                             id="name"
                             value={protocol.name}
-                            onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
+                            onChange={(e) => updateProtocolField('name', e.target.value)}
                             placeholder="Ex: Pós-Preenchimento Facial"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                           />
@@ -906,7 +934,7 @@ export default function EditProtocolPage() {
                           <Textarea
                             id="description"
                             value={protocol.description}
-                            onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
+                            onChange={(e) => updateProtocolField('description', e.target.value)}
                             placeholder="Descreva o protocolo..."
                             className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
@@ -920,7 +948,7 @@ export default function EditProtocolPage() {
                               type="checkbox"
                               id="isTemplate"
                               checked={protocol.isTemplate}
-                              onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
+                              onChange={(e) => updateProtocolField('isTemplate', e.target.checked)}
                               className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                             />
                             <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
@@ -933,7 +961,7 @@ export default function EditProtocolPage() {
                               type="checkbox"
                               id="showDoctorInfo"
                               checked={protocol.showDoctorInfo}
-                              onChange={(e) => setProtocol(prev => ({ ...prev, showDoctorInfo: e.target.checked }))}
+                              onChange={(e) => updateProtocolField('showDoctorInfo', e.target.checked)}
                               className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                             />
                             <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
@@ -981,7 +1009,7 @@ export default function EditProtocolPage() {
                           <Input
                             id="modalTitle"
                             value={protocol.modalTitle}
-                            onChange={(e) => setProtocol(prev => ({ ...prev, modalTitle: e.target.value }))}
+                            onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
                             placeholder="Ex: Protocolo em Desenvolvimento"
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                           />
@@ -992,7 +1020,7 @@ export default function EditProtocolPage() {
                           <Input
                             id="modalVideoUrl"
                             value={protocol.modalVideoUrl}
-                            onChange={(e) => setProtocol(prev => ({ ...prev, modalVideoUrl: e.target.value }))}
+                            onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
                             placeholder="Ex: https://www.youtube.com/embed/..."
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                           />
@@ -1005,7 +1033,7 @@ export default function EditProtocolPage() {
                           <Textarea
                             id="modalDescription"
                             value={protocol.modalDescription}
-                            onChange={(e) => setProtocol(prev => ({ ...prev, modalDescription: e.target.value }))}
+                            onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
                             placeholder="Descreva o que será mostrado no modal..."
                             className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
@@ -1017,7 +1045,7 @@ export default function EditProtocolPage() {
                             <Input
                               id="modalButtonText"
                               value={protocol.modalButtonText}
-                              onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonText: e.target.value }))}
+                              onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
                               placeholder="Ex: Saber mais"
                               className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                             />
@@ -1028,7 +1056,7 @@ export default function EditProtocolPage() {
                             <Input
                               id="modalButtonUrl"
                               value={protocol.modalButtonUrl}
-                              onChange={(e) => setProtocol(prev => ({ ...prev, modalButtonUrl: e.target.value }))}
+                              onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
                               placeholder="Ex: https://..."
                               className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
                             />
