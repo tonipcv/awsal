@@ -22,6 +22,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+// Translations for internationalization
+const translations = {
+  pt: {
+    yourResponsibleDoctor: 'Seu Médico Responsável',
+    sendEmail: 'Enviar Email',
+    call: 'Ligar',
+    contact: 'Contato',
+    email: 'Email',
+    phone: 'Telefone',
+    clinic: 'Clínica',
+    quickAccess: 'Acesso Rápido',
+    viewProtocols: 'Ver Protocolos',
+    viewCourses: 'Ver Cursos',
+    noDoctorAssigned: 'Nenhum médico atribuído',
+    contactSupportForDoctor: 'Entre em contato com o suporte para obter um médico responsável.',
+    loadingDoctorInfo: 'Carregando informações do médico...'
+  },
+  en: {
+    yourResponsibleDoctor: 'Your Responsible Doctor',
+    sendEmail: 'Send Email',
+    call: 'Call',
+    contact: 'Contact',
+    email: 'Email',
+    phone: 'Phone',
+    clinic: 'Clinic',
+    quickAccess: 'Quick Access',
+    viewProtocols: 'View Protocols',
+    viewCourses: 'View Courses',
+    noDoctorAssigned: 'No doctor assigned',
+    contactSupportForDoctor: 'Contact support to get a responsible doctor.',
+    loadingDoctorInfo: 'Loading doctor information...'
+  }
+};
+
 interface DoctorInfo {
   id: string;
   name: string;
@@ -52,6 +86,16 @@ interface DoctorInfo {
 export default function DoctorInfoPage() {
   const [doctorInfo, setDoctorInfo] = useState<DoctorInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+
+  // Detect browser language
+  useEffect(() => {
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
+    setLanguage(detectedLang);
+  }, []);
+
+  const t = translations[language];
 
   useEffect(() => {
     const loadDoctorInfo = async () => {
@@ -88,7 +132,7 @@ export default function DoctorInfoPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-4xl mx-auto px-3 lg:px-6">
             <div className="space-y-6 pt-4 lg:pt-6">
               
@@ -131,7 +175,7 @@ export default function DoctorInfoPage() {
   if (!doctorInfo) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-4xl mx-auto px-3 lg:px-6">
             <div className="space-y-6 pt-4 lg:pt-6">
               
@@ -142,10 +186,10 @@ export default function DoctorInfoPage() {
                     <UserIcon className="h-12 w-12 text-gray-400" />
                   </div>
                   <h1 className="text-2xl lg:text-3xl font-light text-white mb-4">
-                    Nenhum médico atribuído
+                    {t.noDoctorAssigned}
                   </h1>
                   <p className="text-lg text-gray-300 leading-relaxed max-w-md mx-auto">
-                    Entre em contato com o suporte para obter um médico responsável.
+                    {t.contactSupportForDoctor}
                   </p>
                 </div>
               </div>
@@ -159,7 +203,7 @@ export default function DoctorInfoPage() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         <div className="max-w-4xl mx-auto px-3 lg:px-6">
           <div className="space-y-6 pt-4 lg:pt-6">
             
@@ -198,7 +242,7 @@ export default function DoctorInfoPage() {
                       </h1>
                       <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 rounded-full px-4 py-2 text-sm font-medium">
                         <HeartIcon className="h-4 w-4 mr-2" />
-                        Seu Médico Responsável
+                        {t.yourResponsibleDoctor}
                       </Badge>
                     </div>
 
@@ -210,7 +254,7 @@ export default function DoctorInfoPage() {
                       >
                         <Link href={`mailto:${doctorInfo.email}`}>
                           <EnvelopeIcon className="h-5 w-5 mr-2" />
-                          Enviar Email
+                          {t.sendEmail}
                         </Link>
                       </Button>
                       {doctorInfo.phone && (
@@ -221,7 +265,7 @@ export default function DoctorInfoPage() {
                         >
                           <Link href={`tel:${doctorInfo.phone}`}>
                             <PhoneIcon className="h-5 w-5 mr-2" />
-                            Ligar
+                            {t.call}
                           </Link>
                         </Button>
                       )}
@@ -239,7 +283,7 @@ export default function DoctorInfoPage() {
                 <CardHeader className="p-6">
                   <CardTitle className="text-lg font-light text-white flex items-center gap-3">
                     <EnvelopeIcon className="h-5 w-5 text-turquoise" />
-                    Contato
+                    {t.contact}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 pt-0 space-y-4">
@@ -248,7 +292,7 @@ export default function DoctorInfoPage() {
                     <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
                       <div className="flex items-center gap-3 mb-2">
                         <EnvelopeIcon className="h-4 w-4 text-turquoise" />
-                        <span className="text-sm text-gray-400">Email</span>
+                        <span className="text-sm text-gray-400">{t.email}</span>
                       </div>
                       <p className="text-white font-medium">{doctorInfo.email}</p>
                     </div>
@@ -257,7 +301,7 @@ export default function DoctorInfoPage() {
                       <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700/50">
                         <div className="flex items-center gap-3 mb-2">
                           <PhoneIcon className="h-4 w-4 text-turquoise" />
-                          <span className="text-sm text-gray-400">Telefone</span>
+                          <span className="text-sm text-gray-400">{t.phone}</span>
                         </div>
                         <p className="text-white font-medium">{doctorInfo.phone}</p>
                       </div>
@@ -273,7 +317,7 @@ export default function DoctorInfoPage() {
                   <CardHeader className="p-6">
                     <CardTitle className="text-lg font-light text-white flex items-center gap-3">
                       <BuildingOfficeIcon className="h-5 w-5 text-turquoise" />
-                      Clínica
+                      {t.clinic}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 pt-0 space-y-4">
@@ -329,23 +373,26 @@ export default function DoctorInfoPage() {
                 <CardHeader className="p-6">
                   <CardTitle className="text-lg font-light text-white flex items-center gap-3">
                     <DocumentTextIcon className="h-5 w-5 text-turquoise" />
-                    Acesso Rápido
+                    {t.quickAccess}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     
-                    <Link href="/patient/protocols">
-                      <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
+                    <Link href="/patient/protocols" className="w-full">
+                      <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
                         <CheckCircleIcon className="h-5 w-5 mr-2" />
-                        Ver Protocolos
+                        {t.viewProtocols}
                       </Button>
                     </Link>
 
-                    <Link href="/patient/courses">
-                      <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300">
+                    <Link href="/patient/courses" className="w-full">
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-turquoise/30 text-turquoise hover:bg-turquoise/10 hover:text-turquoise bg-transparent font-semibold px-6 py-3 rounded-xl transition-all duration-300"
+                      >
                         <BookOpenIcon className="h-5 w-5 mr-2" />
-                        Ver Cursos
+                        {t.viewCourses}
                       </Button>
                     </Link>
 

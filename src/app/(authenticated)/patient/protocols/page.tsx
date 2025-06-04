@@ -26,6 +26,56 @@ import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import ProtocolModal from '@/components/ProtocolModal';
 
+// Translations for internationalization
+const translations = {
+  pt: {
+    yourProtocols: 'Seus Protocolos',
+    trackProgress: 'Acompanhe seu progresso e continue seu tratamento',
+    activeProtocol: 'Protocolo Ativo',
+    activeProtocols: 'Protocolos Ativos',
+    totalAvailable: 'Total Disponível',
+    averageProgress: 'Progresso Médio',
+    noProtocolsAvailable: 'Nenhum protocolo disponível',
+    contactDoctor: 'Entre em contato com seu médico para obter um protocolo personalizado.',
+    activeProtocolsSection: 'Protocolos Ativos',
+    unavailableProtocolsSection: 'Protocolos Indisponíveis',
+    active: 'Ativo',
+    completed: 'Concluído',
+    unavailable: 'Indisponível',
+    responsibleDoctor: 'Médico Responsável',
+    duration: 'Duração',
+    tasks: 'Tarefas',
+    days: 'dias',
+    dayOf: (current: number, total: number) => `Dia ${current} de ${total}`,
+    continue: 'Continuar',
+    seeDetails: 'Ver detalhes',
+    loading: 'Carregando...'
+  },
+  en: {
+    yourProtocols: 'Your Protocols',
+    trackProgress: 'Track your progress and continue your treatment',
+    activeProtocol: 'Active Protocol',
+    activeProtocols: 'Active Protocols',
+    totalAvailable: 'Total Available',
+    averageProgress: 'Average Progress',
+    noProtocolsAvailable: 'No protocols available',
+    contactDoctor: 'Contact your doctor to get a personalized protocol.',
+    activeProtocolsSection: 'Active Protocols',
+    unavailableProtocolsSection: 'Unavailable Protocols',
+    active: 'Active',
+    completed: 'Completed',
+    unavailable: 'Unavailable',
+    responsibleDoctor: 'Responsible Doctor',
+    duration: 'Duration',
+    tasks: 'Tasks',
+    days: 'days',
+    dayOf: (current: number, total: number) => `Day ${current} of ${total}`,
+    continue: 'Continue',
+    seeDetails: 'See details',
+    loading: 'Loading...'
+  }
+};
+
 interface Protocol {
   id: string;
   name: string;
@@ -94,6 +144,7 @@ export default function ProtocolsPage() {
   const [activeProtocols, setActiveProtocols] = useState<ActiveProtocol[]>([]);
   const [unavailableProtocols, setUnavailableProtocols] = useState<Protocol[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
     title: string;
@@ -109,6 +160,15 @@ export default function ProtocolsPage() {
     buttonText: '',
     buttonUrl: ''
   });
+
+  // Detect browser language
+  useEffect(() => {
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
+    setLanguage(detectedLang);
+  }, []);
+
+  const t = translations[language];
 
   const loadProtocols = useCallback(async () => {
     try {
@@ -187,7 +247,7 @@ export default function ProtocolsPage() {
       title: protocol.modalTitle || protocol.name,
       description: protocol.modalDescription,
       videoUrl: protocol.modalVideoUrl,
-      buttonText: protocol.modalButtonText || 'Saber mais',
+      buttonText: protocol.modalButtonText || t.seeDetails,
       buttonUrl: protocol.modalButtonUrl
     });
   };
@@ -209,7 +269,7 @@ export default function ProtocolsPage() {
   if (!session) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <span className="text-xs text-gray-400">Carregando...</span>
+        <span className="text-xs text-gray-400">{t.loading}</span>
       </div>
     );
   }
@@ -218,7 +278,7 @@ export default function ProtocolsPage() {
     return (
       <div className="min-h-screen bg-black">
         {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
             
             {/* Hero Skeleton */}
@@ -280,7 +340,7 @@ export default function ProtocolsPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Padding para menu lateral no desktop e header no mobile */}
-      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         
         {/* Hero Section Compacto */}
       <div className="relative overflow-hidden">
@@ -289,10 +349,10 @@ export default function ProtocolsPage() {
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">
                 <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
-                  Seus Protocolos
+                  {t.yourProtocols}
                 </h1>
                 <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
-                  Acompanhe seu progresso e continue seu tratamento
+                  {t.trackProgress}
                 </p>
                 
                 {/* Stats Compactas */}
@@ -302,7 +362,7 @@ export default function ProtocolsPage() {
                     {activeProtocols.length}
                   </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      {activeProtocols.length === 1 ? 'Protocolo Ativo' : 'Protocolos Ativos'}
+                      {activeProtocols.length === 1 ? t.activeProtocol : t.activeProtocols}
               </div>
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
@@ -311,7 +371,7 @@ export default function ProtocolsPage() {
                     {totalProtocols}
                   </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      Total Disponível
+                      {t.totalAvailable}
               </div>
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
@@ -322,7 +382,7 @@ export default function ProtocolsPage() {
                       : 0}%
                   </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      Progresso Médio
+                      {t.averageProgress}
                   </div>
                 </div>
               </div>
@@ -341,10 +401,10 @@ export default function ProtocolsPage() {
                   <DocumentTextIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg lg:text-xl font-light text-white mb-2 lg:mb-3">
-                Nenhum protocolo disponível
+                {t.noProtocolsAvailable}
               </h3>
                 <p className="text-sm lg:text-base text-gray-300 leading-relaxed">
-                Entre em contato com seu médico para obter um protocolo personalizado.
+                {t.contactDoctor}
               </p>
             </div>
           </div>
@@ -355,7 +415,7 @@ export default function ProtocolsPage() {
               <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
                     <CheckCircleIcon className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
-                    Protocolos Ativos
+                    {t.activeProtocolsSection}
                 </h2>
                 
                   <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -379,12 +439,12 @@ export default function ProtocolsPage() {
                                   </h3>
                                   {isActive && (
                                     <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                      Ativo
+                                      {t.active}
                                     </Badge>
                                   )}
                                   {isCompleted && (
                                     <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                      Concluído
+                                      {t.completed}
                                     </Badge>
                                   )}
                                 </div>
@@ -396,7 +456,7 @@ export default function ProtocolsPage() {
                                       {assignment.protocol.doctor.image ? (
                                         <img 
                                           src={assignment.protocol.doctor.image} 
-                                          alt={assignment.protocol.doctor.name || 'Médico'}
+                                          alt={assignment.protocol.doctor.name || t.responsibleDoctor}
                                           className="w-full h-full object-cover"
                                           onError={(e) => {
                                             e.currentTarget.style.display = 'none';
@@ -417,7 +477,7 @@ export default function ProtocolsPage() {
                                       </div>
                                     </div>
                                     <span className="text-xs text-gray-400">
-                                      {assignment.protocol.doctor.name || 'Médico Responsável'}
+                                      {assignment.protocol.doctor.name || t.responsibleDoctor}
                                     </span>
                                   </div>
                                 )}
@@ -434,9 +494,9 @@ export default function ProtocolsPage() {
                                 <div className="flex items-center gap-1.5 lg:gap-2">
                                   <CalendarDaysIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
                                 <div>
-                                    <div className="text-gray-400">Duração</div>
+                                    <div className="text-gray-400">{t.duration}</div>
                                   <div className="text-white font-medium">
-                                    {assignment.protocol.duration} dias
+                                    {assignment.protocol.duration} {t.days}
                                   </div>
                                   </div>
                                 </div>
@@ -444,7 +504,7 @@ export default function ProtocolsPage() {
                                 <div className="flex items-center gap-1.5 lg:gap-2">
                                   <DocumentTextIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
                                 <div>
-                                    <div className="text-gray-400">Tarefas</div>
+                                    <div className="text-gray-400">{t.tasks}</div>
                                   <div className="text-white font-medium">
                                       {totalTasks}
                                     </div>
@@ -456,7 +516,7 @@ export default function ProtocolsPage() {
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between text-xs lg:text-sm">
                                   <span className="text-gray-300">
-                                    Dia {progress.currentDay} de {progress.totalDays}
+                                    {t.dayOf(progress.currentDay, progress.totalDays)}
                                   </span>
                                   <span className="text-turquoise font-medium">
                                     {progress.progressPercentage}%
@@ -476,7 +536,7 @@ export default function ProtocolsPage() {
                               >
                                 <Link href={`/patient/checklist/${assignment.protocolId}`}>
                                     <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                                  Continuar
+                                  {t.continue}
                                 </Link>
                               </Button>
                               </div>
@@ -494,7 +554,7 @@ export default function ProtocolsPage() {
               <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
                     <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
-                    Protocolos Indisponíveis
+                    {t.unavailableProtocolsSection}
                 </h2>
                 
                   <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -515,7 +575,7 @@ export default function ProtocolsPage() {
                                   {protocol.name}
                                 </h3>
                                   <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                  Indisponível
+                                  {t.unavailable}
                                 </Badge>
                               </div>
 
@@ -526,7 +586,7 @@ export default function ProtocolsPage() {
                                     {protocol.doctor.image ? (
                                       <img 
                                         src={protocol.doctor.image} 
-                                        alt={protocol.doctor.name || 'Médico'}
+                                        alt={protocol.doctor.name || t.responsibleDoctor}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
@@ -547,7 +607,7 @@ export default function ProtocolsPage() {
                                     </div>
                                   </div>
                                     <span className="text-xs text-gray-400">
-                                    {protocol.doctor.name || 'Médico Responsável'}
+                                    {protocol.doctor.name || t.responsibleDoctor}
                                   </span>
                                 </div>
                               )}
@@ -563,11 +623,11 @@ export default function ProtocolsPage() {
                                 <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
                                   <div className="flex items-center gap-1">
                                     <CalendarDaysIcon className="h-3 w-3 text-gray-500" />
-                                <span>{protocol.duration} dias</span>
+                                <span>{protocol.duration} {t.days}</span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <DocumentTextIcon className="h-3 w-3 text-gray-500" />
-                                <span>{totalTasks} tarefas</span>
+                                <span>{totalTasks} {t.tasks}</span>
                                   </div>
                               </div>
 
@@ -576,7 +636,7 @@ export default function ProtocolsPage() {
                                 size="sm"
                                   className="border-gray-700/30 text-gray-400 hover:bg-gray-800/10 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 lg:h-7 px-2 lg:px-3"
                               >
-                                Ver detalhes
+                                {t.seeDetails}
                               </Button>
                               </div>
                             </div>

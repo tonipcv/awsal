@@ -338,7 +338,7 @@ export default function PatientReferralsPage() {
     return (
       <div className="min-h-screen bg-black">
         {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
             
             {/* Hero Skeleton */}
@@ -459,7 +459,7 @@ export default function PatientReferralsPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Padding para menu lateral no desktop e header no mobile */}
-      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         
         {/* Hero Section Compacto */}
         <div className="relative overflow-hidden">

@@ -24,6 +24,68 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+// Translations for internationalization
+const translations = {
+  pt: {
+    profile: 'Perfil',
+    managePersonalInfo: 'Gerencie suas informações pessoais',
+    personalInfo: 'Informações Pessoais',
+    name: 'Nome',
+    email: 'Email',
+    notInformed: 'Não informado',
+    save: 'Salvar',
+    cancel: 'Cancelar',
+    editProfile: 'Editar Perfil',
+    signOut: 'Sair',
+    accountInfo: 'Informações da Conta',
+    memberSince: 'Membro desde',
+    lastAccess: 'Último acesso',
+    statistics: 'Estatísticas',
+    myProgress: 'Meu Progresso',
+    patients: 'Pacientes',
+    protocols: 'Protocolos',
+    templates: 'Templates',
+    completed: 'Concluídos',
+    active: 'Ativos',
+    roles: {
+      doctor: 'Doctor',
+      superAdmin: 'Super Admin',
+      patient: 'Paciente',
+      user: 'Usuário'
+    },
+    notAvailable: 'N/A'
+  },
+  en: {
+    profile: 'Profile',
+    managePersonalInfo: 'Manage your personal information',
+    personalInfo: 'Personal Information',
+    name: 'Name',
+    email: 'Email',
+    notInformed: 'Not informed',
+    save: 'Save',
+    cancel: 'Cancel',
+    editProfile: 'Edit Profile',
+    signOut: 'Sign Out',
+    accountInfo: 'Account Information',
+    memberSince: 'Member since',
+    lastAccess: 'Last access',
+    statistics: 'Statistics',
+    myProgress: 'My Progress',
+    patients: 'Patients',
+    protocols: 'Protocols',
+    templates: 'Templates',
+    completed: 'Completed',
+    active: 'Active',
+    roles: {
+      doctor: 'Doctor',
+      superAdmin: 'Super Admin',
+      patient: 'Patient',
+      user: 'User'
+    },
+    notAvailable: 'N/A'
+  }
+};
+
 interface UserStats {
   totalPatients?: number;
   totalProtocols?: number;
@@ -46,6 +108,16 @@ export default function ProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
   const [userStats, setUserStats] = useState<UserStats>({});
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+
+  // Detect browser language
+  useEffect(() => {
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
+    setLanguage(detectedLang);
+  }, []);
+
+  const t = translations[language];
 
   // Load user data and stats
   useEffect(() => {
@@ -179,23 +251,22 @@ export default function ProfilePage() {
   const getRoleDisplay = () => {
     switch (userRole) {
       case 'DOCTOR':
-        return { label: 'Doctor', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: UserIcon };
+        return { label: t.roles.doctor, color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: UserIcon };
       case 'SUPER_ADMIN':
-        return { label: 'Super Admin', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: ShieldCheckIcon };
+        return { label: t.roles.superAdmin, color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: ShieldCheckIcon };
       case 'PATIENT':
-        return { label: 'Paciente', color: 'bg-turquoise/20 text-turquoise border-turquoise/30', icon: UsersIcon };
+        return { label: t.roles.patient, color: 'bg-turquoise/20 text-turquoise border-turquoise/30', icon: UsersIcon };
       default:
-        return { label: 'Usuário', color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: UserIcon };
+        return { label: t.roles.user, color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: UserIcon };
     }
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return t.notAvailable;
+    const date = new Date(dateString);
+    return language === 'en' 
+      ? date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   // Loading state
@@ -203,7 +274,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-black">
         {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 lg:px-6">
             <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
               
@@ -309,7 +380,7 @@ export default function ProfilePage() {
       <div className={cn(
         isLightTheme 
           ? "pt-[88px] lg:pt-8 lg:ml-64 pb-24 lg:pb-8"
-          : "pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64"
+          : "pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64"
       )}>
         <div className="max-w-6xl mx-auto px-3 lg:px-6">
           <div className="space-y-4 lg:space-y-6 pt-4 lg:pt-6">
@@ -319,13 +390,13 @@ export default function ProfilePage() {
                 "text-xl lg:text-2xl font-light mb-2 tracking-tight",
               isLightTheme ? "text-gray-900" : "text-white"
             )}>
-              Perfil
+              {t.profile}
             </h1>
             <p className={cn(
               "text-sm lg:text-base font-light",
               isLightTheme ? "text-gray-600" : "text-gray-300"
             )}>
-              Gerencie suas informações pessoais
+              {t.managePersonalInfo}
             </p>
           </div>
 
@@ -343,7 +414,7 @@ export default function ProfilePage() {
                       "text-base lg:text-lg font-light",
                     isLightTheme ? "text-gray-900" : "text-white"
                   )}>
-                    Informações Pessoais
+                    {t.personalInfo}
                   </CardTitle>
                 </CardHeader>
                   <CardContent className="p-3 lg:p-4 pt-0 space-y-4 lg:space-y-6">
@@ -414,7 +485,7 @@ export default function ProfilePage() {
                         isLightTheme ? "text-gray-900" : "text-gray-300"
                       )}>
                         <UserIcon className="h-3 w-3 lg:h-4 lg:w-4" />
-                        <span>Nome</span>
+                        <span>{t.name}</span>
                       </label>
                       {isEditing ? (
                         <Input
@@ -434,7 +505,7 @@ export default function ProfilePage() {
                             ? "text-gray-900 bg-gray-50 border-gray-200" 
                             : "text-white bg-gray-800/50 border-gray-700/50"
                         )}>
-                          {name || 'Não informado'}
+                          {name || t.notInformed}
                         </p>
                       )}
                     </div>
@@ -445,7 +516,7 @@ export default function ProfilePage() {
                         isLightTheme ? "text-gray-900" : "text-gray-300"
                       )}>
                         <EnvelopeIcon className="h-3 w-3 lg:h-4 lg:w-4" />
-                        <span>Email</span>
+                        <span>{t.email}</span>
                       </label>
                       <p className={cn(
                           "text-sm lg:text-base font-medium p-2 lg:p-2.5 rounded-lg border",
@@ -453,7 +524,7 @@ export default function ProfilePage() {
                           ? "text-gray-900 bg-gray-50 border-gray-200" 
                           : "text-white bg-gray-800/50 border-gray-700/50"
                       )}>
-                        {email || 'Não informado'}
+                        {email || t.notInformed}
                       </p>
                     </div>
                   </div>
@@ -471,7 +542,7 @@ export default function ProfilePage() {
                                 : "bg-turquoise hover:bg-turquoise/90 text-black"
                             )}
                         >
-                          Salvar
+                          {t.save}
                         </Button>
                         <Button 
                           variant="outline" 
@@ -483,7 +554,7 @@ export default function ProfilePage() {
                               : "border-gray-700/50 text-gray-300 hover:bg-gray-800/50 bg-gray-900/40"
                           )}
                         >
-                          Cancelar
+                          {t.cancel}
                         </Button>
                       </div>
                     ) : (
@@ -496,7 +567,7 @@ export default function ProfilePage() {
                               : "bg-turquoise hover:bg-turquoise/90 text-black"
                           )}
                       >
-                        Editar Perfil
+                        {t.editProfile}
                       </Button>
                     )}
 
@@ -511,7 +582,7 @@ export default function ProfilePage() {
                       onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                     >
                       <ArrowRightOnRectangleIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
-                      Sair
+                      {t.signOut}
                     </Button>
                   </div>
                 </CardContent>
@@ -533,7 +604,7 @@ export default function ProfilePage() {
                     isLightTheme ? "text-gray-900" : "text-white"
                   )}>
                     <CalendarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-                    <span>Informações da Conta</span>
+                    <span>{t.accountInfo}</span>
                   </CardTitle>
                 </CardHeader>
                   <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
@@ -543,7 +614,7 @@ export default function ProfilePage() {
                         "text-xs lg:text-sm font-medium",
                         isLightTheme ? "text-gray-600" : "text-gray-400"
                       )}>
-                        Membro desde
+                        {t.memberSince}
                       </span>
                       <span className={cn(
                         "text-xs lg:text-sm font-medium",
@@ -557,7 +628,7 @@ export default function ProfilePage() {
                         "text-xs lg:text-sm font-medium",
                         isLightTheme ? "text-gray-600" : "text-gray-400"
                       )}>
-                        Último acesso
+                        {t.lastAccess}
                       </span>
                       <span className={cn(
                         "text-xs lg:text-sm font-medium",
@@ -584,7 +655,7 @@ export default function ProfilePage() {
                       isLightTheme ? "text-gray-900" : "text-white"
                     )}>
                       <ChartBarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-                      <span>Estatísticas</span>
+                      <span>{t.statistics}</span>
                     </CardTitle>
                   </CardHeader>
                     <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
@@ -608,7 +679,7 @@ export default function ProfilePage() {
                               "text-xs lg:text-sm font-medium",
                               isLightTheme ? "text-gray-600" : "text-gray-400"
                             )}>
-                              Pacientes
+                              {t.patients}
                             </p>
                           </div>
                         </div>
@@ -633,7 +704,7 @@ export default function ProfilePage() {
                               "text-xs lg:text-sm font-medium",
                               isLightTheme ? "text-gray-600" : "text-gray-400"
                             )}>
-                              Protocolos
+                              {t.protocols}
                             </p>
                           </div>
                         </div>
@@ -658,7 +729,7 @@ export default function ProfilePage() {
                               "text-xs lg:text-sm font-medium",
                               isLightTheme ? "text-gray-600" : "text-gray-400"
                             )}>
-                              Templates
+                              {t.templates}
                             </p>
                           </div>
                         </div>
@@ -682,7 +753,7 @@ export default function ProfilePage() {
                       isLightTheme ? "text-gray-900" : "text-white"
                     )}>
                       <ChartBarIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-                      <span>Meu Progresso</span>
+                      <span>{t.myProgress}</span>
                     </CardTitle>
                   </CardHeader>
                     <CardContent className="p-3 lg:p-4 pt-0 space-y-2 lg:space-y-3">
@@ -706,7 +777,7 @@ export default function ProfilePage() {
                               "text-xs lg:text-sm font-medium",
                               isLightTheme ? "text-gray-600" : "text-gray-400"
                             )}>
-                              Concluídos
+                              {t.completed}
                             </p>
                           </div>
                         </div>
@@ -734,7 +805,7 @@ export default function ProfilePage() {
                               "text-xs lg:text-sm font-medium",
                               isLightTheme ? "text-gray-600" : "text-gray-400"
                             )}>
-                              Ativos
+                              {t.active}
                             </p>
                           </div>
                         </div>

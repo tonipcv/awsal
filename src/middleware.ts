@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { NextRequestWithAuth } from 'next-auth/middleware'
-import { prisma } from '@/lib/prisma'
 
 export default async function middleware(request: NextRequestWithAuth) {
   const token = await getToken({ req: request })
@@ -68,43 +67,9 @@ export default async function middleware(request: NextRequestWithAuth) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Verificar role do usuário e redirecionar se necessário
-  if (isAuthenticated && isProtectedRoute && token?.email) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { email: token.email },
-        select: { role: true }
-      })
-
-      if (user) {
-        const userRole = user.role
-
-        // Redirecionamentos baseados no role
-        if (userRole === 'PATIENT') {
-          // Se paciente está tentando acessar rota de médico/admin, redirecionar
-          if (isDoctorRoute || isAdminRoute) {
-            console.log('Middleware: Patient trying to access doctor/admin route, redirecting to /patient/protocols');
-            return NextResponse.redirect(new URL('/patient/protocols', request.url));
-          }
-        } else if (userRole === 'DOCTOR') {
-          // Se médico está tentando acessar rota de paciente (exceto doctor-info), redirecionar
-          if (isPatientRoute && !request.nextUrl.pathname.startsWith('/doctor-info')) {
-            console.log('Middleware: Doctor trying to access patient route, redirecting to /doctor/dashboard');
-            return NextResponse.redirect(new URL('/doctor/dashboard', request.url));
-          }
-        } else if (userRole === 'SUPER_ADMIN') {
-          // Se admin está tentando acessar rota de paciente/médico (exceto doctor-info), redirecionar
-          if ((isPatientRoute || isDoctorRoute) && !request.nextUrl.pathname.startsWith('/doctor-info')) {
-            console.log('Middleware: Super admin trying to access patient/doctor route, redirecting to /admin');
-            return NextResponse.redirect(new URL('/admin', request.url));
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking user role in middleware:', error)
-      // Em caso de erro, permitir acesso (fallback)
-    }
-  }
+  // Note: Role-based redirects are now handled in individual pages/API routes
+  // since Prisma cannot be used in Edge Runtime middleware
+  // Each protected page should check user role and redirect accordingly
 
   return NextResponse.next()
 }

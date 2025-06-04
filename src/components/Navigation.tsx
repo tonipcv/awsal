@@ -855,20 +855,7 @@ export default function Navigation() {
           </nav>
 
           {/* Desktop Header for Patients - Simplified */}
-          <div className="fixed top-0 left-0 right-0 z-30 hidden lg:block lg:ml-64">
-            <div className="bg-[#111111]/95 backdrop-blur-xl border-b border-gray-800 shadow-sm">
-              <div className="px-8 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Breadcrumb or page title can go here */}
-                  </div>
-                  <div className="flex items-center">
-                    {/* Additional header content can go here */}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Removed unnecessary desktop header that was creating gray area */}
         </>
       )}
     </>
@@ -892,7 +879,7 @@ export function PageWrapper({ children, className }: { children: React.ReactNode
       <div className={cn(
         "p-4 lg:pl-6 lg:pr-4",
         effectiveRole === 'PATIENT' 
-          ? "pt-[88px] pb-24 lg:pt-[88px] lg:pb-4" // Patients: mobile header + desktop header, mobile bottom nav only
+          ? "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Patients: mobile header only, no desktop header
           : "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Doctors/Admins: mobile header, no desktop header
       )}>
         {children}

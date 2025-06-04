@@ -13,6 +13,66 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
+// Translations for internationalization
+const translations = {
+  pt: {
+    yourCourses: 'Seus Cursos',
+    continueJourney: 'Continue sua jornada de aprendizado',
+    activeCourse: 'Curso Ativo',
+    activeCourses: 'Cursos Ativos',
+    totalAvailable: 'Total Disponível',
+    totalLessons: 'Total de Aulas',
+    noCoursesAvailable: 'Nenhum curso disponível',
+    contactDoctorCourses: 'Você ainda não possui cursos disponíveis. Entre em contato com seu médico para obter acesso aos cursos.',
+    activeCoursesSection: 'Cursos Ativos',
+    unavailableCoursesSection: 'Cursos Indisponíveis',
+    active: 'Ativo',
+    completed: 'Concluído',
+    unavailable: 'Indisponível',
+    lessons: 'Aulas',
+    duration: 'Duração',
+    modules: 'Módulos',
+    additionalModules: (count: number) => `+${count} módulos adicionais`,
+    viewCourse: 'Ver Curso',
+    seeDetails: 'Ver detalhes',
+    courseUnavailable: 'Curso Indisponível',
+    courseUnavailableDescription: 'Este curso ainda não está disponível para você. Entre em contato com seu médico para mais informações.',
+    close: 'Fechar',
+    learnMore: 'Saber mais',
+    lessonsCount: (count: number) => `${count} aulas`,
+    hours: 'h',
+    minutes: 'min'
+  },
+  en: {
+    yourCourses: 'Your Courses',
+    continueJourney: 'Continue your learning journey',
+    activeCourse: 'Active Course',
+    activeCourses: 'Active Courses',
+    totalAvailable: 'Total Available',
+    totalLessons: 'Total Lessons',
+    noCoursesAvailable: 'No courses available',
+    contactDoctorCourses: 'You don\'t have any courses available yet. Contact your doctor to get access to courses.',
+    activeCoursesSection: 'Active Courses',
+    unavailableCoursesSection: 'Unavailable Courses',
+    active: 'Active',
+    completed: 'Completed',
+    unavailable: 'Unavailable',
+    lessons: 'Lessons',
+    duration: 'Duration',
+    modules: 'Modules',
+    additionalModules: (count: number) => `+${count} additional modules`,
+    viewCourse: 'View Course',
+    seeDetails: 'See details',
+    courseUnavailable: 'Course Unavailable',
+    courseUnavailableDescription: 'This course is not yet available to you. Contact your doctor for more information.',
+    close: 'Close',
+    learnMore: 'Learn more',
+    lessonsCount: (count: number) => `${count} lessons`,
+    hours: 'h',
+    minutes: 'min'
+  }
+};
+
 interface Course {
   id: string;
   name: string;
@@ -45,7 +105,17 @@ interface CoursesData {
 export default function CoursesPage() {
   const [coursesData, setCoursesData] = useState<CoursesData>({ active: [], unavailable: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
   const [selectedUnavailableCourse, setSelectedUnavailableCourse] = useState<Course | null>(null);
+
+  // Detect browser language
+  useEffect(() => {
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
+    setLanguage(detectedLang);
+  }, []);
+
+  const t = translations[language];
 
   useEffect(() => {
     loadCourses();
@@ -80,9 +150,9 @@ export default function CoursesPage() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
-      return `${hours}h ${mins}min`;
+      return `${hours}${t.hours} ${mins}${t.minutes}`;
     }
-    return `${mins}min`;
+    return `${mins}${t.minutes}`;
   };
 
   const openUnavailableModal = (course: Course) => {
@@ -97,7 +167,7 @@ export default function CoursesPage() {
     return (
       <div className="min-h-screen bg-black">
         {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
             
             {/* Hero Skeleton */}
@@ -156,7 +226,7 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Padding para menu lateral no desktop e header no mobile */}
-      <div className="pt-[88px] pb-24 lg:pt-[88px] lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         
         {/* Hero Section Compacto */}
         <div className="relative overflow-hidden">
@@ -165,10 +235,10 @@ export default function CoursesPage() {
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">
                 <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
-                  Seus Cursos
+                  {t.yourCourses}
                 </h1>
                 <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
-                  Continue sua jornada de aprendizado
+                  {t.continueJourney}
                 </p>
                 
                 {/* Stats Compactas */}
@@ -178,7 +248,7 @@ export default function CoursesPage() {
                       {coursesData.active.length}
                     </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      {coursesData.active.length === 1 ? 'Curso Ativo' : 'Cursos Ativos'}
+                      {coursesData.active.length === 1 ? t.activeCourse : t.activeCourses}
                     </div>
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
@@ -187,7 +257,7 @@ export default function CoursesPage() {
                       {coursesData.active.length + coursesData.unavailable.length}
                     </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      Total Disponível
+                      {t.totalAvailable}
                     </div>
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
@@ -196,7 +266,7 @@ export default function CoursesPage() {
                       {coursesData.active.reduce((acc, course) => acc + getTotalLessons(course), 0)}
                     </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      Total de Aulas
+                      {t.totalLessons}
                     </div>
                   </div>
                 </div>
@@ -215,10 +285,10 @@ export default function CoursesPage() {
                   <BookOpenIcon className="h-6 w-6 lg:h-8 lg:w-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg lg:text-xl font-light text-white mb-2 lg:mb-3">
-                  Nenhum curso disponível
+                  {t.noCoursesAvailable}
                 </h3>
                 <p className="text-sm lg:text-base text-gray-300 leading-relaxed">
-                  Você ainda não possui cursos disponíveis. Entre em contato com seu médico para obter acesso aos cursos.
+                  {t.contactDoctorCourses}
                 </p>
               </div>
             </div>
@@ -229,7 +299,7 @@ export default function CoursesPage() {
                 <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
                     <AcademicCapIcon className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
-                    Cursos Ativos
+                    {t.activeCoursesSection}
                   </h2>
                   
                   <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -246,7 +316,7 @@ export default function CoursesPage() {
                                   {course.name}
                                 </h3>
                                 <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                  {course.status === 'active' ? 'Ativo' : 'Concluído'}
+                                  {course.status === 'active' ? t.active : t.completed}
                                 </Badge>
                               </div>
                               
@@ -262,7 +332,7 @@ export default function CoursesPage() {
                               <div className="flex items-center gap-1.5 lg:gap-2">
                                 <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
                                 <div>
-                                  <div className="text-gray-400">Aulas</div>
+                                  <div className="text-gray-400">{t.lessons}</div>
                                   <div className="text-white font-medium">
                                     {getTotalLessons(course)}
                                   </div>
@@ -273,7 +343,7 @@ export default function CoursesPage() {
                                 <div className="flex items-center gap-1.5 lg:gap-2">
                                   <ClockIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
                                   <div>
-                                    <div className="text-gray-400">Duração</div>
+                                    <div className="text-gray-400">{t.duration}</div>
                                     <div className="text-white font-medium">
                                       {formatDuration(getTotalDuration(course))}
                                     </div>
@@ -287,7 +357,7 @@ export default function CoursesPage() {
                               <div className="space-y-2">
                                 <h4 className="text-xs lg:text-sm font-medium text-gray-300 flex items-center gap-1.5">
                                   <BookOpenIcon className="h-3 w-3 lg:h-4 lg:w-4 text-turquoise" />
-                                  Módulos
+                                  {t.modules}
                                 </h4>
                                 <div className="space-y-1">
                                   {course.modules.slice(0, 2).map(module => (
@@ -299,7 +369,7 @@ export default function CoursesPage() {
                                   ))}
                                   {course.modules.length > 2 && (
                                     <div className="text-xs text-gray-500">
-                                      +{course.modules.length - 2} módulos adicionais
+                                      {t.additionalModules(course.modules.length - 2)}
                                     </div>
                                   )}
                                 </div>
@@ -311,7 +381,7 @@ export default function CoursesPage() {
                               <Button asChild className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200">
                                 <Link href={`/patient/courses/${course.id}`}>
                                   <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                                  Ver Curso
+                                  {t.viewCourse}
                                 </Link>
                               </Button>
                             </div>
@@ -328,7 +398,7 @@ export default function CoursesPage() {
                 <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
                     <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
-                    Cursos Indisponíveis
+                    {t.unavailableCoursesSection}
                   </h2>
                   
                   <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -346,7 +416,7 @@ export default function CoursesPage() {
                                   {course.name}
                                 </h3>
                                 <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                  Indisponível
+                                  {t.unavailable}
                                 </Badge>
                               </div>
                               
@@ -361,7 +431,7 @@ export default function CoursesPage() {
                               <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
                                   <PlayIcon className="h-3 w-3 text-gray-500" />
-                                  <span>{getTotalLessons(course)} aulas</span>
+                                  <span>{t.lessonsCount(getTotalLessons(course))}</span>
                                 </div>
                                 {getTotalDuration(course) > 0 && (
                                   <div className="flex items-center gap-1">
@@ -376,7 +446,7 @@ export default function CoursesPage() {
                                 size="sm"
                                 className="border-gray-700/30 text-gray-400 hover:bg-gray-800/10 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 lg:h-7 px-2 lg:px-3"
                               >
-                                Ver detalhes
+                                {t.seeDetails}
                               </Button>
                             </div>
                           </div>
@@ -397,7 +467,7 @@ export default function CoursesPage() {
           <div className="w-full max-w-md bg-gray-900/95 border border-gray-700/30 rounded-xl backdrop-blur-sm">
             <div className="p-4 lg:p-6">
               <h3 className="text-base lg:text-lg font-medium text-white mb-3 lg:mb-4">
-                {selectedUnavailableCourse.modalTitle || 'Curso Indisponível'}
+                {selectedUnavailableCourse.modalTitle || t.courseUnavailable}
               </h3>
               
               {selectedUnavailableCourse.modalVideoUrl && (
@@ -411,8 +481,7 @@ export default function CoursesPage() {
               )}
               
               <p className="text-xs lg:text-sm text-gray-300 mb-4 lg:mb-6 leading-relaxed">
-                {selectedUnavailableCourse.modalDescription || 
-                 'Este curso ainda não está disponível para você. Entre em contato com seu médico para mais informações.'}
+                {selectedUnavailableCourse.modalDescription || t.courseUnavailableDescription}
               </p>
               
               <div className="flex gap-2 lg:gap-3">
@@ -421,12 +490,12 @@ export default function CoursesPage() {
                   onClick={closeUnavailableModal}
                   className="flex-1 border-gray-700/30 text-gray-300 hover:bg-gray-800/30 text-xs lg:text-sm h-8 lg:h-9"
                 >
-                  Fechar
+                  {t.close}
                 </Button>
                 {selectedUnavailableCourse.modalButtonUrl && (
                   <Button asChild className="flex-1 bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9">
                     <Link href={selectedUnavailableCourse.modalButtonUrl} target="_blank" rel="noopener noreferrer">
-                      {selectedUnavailableCourse.modalButtonText || 'Saber mais'}
+                      {selectedUnavailableCourse.modalButtonText || t.learnMore}
                     </Link>
                   </Button>
                 )}

@@ -14,6 +14,46 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { cn } from "@/lib/utils";
 
+// Translations for internationalization
+const translations = {
+  pt: {
+    backToCourse: 'Voltar ao Curso',
+    lessonNotFound: 'Aula não encontrada',
+    errorLoadingCourse: 'Erro ao carregar curso',
+    backToCourses: 'Voltar aos Cursos',
+    markAsCompleted: 'Marcar como Concluída',
+    markAsIncomplete: 'Marcar como Incompleta',
+    completed: 'Concluída',
+    previousLesson: 'Aula Anterior',
+    nextLesson: 'Próxima Aula',
+    minutes: 'min',
+    hours: 'h',
+    loadingLesson: 'Carregando aula...',
+    errorMarkingComplete: 'Erro ao marcar como concluída',
+    errorMarkingIncomplete: 'Erro ao marcar como incompleta',
+    module: 'Módulo',
+    lesson: 'Aula'
+  },
+  en: {
+    backToCourse: 'Back to Course',
+    lessonNotFound: 'Lesson not found',
+    errorLoadingCourse: 'Error loading course',
+    backToCourses: 'Back to Courses',
+    markAsCompleted: 'Mark as Completed',
+    markAsIncomplete: 'Mark as Incomplete',
+    completed: 'Completed',
+    previousLesson: 'Previous Lesson',
+    nextLesson: 'Next Lesson',
+    minutes: 'min',
+    hours: 'h',
+    loadingLesson: 'Loading lesson...',
+    errorMarkingComplete: 'Error marking as complete',
+    errorMarkingIncomplete: 'Error marking as incomplete',
+    module: 'Module',
+    lesson: 'Lesson'
+  }
+};
+
 interface Lesson {
   id: string;
   title: string;
@@ -74,6 +114,16 @@ export default function LessonPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+
+  // Detect browser language
+  useEffect(() => {
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
+    setLanguage(detectedLang);
+  }, []);
+
+  const t = translations[language];
 
   useEffect(() => {
     loadCourseAndLesson();
@@ -94,16 +144,16 @@ export default function LessonPage() {
           setIsCompleted(lesson.completed || false);
           setNavigation(calculateNavigation(courseData, lessonId));
         } else {
-          alert('Aula não encontrada');
+          alert(t.lessonNotFound);
           router.push(`/courses/${courseId}`);
         }
       } else {
-        alert('Erro ao carregar curso');
+        alert(t.errorLoadingCourse);
         router.push('/courses');
       }
     } catch (error) {
       console.error('Error loading course:', error);
-      alert('Erro ao carregar curso');
+      alert(t.errorLoadingCourse);
       router.push('/courses');
     } finally {
       setIsLoading(false);
@@ -173,11 +223,11 @@ export default function LessonPage() {
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) {
-      return `${minutes}min`;
+      return `${minutes}${t.minutes}`;
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}${t.hours} ${remainingMinutes}${t.minutes}` : `${hours}${t.hours}`;
   };
 
   const markAsCompleted = async () => {
@@ -198,11 +248,39 @@ export default function LessonPage() {
         loadCourseAndLesson();
       } else {
         const error = await response.json();
-        alert(error.error || 'Erro ao marcar aula como concluída');
+        alert(error.message || t.errorMarkingComplete);
       }
     } catch (error) {
       console.error('Error marking lesson as completed:', error);
-      alert('Erro ao marcar aula como concluída');
+      alert(t.errorMarkingComplete);
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  };
+
+  const markAsIncomplete = async () => {
+    try {
+      setIsMarkingComplete(true);
+      const response = await fetch(`/api/courses/${courseId}/lessons/${lessonId}/incomplete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsCompleted(data.completed);
+        
+        // Optionally reload course data to update progress
+        loadCourseAndLesson();
+      } else {
+        const error = await response.json();
+        alert(error.message || t.errorMarkingIncomplete);
+      }
+    } catch (error) {
+      console.error('Error marking lesson as incomplete:', error);
+      alert(t.errorMarkingIncomplete);
     } finally {
       setIsMarkingComplete(false);
     }
@@ -214,83 +292,42 @@ export default function LessonPage() {
   };
 
   const processYouTubeUrl = (url: string): string => {
-    try {
-      // Convert various YouTube URL formats to privacy-enhanced embed format
-      let videoId = '';
-      
-      if (url.includes('youtube.com/watch?v=')) {
-        videoId = url.split('v=')[1].split('&')[0];
-      } else if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1].split('?')[0];
-      } else if (url.includes('youtube.com/embed/')) {
-        videoId = url.split('embed/')[1].split('?')[0];
-      } else {
-        return url; // Return original if not a recognized YouTube URL
-      }
-      
-      // Use privacy-enhanced mode (youtube-nocookie.com) with restrictive parameters
-      const params = [
-        'modestbranding=1',    // Hide YouTube logo
-        'rel=0',               // Don't show related videos
-        'showinfo=0',          // Hide video info
-        'controls=1',          // Show player controls
-        'disablekb=1',         // Disable keyboard controls
-        'fs=0',                // Disable fullscreen
-        'iv_load_policy=3',    // Hide annotations
-        'cc_load_policy=0',    // Hide captions by default
-        'autohide=1',          // Auto-hide controls
-        'color=white',         // White progress bar
-        'theme=dark',          // Dark theme
-        'playsinline=1',       // Play inline on mobile
-        'origin=awlov',        // Set origin
-        'enablejsapi=0'        // Disable JS API
-      ].join('&');
-      
-      return `https://www.youtube-nocookie.com/embed/${videoId}?${params}`;
-    } catch (error) {
-      console.error('Error processing YouTube URL:', error);
-      return url;
+    // Convert YouTube watch URLs to embed URLs
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
     }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64">
-          <div className="max-w-4xl mx-auto px-4 py-4 lg:px-6 lg:py-6">
-            
-            {/* Header Skeleton */}
-            <div className="mb-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="h-5 w-5 bg-gray-800/50 rounded animate-pulse"></div>
-                <div className="h-6 w-px bg-gray-700/50"></div>
-                <div className="h-5 bg-gray-800/50 rounded w-48 animate-pulse"></div>
+        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
+          <div className="max-w-4xl mx-auto px-3 lg:px-6">
+            <div className="space-y-6 pt-4 lg:pt-6">
+              
+              {/* Header Skeleton */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-8 h-8 bg-gray-800/50 rounded animate-pulse"></div>
+                <div className="h-6 bg-gray-800/50 rounded w-32 animate-pulse"></div>
               </div>
-              <div className="space-y-3">
-                <div className="h-7 bg-gray-800/50 rounded w-80 animate-pulse"></div>
-                <div className="h-4 bg-gray-700/50 rounded w-64 animate-pulse"></div>
+
+              {/* Content Skeleton */}
+              <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm p-6">
+                <div className="space-y-4">
+                  <div className="h-8 bg-gray-800/50 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-4 bg-gray-700/50 rounded w-1/2 animate-pulse"></div>
+                  <div className="h-64 bg-gray-800/50 rounded animate-pulse"></div>
+                </div>
               </div>
-            </div>
 
-            {/* Video Skeleton */}
-            <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 mb-6 backdrop-blur-sm">
-              <div className="aspect-video bg-gray-800/50 rounded-lg animate-pulse"></div>
             </div>
-
-            {/* Content Skeleton */}
-            <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 mb-6 backdrop-blur-sm">
-              <div className="h-5 bg-gray-800/50 rounded w-32 mb-3 animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-700/50 rounded w-full animate-pulse"></div>
-                <div className="h-4 bg-gray-700/50 rounded w-5/6 animate-pulse"></div>
-              </div>
-            </div>
-
-            {/* Action Button Skeleton */}
-            <div className="flex justify-center mb-6">
-              <div className="h-10 bg-gray-800/50 rounded w-48 animate-pulse"></div>
-            </div>
-
           </div>
         </div>
       </div>
@@ -299,14 +336,14 @@ export default function LessonPage() {
 
   if (!course || !currentLesson) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64 flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-white mb-4">Aula não encontrada</h2>
-            <Button asChild className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold">
-              <Link href={`/patient/courses/${courseId}`}>Voltar ao Curso</Link>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-light text-white mb-4">{t.lessonNotFound}</h1>
+          <Link href="/patient/courses">
+            <Button className="bg-turquoise hover:bg-turquoise/90 text-black">
+              {t.backToCourses}
             </Button>
-          </div>
+          </Link>
         </div>
       </div>
     );
@@ -316,207 +353,158 @@ export default function LessonPage() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="pt-[88px] pb-20 lg:pt-[88px] lg:pb-4 lg:ml-64">
-        <div className="max-w-4xl mx-auto px-4 py-4 lg:px-6 lg:py-6">
-          
-          {/* Header Section */}
-          <div className="mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <Button variant="ghost" size="sm" asChild className="text-gray-400 hover:text-turquoise transition-colors -ml-2">
-                <Link href={`/patient/courses/${courseId}`}>
-                  <ArrowLeftIcon className="h-5 w-5" />
-                </Link>
-              </Button>
-              <div className="h-6 w-px bg-gray-700/50" />
-              <div className="flex items-center gap-2 text-sm text-gray-400 min-w-0 flex-1">
-              <span className="truncate">{course.name}</span>
-              {currentModule && (
-                <>
-                  <span>•</span>
-                  <span className="truncate">{currentModule.name}</span>
-                </>
-              )}
-            </div>
-              <div className="flex items-center gap-3">
-              {currentLesson.duration && (
-                  <div className="flex items-center gap-1 text-sm text-gray-400">
-                    <ClockIcon className="h-4 w-4" />
-                  {formatDuration(currentLesson.duration)}
-                  </div>
-              )}
-              {isCompleted && (
-                  <Badge className="bg-turquoise/20 text-turquoise border-turquoise/30 text-sm">
-                  Concluída
-                </Badge>
-              )}
-            </div>
-          </div>
-
-            {/* Lesson Title and Description */}
-            <div className="space-y-3">
-              <h1 className="text-xl lg:text-2xl font-medium text-white leading-tight">
-                  {currentLesson.title}
-                </h1>
-            {currentLesson.description && (
-                <p className="text-gray-300 leading-relaxed">
-                {currentLesson.description}
-              </p>
-            )}
-              </div>
-          </div>
-
-          {/* Video Player */}
-          {currentLesson.videoUrl && (
-            <div className="mb-6">
-              <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 lg:p-6 backdrop-blur-sm">
-                <div className="aspect-video rounded-lg overflow-hidden bg-gray-900/50">
-                  <iframe
-                    src={processYouTubeUrl(currentLesson.videoUrl)}
-                    className="w-full h-full"
-                    allowFullScreen={false}
-                    title={currentLesson.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Lesson Content */}
-          {currentLesson.content && (
-            <div className="mb-6">
-              <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl p-4 lg:p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-white">
-                    Conteúdo da Aula
-                  </h3>
-                  {/* Button only visible on desktop */}
-                  <Button 
-                    onClick={markAsCompleted}
-                    disabled={isCompleted || isMarkingComplete}
-                    size="sm"
-                    className={cn(
-                      "hidden lg:flex px-4 py-2 text-sm font-medium transition-all duration-200",
-                      isCompleted 
-                        ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
-                        : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
-                    )}
-                  >
-                    {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
-                  </Button>
-                </div>
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                  {currentLesson.content}
-                </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Button for mobile (always) and desktop (only when no content) */}
-          <div className="flex justify-center mb-6 lg:hidden">
-            <Button 
-              onClick={markAsCompleted}
-              disabled={isCompleted || isMarkingComplete}
-              size="sm"
-              className={cn(
-                "px-4 py-2 text-sm font-medium transition-all duration-200",
-                isCompleted 
-                  ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
-                  : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
-              )}
-            >
-              {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
-            </Button>
-          </div>
-
-          {/* If no content, show button separately on desktop */}
-          {!currentLesson.content && (
-            <div className="hidden lg:flex justify-center mb-6">
-              <Button 
-                onClick={markAsCompleted}
-                disabled={isCompleted || isMarkingComplete}
-                size="sm"
-                className={cn(
-                  "px-4 py-2 text-sm font-medium transition-all duration-200",
-                  isCompleted 
-                    ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border border-gray-600/30" 
-                    : "bg-turquoise/90 hover:bg-turquoise text-black hover:scale-105"
-                )}
-              >
-                {isMarkingComplete ? 'Marcando...' : isCompleted ? 'Concluída ✓' : 'Marcar como Concluída'}
-              </Button>
-            </div>
-          )}
-
-        </div>
-      </div>
-
-      {/* Fixed Navigation at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-gray-800/60 lg:ml-64 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-3 lg:px-6">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Previous Lesson */}
-            <div>
-              {navigation.previous ? (
-                <Button 
-                  variant="ghost" 
-                  asChild 
-                  className="w-full h-auto p-3 text-left bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
-                >
-                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.previous.id}`}>
-                    <div className="flex items-center gap-2">
-                      <ChevronLeftIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-xs text-turquoise font-medium">Anterior</div>
-                        <div className="text-sm text-white font-medium truncate">{navigation.previous.title}</div>
-                      </div>
-                    </div>
-                  </Link>
-                </Button>
-              ) : (
-                <div></div>
-              )}
-            </div>
+      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
+        <div className="max-w-4xl mx-auto px-3 lg:px-6">
+          <div className="space-y-6 pt-4 lg:pt-6">
             
-            {/* Next Lesson */}
-            <div>
-              {navigation.next ? (
-                <Button 
-                  variant="ghost" 
-                  asChild 
-                  className="w-full h-auto p-3 text-right bg-white/[0.02] border border-gray-800/60 rounded-lg hover:border-turquoise/30 hover:bg-white/[0.01] transition-all duration-200"
-                >
-                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.next.id}`}>
-                    <div className="flex items-center gap-2 justify-end">
-                      <div className="min-w-0">
-                        <div className="text-xs text-turquoise font-medium">Próxima</div>
-                        <div className="text-sm text-white font-medium truncate">{navigation.next.title}</div>
-                      </div>
-                      <ChevronRightIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
-                    </div>
-                  </Link>
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <Link href={`/patient/courses/${courseId}`}>
+                <Button size="sm" className="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white border border-gray-700/50 hover:border-gray-600/50 p-2 transition-all duration-200">
+                  <ArrowLeftIcon className="h-5 w-5" />
                 </Button>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  asChild 
-                  className="w-full h-auto p-3 text-right bg-turquoise/10 border border-turquoise/30 rounded-lg hover:bg-turquoise/20 transition-all duration-200"
-                >
-                  <Link href={`/patient/courses/${courseId}`}>
-                    <div className="flex items-center gap-2 justify-end">
-                      <div className="min-w-0">
-                        <div className="text-xs text-turquoise font-medium">Finalizar</div>
-                        <div className="text-sm text-turquoise font-medium">Voltar ao Curso</div>
-                      </div>
-                      <CheckCircleIcon className="h-4 w-4 text-turquoise flex-shrink-0" />
+              </Link>
+              <span className="text-gray-400 text-sm">{t.backToCourse}</span>
+            </div>
+
+            {/* Lesson Header */}
+            <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm">
+              <div className="p-6 lg:p-8">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                  
+                  {/* Lesson Info */}
+                  <div className="flex-1 space-y-4">
+                    <div className="space-y-2">
+                      {currentModule && (
+                        <div className="text-sm text-turquoise font-medium">
+                          {t.module}: {currentModule.name}
+                        </div>
+                      )}
+                      <h1 className="text-2xl lg:text-3xl font-light text-white">
+                        {currentLesson.title}
+                      </h1>
+                      {isCompleted && (
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-sm font-medium">
+                          <CheckCircleIcon className="h-4 w-4 mr-2" />
+                          {t.completed}
+                        </Badge>
+                      )}
                     </div>
-                  </Link>
-                </Button>
+
+                    {currentLesson.description && (
+                      <p className="text-gray-300 leading-relaxed">
+                        {currentLesson.description}
+                      </p>
+                    )}
+
+                    {/* Lesson Stats */}
+                    {currentLesson.duration && (
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <ClockIcon className="h-4 w-4" />
+                        <span>{formatDuration(currentLesson.duration)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="flex-shrink-0">
+                    {isCompleted ? (
+                      <Button
+                        onClick={markAsIncomplete}
+                        disabled={isMarkingComplete}
+                        variant="outline"
+                        className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white font-semibold px-6 py-3 rounded-xl"
+                      >
+                        {isMarkingComplete ? '...' : t.markAsIncomplete}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={markAsCompleted}
+                        disabled={isMarkingComplete}
+                        className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
+                      >
+                        {isMarkingComplete ? '...' : t.markAsCompleted}
+                      </Button>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            {/* Lesson Content */}
+            <div className="space-y-6">
+              
+              {/* Video Content */}
+              {currentLesson.videoUrl && (
+                <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm overflow-hidden">
+                  <div className="aspect-video">
+                    <iframe
+                      src={processYouTubeUrl(currentLesson.videoUrl)}
+                      title={currentLesson.title}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  </div>
+                </div>
               )}
+
+              {/* Text Content */}
+              {currentLesson.content && (
+                <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm">
+                  <div className="p-6 lg:p-8">
+                    <div 
+                      className="prose prose-invert prose-gray max-w-none"
+                      dangerouslySetInnerHTML={{ __html: currentLesson.content }}
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Navigation */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-between pt-6">
+              
+              {/* Previous Lesson */}
+              <div className="flex-1">
+                {navigation.previous ? (
+                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.previous.id}`}>
+                    <Button 
+                      className="w-full bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700/50 hover:border-gray-600/50 text-gray-300 hover:text-white font-medium px-6 py-3 rounded-xl transition-all duration-300 justify-start"
+                    >
+                      <ChevronLeftIcon className="h-5 w-5 mr-2" />
+                      <div className="text-left">
+                        <div className="text-xs text-gray-400 hover:text-gray-300">{t.previousLesson}</div>
+                        <div className="truncate">{navigation.previous.title}</div>
+                      </div>
+                    </Button>
+                  </Link>
+                ) : (
+                  <div></div>
+                )}
+              </div>
+
+              {/* Next Lesson */}
+              <div className="flex-1">
+                {navigation.next ? (
+                  <Link href={`/patient/courses/${courseId}/lessons/${navigation.next.id}`}>
+                    <Button 
+                      className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 justify-end"
+                    >
+                      <div className="text-right">
+                        <div className="text-xs text-black/70">{t.nextLesson}</div>
+                        <div className="truncate">{navigation.next.title}</div>
+                      </div>
+                      <ChevronRightIcon className="h-5 w-5 ml-2" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <div></div>
+                )}
+              </div>
+
             </div>
           </div>
         </div>

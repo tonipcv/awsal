@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No doctor assigned' }, { status: 404 });
     }
 
-    // Get doctor information with clinic details
+    // Get doctor information with basic details only (avoiding clinic for now)
     const doctor = await prisma.user.findUnique({
       where: { id: patient.doctorId },
       select: {
@@ -32,34 +32,12 @@ export async function GET(request: NextRequest) {
         phone: true,
         createdAt: true,
         role: true,
-        // Get clinic membership to access clinic info
-        clinicMemberships: {
-          where: { isActive: true },
-          select: {
-            clinic: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                email: true,
-                phone: true,
-                address: true,
-                city: true,
-                state: true,
-                zipCode: true,
-                country: true,
-                website: true
-              }
-            }
-          },
-          take: 1
-        },
         // Get patients count
         patients: {
           where: { isActive: true },
           select: { id: true }
         },
-        // Get protocols created by this doctor
+        // Get protocols count
         _count: {
           select: {
             patients: {
@@ -74,31 +52,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Doctor not found' }, { status: 404 });
     }
 
-    // Get protocols statistics
-    const protocolStats = await prisma.protocol.aggregate({
-      where: {
-        // Assuming protocols have a doctorId or createdBy field
-        // You might need to adjust this based on your actual schema
-        assignments: {
-          some: {
-            user: {
-              doctorId: doctor.id
-            }
+    // Get protocols statistics - simplified query
+    let protocolStats = { _count: 0 };
+    let activeProtocolsCount = 0;
+
+    try {
+      // Get active protocols count for this doctor's patients
+      activeProtocolsCount = await prisma.userProtocol.count({
+        where: {
+          isActive: true,
+          user: {
+            doctorId: doctor.id
           }
         }
-      },
-      _count: true
-    });
+      });
 
-    // Get active protocols count
-    const activeProtocolsCount = await prisma.userProtocol.count({
-      where: {
-        isActive: true,
-        user: {
-          doctorId: doctor.id
-        }
-      }
-    });
+      // Get total protocols count
+      protocolStats = await prisma.protocol.aggregate({
+        where: {
+          assignments: {
+            some: {
+              user: {
+                doctorId: doctor.id
+              }
+            }
+          }
+        },
+        _count: true
+      });
+    } catch (protocolError) {
+      console.error('Error fetching protocol stats:', protocolError);
+      // Continue with default values
+    }
 
     // Format response
     const doctorInfo = {
@@ -112,13 +97,13 @@ export async function GET(request: NextRequest) {
       totalPatients: doctor.patients.length,
       totalProtocols: protocolStats._count || 0,
       activeProtocols: activeProtocolsCount,
-      clinic: doctor.clinicMemberships[0]?.clinic || null
+      clinic: null // Temporarily disabled until clinic table issues are resolved
     };
 
     return NextResponse.json(doctorInfo);
 
   } catch (error) {
-    console.error('Error fetching doctor info:', error);
+    console.error('Error fetching doctor info:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
