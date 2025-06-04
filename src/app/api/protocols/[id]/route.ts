@@ -242,6 +242,15 @@ export async function PUT(
 
       // Se há dias para atualizar, remover e recriar
       if (days && Array.isArray(days)) {
+        console.log('🔄 Processing days data:', {
+          daysCount: days.length,
+          days: days.map(d => ({
+            dayNumber: d.dayNumber,
+            sessionsCount: d.sessions?.length || 0,
+            tasksCount: d.tasks?.length || 0
+          }))
+        });
+
         // Remover dados existentes de forma mais eficiente usando cascade
         // Como ProtocolDay tem cascade, ao deletar os dias, as sessões e tarefas são removidas automaticamente
         await tx.protocolDay.deleteMany({
@@ -252,6 +261,11 @@ export async function PUT(
 
         // Criar novos dias e tarefas
         for (const dayData of days) {
+          console.log(`📅 Creating day ${dayData.dayNumber}:`, {
+            sessionsCount: dayData.sessions?.length || 0,
+            tasksCount: dayData.tasks?.length || 0
+          });
+
           const protocolDay = await tx.protocolDay.create({
             data: {
               dayNumber: dayData.dayNumber,
@@ -263,18 +277,26 @@ export async function PUT(
 
           // Criar sessões se existirem
           if (dayData.sessions && Array.isArray(dayData.sessions)) {
+            console.log(`📝 Creating ${dayData.sessions.length} sessions for day ${dayData.dayNumber}`);
             for (const sessionData of dayData.sessions) {
+              console.log(`  📝 Creating session:`, {
+                name: sessionData.name,
+                title: sessionData.title,
+                tasksCount: sessionData.tasks?.length || 0
+              });
+
               const protocolSession = await tx.protocolSession.create({
                 data: {
-                  title: sessionData.title || sessionData.name,
+                  title: sessionData.title || sessionData.name || 'Sessão sem nome',
                   description: sessionData.description || null,
                   sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
                   protocolDayId: protocolDay.id
                 }
               });
 
-              // Criar tarefas da sessão
-              if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+              // Criar tarefas da sessão (mesmo que não haja tarefas, a sessão deve ser criada)
+              if (sessionData.tasks && Array.isArray(sessionData.tasks) && sessionData.tasks.length > 0) {
+                console.log(`    📋 Creating ${sessionData.tasks.length} tasks for session`);
                 for (const taskData of sessionData.tasks) {
                   await tx.protocolTask.create({
                     data: {
@@ -294,12 +316,15 @@ export async function PUT(
                     }
                   });
                 }
+              } else {
+                console.log(`    📋 Session created without tasks (empty session)`);
               }
             }
           }
 
-          // Criar tarefas diretas do dia (sem sessão) - criar uma sessão padrão
-          if (dayData.tasks && Array.isArray(dayData.tasks)) {
+          // Criar tarefas diretas do dia (sem sessão)
+          if (dayData.tasks && Array.isArray(dayData.tasks) && dayData.tasks.length > 0) {
+            console.log(`📋 Creating default session for ${dayData.tasks.length} direct day tasks`);
             const defaultSession = await tx.protocolSession.create({
               data: {
                 title: 'Sessão Principal',
@@ -381,15 +406,15 @@ export async function PUT(
               for (const sessionData of dayData.sessions) {
                 const protocolSession = await prisma.protocolSession.create({
                   data: {
-                    title: sessionData.title || sessionData.name,
+                    title: sessionData.title || sessionData.name || 'Sessão sem nome',
                     description: sessionData.description || null,
                     sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
                     protocolDayId: protocolDay.id
                   }
                 });
 
-                // Criar tarefas da sessão
-                if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+                // Criar tarefas da sessão (mesmo que não haja tarefas, a sessão deve ser criada)
+                if (sessionData.tasks && Array.isArray(sessionData.tasks) && sessionData.tasks.length > 0) {
                   for (const taskData of sessionData.tasks) {
                     await prisma.protocolTask.create({
                       data: {
@@ -414,7 +439,7 @@ export async function PUT(
             }
 
             // Criar tarefas diretas do dia (sem sessão)
-            if (dayData.tasks && Array.isArray(dayData.tasks)) {
+            if (dayData.tasks && Array.isArray(dayData.tasks) && dayData.tasks.length > 0) {
               const defaultSession = await prisma.protocolSession.create({
                 data: {
                   title: 'Sessão Principal',

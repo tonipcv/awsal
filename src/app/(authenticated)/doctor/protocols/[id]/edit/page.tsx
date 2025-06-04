@@ -390,38 +390,64 @@ export default function EditProtocolPage() {
   };
 
   const removeSession = (dayNumber: number, sessionId: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => {
-        if (day.dayNumber === dayNumber) {
-          return {
-            ...day,
-            sessions: day.sessions.filter(session => session.id !== sessionId)
-          };
-        }
-        return day;
-      })
-    }));
+    console.log('🗑️ Removing session:', { dayNumber, sessionId });
+    setProtocol(prev => {
+      const newProtocol = {
+        ...prev,
+        days: prev.days.map(day => {
+          if (day.dayNumber === dayNumber) {
+            const newDay = {
+              ...day,
+              sessions: day.sessions.filter(session => session.id !== sessionId)
+            };
+            console.log('🗑️ Day after removing session:', { 
+              dayNumber: newDay.dayNumber, 
+              sessionsCount: newDay.sessions.length,
+              sessionIds: newDay.sessions.map(s => s.id)
+            });
+            return newDay;
+          }
+          return day;
+        })
+      };
+      console.log('🗑️ Protocol after removing session:', {
+        daysCount: newProtocol.days.length,
+        day1SessionsCount: newProtocol.days.find(d => d.dayNumber === 1)?.sessions.length || 0
+      });
+      return newProtocol;
+    });
   };
 
   const updateSession = (dayNumber: number, sessionId: string, field: string, value: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => {
-        if (day.dayNumber === dayNumber) {
-          return {
-            ...day,
-            sessions: day.sessions.map(session => {
-              if (session.id === sessionId) {
-                return { ...session, [field]: value };
-              }
-              return session;
-            })
-          };
-        }
-        return day;
-      })
-    }));
+    console.log('✏️ Updating session:', { dayNumber, sessionId, field, value });
+    setProtocol(prev => {
+      const newProtocol = {
+        ...prev,
+        days: prev.days.map(day => {
+          if (day.dayNumber === dayNumber) {
+            const newDay = {
+              ...day,
+              sessions: day.sessions.map(session => {
+                if (session.id === sessionId) {
+                  const updatedSession = { ...session, [field]: value };
+                  console.log('✏️ Session updated:', { 
+                    sessionId, 
+                    field, 
+                    oldValue: session[field as keyof ProtocolSession], 
+                    newValue: value 
+                  });
+                  return updatedSession;
+                }
+                return session;
+              })
+            };
+            return newDay;
+          }
+          return day;
+        })
+      };
+      return newProtocol;
+    });
   };
 
   const moveTaskToSession = (dayNumber: number, taskId: string, targetSessionId: string) => {
@@ -485,6 +511,23 @@ export default function EditProtocolPage() {
         productsCount: protocol.products.length
       });
 
+      // Log detalhado das sessões antes de enviar
+      protocol.days.forEach((day, dayIndex) => {
+        console.log(`📅 Day ${day.dayNumber}:`, {
+          sessionsCount: day.sessions.length,
+          tasksCount: day.tasks.length
+        });
+        day.sessions.forEach((session, sessionIndex) => {
+          console.log(`  📝 Session ${sessionIndex + 1}:`, {
+            id: session.id,
+            name: session.name,
+            description: session.description,
+            order: session.order,
+            tasksCount: session.tasks.length
+          });
+        });
+      });
+
       const response = await fetch(`/api/protocols/${params.id}`, {
         method: 'PUT',
         headers: {
@@ -520,7 +563,7 @@ export default function EditProtocolPage() {
                 modalButtonText: task.modalButtonText || '',
                 modalButtonUrl: task.modalButtonUrl || ''
               }))
-            })).filter(session => session.tasks.length > 0),
+            })), // REMOVIDO: .filter(session => session.tasks.length > 0) - agora salva sessões vazias também
             tasks: day.tasks.filter(task => task.title.trim()).map((task, index) => ({
               title: task.title,
               description: task.description,
@@ -565,9 +608,7 @@ export default function EditProtocolPage() {
         if (productsResponse.ok) {
           console.log('✅ Products saved successfully');
           setShowSuccessAlert(true);
-          setTimeout(() => {
-            router.push(`/doctor/protocols/${params.id}`);
-          }, 2000);
+          setTimeout(() => setShowSuccessAlert(false), 5000);
         } else {
           console.error('❌ Failed to save products:', productsResponse.status, productsResponse.statusText);
           const errorText = await productsResponse.text();
@@ -801,7 +842,7 @@ export default function EditProtocolPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-green-900">Protocolo salvo com sucesso!</h4>
-                  <p className="text-xs text-green-700 mt-1">Redirecionando para a página do protocolo...</p>
+                  <p className="text-xs text-green-700 mt-1">Todas as alterações foram salvas.</p>
                 </div>
               </div>
             </div>

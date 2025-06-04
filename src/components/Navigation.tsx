@@ -368,9 +368,25 @@ export default function Navigation() {
   const isSpecificCoursePage = pathname?.match(/^\/patient\/courses\/[^\/]+/) && pathname !== '/patient/courses';
   const isDoctorInfoPage = pathname === '/doctor-info';
   
-  // ESTRATÉGIA AGRESSIVA: Se ainda não temos role, assumir PATIENT como padrão
-  // Isso evita qualquer flash ou skeleton
-  const effectiveRole = userRole || 'PATIENT';
+  // ESTRATÉGIA MELHORADA: Usar a URL como hint inicial para evitar flash
+  // Se estamos em página de médico/admin, assumir esse role até a API confirmar
+  // Se estamos em página de paciente ou não sabemos, assumir paciente
+  const getEffectiveRole = () => {
+    // Se já temos o role da API, usar ele
+    if (userRole) return userRole;
+    
+    // Se ainda está carregando, usar hint da URL
+    if (isLoadingRole) {
+      if (isAdminPage) return 'SUPER_ADMIN';
+      if (isDoctorPage) return 'DOCTOR';
+      return 'PATIENT';
+    }
+    
+    // Fallback para paciente se não conseguiu detectar
+    return 'PATIENT';
+  };
+  
+  const effectiveRole = getEffectiveRole();
   
   // Determinar tema baseado no role do usuário e na URL
   // /doctor-info sempre usa tema escuro (paciente), mesmo que o usuário seja médico
