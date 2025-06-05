@@ -672,18 +672,22 @@ export default function Navigation() {
               <div className="px-4 py-2">
                 <div className="flex items-center justify-around">
                   {patientNavSections.flatMap(section => section.items).map((item) => (
-                    <Link key={item.href} href={item.href} className="flex-1 max-w-[50px]">
+                    <Link key={item.href} href={item.href} className={cn(
+                      "flex-1",
+                      item.href === '/patient/ai-chat' ? "max-w-[70px]" : "max-w-[50px]"
+                    )}>
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                          "w-full flex items-center justify-center rounded-full transition-all duration-300",
+                          item.href === '/patient/ai-chat' ? "h-12" : "h-10",
                           pathname === item.href 
                             ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
                             : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                         )}
                       >
                         {item.href === '/patient/ai-chat' ? (
-                          <div className="relative w-4 h-4">
+                          <div className="relative w-10 h-10">
                             <Image
                               src="/logo.png"
                               alt="Logo"
@@ -830,35 +834,27 @@ export default function Navigation() {
               {/* Logo Section */}
               <div className="p-6 border-b border-gray-800">
                 <Link href="/" className="flex items-center justify-center">
-                  <div className="relative w-8 h-8">
-                    <Image
-                      src="/logo.png"
-                      alt="Logo"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
+                  {doctorInfo?.clinicLogo ? (
+                    <div className="relative w-20 h-12">
+                      <Image
+                        src={doctorInfo.clinicLogo}
+                        alt={doctorInfo.clinicName || 'Clinic Logo'}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative w-8 h-8">
+                      <Image
+                        src="/logo.png"
+                        alt="Logo"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  )}
                 </Link>
               </div>
-
-              {/* Doctor Info Section - if available */}
-              {doctorInfo && (
-                <div className="p-4 border-b border-gray-800">
-                  <Link href="/doctor-info">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer">
-                    <div className="h-10 w-14 flex items-center justify-center">
-                      <ClinicLogo doctor={doctorInfo} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-400">Practicioner</p>
-                      <p className="text-sm font-medium text-white truncate">
-                        {doctorInfo.name}
-                      </p>
-                    </div>
-                  </div>
-                  </Link>
-                </div>
-              )}
 
               {/* Navigation Sections */}
               <div className="flex-1 py-6 px-4 overflow-y-auto">
@@ -897,7 +893,18 @@ export default function Navigation() {
                 <Link href={getProfileUrl()}>
                   <div className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-gray-800/50">
                     <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700">
-                      <UserAvatar />
+                      {session?.user?.image ? (
+                        <div className="relative w-full h-full rounded-full overflow-hidden">
+                          <Image
+                            src={session.user.image}
+                            alt="Profile"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <UserCircleIcon className="h-5 w-5 text-gray-300" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">
@@ -909,6 +916,21 @@ export default function Navigation() {
                     </div>
                   </div>
                 </Link>
+              </div>
+
+              {/* Powered by Section */}
+              <div className="p-4 border-t border-gray-800/50">
+                <div className="flex items-center justify-center gap-2 opacity-60">
+                  <span className="text-xs text-gray-500">Powered by</span>
+                  <div className="relative w-4 h-4">
+                    <Image
+                      src="/logo.png"
+                      alt="Boop Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </nav>
