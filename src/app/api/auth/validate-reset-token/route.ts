@@ -20,7 +20,14 @@ export async function POST(request: Request) {
       select: {
         id: true,
         email: true,
-        name: true
+        name: true,
+        doctorId: true,
+        doctor: {
+          select: {
+            name: true,
+            googleReviewLink: true
+          }
+        }
       }
     });
 
@@ -31,7 +38,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       valid: true,
       email: user.email,
-      name: user.name
+      name: user.name,
+      doctorName: user.doctor?.name,
+      googleReviewLink: user.doctor?.googleReviewLink
     });
 
   } catch (error) {

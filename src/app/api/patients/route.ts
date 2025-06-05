@@ -243,7 +243,8 @@ export async function POST(request: Request) {
                 clinic: {
                   select: {
                     name: true,
-                    email: true
+                    email: true,
+                    logo: true
                   }
                 }
               },
@@ -268,50 +269,110 @@ export async function POST(request: Request) {
             address: process.env.SMTP_FROM as string
           },
           to: patient.email!,
-          subject: `Bem-vindo! Defina sua senha de acesso - ${senderName}`,
+          subject: `Welcome! Set Your Password - ${senderName}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Bem-vindo ao ${senderName}!</h1>
-              
-              <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-                Olá <strong>${patient.name}</strong>,
-              </p>
-              
-              <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-                Seu médico criou uma conta para você em nossa plataforma. Para começar a usar o sistema, você precisa definir sua senha.
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetUrl}" 
-                   style="display: inline-block; padding: 15px 30px; background-color: #5154e7; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                  Definir Minha Senha
-                </a>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Welcome to Our Platform</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #ffffff; line-height: 1.6;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+                
+                <!-- Header with Clinic Logo -->
+                <div style="background-color: #000000; padding: 40px 30px; text-align: center;">
+                  ${doctorWithClinic?.clinicMemberships?.[0]?.clinic?.logo ? `
+                    <img src="${doctorWithClinic.clinicMemberships[0].clinic.logo}" alt="${senderName}" style="max-height: 60px; max-width: 200px; margin-bottom: 20px; object-fit: contain;">
+                  ` : `
+                    <div style="margin-bottom: 20px;">
+                      <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">${senderName}</h2>
+                    </div>
+                  `}
+                  <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 400;">Welcome to ${senderName}!</h1>
+                </div>
+
+                <!-- Main Content -->
+                <div style="padding: 40px 30px; background-color: #ffffff;">
+                  <div style="margin-bottom: 30px;">
+                    <h2 style="color: #000000; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${patient.name},</h2>
+                    <p style="color: #666666; margin: 0 0 16px 0; font-size: 16px;">
+                      Your doctor has created an account for you on our healthcare platform. To start using the system, you need to set your password.
+                    </p>
+                  </div>
+
+                  <!-- Set Password Button -->
+                  <div style="text-align: center; margin: 40px 0;">
+                    <a href="${resetUrl}" 
+                       style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 4px; font-weight: 600; font-size: 16px;">
+                      Set My Password
+                    </a>
+                  </div>
+
+                  <!-- Account Information -->
+                  <div style="background-color: #f8f8f8; border-left: 4px solid #000000; padding: 20px; margin: 30px 0;">
+                    <h3 style="color: #000000; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Your Account</h3>
+                    <div style="color: #666666; font-size: 14px;">
+                      <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${patient.email}</p>
+                      <p style="margin: 0 0 8px 0;"><strong>Healthcare Provider:</strong> ${user.name}</p>
+                      <p style="margin: 0;"><strong>Clinic:</strong> ${senderName}</p>
+                    </div>
+                  </div>
+
+                  <!-- Getting Started -->
+                  <div style="background-color: #f8f8f8; border-left: 4px solid #000000; padding: 20px; margin: 30px 0;">
+                    <h3 style="color: #000000; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Getting Started</h3>
+                    <ul style="color: #666666; margin: 0; padding-left: 20px; font-size: 14px;">
+                      <li style="margin-bottom: 8px;">Click the button above to set your password</li>
+                      <li style="margin-bottom: 8px;">Once set, you can access your personalized healthcare dashboard</li>
+                      <li>Your doctor will be able to monitor your progress and provide guidance</li>
+                    </ul>
+                  </div>
+
+                  <!-- Important Notice -->
+                  <div style="background-color: #f8f8f8; border-left: 4px solid #666666; padding: 20px; margin: 30px 0;">
+                    <h3 style="color: #000000; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Important</h3>
+                    <ul style="color: #666666; margin: 0; padding-left: 20px; font-size: 14px;">
+                      <li style="margin-bottom: 8px;">This link is valid for 24 hours</li>
+                      <li style="margin-bottom: 8px;">If you don't set your password within this time, please contact your doctor</li>
+                      <li>Keep your login credentials secure and don't share them with others</li>
+                    </ul>
+                  </div>
+
+                  <!-- Alternative Link -->
+                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                    <p style="color: #666666; font-size: 14px; margin: 0 0 8px 0;">
+                      If the button doesn't work, copy and paste this link into your browser:
+                    </p>
+                    <p style="color: #000000; font-size: 14px; word-break: break-all; margin: 0;">
+                      ${resetUrl}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #f8f8f8; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                  <div style="margin-bottom: 20px;">
+                    <p style="color: #666666; font-size: 14px; margin: 0;">
+                      This email was sent by <strong>${senderName}</strong>
+                    </p>
+                    <p style="color: #999999; font-size: 12px; margin: 8px 0 0 0;">
+                      This is an automated message, please do not reply to this email.
+                    </p>
+                  </div>
+                  
+                  <!-- System Logo -->
+                  <div style="padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                    <p style="color: #999999; font-size: 11px; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1px;">
+                      Powered by
+                    </p>
+                    <img src="${baseUrl}/logo.png" alt="CXLUS" style="height: 20px; opacity: 0.7;">
+                  </div>
+                </div>
               </div>
-              
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #059669; margin: 0 0 10px 0;">📋 Sua Conta</h3>
-                <p style="color: #475569; margin: 0; font-size: 14px;">
-                  <strong>Email:</strong> ${patient.email}<br>
-                  <strong>Médico:</strong> ${user.name}<br>
-                  <strong>Clínica:</strong> ${senderName}
-                </p>
-              </div>
-              
-              <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-                <strong>Importante:</strong> Este link é válido por 24 horas. Se você não definir sua senha dentro deste prazo, será necessário solicitar um novo link ao seu médico.
-              </p>
-              
-              <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-                Se você não solicitou esta conta, pode ignorar este email com segurança.
-              </p>
-              
-              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-              
-              <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-                ${senderName} - Plataforma Médica<br>
-                Este é um email automático, não responda.
-              </p>
-            </div>
+            </body>
+            </html>
           `
         });
         
@@ -336,4 +397,4 @@ export async function POST(request: Request) {
     console.error('Error creating patient:', error);
     return NextResponse.json({ error: 'Erro ao criar paciente' }, { status: 500 });
   }
-} 
+}

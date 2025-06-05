@@ -21,6 +21,29 @@ export async function POST(request: Request) {
         resetTokenExpiry: {
           gt: new Date() // Token must not be expired
         }
+      },
+      include: {
+        doctor: {
+          select: {
+            name: true,
+            googleReviewLink: true,
+            // Get clinic information for the doctor
+            ownedClinics: {
+              where: { isActive: true },
+              select: { slug: true, name: true },
+              take: 1
+            },
+            clinicMemberships: {
+              where: { isActive: true },
+              include: {
+                clinic: {
+                  select: { slug: true, name: true }
+                }
+              },
+              take: 1
+            }
+          }
+        }
       }
     });
 
@@ -44,9 +67,29 @@ export async function POST(request: Request) {
 
     console.log(`✅ Password updated successfully for user: ${user.email}`);
 
+    // Get clinic information for response
+    let clinicName = 'Your Healthcare Provider';
+    let clinicSlug = null;
+    
+    if (user.doctor) {
+      // Check if doctor owns a clinic
+      if (user.doctor.ownedClinics.length > 0) {
+        clinicName = user.doctor.ownedClinics[0].name;
+        clinicSlug = user.doctor.ownedClinics[0].slug;
+      }
+      // Otherwise check if doctor is a member of a clinic
+      else if (user.doctor.clinicMemberships.length > 0) {
+        clinicName = user.doctor.clinicMemberships[0].clinic.name;
+        clinicSlug = user.doctor.clinicMemberships[0].clinic.slug;
+      }
+    }
+
     return NextResponse.json({
-      success: true,
-      message: 'Password updated successfully'
+      message: 'Password updated successfully',
+      clinicName,
+      clinicSlug,
+      doctorName: user.doctor?.name || '',
+      googleReviewLink: user.doctor?.googleReviewLink || ''
     });
 
   } catch (error) {

@@ -46,6 +46,7 @@ export default function DoctorProfilePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
   const [userStats, setUserStats] = useState<UserStats>({});
+  const [googleReviewLink, setGoogleReviewLink] = useState('');
 
   // Load user data and stats
   useEffect(() => {
@@ -54,35 +55,47 @@ export default function DoctorProfilePage() {
         try {
           setLoading(true);
           
-          // Set basic data from session
-          setName(session.user.name || '');
-          setEmail(session.user.email || '');
-          // Add cache-busting to initial image load to ensure fresh image
-          const initialImage = session.user.image;
-          setImage(initialImage ? `${initialImage}?t=${Date.now()}` : '');
-          setImageKey(prev => prev + 1); // Force initial render
+          // Load profile data from API
+          const profileResponse = await fetch('/api/profile');
+          if (profileResponse.ok) {
+            const profileData = await profileResponse.json();
+            setName(profileData.name || '');
+            setEmail(profileData.email || '');
+            setGoogleReviewLink(profileData.googleReviewLink || '');
+            // Add cache-busting to initial image load to ensure fresh image
+            const initialImage = profileData.image;
+            setImage(initialImage ? `${initialImage}?t=${Date.now()}` : '');
+            setImageKey(prev => prev + 1); // Force initial render
 
-          // Detect user role
-          const roleResponse = await fetch('/api/auth/role');
-          if (roleResponse.ok) {
-            const roleData = await roleResponse.json();
-            setUserRole(roleData.role);
+            // Detect user role
+            const roleResponse = await fetch('/api/auth/role');
+            if (roleResponse.ok) {
+              const roleData = await roleResponse.json();
+              setUserRole(roleData.role);
 
-            // Redirect if not a doctor
-            if (roleData.role !== 'DOCTOR' && roleData.role !== 'SUPER_ADMIN') {
+              // Redirect if not a doctor
+              if (roleData.role !== 'DOCTOR' && roleData.role !== 'SUPER_ADMIN') {
+                router.push('/profile');
+                return;
+              }
+
+              // Load doctor stats
+              const statsResponse = await fetch('/api/doctor/stats');
+              if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                setUserStats(stats);
+              }
+            } else {
               router.push('/profile');
               return;
             }
-
-            // Load doctor stats
-            const statsResponse = await fetch('/api/doctor/stats');
-            if (statsResponse.ok) {
-              const stats = await statsResponse.json();
-              setUserStats(stats);
-            }
           } else {
-            router.push('/profile');
-            return;
+            // Fallback to session data
+            setName(session.user.name || '');
+            setEmail(session.user.email || '');
+            const initialImage = session.user.image;
+            setImage(initialImage ? `${initialImage}?t=${Date.now()}` : '');
+            setImageKey(prev => prev + 1);
           }
         } catch (error) {
           console.error('Error loading user data:', error);
@@ -146,7 +159,8 @@ export default function DoctorProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           name, 
-          image: newImage || image 
+          image: newImage || image,
+          googleReviewLink
         }),
       });
 
@@ -377,6 +391,19 @@ export default function DoctorProfilePage() {
                           className="border-gray-300 bg-gray-50 text-gray-500 rounded-xl h-12"
                         />
                       </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-sm font-semibold text-gray-900">Google Review Link</label>
+                        <Input
+                          value={googleReviewLink}
+                          onChange={(e) => setGoogleReviewLink(e.target.value)}
+                          disabled={!isEditing}
+                          placeholder="https://g.page/r/..."
+                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Link para avaliações do Google que será mostrado aos pacientes após reset de senha
+                        </p>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
@@ -401,6 +428,19 @@ export default function DoctorProfilePage() {
                             onClick={() => {
                               setIsEditing(false);
                               setName(session?.user?.name || '');
+                              // Reset googleReviewLink to original value
+                              const loadOriginalData = async () => {
+                                try {
+                                  const response = await fetch('/api/profile');
+                                  if (response.ok) {
+                                    const data = await response.json();
+                                    setGoogleReviewLink(data.googleReviewLink || '');
+                                  }
+                                } catch (error) {
+                                  console.error('Error loading original data:', error);
+                                }
+                              };
+                              loadOriginalData();
                             }}
                             variant="outline"
                             className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-12 px-6 font-semibold"

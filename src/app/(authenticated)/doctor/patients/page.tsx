@@ -21,7 +21,8 @@ import {
   TrashIcon,
   CheckCircleIcon,
   PaperAirplaneIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -84,12 +85,7 @@ export default function PatientsPage() {
   const [showCredentials, setShowCredentials] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{ email: string; password: string } | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
-  
-  // Notification states
-  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
-  const [notificationTitle, setNotificationTitle] = useState('');
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
+  const [isImprovingNotes, setIsImprovingNotes] = useState(false);
   
   const [newPatient, setNewPatient] = useState<NewPatientForm>({
     name: '',
@@ -134,11 +130,11 @@ export default function PatientsPage() {
       } else {
         const errorData = await response.json();
         console.error('API Error:', response.status, errorData);
-        showNotification('Erro ao Carregar', `Erro ao carregar clientes: ${errorData.error || 'Erro desconhecido'}`, 'error');
+        alert(`Erro ao carregar clientes: ${errorData.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
       console.error('Error loading clients:', error);
-      showNotification('Erro de Conexão', 'Erro de conexão ao carregar clientes', 'error');
+      alert('Erro de Conexão ao carregar clientes');
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +160,7 @@ export default function PatientsPage() {
 
   const addPatient = async () => {
     if (!newPatient.name.trim() || !newPatient.email.trim()) {
-      showNotification('Campos Obrigatórios', 'Nome e email são obrigatórios', 'error');
+      alert('Nome e email são obrigatórios');
       return;
     }
 
@@ -214,15 +210,15 @@ export default function PatientsPage() {
         if (newPatient.sendCredentials && result.patient?.id) {
           await sendPasswordResetEmail(result.patient.id, result.patient.email || newPatient.email);
         } else {
-          showNotification('Cliente Criado!', 'Cliente criado com sucesso!', 'success');
+          alert('Cliente criado com sucesso!');
         }
       } else {
         const error = await response.json();
-        showNotification('Erro ao Criar Cliente', error.error || 'Erro ao adicionar cliente', 'error');
+        alert(`Erro ao criar cliente: ${error.error || 'Erro ao adicionar cliente'}`);
       }
     } catch (error) {
       console.error('Error adding client:', error);
-      showNotification('Erro ao Criar Cliente', 'Erro ao adicionar cliente', 'error');
+      alert('Erro ao criar cliente');
     } finally {
       setIsAddingPatient(false);
     }
@@ -239,14 +235,14 @@ export default function PatientsPage() {
       if (response.ok) {
         // Reload clients list
         await loadPatients();
-        showNotification('Cliente Removido', `Cliente ${patientName} foi removido com sucesso`, 'success');
+        alert(`Cliente ${patientName} foi removido com sucesso`);
       } else {
         const error = await response.json();
-        showNotification('Erro ao Remover', error.error || 'Erro ao deletar cliente', 'error');
+        alert(`Erro ao remover: ${error.error || 'Erro ao deletar cliente'}`);
       }
     } catch (error) {
       console.error('Error deleting client:', error);
-      showNotification('Erro ao Remover', 'Erro ao deletar cliente', 'error');
+      alert('Erro ao deletar cliente');
     } finally {
       setDeletingPatientId(null);
       setShowDeleteConfirm(false);
@@ -278,15 +274,15 @@ export default function PatientsPage() {
 
       if (response.ok) {
         const result = await response.json();
-        showNotification('Email Enviado!', `Email de redefinição de senha enviado para ${patientEmail} com sucesso!`, 'success');
+        alert(`Email de redefinição de senha enviado para ${patientEmail} com sucesso!`);
         console.log('Reset URL (for testing):', result.resetUrl);
       } else {
         const error = await response.json();
-        showNotification('Erro ao Enviar Email', error.error || 'Erro ao enviar email de redefinição de senha', 'error');
+        alert(`Erro ao enviar email de redefinição de senha: ${error.error || 'Erro ao enviar email de redefinição de senha'}`);
       }
     } catch (error) {
       console.error('Error sending password reset email:', error);
-      showNotification('Erro ao Enviar Email', 'Erro ao enviar email de redefinição de senha', 'error');
+      alert('Erro ao enviar email de redefinição de senha');
     } finally {
       setSendingEmailId(null);
     }
@@ -306,12 +302,40 @@ export default function PatientsPage() {
     return patient.assignedProtocols.find(p => p.isActive);
   };
 
-  // Helper function to show notifications
-  const showNotification = (title: string, message: string, type: 'success' | 'error' = 'success') => {
-    setNotificationTitle(title);
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotificationDialog(true);
+  const improveNotesWithAI = async () => {
+    if (!newPatient.notes.trim()) {
+      alert('Please write something in the notes before using AI to improve it.');
+      return;
+    }
+
+    try {
+      setIsImprovingNotes(true);
+      
+      const response = await fetch('/api/ai/improve-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: newPatient.notes,
+          context: 'medical_notes'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNewPatient({...newPatient, notes: data.improvedText});
+        alert('Text improved successfully with AI!');
+      } else {
+        const errorData = await response.json();
+        alert(`Error improving text: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error improving notes:', error);
+      alert('Connection error while trying to improve text with AI.');
+    } finally {
+      setIsImprovingNotes(false);
+    }
   };
 
   if (isLoading) {
@@ -603,14 +627,31 @@ export default function PatientsPage() {
                       <Label htmlFor="notes" className="text-sm font-semibold text-gray-700">
                         General Notes
                       </Label>
-                      <Textarea
-                        id="notes"
-                        value={newPatient.notes}
-                        onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
-                        placeholder="General observations about the client"
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={3}
-                      />
+                      <div className="relative">
+                        <Textarea
+                          id="notes"
+                          value={newPatient.notes}
+                          onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
+                          placeholder="General observations about the client"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
+                          rows={3}
+                        />
+                        {newPatient.notes.trim() && (
+                          <button
+                            type="button"
+                            onClick={improveNotesWithAI}
+                            disabled={isImprovingNotes}
+                            className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Improve text with AI"
+                          >
+                            {isImprovingNotes ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
+                            ) : (
+                              <SparklesIcon className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -948,58 +989,6 @@ export default function PatientsPage() {
         )}
         </div>
       </div>
-
-      {/* Beautiful Notification Dialog */}
-      <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
-        <DialogContent className="bg-white border-gray-200 rounded-2xl max-w-md">
-          <div className="text-center p-6">
-            {/* Close button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl"
-              onClick={() => setShowNotificationDialog(false)}
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </Button>
-
-            {/* Icon */}
-            <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-              notificationType === 'success' 
-                ? 'bg-gradient-to-br from-emerald-100 to-emerald-50' 
-                : 'bg-gradient-to-br from-red-100 to-red-50'
-            }`}>
-              {notificationType === 'success' ? (
-                <CheckCircleIcon className="h-8 w-8 text-emerald-600" />
-              ) : (
-                <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
-              )}
-            </div>
-
-            {/* Title */}
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              {notificationTitle}
-            </h3>
-
-            {/* Message */}
-            <p className="text-gray-600 font-medium mb-6 leading-relaxed">
-              {notificationMessage}
-            </p>
-
-            {/* Action Button */}
-            <Button 
-              onClick={() => setShowNotificationDialog(false)}
-              className={`w-full h-12 rounded-xl font-semibold ${
-                notificationType === 'success'
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-              }`}
-            >
-              {notificationType === 'success' ? 'Perfeito!' : 'Entendi'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 } 
