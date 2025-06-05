@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: 10 // Limitar para não sobrecarregar o contexto
+      take: 20 // Aumentado de 10 para 20
     });
 
     // Buscar produtos do médico
@@ -161,19 +161,19 @@ export async function POST(request: NextRequest) {
         isActive: true
       },
       orderBy: { createdAt: 'desc' },
-      take: 20 // Limitar para não sobrecarregar o contexto
+      take: 50 // Aumentado de 20 para 50
     });
 
-    // Buscar histórico da conversa atual (últimas 10 mensagens)
+    // Buscar histórico da conversa atual (últimas mensagens)
     const conversationHistory = await prisma.patientAIMessage.findMany({
       where: {
         conversationId: conversation.id
       },
       orderBy: { createdAt: 'desc' },
-      take: 10
+      take: 20 // Aumentado de 10 para 20
     });
 
-    // Buscar conversas anteriores do paciente com este médico (últimas 3 conversas)
+    // Buscar conversas anteriores do paciente com este médico
     const previousConversations = await prisma.patientAIConversation.findMany({
       where: {
         patientId: session.user.id,
@@ -184,11 +184,11 @@ export async function POST(request: NextRequest) {
       include: {
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 5 // Últimas 5 mensagens de cada conversa anterior
+          take: 8 // Aumentado de 5 para 8
         }
       },
       orderBy: { updatedAt: 'desc' },
-      take: 3
+      take: 5 // Aumentado de 3 para 5
     });
 
     // Preparar contexto para a IA
@@ -229,48 +229,71 @@ export async function POST(request: NextRequest) {
       select: { name: true }
     });
 
-    const systemPrompt = `You are an AI assistant for Dr. ${doctor?.name || 'Doctor'}. 
+    const systemPrompt = `You are an AI medical assistant for Dr. ${doctor?.name || 'Doctor'}. You are knowledgeable, empathetic, and professional.
 
-IMPORTANT INSTRUCTIONS:
-1. Use ONLY the information from FAQs, protocols, products, and conversation history provided below
-2. If the question is not covered in the available information, say you don't have that information and will forward to the doctor
-3. Be empathetic, professional, and clear
-4. Never invent medical information
-5. Always recommend consulting the doctor for specific cases
-6. Use simple and accessible language
-7. Reference specific protocols, products, or previous conversations when relevant
+RESPONSE PRIORITY (in order):
+1. FIRST: Use specific information from the doctor's FAQs, protocols, and products below when available
+2. SECOND: If no specific information is available, provide general medical guidance while clearly stating it's general information
+3. ALWAYS: Recommend consulting the doctor for personalized medical advice
+4. NEVER: Provide specific diagnoses or prescribe medications
 
-AVAILABLE FAQs:
-${faqContext}
+AVAILABLE DOCTOR-SPECIFIC INFORMATION:
 
-AVAILABLE PROTOCOLS/PROCEDURES:
-${protocolsContext}
+FAQs:
+${faqContext || 'No FAQs available'}
 
-AVAILABLE PRODUCTS:
-${productsContext}
+PROTOCOLS/PROCEDURES:
+${protocolsContext || 'No protocols available'}
 
-${historyContext ? `CURRENT CONVERSATION HISTORY:\n${historyContext}\n` : ''}
+PRODUCTS:
+${productsContext || 'No products available'}
+
+${historyContext ? `CONVERSATION HISTORY:\n${historyContext}\n` : ''}
 
 ${previousConversationsContext ? `PREVIOUS CONVERSATIONS:\n${previousConversationsContext}\n` : ''}
 
-Answer the patient's question based on the information above. If you reference a protocol, product, or previous conversation, mention it specifically.`;
+RESPONSE GUIDELINES:
+- If you find relevant information in the doctor's FAQs/protocols/products, reference it specifically
+- If no specific information is available, provide helpful general medical information
+- Always be clear about whether you're using doctor-specific information or general medical knowledge
+- Encourage patients to discuss specific concerns with Dr. ${doctor?.name || 'their doctor'}
+- Use simple, accessible language
+- Be empathetic and supportive
+- For emergencies, always advise immediate medical attention
+
+Answer the patient's question following these guidelines.`;
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message }
         ],
-        max_tokens: 800,
-        temperature: 0.3
+        max_tokens: 1500,
+        temperature: 0.5
       });
 
       const aiResponse = completion.choices[0]?.message?.content || aiSettings.fallbackMessage!;
       
-      // Calcular confiança baseada na resposta
-      const confidence = aiResponse.includes('don\'t have that information') || 
-                       aiResponse.includes('forward to the doctor') ? 0.3 : 0.8;
+      // Calcular confiança de forma mais inteligente
+      let confidence = 0.7; // Confiança base
+      
+      // Aumentar confiança se usou informações específicas do médico
+      if (faqContext && aiResponse.toLowerCase().includes('faq')) confidence += 0.2;
+      if (protocolsContext && aiResponse.toLowerCase().includes('protocol')) confidence += 0.2;
+      if (productsContext && aiResponse.toLowerCase().includes('product')) confidence += 0.2;
+      
+      // Reduzir confiança apenas para respostas claramente inadequadas
+      if (aiResponse.includes('I don\'t have that information') || 
+          aiResponse.includes('forward to the doctor') ||
+          aiResponse.includes('não consegui encontrar') ||
+          aiResponse.length < 50) {
+        confidence = 0.3;
+      }
+      
+      // Garantir que confiança não exceda 1.0
+      confidence = Math.min(confidence, 1.0);
       
       const needsReview = confidence < aiSettings.confidenceThreshold;
 

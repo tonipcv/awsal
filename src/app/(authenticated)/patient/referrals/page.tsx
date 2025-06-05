@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -23,7 +22,10 @@ import {
   CheckCircle,
   Clock,
   Star,
-  UserPlus
+  UserPlus,
+  MessageCircle,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +39,15 @@ const translations = {
     // Action buttons
     shareLink: 'Compartilhar Link',
     startReferring: 'Começar a Indicar',
+    shareOptions: 'Opções de Compartilhamento',
+    shareWhatsApp: 'WhatsApp',
+    shareSMS: 'SMS',
+    shareEmail: 'Email',
+    copyLink: 'Copiar Link',
+    
+    // Share messages
+    shareMessage: 'Olá! Estou usando este incrível sistema médico e queria te indicar. Use meu código de indicação para se cadastrar:',
+    shareSubject: 'Indicação - Sistema Médico',
     
     // Stats
     availableCredits: 'Créditos Disponíveis',
@@ -101,6 +112,15 @@ const translations = {
     // Action buttons
     shareLink: 'Share Link',
     startReferring: 'Start Referring',
+    shareOptions: 'Share Options',
+    shareWhatsApp: 'WhatsApp',
+    shareSMS: 'SMS',
+    shareEmail: 'Email',
+    copyLink: 'Copy Link',
+    
+    // Share messages
+    shareMessage: 'Hello! I\'m using this amazing medical system and wanted to refer you. Use my referral code to sign up:',
+    shareSubject: 'Referral - Medical System',
     
     // Stats
     availableCredits: 'Available Credits',
@@ -487,6 +507,44 @@ export default function PatientReferralsPage() {
     }
   };
 
+  // Funções de compartilhamento
+  const shareViaWhatsApp = () => {
+    const link = generateReferralLink('default');
+    if (!link) {
+      toast.error(t.toastMessages.errorGeneratingLink);
+      return;
+    }
+    
+    const message = `${t.shareMessage}\n\n${link}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const shareViaSMS = () => {
+    const link = generateReferralLink('default');
+    if (!link) {
+      toast.error(t.toastMessages.errorGeneratingLink);
+      return;
+    }
+    
+    const message = `${t.shareMessage}\n\n${link}`;
+    const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+    window.open(smsUrl, '_blank');
+  };
+
+  const shareViaEmail = () => {
+    const link = generateReferralLink('default');
+    if (!link) {
+      toast.error(t.toastMessages.errorGeneratingLink);
+      return;
+    }
+    
+    const subject = t.shareSubject;
+    const body = `${t.shareMessage}\n\n${link}`;
+    const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(emailUrl, '_blank');
+  };
+
   // Format date based on language
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -635,52 +693,81 @@ export default function PatientReferralsPage() {
                   {t.pageDescription}
                 </p>
                 
-                {/* Action Buttons Compactos */}
+                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-2 lg:gap-3 justify-center items-center mb-4 lg:mb-6">
-                  {referralCode && (
-                    <Button 
-                      variant="outline" 
-                      onClick={copyReferralCode} 
-                      className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 backdrop-blur-sm text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4"
-                    >
-                      <Copy className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                      {language === 'en' ? 'Code' : 'Código'}: {referralCode}
-                    </Button>
-                  )}
                   {doctorId && referralCode && (
-                    <Button 
-                      onClick={copyReferralLink} 
-                      className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 shadow-md shadow-teal-400/25"
-                    >
-                      <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                      {t.shareLink}
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 shadow-md shadow-turquoise/25">
+                          <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                          {t.shareLink}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gray-900 border border-gray-800 text-white">
+                        <DialogHeader>
+                          <DialogTitle className="text-white">{t.shareOptions}</DialogTitle>
+                          <DialogDescription className="text-gray-400">
+                            {t.pageDescription}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 gap-3 py-4">
+                          <Button
+                            onClick={shareViaWhatsApp}
+                            className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/30 flex items-center gap-2 h-10"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            {t.shareWhatsApp}
+                          </Button>
+                          <Button
+                            onClick={shareViaSMS}
+                            className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 flex items-center gap-2 h-10"
+                          >
+                            <Phone className="h-4 w-4" />
+                            {t.shareSMS}
+                          </Button>
+                          <Button
+                            onClick={shareViaEmail}
+                            className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 flex items-center gap-2 h-10"
+                          >
+                            <Mail className="h-4 w-4" />
+                            {t.shareEmail}
+                          </Button>
+                          <Button
+                            onClick={copyReferralLink}
+                            className="bg-gray-700/20 hover:bg-gray-700/30 text-gray-300 border border-gray-700/30 flex items-center gap-2 h-10"
+                          >
+                            <Copy className="h-4 w-4" />
+                            {t.copyLink}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
 
                 {/* Stats Cards Compactas */}
                 {stats && (
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
-                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
-                      <div className="text-xl lg:text-2xl font-light text-teal-400 mb-1">{creditsBalance}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">{t.availableCredits}</div>
+                  <div className="flex items-center justify-center gap-4 lg:gap-8">
+                    <div className="text-center">
+                      <div className="text-lg lg:text-2xl font-light text-turquoise mb-0.5">{creditsBalance}</div>
+                      <div className="text-xs lg:text-sm text-gray-400">{t.availableCredits}</div>
                     </div>
-
-                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
-                      <div className="text-xl lg:text-2xl font-light text-white mb-1">{stats.totalReferrals}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">{t.totalReferrals}</div>
+                    <div className="w-px h-6 lg:h-8 bg-gray-700" />
+                    <div className="text-center">
+                      <div className="text-lg lg:text-2xl font-light text-white mb-0.5">{stats.totalReferrals}</div>
+                      <div className="text-xs lg:text-sm text-gray-400">{t.totalReferrals}</div>
                     </div>
-
-                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
-                      <div className="text-xl lg:text-2xl font-light text-green-400 mb-1">{stats.convertedReferrals}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">{t.converted}</div>
+                    <div className="w-px h-6 lg:h-8 bg-gray-700" />
+                    <div className="text-center">
+                      <div className="text-lg lg:text-2xl font-light text-white mb-0.5">{stats.convertedReferrals}</div>
+                      <div className="text-xs lg:text-sm text-gray-400">{t.converted}</div>
                     </div>
-
-                    <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
-                      <div className="text-xl lg:text-2xl font-light text-purple-400 mb-1">
+                    <div className="w-px h-6 lg:h-8 bg-gray-700" />
+                    <div className="text-center">
+                      <div className="text-lg lg:text-2xl font-light text-white mb-0.5">
                         {stats.totalReferrals > 0 ? Math.round((stats.convertedReferrals / stats.totalReferrals) * 100) : 0}%
                       </div>
-                      <div className="text-gray-400 text-xs lg:text-sm">{t.conversionRate}</div>
+                      <div className="text-xs lg:text-sm text-gray-400">{t.conversionRate}</div>
                     </div>
                   </div>
                 )}
@@ -693,30 +780,30 @@ export default function PatientReferralsPage() {
         <div className="max-w-6xl mx-auto px-3 lg:px-6 space-y-4 lg:space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Recompensas Disponíveis */}
-            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
-              <CardHeader className="pb-3 lg:pb-4">
+            <div className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm">
+              <div className="p-4 lg:p-6 border-b border-gray-800/40">
                 <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="p-1.5 lg:p-2 bg-teal-400/20 rounded-lg">
-                    <Gift className="h-4 w-4 lg:h-5 lg:w-5 text-teal-400" />
+                  <div className="p-1.5 lg:p-2 bg-turquoise/20 rounded-lg">
+                    <Gift className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.rewards}</CardTitle>
-                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                    <h2 className="text-white text-base lg:text-xl font-light">{t.rewards}</h2>
+                    <p className="text-gray-400 text-xs lg:text-sm">
                       {t.rewardsDescription}
-                    </CardDescription>
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3 lg:space-y-4">
+              </div>
+              <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
                 {availableRewards.map((reward) => (
-                  <div key={reward.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                  <div key={reward.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50 hover:border-turquoise/30 transition-colors">
                     <div className="flex justify-between items-start mb-2 lg:mb-3">
                       <div className="flex-1">
                         <h3 className="font-medium text-white text-sm lg:text-base">{reward.title}</h3>
                         <p className="text-gray-400 text-xs lg:text-sm mt-1">{reward.description}</p>
                       </div>
                       <div className="text-right ml-3 lg:ml-4">
-                        <div className="text-white font-medium text-sm lg:text-base">{reward.creditsRequired}</div>
+                        <div className="text-turquoise font-medium text-sm lg:text-base">{reward.creditsRequired}</div>
                         <div className="text-gray-400 text-xs">{t.credits}</div>
                       </div>
                     </div>
@@ -734,7 +821,7 @@ export default function PatientReferralsPage() {
                         redeeming === reward.id ||
                         (reward.maxRedemptions ? reward.currentRedemptions >= reward.maxRedemptions : false)
                       }
-                      className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium disabled:bg-gray-700 disabled:text-gray-500 text-xs lg:text-sm h-7 lg:h-8"
+                      className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium disabled:bg-gray-700 disabled:text-gray-500 text-xs lg:text-sm h-7 lg:h-8 shadow-md shadow-turquoise/25"
                     >
                       {redeeming === reward.id ? (
                         <>
@@ -754,36 +841,36 @@ export default function PatientReferralsPage() {
 
                 {availableRewards.length === 0 && (
                   <div className="text-center py-8 lg:py-12">
-                    <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
-                      <Gift className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                      <Gift className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400" />
                     </div>
                     <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">{t.noRewardsAvailable}</div>
                     <div className="text-gray-400 text-xs lg:text-sm">{t.waitForRewards}</div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Histórico de Indicações */}
-            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
-              <CardHeader className="pb-3 lg:pb-4">
+            <div className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm">
+              <div className="p-4 lg:p-6 border-b border-gray-800/40">
                 <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="p-1.5 lg:p-2 bg-green-400/20 rounded-lg">
-                    <UserPlus className="h-4 w-4 lg:h-5 lg:w-5 text-green-400" />
+                  <div className="p-1.5 lg:p-2 bg-turquoise/20 rounded-lg">
+                    <UserPlus className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.yourReferrals}</CardTitle>
-                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                    <h2 className="text-white text-base lg:text-xl font-light">{t.yourReferrals}</h2>
+                    <p className="text-gray-400 text-xs lg:text-sm">
                       {t.referralsDescription}
-                    </CardDescription>
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3 lg:space-y-4">
+              </div>
+              <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
                 {referralsMade.map((referral) => {
                   const StatusIcon = statusConfig[referral.status as keyof typeof statusConfig]?.icon || Clock;
                   return (
-                    <div key={referral.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                    <div key={referral.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50 hover:border-turquoise/30 transition-colors">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <h3 className="font-medium text-white text-sm lg:text-base">{referral.name}</h3>
@@ -806,7 +893,7 @@ export default function PatientReferralsPage() {
                       </div>
 
                       {referral.credits.length > 0 && (
-                        <div className="text-teal-400 text-xs lg:text-sm font-medium flex items-center gap-1">
+                        <div className="text-turquoise text-xs lg:text-sm font-medium flex items-center gap-1">
                           <Star className="h-3 w-3 lg:h-4 lg:w-4" />
                           +{referral.credits.reduce((sum, credit) => sum + credit.amount, 0)} {t.creditsEarned}
                         </div>
@@ -817,47 +904,86 @@ export default function PatientReferralsPage() {
 
                 {referralsMade.length === 0 && (
                   <div className="text-center py-8 lg:py-12">
-                    <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
-                      <UserPlus className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                      <UserPlus className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400" />
                     </div>
                     <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">{t.noReferralsYet}</div>
                     <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">{t.startReferringDescription}</div>
                     {doctorId && (
-                      <Button 
-                        onClick={copyReferralLink} 
-                        className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-7 lg:h-8 px-3 lg:px-4"
-                      >
-                        <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                        {t.startReferring}
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button className="bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-7 lg:h-8 px-3 lg:px-4 shadow-md shadow-turquoise/25">
+                            <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                            {t.startReferring}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-gray-900 border border-gray-800 text-white">
+                          <DialogHeader>
+                            <DialogTitle className="text-white">{t.shareOptions}</DialogTitle>
+                            <DialogDescription className="text-gray-400">
+                              {t.pageDescription}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="grid grid-cols-2 gap-3 py-4">
+                            <Button
+                              onClick={shareViaWhatsApp}
+                              className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/30 flex items-center gap-2 h-10"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              {t.shareWhatsApp}
+                            </Button>
+                            <Button
+                              onClick={shareViaSMS}
+                              className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 flex items-center gap-2 h-10"
+                            >
+                              <Phone className="h-4 w-4" />
+                              {t.shareSMS}
+                            </Button>
+                            <Button
+                              onClick={shareViaEmail}
+                              className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 flex items-center gap-2 h-10"
+                            >
+                              <Mail className="h-4 w-4" />
+                              {t.shareEmail}
+                            </Button>
+                            <Button
+                              onClick={copyReferralLink}
+                              className="bg-gray-700/20 hover:bg-gray-700/30 text-gray-300 border border-gray-700/30 flex items-center gap-2 h-10"
+                            >
+                              <Copy className="h-4 w-4" />
+                              {t.copyLink}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
           {/* Histórico de Resgates */}
           {redemptionsHistory.length > 0 && (
-            <Card className="bg-gray-900/40 border border-gray-800/40 backdrop-blur-sm">
-              <CardHeader className="pb-3 lg:pb-4">
+            <div className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm">
+              <div className="p-4 lg:p-6 border-b border-gray-800/40">
                 <div className="flex items-center gap-2 lg:gap-3">
-                  <div className="p-1.5 lg:p-2 bg-purple-400/20 rounded-lg">
-                    <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5 text-purple-400" />
+                  <div className="p-1.5 lg:p-2 bg-turquoise/20 rounded-lg">
+                    <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.redemptionHistory}</CardTitle>
-                    <CardDescription className="text-gray-400 text-xs lg:text-sm">
+                    <h2 className="text-white text-base lg:text-xl font-light">{t.redemptionHistory}</h2>
+                    <p className="text-gray-400 text-xs lg:text-sm">
                       {t.redemptionDescription}
-                    </CardDescription>
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3 lg:space-y-4">
+              </div>
+              <div className="p-4 lg:p-6 space-y-3 lg:space-y-4">
                 {redemptionsHistory.map((redemption) => {
                   const StatusIcon = statusConfig[redemption.status as keyof typeof statusConfig]?.icon || Clock;
                   return (
-                    <div key={redemption.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50">
+                    <div key={redemption.id} className="bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-700/50 hover:border-turquoise/30 transition-colors">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <h3 className="font-medium text-white text-sm lg:text-base">{redemption.reward.title}</h3>
@@ -869,14 +995,14 @@ export default function PatientReferralsPage() {
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center text-xs lg:text-sm text-gray-400">
-                        <span>{redemption.creditsUsed} {t.creditsUsed}</span>
+                        <span className="text-turquoise font-medium">{redemption.creditsUsed} {t.creditsUsed}</span>
                         <span>{formatDate(redemption.redeemedAt)}</span>
                       </div>
                     </div>
                   );
                 })}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
       </div>
