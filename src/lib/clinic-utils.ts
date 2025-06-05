@@ -42,6 +42,20 @@ export interface ClinicWithDetails {
   } | null;
 }
 
+export interface ClinicData {
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  description?: string;
+  logo?: string | null;
+}
+
 // ========== FUNÇÕES DE CLÍNICA ==========
 
 /**
@@ -421,4 +435,44 @@ export async function getClinicStats(clinicId: string) {
     totalPatients: patientCount,
     totalCourses: courseCount
   };
+}
+
+// Função para gerar slug a partir do nome
+export function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais
+    .replace(/\s+/g, '-') // Substitui espaços por hífens
+    .replace(/-+/g, '-') // Remove hífens duplicados
+    .replace(/^-|-$/g, ''); // Remove hífens do início e fim
+}
+
+// Função para garantir slug único
+export async function ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const existing = await prisma.clinic.findFirst({
+      where: {
+        slug: slug,
+        ...(excludeId && { id: { not: excludeId } })
+      }
+    });
+    
+    if (!existing) {
+      return slug;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
+// Função para gerar slug único para uma clínica
+export async function generateUniqueSlugForClinic(name: string, excludeId?: string): Promise<string> {
+  const baseSlug = generateSlug(name);
+  return await ensureUniqueSlug(baseSlug, excludeId);
 } 

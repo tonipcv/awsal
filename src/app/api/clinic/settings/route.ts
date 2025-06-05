@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { generateUniqueSlugForClinic } from '@/lib/clinic-utils';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -49,11 +50,18 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Clínica não encontrada ou você não tem permissão para editá-la' }, { status: 404 });
     }
 
+    // Verificar se o nome mudou para gerar novo slug
+    let newSlug = clinic.slug;
+    if (name.trim() !== clinic.name) {
+      newSlug = await generateUniqueSlugForClinic(name.trim(), clinic.id);
+    }
+
     // Atualizar clínica
     const updatedClinic = await prisma.clinic.update({
       where: { id: clinic.id },
       data: {
         name: name.trim(),
+        slug: newSlug,
         description: description?.trim() || null,
         logo: logo?.trim() || null,
         email: email?.trim() || null,

@@ -551,6 +551,7 @@ model SystemMetrics {
 model Clinic {
   id           String             @id @default(cuid())
   name         String
+  slug         String?            @unique
   address      String?
   city         String?
   state        String?
@@ -570,6 +571,7 @@ model Clinic {
   subscription ClinicSubscription?
 
   @@index([ownerId])
+  @@index([slug])
   @@map("clinics")
 }
 
