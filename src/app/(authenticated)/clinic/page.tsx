@@ -25,7 +25,8 @@ import {
   X,
   BuildingIcon,
   CameraIcon,
-  Loader2
+  Loader2,
+  Copy
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,6 +35,7 @@ interface ClinicData {
   name: string;
   description: string | null;
   logo: string | null;
+  slug: string | null;
   ownerId: string;
   isActive: boolean;
   createdAt: string;
@@ -95,6 +97,7 @@ export default function ClinicDashboard() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [baseUrl, setBaseUrl] = useState('https://yourapp.com');
   
   // Notification states
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -110,6 +113,13 @@ export default function ClinicDashboard() {
 
     fetchClinicData();
   }, [session, router]);
+
+  useEffect(() => {
+    // Set base URL from current location
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   const fetchClinicData = async () => {
     try {
@@ -259,8 +269,8 @@ export default function ClinicDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: clinic?.name,
-          description: clinic?.description,
+          name: editingClinicName,
+          description: editingClinicDescription,
           logo: logoUrl,
         }),
       });
@@ -269,9 +279,13 @@ export default function ClinicDashboard() {
         throw new Error('Failed to save settings');
       }
 
-      // Update local state
-      if (clinic) {
-        setClinic({ ...clinic, logo: logoUrl || null });
+      const result = await response.json();
+
+      // Update local state with the response data
+      if (clinic && result.clinic) {
+        setClinic(result.clinic);
+        setEditingClinicName(result.clinic.name);
+        setEditingClinicDescription(result.clinic.description || '');
       }
       
       // Reset logo editing state
@@ -281,13 +295,30 @@ export default function ClinicDashboard() {
       
       setShowSettingsModal(false);
       
-      // Refresh the page to update navigation
-      window.location.reload();
+      // Show success message
+      setSuccessTitle('Settings Updated');
+      setSuccessMessage('Clinic settings have been updated successfully.');
+      setShowSuccessDialog(true);
+      
     } catch (error) {
       console.error('Error saving settings:', error);
       alert('Failed to save settings. Please try again.');
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const copyClinicUrl = async () => {
+    if (clinic?.slug) {
+      const url = `${baseUrl}/login/${clinic.slug}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        setSuccessTitle('URL Copied!');
+        setSuccessMessage('The clinic URL has been copied to your clipboard.');
+        setShowSuccessDialog(true);
+      } catch (error) {
+        console.error('Failed to copy URL:', error);
+      }
     }
   };
 
@@ -818,6 +849,36 @@ export default function ClinicDashboard() {
                     disabled={!isAdmin}
                     className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 mt-2"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="clinic-slug-display" className="text-gray-700 font-semibold">Clinic URL</Label>
+                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600 font-medium flex-1">
+                        {clinic?.slug ? (
+                          <>
+                            <span className="text-gray-500">{baseUrl}/login/</span>
+                            <span className="font-bold text-gray-900">{clinic.slug}</span>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">No URL configured</span>
+                        )}
+                      </p>
+                      {clinic?.slug && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={copyClinicUrl}
+                          className="ml-2 h-8 w-8 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      This is your clinic's unique login URL that patients can use to access their accounts.
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="clinic-logo-edit" className="text-gray-700 font-semibold">Clinic Logo</Label>

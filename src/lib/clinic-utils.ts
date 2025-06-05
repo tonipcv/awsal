@@ -6,6 +6,7 @@ export interface ClinicWithDetails {
   name: string;
   description: string | null;
   logo: string | null;
+  slug: string | null;
   ownerId: string;
   isActive: boolean;
   createdAt: Date;
@@ -65,7 +66,16 @@ export async function getUserClinic(userId: string): Promise<ClinicWithDetails |
   // Primeiro, verificar se é owner de alguma clínica
   let clinic = await prisma.clinic.findFirst({
     where: { ownerId: userId },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      logo: true,
+      slug: true,
+      ownerId: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       owner: {
         select: { id: true, name: true, email: true }
       },
@@ -95,7 +105,16 @@ export async function getUserClinic(userId: string): Promise<ClinicWithDetails |
       },
       include: {
         clinic: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            logo: true,
+            slug: true,
+            ownerId: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
             owner: {
               select: { id: true, name: true, email: true }
             },
@@ -351,10 +370,14 @@ export async function ensureDoctorHasClinic(doctorId: string): Promise<{ success
     }
 
     // Criar clínica automática APENAS se não for membro de nenhuma clínica
+    const clinicName = `${doctor.name} Clinic`;
+    const clinicSlug = await generateUniqueSlugForClinic(clinicName);
+    
     const clinic = await prisma.clinic.create({
       data: {
-        name: `${doctor.name} Clinic`,
+        name: clinicName,
         description: `Personal clinic of ${doctor.name}`,
+        slug: clinicSlug,
         ownerId: doctorId
       }
     });
