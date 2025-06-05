@@ -27,6 +27,155 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Translation system
+const translations = {
+  pt: {
+    // Page title and description
+    pageTitle: 'Programa de Indicações',
+    pageDescription: 'Indique amigos e ganhe recompensas incríveis',
+    
+    // Action buttons
+    shareLink: 'Compartilhar Link',
+    startReferring: 'Começar a Indicar',
+    
+    // Stats
+    availableCredits: 'Créditos Disponíveis',
+    totalReferrals: 'Total de Indicações',
+    converted: 'Convertidas',
+    conversionRate: 'Taxa de Conversão',
+    
+    // Rewards section
+    rewards: 'Recompensas',
+    rewardsDescription: 'Use seus créditos para resgatar recompensas',
+    credits: 'créditos',
+    remaining: 'Restam',
+    redemptions: 'resgates',
+    redeem: 'Resgatar',
+    redeeming: 'Resgatando...',
+    insufficientCredits: 'Créditos insuficientes',
+    soldOut: 'Esgotado',
+    noRewardsAvailable: 'Nenhuma recompensa disponível',
+    waitForRewards: 'Aguarde novas recompensas do seu médico',
+    
+    // Referrals section
+    yourReferrals: 'Suas Indicações',
+    referralsDescription: 'Pessoas que você indicou',
+    noReferralsYet: 'Nenhuma indicação ainda',
+    startReferringDescription: 'Comece a indicar pessoas para ganhar créditos',
+    creditsEarned: 'créditos ganhos',
+    
+    // Redemption history
+    redemptionHistory: 'Histórico de Resgates',
+    redemptionDescription: 'Recompensas que você já resgatou',
+    creditsUsed: 'créditos usados',
+    
+    // Status labels
+    status: {
+      PENDING: 'Pendente',
+      CONTACTED: 'Contatado',
+      CONVERTED: 'Convertido',
+      REJECTED: 'Rejeitado',
+      APPROVED: 'Aprovado',
+      FULFILLED: 'Entregue'
+    },
+    
+    // Toast messages
+    toastMessages: {
+      linkCopied: 'Link copiado para a área de transferência!',
+      codeCopied: 'Código copiado para a área de transferência!',
+      rewardRedeemed: 'Recompensa resgatada com sucesso!',
+      errorRedeeming: 'Erro ao resgatar recompensa',
+      errorGeneratingLink: 'Não foi possível gerar o link de indicação',
+      errorCopyingLink: 'Erro ao copiar link. Tente novamente.',
+      errorCopyingCode: 'Erro ao copiar código. Tente novamente.',
+      codeNotAvailable: 'Código de indicação não disponível',
+      connectionError: 'Erro de conexão. Tente novamente.',
+      copyManually: 'Erro ao copiar link. Tente copiar manualmente: '
+    }
+  },
+  en: {
+    // Page title and description
+    pageTitle: 'Referral Program',
+    pageDescription: 'Refer friends and earn amazing rewards',
+    
+    // Action buttons
+    shareLink: 'Share Link',
+    startReferring: 'Start Referring',
+    
+    // Stats
+    availableCredits: 'Available Credits',
+    totalReferrals: 'Total Referrals',
+    converted: 'Converted',
+    conversionRate: 'Conversion Rate',
+    
+    // Rewards section
+    rewards: 'Rewards',
+    rewardsDescription: 'Use your credits to redeem rewards',
+    credits: 'credits',
+    remaining: 'Remaining',
+    redemptions: 'redemptions',
+    redeem: 'Redeem',
+    redeeming: 'Redeeming...',
+    insufficientCredits: 'Insufficient credits',
+    soldOut: 'Sold out',
+    noRewardsAvailable: 'No rewards available',
+    waitForRewards: 'Wait for new rewards from your doctor',
+    
+    // Referrals section
+    yourReferrals: 'Your Referrals',
+    referralsDescription: 'People you have referred',
+    noReferralsYet: 'No referrals yet',
+    startReferringDescription: 'Start referring people to earn credits',
+    creditsEarned: 'credits earned',
+    
+    // Redemption history
+    redemptionHistory: 'Redemption History',
+    redemptionDescription: 'Rewards you have already redeemed',
+    creditsUsed: 'credits used',
+    
+    // Status labels
+    status: {
+      PENDING: 'Pending',
+      CONTACTED: 'Contacted',
+      CONVERTED: 'Converted',
+      REJECTED: 'Rejected',
+      APPROVED: 'Approved',
+      FULFILLED: 'Fulfilled'
+    },
+    
+    // Toast messages
+    toastMessages: {
+      linkCopied: 'Link copied to clipboard!',
+      codeCopied: 'Code copied to clipboard!',
+      rewardRedeemed: 'Reward redeemed successfully!',
+      errorRedeeming: 'Error redeeming reward',
+      errorGeneratingLink: 'Could not generate referral link',
+      errorCopyingLink: 'Error copying link. Please try again.',
+      errorCopyingCode: 'Error copying code. Please try again.',
+      codeNotAvailable: 'Referral code not available',
+      connectionError: 'Connection error. Please try again.',
+      copyManually: 'Error copying link. Please copy manually: '
+    }
+  }
+};
+
+// Hook to detect browser language
+const useLanguage = () => {
+  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+  
+  useEffect(() => {
+    // Detect browser language
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith('en')) {
+      setLanguage('en');
+    } else {
+      setLanguage('pt'); // Default to Portuguese
+    }
+  }, []);
+  
+  return language;
+};
+
 interface PatientStats {
   totalReferrals: number;
   convertedReferrals: number;
@@ -87,17 +236,11 @@ interface Redemption {
   };
 }
 
-const statusConfig = {
-  PENDING: { label: 'Pendente', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30', icon: Clock },
-  CONTACTED: { label: 'Contatado', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: Users },
-  CONVERTED: { label: 'Convertido', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle },
-  REJECTED: { label: 'Rejeitado', color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: Clock },
-  APPROVED: { label: 'Aprovado', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: CheckCircle },
-  FULFILLED: { label: 'Entregue', color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle }
-};
-
 export default function PatientReferralsPage() {
   const { data: session } = useSession();
+  const language = useLanguage();
+  const t = translations[language];
+  
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [stats, setStats] = useState<PatientStats>({
@@ -114,6 +257,16 @@ export default function PatientReferralsPage() {
   const [creditsBalance, setCreditsBalance] = useState(0);
   const [referralCode, setReferralCode] = useState('');
   const [doctorId, setDoctorId] = useState('');
+
+  // Status configuration with translations
+  const statusConfig = {
+    PENDING: { label: t.status.PENDING, color: 'bg-amber-500/20 text-amber-300 border-amber-500/30', icon: Clock },
+    CONTACTED: { label: t.status.CONTACTED, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: Users },
+    CONVERTED: { label: t.status.CONVERTED, color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle },
+    REJECTED: { label: t.status.REJECTED, color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: Clock },
+    APPROVED: { label: t.status.APPROVED, color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', icon: CheckCircle },
+    FULFILLED: { label: t.status.FULFILLED, color: 'bg-green-500/20 text-green-300 border-green-500/30', icon: CheckCircle }
+  };
 
   // Carregar dados do dashboard quando o componente montar
   useEffect(() => {
@@ -170,14 +323,14 @@ export default function PatientReferralsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message || 'Recompensa resgatada com sucesso!');
+        toast.success(data.message || t.toastMessages.rewardRedeemed);
         await loadDashboard(); // Recarregar dados
       } else {
-        toast.error(data.error || 'Erro ao resgatar recompensa');
+        toast.error(data.error || t.toastMessages.errorRedeeming);
       }
     } catch (error) {
       console.error('Erro ao resgatar recompensa:', error);
-      toast.error('Erro de conexão. Tente novamente.');
+      toast.error(t.toastMessages.connectionError);
     } finally {
       setRedeeming(null);
     }
@@ -199,7 +352,7 @@ export default function PatientReferralsPage() {
     console.log('Attempting to copy link:', link);
     
     if (!link) {
-      toast.error('Não foi possível gerar o link de indicação');
+      toast.error(t.toastMessages.errorGeneratingLink);
       return;
     }
 
@@ -221,13 +374,13 @@ export default function PatientReferralsPage() {
           const success = document.execCommand('copy');
           console.log('Fallback copy result:', success);
           if (success) {
-            toast.success('Link copiado para a área de transferência!');
+            toast.success(t.toastMessages.linkCopied);
           } else {
-            toast.error('Erro ao copiar link. Tente novamente.');
+            toast.error(t.toastMessages.errorCopyingLink);
           }
         } catch (err) {
           console.error('Fallback copy failed:', err);
-          toast.error('Erro ao copiar link. Tente novamente.');
+          toast.error(t.toastMessages.errorCopyingLink);
         } finally {
           document.body.removeChild(textArea);
         }
@@ -245,7 +398,7 @@ export default function PatientReferralsPage() {
       // Usar clipboard API moderna
       console.log('Using modern clipboard API');
         await navigator.clipboard.writeText(link);
-        toast.success('Link copiado para a área de transferência!');
+        toast.success(t.toastMessages.linkCopied);
       console.log('Link copied successfully');
       } catch (error) {
       console.error('Error copying link:', error);
@@ -266,20 +419,20 @@ export default function PatientReferralsPage() {
         document.body.removeChild(textArea);
         
         if (success) {
-          toast.success('Link copiado para a área de transferência!');
+          toast.success(t.toastMessages.linkCopied);
         } else {
-          toast.error('Erro ao copiar link. Tente copiar manualmente: ' + link);
+          toast.error(t.toastMessages.copyManually + link);
         }
       } catch (fallbackError) {
         console.error('Fallback copy also failed:', fallbackError);
-        toast.error('Erro ao copiar link. Tente copiar manualmente: ' + link);
+        toast.error(t.toastMessages.copyManually + link);
       }
     }
   };
 
   const copyReferralCode = async () => {
     if (!referralCode) {
-      toast.error('Código de indicação não disponível');
+      toast.error(t.toastMessages.codeNotAvailable);
       return;
     }
 
@@ -298,10 +451,10 @@ export default function PatientReferralsPage() {
         
         try {
           document.execCommand('copy');
-          toast.success('Código copiado para a área de transferência!');
+          toast.success(t.toastMessages.codeCopied);
         } catch (err) {
           console.error('Fallback copy failed:', err);
-          toast.error('Erro ao copiar código. Tente novamente.');
+          toast.error(t.toastMessages.errorCopyingCode);
         } finally {
           document.body.removeChild(textArea);
         }
@@ -309,7 +462,7 @@ export default function PatientReferralsPage() {
       }
 
         await navigator.clipboard.writeText(referralCode);
-      toast.success('Código copiado para a área de transferência!');
+      toast.success(t.toastMessages.codeCopied);
     } catch (error) {
       console.error('Error copying code:', error);
       
@@ -326,12 +479,20 @@ export default function PatientReferralsPage() {
         
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        toast.success('Código copiado para a área de transferência!');
+        toast.success(t.toastMessages.codeCopied);
       } catch (fallbackError) {
         console.error('Fallback copy also failed:', fallbackError);
-        toast.error('Erro ao copiar código. Tente copiar manualmente: ' + referralCode);
+        toast.error(t.toastMessages.errorCopyingCode + ': ' + referralCode);
       }
     }
+  };
+
+  // Format date based on language
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return language === 'en' 
+      ? date.toLocaleDateString('en-US')
+      : date.toLocaleDateString('pt-BR');
   };
 
   if (loading) {
@@ -468,10 +629,10 @@ export default function PatientReferralsPage() {
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">
                 <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
-                  Programa de Indicações
+                  {t.pageTitle}
                 </h1>
                 <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
-                  Indique amigos e ganhe recompensas incríveis
+                  {t.pageDescription}
                 </p>
                 
                 {/* Action Buttons Compactos */}
@@ -483,7 +644,7 @@ export default function PatientReferralsPage() {
                       className="bg-gray-800/50 border-gray-700/50 text-white hover:bg-gray-700/50 backdrop-blur-sm text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4"
                     >
                       <Copy className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                      Código: {referralCode}
+                      {language === 'en' ? 'Code' : 'Código'}: {referralCode}
                     </Button>
                   )}
                   {doctorId && referralCode && (
@@ -492,7 +653,7 @@ export default function PatientReferralsPage() {
                       className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 shadow-md shadow-teal-400/25"
                     >
                       <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                      Compartilhar Link
+                      {t.shareLink}
                     </Button>
                   )}
                 </div>
@@ -502,24 +663,24 @@ export default function PatientReferralsPage() {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
                     <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
                       <div className="text-xl lg:text-2xl font-light text-teal-400 mb-1">{creditsBalance}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">Créditos Disponíveis</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">{t.availableCredits}</div>
                     </div>
 
                     <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
                       <div className="text-xl lg:text-2xl font-light text-white mb-1">{stats.totalReferrals}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">Total de Indicações</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">{t.totalReferrals}</div>
                     </div>
 
                     <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
                       <div className="text-xl lg:text-2xl font-light text-green-400 mb-1">{stats.convertedReferrals}</div>
-                      <div className="text-gray-400 text-xs lg:text-sm">Convertidas</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">{t.converted}</div>
                     </div>
 
                     <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl p-3 lg:p-4 backdrop-blur-sm">
                       <div className="text-xl lg:text-2xl font-light text-purple-400 mb-1">
                         {stats.totalReferrals > 0 ? Math.round((stats.convertedReferrals / stats.totalReferrals) * 100) : 0}%
                       </div>
-                      <div className="text-gray-400 text-xs lg:text-sm">Taxa de Conversão</div>
+                      <div className="text-gray-400 text-xs lg:text-sm">{t.conversionRate}</div>
                     </div>
                   </div>
                 )}
@@ -539,9 +700,9 @@ export default function PatientReferralsPage() {
                     <Gift className="h-4 w-4 lg:h-5 lg:w-5 text-teal-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">Recompensas</CardTitle>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.rewards}</CardTitle>
                     <CardDescription className="text-gray-400 text-xs lg:text-sm">
-                      Use seus créditos para resgatar recompensas
+                      {t.rewardsDescription}
                     </CardDescription>
                   </div>
                 </div>
@@ -556,13 +717,13 @@ export default function PatientReferralsPage() {
                       </div>
                       <div className="text-right ml-3 lg:ml-4">
                         <div className="text-white font-medium text-sm lg:text-base">{reward.creditsRequired}</div>
-                        <div className="text-gray-400 text-xs">créditos</div>
+                        <div className="text-gray-400 text-xs">{t.credits}</div>
                       </div>
                     </div>
                     
                     {reward.maxRedemptions && (
                       <p className="text-gray-500 text-xs mb-2 lg:mb-3">
-                        Restam: {reward.maxRedemptions - reward.currentRedemptions} resgates
+                        {t.remaining}: {reward.maxRedemptions - reward.currentRedemptions} {t.redemptions}
                       </p>
                     )}
 
@@ -578,14 +739,14 @@ export default function PatientReferralsPage() {
                       {redeeming === reward.id ? (
                         <>
                           <Loader2 className="mr-1.5 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4 animate-spin" />
-                          Resgatando...
+                          {t.redeeming}
                         </>
                       ) : creditsBalance < reward.creditsRequired ? (
-                        'Créditos insuficientes'
+                        t.insufficientCredits
                       ) : (reward.maxRedemptions && reward.currentRedemptions >= reward.maxRedemptions) ? (
-                        'Esgotado'
+                        t.soldOut
                       ) : (
-                        'Resgatar'
+                        t.redeem
                       )}
                     </Button>
                   </div>
@@ -596,8 +757,8 @@ export default function PatientReferralsPage() {
                     <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
                       <Gift className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">Nenhuma recompensa disponível</div>
-                    <div className="text-gray-400 text-xs lg:text-sm">Aguarde novas recompensas do seu médico</div>
+                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">{t.noRewardsAvailable}</div>
+                    <div className="text-gray-400 text-xs lg:text-sm">{t.waitForRewards}</div>
                   </div>
                 )}
               </CardContent>
@@ -611,9 +772,9 @@ export default function PatientReferralsPage() {
                     <UserPlus className="h-4 w-4 lg:h-5 lg:w-5 text-green-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">Suas Indicações</CardTitle>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.yourReferrals}</CardTitle>
                     <CardDescription className="text-gray-400 text-xs lg:text-sm">
-                      Pessoas que você indicou
+                      {t.referralsDescription}
                     </CardDescription>
                   </div>
                 </div>
@@ -635,14 +796,19 @@ export default function PatientReferralsPage() {
                       </div>
                       
                       <div className="flex justify-between items-center text-xs lg:text-sm text-gray-400 mb-2">
-                        <span>Dr(a). {referral.doctor.name}</span>
-                        <span>{new Date(referral.createdAt).toLocaleDateString('pt-BR')}</span>
+                        <span>
+                          {referral.doctor.name.toLowerCase().startsWith('dr') 
+                            ? referral.doctor.name 
+                            : `Dr(a). ${referral.doctor.name}`
+                          }
+                        </span>
+                        <span>{formatDate(referral.createdAt)}</span>
                       </div>
 
                       {referral.credits.length > 0 && (
                         <div className="text-teal-400 text-xs lg:text-sm font-medium flex items-center gap-1">
                           <Star className="h-3 w-3 lg:h-4 lg:w-4" />
-                          +{referral.credits.reduce((sum, credit) => sum + credit.amount, 0)} créditos ganhos
+                          +{referral.credits.reduce((sum, credit) => sum + credit.amount, 0)} {t.creditsEarned}
                         </div>
                       )}
                     </div>
@@ -654,15 +820,15 @@ export default function PatientReferralsPage() {
                     <div className="p-2 lg:p-3 bg-gray-800/50 rounded-full w-fit mx-auto mb-3 lg:mb-4">
                       <UserPlus className="h-6 w-6 lg:h-8 lg:w-8 text-gray-500" />
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">Nenhuma indicação ainda</div>
-                    <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">Comece a indicar pessoas para ganhar créditos</div>
+                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">{t.noReferralsYet}</div>
+                    <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">{t.startReferringDescription}</div>
                     {doctorId && (
                       <Button 
                         onClick={copyReferralLink} 
                         className="bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black font-medium text-xs lg:text-sm h-7 lg:h-8 px-3 lg:px-4"
                       >
                         <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                        Começar a Indicar
+                        {t.startReferring}
                       </Button>
                     )}
                   </div>
@@ -680,9 +846,9 @@ export default function PatientReferralsPage() {
                     <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5 text-purple-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-base lg:text-xl font-light">Histórico de Resgates</CardTitle>
+                    <CardTitle className="text-white text-base lg:text-xl font-light">{t.redemptionHistory}</CardTitle>
                     <CardDescription className="text-gray-400 text-xs lg:text-sm">
-                      Recompensas que você já resgatou
+                      {t.redemptionDescription}
                     </CardDescription>
                   </div>
                 </div>
@@ -703,8 +869,8 @@ export default function PatientReferralsPage() {
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center text-xs lg:text-sm text-gray-400">
-                        <span>{redemption.creditsUsed} créditos usados</span>
-                        <span>{new Date(redemption.redeemedAt).toLocaleDateString('pt-BR')}</span>
+                        <span>{redemption.creditsUsed} {t.creditsUsed}</span>
+                        <span>{formatDate(redemption.redeemedAt)}</span>
                       </div>
                     </div>
                   );
