@@ -21,7 +21,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem atualizar configurações da clínica.' }, { status: 403 });
     }
 
-    const { name, description, email, phone, address, city, state, zipCode, country, website } = await request.json();
+    const { name, description, logo, email, phone, address, city, state, zipCode, country, website } = await request.json();
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Nome da clínica é obrigatório' }, { status: 400 });
@@ -55,6 +55,7 @@ export async function PUT(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
+        logo: logo?.trim() || null,
         email: email?.trim() || null,
         phone: phone?.trim() || null,
         address: address?.trim() || null,

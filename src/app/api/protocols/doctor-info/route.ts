@@ -34,16 +34,52 @@ export async function GET(request: NextRequest) {
       doctorName: user?.doctor?.name 
     });
 
+    // Function to get clinic logo for a doctor
+    const getClinicLogo = async (doctorId: string) => {
+      // First try to find clinic where doctor is owner
+      const ownedClinic = await prisma.clinic.findFirst({
+        where: { ownerId: doctorId },
+        select: { logo: true, name: true }
+      });
+
+      if (ownedClinic?.logo) {
+        return { logo: ownedClinic.logo, clinicName: ownedClinic.name };
+      }
+
+      // Then try to find clinic where doctor is a member
+      const memberClinic = await prisma.clinicMember.findFirst({
+        where: { 
+          userId: doctorId,
+          isActive: true 
+        },
+        include: {
+          clinic: {
+            select: { logo: true, name: true }
+          }
+        }
+      });
+
+      if (memberClinic?.clinic?.logo) {
+        return { logo: memberClinic.clinic.logo, clinicName: memberClinic.clinic.name };
+      }
+
+      return { logo: null, clinicName: null };
+    };
+
     // If user has a direct doctor relationship, use that
     if (user?.doctor) {
       console.log('Using direct doctor relationship:', user.doctor);
+      const clinicInfo = await getClinicLogo(user.doctor.id);
+      
       const response = NextResponse.json({
         success: true,
         doctor: {
           id: user.doctor.id,
           name: user.doctor.name,
           email: user.doctor.email,
-          image: user.doctor.image
+          image: user.doctor.image,
+          clinicLogo: clinicInfo.logo,
+          clinicName: clinicInfo.clinicName
         }
       });
       
@@ -92,13 +128,17 @@ export async function GET(request: NextRequest) {
       
       console.log('Using protocol doctor:', doctor);
       
+      const clinicInfo = await getClinicLogo(doctor.id);
+      
       const response = NextResponse.json({
         success: true,
         doctor: {
           id: doctor.id,
           name: doctor.name,
           email: doctor.email,
-          image: doctor.image
+          image: doctor.image,
+          clinicLogo: clinicInfo.logo,
+          clinicName: clinicInfo.clinicName
         }
       });
       

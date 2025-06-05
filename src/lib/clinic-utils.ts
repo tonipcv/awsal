@@ -5,6 +5,7 @@ export interface ClinicWithDetails {
   id: string;
   name: string;
   description: string | null;
+  logo: string | null;
   ownerId: string;
   isActive: boolean;
   createdAt: Date;

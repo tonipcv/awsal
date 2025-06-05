@@ -29,6 +29,7 @@ import ProtocolModal from '@/components/ProtocolModal';
 // Translations for internationalization
 const translations = {
   pt: {
+    greeting: (name: string) => `Olá, ${name}!`,
     yourProtocols: 'Seus Protocolos',
     trackProgress: 'Acompanhe seu progresso e continue seu tratamento',
     activeProtocol: 'Protocolo Ativo',
@@ -52,6 +53,7 @@ const translations = {
     loading: 'Carregando...'
   },
   en: {
+    greeting: (name: string) => `Hi, ${name}!`,
     yourProtocols: 'Your Protocols',
     trackProgress: 'Track your progress and continue your treatment',
     activeProtocol: 'Active Protocol',
@@ -284,7 +286,8 @@ export default function ProtocolsPage() {
             {/* Hero Skeleton */}
             <div className="mb-6 lg:mb-8">
               <div className="text-center max-w-3xl mx-auto">
-                <div className="h-8 lg:h-12 bg-gray-800/50 rounded-lg w-48 mx-auto mb-3 lg:mb-4 animate-pulse"></div>
+                <div className="h-10 lg:h-14 bg-gray-800/50 rounded-lg w-56 mx-auto mb-2 lg:mb-3 animate-pulse"></div>
+                <div className="h-6 lg:h-8 bg-gray-700/50 rounded-lg w-40 mx-auto mb-3 lg:mb-4 animate-pulse"></div>
                 <div className="h-4 lg:h-6 bg-gray-700/50 rounded w-64 mx-auto mb-6 lg:mb-8 animate-pulse"></div>
                 
                 {/* Stats Skeleton */}
@@ -348,9 +351,12 @@ export default function ProtocolsPage() {
           <div className="relative py-6 lg:py-8">
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">
-                <h1 className="text-2xl lg:text-4xl font-light text-white mb-2 lg:mb-3 tracking-tight">
-                  {t.yourProtocols}
+                <h1 className="text-3xl lg:text-5xl font-light text-white mb-2 lg:mb-3 tracking-tight">
+                  {t.greeting(session?.user?.name || 'Paciente')}
                 </h1>
+                <h2 className="text-xl lg:text-2xl font-light text-gray-300 mb-2 lg:mb-3 tracking-tight">
+                  {t.yourProtocols}
+                </h2>
                 <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
                   {t.trackProgress}
                 </p>

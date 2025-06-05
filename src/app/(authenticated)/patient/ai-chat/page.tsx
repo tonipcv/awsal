@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send } from 'lucide-react';
+import { Send, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Message {
@@ -37,7 +37,46 @@ export default function PatientAIChatPage() {
   const [loading, setLoading] = useState(false);
   const [doctorId, setDoctorId] = useState<string>('');
   const [isLoadingDoctor, setIsLoadingDoctor] = useState(true);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Detectar teclado virtual no mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const currentHeight = window.visualViewport?.height || window.innerHeight;
+      const fullHeight = window.screen.height;
+      
+      // Se a altura da viewport for significativamente menor que a altura da tela,
+      // provavelmente o teclado está aberto
+      const keyboardThreshold = fullHeight * 0.75;
+      const keyboardIsOpen = currentHeight < keyboardThreshold;
+      
+      setIsKeyboardOpen(keyboardIsOpen);
+      setViewportHeight(currentHeight);
+    };
+
+    // Usar Visual Viewport API se disponível (melhor para mobile)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      handleResize(); // Chamada inicial
+    } else {
+      // Fallback para navegadores que não suportam Visual Viewport API
+      window.addEventListener('resize', handleResize);
+      handleResize(); // Chamada inicial
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -47,10 +86,33 @@ export default function PatientAIChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+    // Verificar posição do scroll após as mensagens serem renderizadas
+    setTimeout(checkScrollPosition, 100);
+  }, [messages, isKeyboardOpen]);
+
+  // Adicionar listener de scroll
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowScrollButton(false);
+  };
+
+  // Função para focar no input e garantir que ele fique visível
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+      // Pequeno delay para garantir que o teclado apareça antes do scroll
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
   };
 
   const loadDoctorInfo = async () => {
@@ -73,19 +135,21 @@ export default function PatientAIChatPage() {
 
   const loadWelcomeMessage = async (docId: string) => {
     try {
+      const patientName = session?.user?.name || 'Patient';
       const welcomeMsg: Message = {
         id: 'welcome',
         role: 'assistant',
-        content: 'Hello! I am your doctor\'s AI assistant. How can I help you today? I can answer questions about your treatment, medications, and healthcare.',
+        content: `Hello ${patientName}! I am your doctor's AI assistant. How can I help you today?`,
         createdAt: new Date().toISOString()
       };
       setMessages([welcomeMsg]);
     } catch (error) {
       console.error('Error loading welcome message:', error);
+      const patientName = session?.user?.name || 'Patient';
       const welcomeMsg: Message = {
         id: 'welcome',
         role: 'assistant',
-        content: 'Hello! How can I help you today?',
+        content: `Hello ${patientName}! How can I help you today?`,
         createdAt: new Date().toISOString()
       };
       setMessages([welcomeMsg]);
@@ -169,6 +233,15 @@ export default function PatientAIChatPage() {
     });
   };
 
+  // Detectar se o usuário está no final do chat
+  const checkScrollPosition = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px de tolerância
+      setShowScrollButton(!isAtBottom && messages.length > 3);
+    }
+  };
+
   // Skeleton Loading Component
   const ChatSkeleton = () => (
     <div className="min-h-screen bg-black">
@@ -177,7 +250,6 @@ export default function PatientAIChatPage() {
         {/* Header Skeleton */}
         <div className="flex-shrink-0 pt-[100px] px-4 pb-6">
           <div className="text-center">
-            <div className="h-8 bg-gray-800/50 rounded-lg w-48 mx-auto mb-3 animate-pulse"></div>
             <div className="h-5 bg-gray-800/30 rounded-lg w-32 mx-auto animate-pulse"></div>
           </div>
         </div>
@@ -185,7 +257,7 @@ export default function PatientAIChatPage() {
         {/* Messages Skeleton */}
         <div className="flex-1 overflow-hidden">
           <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
               {/* Assistant message skeleton */}
               <div className="flex justify-start">
                 <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-gray-800/50 animate-pulse">
@@ -215,11 +287,12 @@ export default function PatientAIChatPage() {
             </div>
 
             {/* Input Skeleton */}
-            <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/50 backdrop-blur-sm p-4 pb-[100px]">
+            <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/90 backdrop-blur-sm p-4 pb-[100px]">
               <div className="flex gap-3">
                 <div className="flex-1 h-12 bg-gray-800/50 rounded-2xl animate-pulse"></div>
                 <div className="w-12 h-12 bg-gray-700/50 rounded-2xl animate-pulse"></div>
               </div>
+              <div className="h-3 bg-gray-800/30 rounded w-48 mx-auto mt-2 animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -233,7 +306,6 @@ export default function PatientAIChatPage() {
           <div className="relative overflow-hidden mb-6">
             <div className="relative py-6">
               <div className="text-center max-w-3xl mx-auto">
-                <div className="h-10 bg-gray-800/50 rounded-lg w-64 mx-auto mb-4 animate-pulse"></div>
                 <div className="h-6 bg-gray-800/30 rounded-lg w-96 mx-auto mb-6 animate-pulse"></div>
                 
                 {/* Stats Skeleton */}
@@ -351,25 +423,28 @@ export default function PatientAIChatPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Mobile: Full screen chat layout */}
-      <div className="lg:hidden fixed inset-0 bg-black flex flex-col">
-        {/* Header fixo - minimalista */}
-        <div className="flex-shrink-0 pt-[100px] px-4 pb-6">
+      <div className="lg:hidden fixed inset-0 bg-black flex flex-col" style={{ height: isKeyboardOpen ? `${viewportHeight}px` : '100vh' }}>
+        {/* Header fixo - mais compacto quando teclado aberto */}
+        <div className={`flex-shrink-0 px-4 ${isKeyboardOpen ? 'pt-[80px] pb-3' : 'pt-[100px] pb-6'} transition-all duration-300`}>
           <div className="text-center">
-            <h1 className="text-3xl font-light text-white mb-2 tracking-tight">
-              Medical Assistant
-            </h1>
-            <p className="text-gray-300 text-base font-light">
-              Available 24/7 to help you
-            </p>
+            {!isKeyboardOpen && (
+              <p className="text-gray-300 text-lg font-light">
+                Available 24/7 to help you
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Área de mensagens - ocupa todo o espaço disponível */}
-        <div className="flex-1 overflow-hidden">
+        {/* Área de mensagens - altura dinâmica */}
+        <div className="flex-1 overflow-hidden relative">
           <div className="h-full flex flex-col">
             
-            {/* Messages container */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {/* Messages container - altura ajustada dinamicamente */}
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3" style={{ 
+              maxHeight: isKeyboardOpen 
+                ? `${viewportHeight - 200}px` // Espaço para header compacto + input
+                : 'calc(100vh - 280px)' // Espaço para header normal + input + navegação
+            }} ref={messagesContainerRef}>
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -424,13 +499,30 @@ export default function PatientAIChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input fixo na parte inferior - com padding para mobile menu */}
-            <div className="flex-shrink-0 border-t border-gray-800/50 bg-black/50 backdrop-blur-sm p-4 pb-[100px]">
+            {/* Botão de scroll para baixo - apenas no mobile */}
+            {showScrollButton && (
+              <div className="absolute bottom-20 right-4 z-10">
+                <Button
+                  onClick={scrollToBottom}
+                  size="icon"
+                  className="rounded-full w-10 h-10 bg-teal-500/90 hover:bg-teal-500 text-white shadow-lg backdrop-blur-sm border border-teal-400/30"
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </Button>
+              </div>
+            )}
+
+            {/* Input fixo na parte inferior - altura dinâmica */}
+            <div className={`flex-shrink-0 border-t border-gray-800/50 bg-black/90 backdrop-blur-sm p-4 transition-all duration-300 ${
+              isKeyboardOpen ? 'pb-4' : 'pb-[100px]'
+            }`}>
               <div className="flex gap-3">
                 <Input
+                  ref={inputRef}
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
+                  onFocus={focusInput}
                   placeholder="Type your question..."
                   disabled={loading}
                   className="flex-1 bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-400 rounded-2xl px-4 py-3 text-base focus:border-teal-400/50 focus:ring-teal-400/20 focus:bg-gray-800/80"
@@ -444,9 +536,6 @@ export default function PatientAIChatPage() {
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                This assistant uses AI and may make mistakes
-              </p>
             </div>
           </div>
         </div>
@@ -461,10 +550,7 @@ export default function PatientAIChatPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20" />
             <div className="relative py-6">
               <div className="text-center max-w-3xl mx-auto">
-                <h1 className="text-4xl font-light text-white mb-3 tracking-tight">
-                  Medical Assistant
-                </h1>
-                <p className="text-lg text-gray-300 mb-4 font-light leading-relaxed">
+                <p className="text-lg text-gray-300 mb-6 font-light leading-relaxed">
                   Available 24/7 to help you with your healthcare questions
                 </p>
                 
@@ -570,6 +656,7 @@ export default function PatientAIChatPage() {
                   placeholder="Type your question..."
                   disabled={loading}
                   className="flex-1 bg-gray-800/60 border-gray-700/50 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:border-teal-400/50 focus:ring-teal-400/20 focus:bg-gray-800/80"
+                  ref={inputRef}
                 />
                 <Button
                   onClick={sendMessage}
@@ -580,9 +667,6 @@ export default function PatientAIChatPage() {
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                This assistant uses AI and may make mistakes
-              </p>
             </div>
           </div>
         </div>

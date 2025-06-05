@@ -46,6 +46,8 @@ interface DoctorInfo {
   name: string;
   image: string | null;
   email: string;
+  clinicLogo: string | null;
+  clinicName: string | null;
 }
 
 // Contexto para compartilhar o role do usuário
@@ -501,6 +503,30 @@ export default function Navigation() {
     )
   );
 
+  const ClinicLogo = ({ doctor }: { doctor: DoctorInfo }) => (
+    doctor.clinicLogo ? (
+      <div className="relative w-full h-full overflow-hidden">
+        <Image
+          src={doctor.clinicLogo}
+          alt={doctor.clinicName || 'Clinic Logo'}
+          fill
+          className="object-contain"
+        />
+      </div>
+    ) : doctor.image ? (
+      <div className="relative w-full h-full rounded-full overflow-hidden">
+        <Image
+          src={doctor.image}
+          alt={`Dr. ${doctor.name}`}
+          fill
+          className="object-cover"
+        />
+      </div>
+    ) : (
+      <UserCircleIcon className="h-5 w-5 text-gray-300" />
+    )
+  );
+
   return (
     <>
       {/* Desktop Navigation - For Doctors/Admins (light theme) or Doctor Info page (dark theme) */}
@@ -577,10 +603,16 @@ export default function Navigation() {
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
             {(effectiveRole === 'PATIENT' || isDoctorInfoPage) ? (
-              // Patient Header - Always show logo, and doctor info when available
+              // Patient Header - Show clinic logo, and doctor info when available
               <>
                 <div className="flex items-center gap-3">
-                  <Link href="/" className="flex items-center">
+                  {doctorInfo ? (
+                    <Link href="/doctor-info" className="flex items-center">
+                      <div className="h-8 w-12 flex items-center justify-center">
+                        <ClinicLogo doctor={doctorInfo} />
+                      </div>
+                    </Link>
+                  ) : (
                     <div className="relative w-6 h-6">
                       <Image
                         src="/logo.png"
@@ -589,7 +621,7 @@ export default function Navigation() {
                         className="object-contain"
                       />
                     </div>
-                  </Link>
+                  )}
                 </div>
                 <div className="flex items-center">
                   {doctorInfo && (
@@ -650,10 +682,21 @@ export default function Navigation() {
                             : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                         )}
                       >
-                        <item.icon className={cn(
-                          "h-4 w-4 stroke-current transition-all duration-300",
-                          pathname === item.href ? "drop-shadow-sm" : ""
-                        )} />
+                        {item.href === '/patient/ai-chat' ? (
+                          <div className="relative w-4 h-4">
+                            <Image
+                              src="/logo.png"
+                              alt="Logo"
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <item.icon className={cn(
+                            "h-4 w-4 stroke-current transition-all duration-300",
+                            pathname === item.href ? "drop-shadow-sm" : ""
+                          )} />
+                        )}
                       </Button>
                     </Link>
                   ))}
@@ -803,8 +846,8 @@ export default function Navigation() {
                 <div className="p-4 border-b border-gray-800">
                   <Link href="/doctor-info">
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors cursor-pointer">
-                    <div className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600">
-                      <DoctorAvatar doctor={doctorInfo} />
+                    <div className="h-10 w-14 flex items-center justify-center">
+                      <ClinicLogo doctor={doctorInfo} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-400">Practicioner</p>

@@ -22,7 +22,10 @@ import {
   Plus,
   CheckCircle,
   Mail,
-  X
+  X,
+  BuildingIcon,
+  CameraIcon,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,6 +33,7 @@ interface ClinicData {
   id: string;
   name: string;
   description: string | null;
+  logo: string | null;
   ownerId: string;
   isActive: boolean;
   createdAt: string;
@@ -86,6 +90,10 @@ export default function ClinicDashboard() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [editingClinicName, setEditingClinicName] = useState('');
   const [editingClinicDescription, setEditingClinicDescription] = useState('');
+  const [editingClinicLogo, setEditingClinicLogo] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   
   // Notification states
@@ -120,6 +128,8 @@ export default function ClinicDashboard() {
         // Initialize editing values
         setEditingClinicName(data.clinic.name);
         setEditingClinicDescription(data.clinic.description || '');
+        setEditingClinicLogo(data.clinic.logo);
+        setLogoPreview(data.clinic.logo);
 
         // Fetch statistics
         const statsResponse = await fetch(`/api/clinic/stats`);
@@ -181,41 +191,101 @@ export default function ClinicDashboard() {
     }
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB');
+      return;
+    }
+
+    setLogoFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile) return null;
+
+    try {
+      setUploadingLogo(true);
+      const formData = new FormData();
+      formData.append('image', logoFile);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Failed to upload logo');
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      throw error;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const saveSettings = async () => {
     try {
       setSavingSettings(true);
       
+      let logoUrl = clinic?.logo;
+      
+      // Upload logo if a new file was selected
+      if (logoFile) {
+        logoUrl = await uploadLogo();
+      }
+
       const response = await fetch('/api/clinic/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          name: editingClinicName,
-          description: editingClinicDescription
-        })
+          name: clinic?.name,
+          description: clinic?.description,
+          logo: logoUrl,
+        }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
 
-      if (response.ok) {
-        setShowSettingsModal(false);
-        fetchClinicData(); // Reload data
-        
-        // Show beautiful success dialog
-        setSuccessTitle('Configurações Salvas!');
-        setSuccessMessage('As configurações da clínica foram atualizadas com sucesso.');
-        setShowSuccessDialog(true);
-      } else {
-        // Show error dialog
-        setSuccessTitle('Erro ao Salvar');
-        setSuccessMessage(data.error || 'Erro ao salvar configurações');
-        setShowSuccessDialog(true);
+      // Update local state
+      if (clinic) {
+        setClinic({ ...clinic, logo: logoUrl || null });
       }
       
+      // Reset logo editing state
+      setEditingClinicLogo(false);
+      setLogoFile(null);
+      setLogoPreview(null);
+      
+      setShowSettingsModal(false);
+      
+      // Refresh the page to update navigation
+      window.location.reload();
     } catch (error) {
       console.error('Error saving settings:', error);
-      setSuccessTitle('Erro ao Salvar');
-      setSuccessMessage('Erro ao salvar configurações');
-      setShowSuccessDialog(true);
+      alert('Failed to save settings. Please try again.');
     } finally {
       setSavingSettings(false);
     }
@@ -750,6 +820,40 @@ export default function ClinicDashboard() {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="clinic-logo-edit" className="text-gray-700 font-semibold">Clinic Logo</Label>
+                  <div className="mt-2 space-y-3">
+                    {/* Current Logo or Preview */}
+                    <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
+                      {logoPreview ? (
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : clinic?.logo ? (
+                        <img
+                          src={clinic.logo}
+                          alt="Current logo"
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <BuildingIcon className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    <Input 
+                      id="clinic-logo-edit"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      disabled={!isAdmin || uploadingLogo}
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Supported formats: JPG, PNG, GIF. Max size: 5MB.
+                    </p>
+                  </div>
+                </div>
+                <div>
                   <Label className="text-gray-700 font-semibold">Owner</Label>
                   <p className="font-bold text-gray-900 mt-1">{clinic.owner.name} ({clinic.owner.email})</p>
                 </div>
@@ -761,10 +865,10 @@ export default function ClinicDashboard() {
                   <div className="flex gap-3 pt-4">
                     <Button 
                       onClick={saveSettings}
-                      disabled={savingSettings}
+                      disabled={savingSettings || uploadingLogo}
                       className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
                     >
-                      {savingSettings ? 'Saving...' : 'Save Changes'}
+                      {uploadingLogo ? 'Uploading Logo...' : savingSettings ? 'Saving...' : 'Save Changes'}
                     </Button>
                     <Button 
                       variant="outline"
