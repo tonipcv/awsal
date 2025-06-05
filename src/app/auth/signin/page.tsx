@@ -1,16 +1,25 @@
 'use client';
 
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from "next-auth/react"
 import { ArrowRight } from 'lucide-react';
 
-export default function LoginDark() {
+function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for clinic slug and redirect if present
+  useEffect(() => {
+    const clinicSlug = searchParams.get('clinicSlug');
+    if (clinicSlug && clinicSlug !== 'null') {
+      router.push(`/login/${clinicSlug}`);
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -128,5 +137,28 @@ export default function LoginDark() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+          <div className="text-center">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto"></div>
+            <p className="mt-4 text-gray-400 text-sm">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginDark() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 } 

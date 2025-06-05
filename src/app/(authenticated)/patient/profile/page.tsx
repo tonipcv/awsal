@@ -109,6 +109,7 @@ export default function ProfilePage() {
   const [userRole, setUserRole] = useState<'DOCTOR' | 'PATIENT' | 'SUPER_ADMIN' | null>(null);
   const [userStats, setUserStats] = useState<UserStats>({});
   const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+  const [clinicSlug, setClinicSlug] = useState<string | null>(null);
 
   // Detect browser language
   useEffect(() => {
@@ -152,6 +153,13 @@ export default function ProfilePage() {
               if (statsResponse.ok) {
                 const stats = await statsResponse.json();
                 setUserStats(stats);
+              }
+
+              // Get clinic slug for logout redirect
+              const clinicSlugResponse = await fetch('/api/patient/clinic-slug');
+              if (clinicSlugResponse.ok) {
+                const clinicData = await clinicSlugResponse.json();
+                setClinicSlug(clinicData.clinicSlug);
               }
             }
           } else {
@@ -579,7 +587,13 @@ export default function ProfilePage() {
                           ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100" 
                           : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
                       )}
-                      onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                      onClick={() => {
+                        if (clinicSlug) {
+                          signOut({ callbackUrl: `/login/${clinicSlug}` });
+                        } else {
+                          signOut({ callbackUrl: '/auth/signin' });
+                        }
+                      }}
                     >
                       <ArrowRightOnRectangleIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
                       {t.signOut}
