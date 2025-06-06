@@ -19,6 +19,7 @@ export interface Protocol {
   modalDescription?: string;
   modalButtonText?: string;
   modalButtonUrl?: string;
+  coverImage?: string;
 }
 
 export interface ProtocolDay {

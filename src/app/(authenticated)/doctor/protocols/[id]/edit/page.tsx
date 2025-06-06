@@ -21,9 +21,12 @@ import {
   XMarkIcon,
   InformationCircleIcon,
   PlayIcon,
-  EyeIcon
+  EyeIcon,
+  PhotoIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
 
@@ -96,6 +99,7 @@ interface ProtocolForm {
   modalDescription: string;
   modalButtonText: string;
   modalButtonUrl: string;
+  coverImage: string;
   days: ProtocolDay[];
   products: ProtocolProduct[];
 }
@@ -110,6 +114,7 @@ export default function EditProtocolPage() {
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [protocol, setProtocol] = useState<ProtocolForm>({
     name: '',
     duration: 7,
@@ -121,6 +126,7 @@ export default function EditProtocolPage() {
     modalDescription: '',
     modalButtonText: '',
     modalButtonUrl: '',
+    coverImage: '',
     days: [],
     products: []
   });
@@ -178,6 +184,7 @@ export default function EditProtocolPage() {
           modalDescription: data.modalDescription || '',
           modalButtonText: data.modalButtonText || '',
           modalButtonUrl: data.modalButtonUrl || '',
+          coverImage: data.coverImage || '',
           days: data.days.map((day: any) => ({
             id: day.id,
             dayNumber: day.dayNumber,
@@ -200,7 +207,7 @@ export default function EditProtocolPage() {
                 modalButtonUrl: task.modalButtonUrl || ''
               }))
             })),
-            tasks: day.tasks.map((task: any) => ({
+            tasks: day.tasks?.map((task: any) => ({
               id: task.id,
               title: task.title,
               description: task.description || '',
@@ -212,22 +219,24 @@ export default function EditProtocolPage() {
               modalTitle: task.modalTitle || '',
               modalButtonText: task.modalButtonText || '',
               modalButtonUrl: task.modalButtonUrl || ''
-            }))
+            })) || []
           })),
           products: protocolProducts
         });
         
+        setIsProtocolLoaded(true);
         console.log('✅ Protocol state set successfully');
       } else {
         console.error('❌ Failed to load protocol:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        setErrorMessage('Failed to load protocol');
+        setShowErrorAlert(true);
       }
     } catch (error) {
       console.error('❌ Error loading protocol:', error);
+      setErrorMessage('Error loading protocol');
+      setShowErrorAlert(true);
     } finally {
       setIsLoadingProtocol(false);
-      setIsProtocolLoaded(true);
     }
   };
 
@@ -563,6 +572,7 @@ export default function EditProtocolPage() {
           modalDescription: protocol.modalDescription,
           modalButtonText: protocol.modalButtonText,
           modalButtonUrl: protocol.modalButtonUrl,
+          coverImage: protocol.coverImage,
           days: protocol.days.map(day => ({
             dayNumber: day.dayNumber,
             sessions: day.sessions.map(session => ({
@@ -728,6 +738,58 @@ export default function EditProtocolPage() {
         duration: reorderedDays.length
       };
     });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select a valid image file');
+      setShowErrorAlert(true);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Image size must be less than 5MB');
+      setShowErrorAlert(true);
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        updateProtocolField('coverImage', url);
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.error || 'Failed to upload image');
+        setShowErrorAlert(true);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setErrorMessage('Error uploading image');
+      setShowErrorAlert(true);
+    } finally {
+      setIsUploadingImage(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  const removeCoverImage = () => {
+    updateProtocolField('coverImage', '');
   };
 
   if (isLoadingProtocol) {
@@ -938,6 +1000,70 @@ export default function EditProtocolPage() {
                             placeholder="Describe the protocol..."
                             className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
+                        </div>
+
+                        {/* Cover Image Upload */}
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Cover Image</Label>
+                          <div className="space-y-3">
+                            {protocol.coverImage ? (
+                              <div className="relative group">
+                                <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200">
+                                  <Image
+                                    src={protocol.coverImage}
+                                    alt="Protocol cover"
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={removeCoverImage}
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                    >
+                                      <TrashIcon className="h-4 w-4 mr-2" />
+                                      Remove
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#5154e7] transition-colors">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                  id="cover-image-upload"
+                                  disabled={isUploadingImage}
+                                />
+                                {isUploadingImage ? (
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#5154e7] border-t-transparent"></div>
+                                    <p className="text-sm text-gray-600 font-medium">Uploading...</p>
+                                  </div>
+                                ) : (
+                                  <label
+                                    htmlFor="cover-image-upload"
+                                    className="cursor-pointer flex flex-col items-center gap-3"
+                                  >
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                                      <PhotoIcon className="h-6 w-6 text-gray-400" />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Upload cover image</p>
+                                      <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                                    </div>
+                                    <div className="border border-[#5154e7] text-[#5154e7] hover:bg-[#5154e7] hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">
+                                      <CloudArrowUpIcon className="h-4 w-4" />
+                                      Choose File
+                                    </div>
+                                  </label>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 

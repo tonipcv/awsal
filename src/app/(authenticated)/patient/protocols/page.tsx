@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
+import Image from 'next/image';
 import ProtocolModal from '@/components/ProtocolModal';
 
 // Translations for internationalization
@@ -89,6 +90,7 @@ interface Protocol {
   modalDescription?: string;
   modalButtonText?: string;
   modalButtonUrl?: string;
+  coverImage?: string;
   days: Array<{
     id: string;
     dayNumber: number;
@@ -436,6 +438,20 @@ export default function ProtocolsPage() {
                         key={assignment.id} 
                           className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
                       >
+                          {/* Cover Image */}
+                          {assignment.protocol.coverImage && (
+                            <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                              <Image
+                                src={assignment.protocol.coverImage}
+                                alt={assignment.protocol.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
+                            </div>
+                          )}
+                          
                           <div className="p-3 lg:p-4">
                             <div className="space-y-3 lg:space-y-4">
                               <div>
@@ -575,6 +591,20 @@ export default function ProtocolsPage() {
                           className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
                         onClick={() => openModal(protocol)}
                       >
+                          {/* Cover Image */}
+                          {protocol.coverImage && (
+                            <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                              <Image
+                                src={protocol.coverImage}
+                                alt={protocol.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+                            </div>
+                          )}
+                          
                           <div className="p-3 lg:p-4">
                             <div className="space-y-3">
                             <div>

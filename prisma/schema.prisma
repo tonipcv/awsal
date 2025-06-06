@@ -244,6 +244,7 @@ model Protocol {
   modalButtonUrl      String?
   showDoctorInfo      Boolean?              @default(false)
   isTemplate          Boolean?              @default(false)
+  coverImage          String?
   days                ProtocolDay[]
   ProtocolDayProgress ProtocolDayProgress[]
   assignments         UserProtocol[]

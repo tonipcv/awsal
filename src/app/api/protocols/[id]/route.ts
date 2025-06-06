@@ -176,7 +176,8 @@ export async function PUT(
       modalVideoUrl,
       modalDescription,
       modalButtonText,
-      modalButtonUrl
+      modalButtonUrl,
+      coverImage
     } = body;
     
     // Atribuir days para estar disponível no catch
@@ -201,7 +202,8 @@ export async function PUT(
       modalVideoUrl !== undefined || 
       modalDescription !== undefined || 
       modalButtonText !== undefined || 
-      modalButtonUrl !== undefined
+      modalButtonUrl !== undefined ||
+      coverImage !== undefined
     ) && !name && !duration && !days;
 
     // Validar campos obrigatórios apenas se não for uma atualização de disponibilidade
@@ -221,6 +223,7 @@ export async function PUT(
     if (modalDescription !== undefined) updateData.modalDescription = modalDescription;
     if (modalButtonText !== undefined) updateData.modalButtonText = modalButtonText;
     if (modalButtonUrl !== undefined) updateData.modalButtonUrl = modalButtonUrl;
+    if (coverImage !== undefined) updateData.coverImage = coverImage;
 
     // Se é apenas atualização de disponibilidade/modal, fazer update simples
     if (isAvailabilityUpdate) {
@@ -240,9 +243,9 @@ export async function PUT(
         data: updateData
       });
 
-      // Se há dias para atualizar, remover e recriar
+      // Se há dias para atualizar, fazer update incremental
       if (days && Array.isArray(days)) {
-        console.log('🔄 Processing days data:', {
+        console.log('🔄 Processing days data incrementally:', {
           daysCount: days.length,
           days: days.map(d => ({
             dayNumber: d.dayNumber,
@@ -251,108 +254,234 @@ export async function PUT(
           }))
         });
 
-        // Remover dados existentes de forma mais eficiente usando cascade
-        // Como ProtocolDay tem cascade, ao deletar os dias, as sessões e tarefas são removidas automaticamente
-        await tx.protocolDay.deleteMany({
-          where: {
-            protocolId: protocolId
+        // Buscar dados existentes
+        const existingDays = await tx.protocolDay.findMany({
+          where: { protocolId: protocolId },
+          include: {
+            sessions: {
+              include: {
+                tasks: true
+              }
+            }
           }
         });
 
-        // Criar novos dias e tarefas
+        // Mapear dias existentes por dayNumber
+        const existingDaysMap = new Map(existingDays.map(day => [day.dayNumber, day]));
+
+        // Processar cada dia
         for (const dayData of days) {
-          console.log(`📅 Creating day ${dayData.dayNumber}:`, {
-            sessionsCount: dayData.sessions?.length || 0,
-            tasksCount: dayData.tasks?.length || 0
-          });
+          const existingDay = existingDaysMap.get(dayData.dayNumber);
+          
+          if (existingDay) {
+            // Dia existe - verificar se precisa atualizar
+            const needsUpdate = 
+              existingDay.title !== (dayData.title || `Dia ${dayData.dayNumber}`) ||
+              existingDay.description !== (dayData.description || null);
 
-          const protocolDay = await tx.protocolDay.create({
-            data: {
-              dayNumber: dayData.dayNumber,
-              title: dayData.title || `Dia ${dayData.dayNumber}`,
-              description: dayData.description || null,
-              protocolId: protocol.id
-            }
-          });
-
-          // Criar sessões se existirem
-          if (dayData.sessions && Array.isArray(dayData.sessions)) {
-            console.log(`📝 Creating ${dayData.sessions.length} sessions for day ${dayData.dayNumber}`);
-            for (const sessionData of dayData.sessions) {
-              console.log(`  📝 Creating session:`, {
-                name: sessionData.name,
-                title: sessionData.title,
-                tasksCount: sessionData.tasks?.length || 0
-              });
-
-              const protocolSession = await tx.protocolSession.create({
+            if (needsUpdate) {
+              console.log(`📅 Updating existing day ${dayData.dayNumber}`);
+              await tx.protocolDay.update({
+                where: { id: existingDay.id },
                 data: {
-                  title: sessionData.title || sessionData.name || 'Sessão sem nome',
-                  description: sessionData.description || null,
-                  sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
-                  protocolDayId: protocolDay.id
+                  title: dayData.title || `Dia ${dayData.dayNumber}`,
+                  description: dayData.description || null
                 }
               });
+            } else {
+              console.log(`📅 Day ${dayData.dayNumber} unchanged, skipping update`);
+            }
 
-              // Criar tarefas da sessão (mesmo que não haja tarefas, a sessão deve ser criada)
-              if (sessionData.tasks && Array.isArray(sessionData.tasks) && sessionData.tasks.length > 0) {
-                console.log(`    📋 Creating ${sessionData.tasks.length} tasks for session`);
-                for (const taskData of sessionData.tasks) {
-                  await tx.protocolTask.create({
+            // Processar sessões do dia
+            if (dayData.sessions && Array.isArray(dayData.sessions)) {
+              const existingSessionsMap = new Map(existingDay.sessions.map(session => [session.sessionNumber, session]));
+
+              for (const sessionData of dayData.sessions) {
+                const sessionNumber = sessionData.sessionNumber || sessionData.order || 1;
+                const existingSession = existingSessionsMap.get(sessionNumber);
+
+                if (existingSession) {
+                  // Sessão existe - verificar se precisa atualizar
+                  const sessionNeedsUpdate = 
+                    existingSession.title !== (sessionData.title || sessionData.name || 'Sessão sem nome') ||
+                    existingSession.description !== (sessionData.description || null);
+
+                  if (sessionNeedsUpdate) {
+                    console.log(`📝 Updating existing session ${sessionNumber} for day ${dayData.dayNumber}`);
+                    await tx.protocolSession.update({
+                      where: { id: existingSession.id },
+                      data: {
+                        title: sessionData.title || sessionData.name || 'Sessão sem nome',
+                        description: sessionData.description || null
+                      }
+                    });
+                  } else {
+                    console.log(`📝 Session ${sessionNumber} for day ${dayData.dayNumber} unchanged, skipping update`);
+                  }
+
+                  // Processar tarefas da sessão (sempre recriar se houver mudanças)
+                  if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+                    // Comparar tarefas existentes com novas
+                    const existingTasks = existingSession.tasks;
+                    const newTasks = sessionData.tasks.filter((task: any) => task.title.trim());
+
+                    // Se o número de tarefas ou conteúdo mudou, recriar
+                    const tasksChanged = 
+                      existingTasks.length !== newTasks.length ||
+                      existingTasks.some((existingTask, index) => {
+                        const newTask = newTasks[index];
+                        return !newTask || 
+                          existingTask.title !== newTask.title ||
+                          existingTask.description !== (newTask.description || null) ||
+                          existingTask.hasMoreInfo !== (newTask.hasMoreInfo || false) ||
+                          existingTask.videoUrl !== (newTask.videoUrl || null) ||
+                          existingTask.fullExplanation !== (newTask.fullExplanation || null) ||
+                          existingTask.productId !== (newTask.productId || null) ||
+                          existingTask.modalTitle !== (newTask.modalTitle || null) ||
+                          existingTask.modalButtonText !== (newTask.modalButtonText || null) ||
+                          existingTask.modalButtonUrl !== (newTask.modalButtonUrl || null);
+                      });
+
+                    if (tasksChanged) {
+                      console.log(`📋 Tasks changed for session ${sessionNumber}, updating...`);
+                      // Deletar tarefas existentes
+                      await tx.protocolTask.deleteMany({
+                        where: { protocolSessionId: existingSession.id }
+                      });
+
+                      // Criar novas tarefas
+                      for (const taskData of newTasks) {
+                        await tx.protocolTask.create({
+                          data: {
+                            title: taskData.title,
+                            description: taskData.description || null,
+                            type: taskData.type || 'task',
+                            duration: taskData.duration || null,
+                            orderIndex: taskData.orderIndex || taskData.order || 0,
+                            hasMoreInfo: taskData.hasMoreInfo || false,
+                            videoUrl: taskData.videoUrl || null,
+                            fullExplanation: taskData.fullExplanation || null,
+                            productId: taskData.productId || null,
+                            modalTitle: taskData.modalTitle || null,
+                            modalButtonText: taskData.modalButtonText || null,
+                            modalButtonUrl: taskData.modalButtonUrl || null,
+                            protocolSessionId: existingSession.id
+                          }
+                        });
+                      }
+                    } else {
+                      console.log(`📋 Tasks for session ${sessionNumber} unchanged, skipping update`);
+                    }
+                  }
+                } else {
+                  // Sessão nova - criar
+                  console.log(`📝 Creating new session ${sessionNumber} for day ${dayData.dayNumber}`);
+                  const protocolSession = await tx.protocolSession.create({
                     data: {
-                      title: taskData.title,
-                      description: taskData.description || null,
-                      type: taskData.type || 'task',
-                      duration: taskData.duration || null,
-                      orderIndex: taskData.orderIndex || taskData.order || 0,
-                      hasMoreInfo: taskData.hasMoreInfo || false,
-                      videoUrl: taskData.videoUrl || null,
-                      fullExplanation: taskData.fullExplanation || null,
-                      productId: taskData.productId || null,
-                      modalTitle: taskData.modalTitle || null,
-                      modalButtonText: taskData.modalButtonText || null,
-                      modalButtonUrl: taskData.modalButtonUrl || null,
-                      protocolSessionId: protocolSession.id
+                      title: sessionData.title || sessionData.name || 'Sessão sem nome',
+                      description: sessionData.description || null,
+                      sessionNumber: sessionNumber,
+                      protocolDayId: existingDay.id
                     }
                   });
+
+                  // Criar tarefas da nova sessão
+                  if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+                    const validTasks = sessionData.tasks.filter((task: any) => task.title.trim());
+                    for (const taskData of validTasks) {
+                      await tx.protocolTask.create({
+                        data: {
+                          title: taskData.title,
+                          description: taskData.description || null,
+                          type: taskData.type || 'task',
+                          duration: taskData.duration || null,
+                          orderIndex: taskData.orderIndex || taskData.order || 0,
+                          hasMoreInfo: taskData.hasMoreInfo || false,
+                          videoUrl: taskData.videoUrl || null,
+                          fullExplanation: taskData.fullExplanation || null,
+                          productId: taskData.productId || null,
+                          modalTitle: taskData.modalTitle || null,
+                          modalButtonText: taskData.modalButtonText || null,
+                          modalButtonUrl: taskData.modalButtonUrl || null,
+                          protocolSessionId: protocolSession.id
+                        }
+                      });
+                    }
+                  }
                 }
-              } else {
-                console.log(`    📋 Session created without tasks (empty session)`);
+              }
+
+              // Remover sessões que não existem mais
+              const newSessionNumbers = new Set(dayData.sessions.map((s: any) => s.sessionNumber || s.order || 1));
+              for (const existingSession of existingDay.sessions) {
+                if (!newSessionNumbers.has(existingSession.sessionNumber)) {
+                  console.log(`🗑️ Removing session ${existingSession.sessionNumber} from day ${dayData.dayNumber}`);
+                  await tx.protocolSession.delete({
+                    where: { id: existingSession.id }
+                  });
+                }
               }
             }
-          }
-
-          // Criar tarefas diretas do dia (sem sessão)
-          if (dayData.tasks && Array.isArray(dayData.tasks) && dayData.tasks.length > 0) {
-            console.log(`📋 Creating default session for ${dayData.tasks.length} direct day tasks`);
-            const defaultSession = await tx.protocolSession.create({
+          } else {
+            // Dia novo - criar
+            console.log(`📅 Creating new day ${dayData.dayNumber}`);
+            const protocolDay = await tx.protocolDay.create({
               data: {
-                title: 'Sessão Principal',
-                description: 'Sessão principal do dia',
-                sessionNumber: 1,
-                protocolDayId: protocolDay.id
+                dayNumber: dayData.dayNumber,
+                title: dayData.title || `Dia ${dayData.dayNumber}`,
+                description: dayData.description || null,
+                protocolId: protocol.id
               }
             });
 
-            for (const taskData of dayData.tasks) {
-              await tx.protocolTask.create({
-                data: {
-                  title: taskData.title,
-                  description: taskData.description || null,
-                  type: taskData.type || 'task',
-                  duration: taskData.duration || null,
-                  orderIndex: taskData.orderIndex || taskData.order || 0,
-                  hasMoreInfo: taskData.hasMoreInfo || false,
-                  videoUrl: taskData.videoUrl || null,
-                  fullExplanation: taskData.fullExplanation || null,
-                  productId: taskData.productId || null,
-                  modalTitle: taskData.modalTitle || null,
-                  modalButtonText: taskData.modalButtonText || null,
-                  modalButtonUrl: taskData.modalButtonUrl || null,
-                  protocolSessionId: defaultSession.id
+            // Criar sessões do novo dia
+            if (dayData.sessions && Array.isArray(dayData.sessions)) {
+              for (const sessionData of dayData.sessions) {
+                const protocolSession = await tx.protocolSession.create({
+                  data: {
+                    title: sessionData.title || sessionData.name || 'Sessão sem nome',
+                    description: sessionData.description || null,
+                    sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
+                    protocolDayId: protocolDay.id
+                  }
+                });
+
+                // Criar tarefas da sessão
+                if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
+                  const validTasks = sessionData.tasks.filter((task: any) => task.title.trim());
+                  for (const taskData of validTasks) {
+                    await tx.protocolTask.create({
+                      data: {
+                        title: taskData.title,
+                        description: taskData.description || null,
+                        type: taskData.type || 'task',
+                        duration: taskData.duration || null,
+                        orderIndex: taskData.orderIndex || taskData.order || 0,
+                        hasMoreInfo: taskData.hasMoreInfo || false,
+                        videoUrl: taskData.videoUrl || null,
+                        fullExplanation: taskData.fullExplanation || null,
+                        productId: taskData.productId || null,
+                        modalTitle: taskData.modalTitle || null,
+                        modalButtonText: taskData.modalButtonText || null,
+                        modalButtonUrl: taskData.modalButtonUrl || null,
+                        protocolSessionId: protocolSession.id
+                      }
+                    });
+                  }
                 }
-              });
+              }
             }
+          }
+        }
+
+        // Remover dias que não existem mais
+        const newDayNumbers = new Set(days.map(d => d.dayNumber));
+        for (const existingDay of existingDays) {
+          if (!newDayNumbers.has(existingDay.dayNumber)) {
+            console.log(`🗑️ Removing day ${existingDay.dayNumber}`);
+            await tx.protocolDay.delete({
+              where: { id: existingDay.id }
+            });
           }
         }
       }
@@ -438,37 +567,8 @@ export async function PUT(
               }
             }
 
-            // Criar tarefas diretas do dia (sem sessão)
-            if (dayData.tasks && Array.isArray(dayData.tasks) && dayData.tasks.length > 0) {
-              const defaultSession = await prisma.protocolSession.create({
-                data: {
-                  title: 'Sessão Principal',
-                  description: 'Sessão principal do dia',
-                  sessionNumber: 1,
-                  protocolDayId: protocolDay.id
-                }
-              });
-
-              for (const taskData of dayData.tasks) {
-                await prisma.protocolTask.create({
-                  data: {
-                    title: taskData.title,
-                    description: taskData.description || null,
-                    type: taskData.type || 'task',
-                    duration: taskData.duration || null,
-                    orderIndex: taskData.orderIndex || taskData.order || 0,
-                    hasMoreInfo: taskData.hasMoreInfo || false,
-                    videoUrl: taskData.videoUrl || null,
-                    fullExplanation: taskData.fullExplanation || null,
-                    productId: taskData.productId || null,
-                    modalTitle: taskData.modalTitle || null,
-                    modalButtonText: taskData.modalButtonText || null,
-                    modalButtonUrl: taskData.modalButtonUrl || null,
-                    protocolSessionId: defaultSession.id
-                  }
-                });
-              }
-            }
+            // Note: Direct tasks are no longer automatically wrapped in sessions
+            // Users have full control over protocol structure
           }
         }
 
