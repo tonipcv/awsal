@@ -44,9 +44,9 @@ export default function ProtocolModal({
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-background/95 backdrop-blur border border-border/20 rounded-lg shadow-2xl">
+      <div className="relative w-full max-w-2xl bg-gray-900 backdrop-blur border border-gray-700 rounded-lg shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border/20">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <h2 className="text-xl font-light text-white">
             {title}
           </h2>
@@ -54,7 +54,7 @@ export default function ProtocolModal({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-white/70 hover:text-white hover:bg-white/10"
+            className="text-gray-400 hover:text-white hover:bg-gray-800"
           >
             <XMarkIcon className="h-5 w-5" />
           </Button>
@@ -64,7 +64,7 @@ export default function ProtocolModal({
         <div className="p-6 space-y-6">
           {/* Video */}
           {videoUrl && (
-            <div className="relative aspect-video bg-background/20 rounded-lg overflow-hidden">
+            <div className="relative aspect-video bg-gray-800 rounded-lg overflow-hidden">
               {!isVideoLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-16 h-16 bg-turquoise/20 rounded-full flex items-center justify-center">
@@ -89,7 +89,7 @@ export default function ProtocolModal({
           {/* Description */}
           {description && (
             <div className="prose prose-invert max-w-none">
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-gray-300 leading-relaxed">
                 {description}
               </p>
             </div>
@@ -97,18 +97,18 @@ export default function ProtocolModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-border/20">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-700">
           <Button
             variant="ghost"
             onClick={onClose}
-            className="text-white/70 hover:text-white"
+            className="text-gray-400 hover:text-white hover:bg-gray-800"
           >
             Fechar
           </Button>
           {buttonUrl && (
             <Button
               onClick={handleButtonClick}
-              className="bg-turquoise hover:bg-turquoise/90 text-background"
+              className="bg-turquoise hover:bg-turquoise/90 text-black font-medium"
             >
               <span className="mr-2">{buttonText}</span>
               <ArrowTopRightOnSquareIcon className="h-4 w-4" />

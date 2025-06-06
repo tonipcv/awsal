@@ -439,20 +439,22 @@ export default function ProtocolsPage() {
                           <div className="p-3 lg:p-4">
                             <div className="space-y-3 lg:space-y-4">
                               <div>
-                                <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-turquoise transition-colors line-clamp-1">
+                                <div className="mb-2">
+                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-turquoise transition-colors line-clamp-2 mb-2">
                                     {assignment.protocol.name}
                                   </h3>
-                                  {isActive && (
-                                    <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                      {t.active}
-                                    </Badge>
-                                  )}
-                                  {isCompleted && (
-                                    <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                      {t.completed}
-                                    </Badge>
-                                  )}
+                                  <div className="flex items-center gap-2">
+                                    {isActive && (
+                                      <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                        {t.active}
+                                      </Badge>
+                                    )}
+                                    {isCompleted && (
+                                      <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                        {t.completed}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Doctor Info - Only show if showDoctorInfo is true */}
@@ -576,8 +578,8 @@ export default function ProtocolsPage() {
                           <div className="p-3 lg:p-4">
                             <div className="space-y-3">
                             <div>
-                              <div className="flex items-center gap-2 lg:gap-3 mb-2">
-                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-1">
+                              <div className="mb-2">
+                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-2 mb-2">
                                   {protocol.name}
                                 </h3>
                                   <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
@@ -640,7 +642,7 @@ export default function ProtocolsPage() {
                               <Button 
                                 variant="outline"
                                 size="sm"
-                                  className="border-gray-700/30 text-gray-400 hover:bg-gray-800/10 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 lg:h-7 px-2 lg:px-3"
+                                className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
                               >
                                 {t.seeDetails}
                               </Button>
