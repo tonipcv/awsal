@@ -42,8 +42,10 @@ import {
   Eye,
   Edit,
   Share2,
-  TrendingUp
+  TrendingUp,
+  ChartBarIcon
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface ReferralLead {
   id: string;
@@ -95,7 +97,7 @@ export default function DoctorReferralsPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<ReferralLead | null>(null);
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [activeTab, setActiveTab] = useState<'active' | 'rejected'>('active');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -108,7 +110,6 @@ export default function DoctorReferralsPage() {
   const loadData = async () => {
     try {
       const params = new URLSearchParams({
-        status: statusFilter,
         page: page.toString(),
         limit: '10'
       });
@@ -132,7 +133,7 @@ export default function DoctorReferralsPage() {
     if (session?.user?.id) {
       loadData();
     }
-  }, [session, statusFilter, page]);
+  }, [session, page]);
 
   const handleStatusUpdate = async () => {
     if (!selectedLead || !updateForm.status) return;
@@ -179,6 +180,23 @@ export default function DoctorReferralsPage() {
     // Here you could add a success toast
   };
 
+  // Filter leads based on active tab
+  const filteredLeads = activeTab === 'active' 
+    ? leads.filter(lead => ['PENDING', 'CONTACTED', 'CONVERTED'].includes(lead.status))
+    : leads.filter(lead => lead.status === 'REJECTED');
+
+  // Calculate stats for each tab
+  const activeStats = {
+    pending: stats?.pending || 0,
+    contacted: stats?.contacted || 0,
+    converted: stats?.converted || 0,
+    total: (stats?.pending || 0) + (stats?.contacted || 0) + (stats?.converted || 0)
+  };
+
+  const rejectedStats = {
+    rejected: stats?.rejected || 0
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -190,7 +208,16 @@ export default function DoctorReferralsPage() {
                 <div className="h-8 bg-gray-200 rounded-lg w-32 mb-2 animate-pulse"></div>
                 <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
               </div>
-              <div className="h-12 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
+              <div className="flex gap-3">
+                <div className="h-12 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+                <div className="h-12 bg-gray-200 rounded-xl w-40 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="flex space-x-1 mb-8">
+              <div className="h-12 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+              <div className="h-12 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
             </div>
 
             {/* Stats Cards Skeleton */}
@@ -210,13 +237,10 @@ export default function DoctorReferralsPage() {
               ))}
             </div>
 
-            {/* Filters and Table Skeleton */}
+            {/* Table Skeleton */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
-                <div className="flex justify-between items-center">
-                  <div className="h-6 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
-                  <div className="h-10 bg-gray-100 rounded-xl w-32 animate-pulse"></div>
-                </div>
+                <div className="h-6 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
               </CardHeader>
               <CardContent>
                 {/* Table Header */}
@@ -258,118 +282,136 @@ export default function DoctorReferralsPage() {
                 Manage referral leads and track conversions
               </p>
             </div>
-            <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
-              <Share2 className="h-4 w-4" />
-              <span>Copy Referral Link</span>
-            </Button>
+            <div className="flex gap-3">
+              <Button asChild className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl h-12 px-6 font-semibold">
+                <Link href="/doctor/pipeline">
+                  <ChartBarIcon className="h-4 w-4" />
+                  <span>Pipeline</span>
+                </Link>
+              </Button>
+              <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+                <Share2 className="h-4 w-4" />
+                <span>Copy Referral Link</span>
+              </Button>
+            </div>
           </div>
 
-          {/* Statistics */}
+          {/* Tabs */}
+          <div className="flex space-x-1 mb-8">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                activeTab === 'active'
+                  ? 'bg-[#5154e7] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Active ({activeStats.total})
+            </button>
+            <button
+              onClick={() => setActiveTab('rejected')}
+              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+                activeTab === 'rejected'
+                  ? 'bg-[#5154e7] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Rejected ({rejectedStats.rejected})
+            </button>
+          </div>
+
+          {/* Statistics - Show different stats based on active tab */}
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      <Users className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-semibold text-gray-600">Total</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {activeTab === 'active' ? (
+                <>
+                  <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-yellow-100 rounded-xl">
+                          <Clock className="h-6 w-6 text-yellow-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-semibold text-gray-600">Pending</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-3 bg-yellow-100 rounded-xl">
-                      <Clock className="h-6 w-6 text-yellow-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-semibold text-gray-600">Pending</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                          <UserPlus className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-semibold text-gray-600">Contacted</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.contacted}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      <UserPlus className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-semibold text-gray-600">Contacted</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.contacted}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-green-100 rounded-xl">
+                          <CheckCircle className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-semibold text-gray-600">Converted</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.converted}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-3 bg-green-100 rounded-xl">
-                      <CheckCircle className="h-6 w-6 text-green-600" />
+                  <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <div className="p-3 bg-purple-100 rounded-xl">
+                          <TrendingUp className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-semibold text-gray-600">Conversion Rate</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {activeStats.total > 0 ? Math.round((stats.converted / activeStats.total) * 100) : 0}%
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 bg-red-100 rounded-xl">
+                        <XCircle className="h-6 w-6 text-red-600" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-semibold text-gray-600">Rejected</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
+                      </div>
                     </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-semibold text-gray-600">Converted</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.converted}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center">
-                    <div className="p-3 bg-purple-100 rounded-xl">
-                      <TrendingUp className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-semibold text-gray-600">Conversion Rate</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {stats.total > 0 ? Math.round((stats.converted / stats.total) * 100) : 0}%
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
-
-          {/* Filters */}
-          <Card className="mb-8 bg-white border-gray-200 shadow-lg rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div>
-                  <Label htmlFor="status-filter" className="text-gray-900 font-semibold">Filter by Status</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48 mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 rounded-xl h-10 font-medium">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">All</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="CONTACTED">Contacted</SelectItem>
-                      <SelectItem value="CONVERTED">Converted</SelectItem>
-                      <SelectItem value="REJECTED">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Referrals Table */}
           <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold text-gray-900">Received Referrals</CardTitle>
+              <CardTitle className="text-xl font-bold text-gray-900">
+                {activeTab === 'active' ? 'Active Referrals' : 'Rejected Referrals'}
+              </CardTitle>
               <CardDescription className="text-gray-600 font-medium">
-                List of all received referrals and their status
+                {activeTab === 'active' 
+                  ? 'Referrals that are pending, contacted, or converted'
+                  : 'Referrals that have been rejected'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -385,7 +427,7 @@ export default function DoctorReferralsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leads.map((lead) => {
+                  {filteredLeads.map((lead) => {
                     const StatusIcon = statusConfig[lead.status as keyof typeof statusConfig]?.icon || Clock;
                     return (
                       <TableRow key={lead.id}>
@@ -491,16 +533,22 @@ export default function DoctorReferralsPage() {
                 </TableBody>
               </Table>
 
-              {leads.length === 0 && (
+              {filteredLeads.length === 0 && (
                 <div className="text-center py-12">
                   <div className="p-4 bg-gray-100 rounded-2xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <Users className="h-8 w-8 text-gray-400" />
+                    {activeTab === 'active' ? (
+                      <Users className="h-8 w-8 text-gray-400" />
+                    ) : (
+                      <XCircle className="h-8 w-8 text-gray-400" />
+                    )}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">No referrals found</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    {activeTab === 'active' ? 'No active referrals found' : 'No rejected referrals found'}
+                  </h3>
                   <p className="text-gray-500 font-medium">
-                    {statusFilter === 'ALL' 
-                      ? 'You haven\'t received any referrals yet. Share your referral link!'
-                      : 'No referrals found with this filter.'
+                    {activeTab === 'active' 
+                      ? 'You don\'t have any active referrals at the moment.'
+                      : 'You don\'t have any rejected referrals.'
                     }
                   </p>
                 </div>

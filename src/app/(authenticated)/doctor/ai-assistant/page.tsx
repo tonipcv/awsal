@@ -19,9 +19,11 @@ import {
   ChatBubbleLeftRightIcon, 
   CogIcon, 
   ChartBarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import { Bot } from 'lucide-react';
+import Link from 'next/link';
 
 interface FAQ {
   id: string;
@@ -287,6 +289,15 @@ export default function AIAssistantPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/doctor/ai-conversations">
+                <Button 
+                  variant="outline"
+                  className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 py-2 font-semibold"
+                >
+                  <EyeIcon className="h-4 w-4 mr-2" />
+                  View Conversations
+                </Button>
+              </Link>
               <Badge 
                 variant={settings?.isEnabled ? "default" : "secondary"}
                 className={settings?.isEnabled 

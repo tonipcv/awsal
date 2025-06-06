@@ -20,7 +20,8 @@ import {
   UserPlusIcon,
   UserIcon,
   CreditCardIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { Bot } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -223,7 +224,7 @@ export default function Navigation() {
   // Navegação para médicos - memoizada para evitar re-renderizações
   const doctorNavSections: NavSection[] = useMemo(() => [
     {
-      title: "Management",
+      title: "Overview",
       items: [
         {
           href: '/doctor/dashboard',
@@ -231,6 +232,17 @@ export default function Navigation() {
           icon: PresentationChartBarIcon,
           description: 'Overview'
         },
+        {
+          href: '/doctor/intelligence',
+          label: 'Intelligence',
+          icon: SparklesIcon,
+          description: 'Real-time patient insights and churn prevention'
+        }
+      ]
+    },
+    {
+      title: "Patient Management",
+      items: [
         {
           href: '/clinic',
           label: 'My Clinic',
@@ -242,7 +254,12 @@ export default function Navigation() {
           label: 'Clients',
           icon: UsersIcon,
           description: 'Manage clients'
-        },
+        }
+      ]
+    },
+    {
+      title: "Content & AI",
+      items: [
         {
           href: '/doctor/protocols',
           label: 'Protocols',
@@ -256,12 +273,6 @@ export default function Navigation() {
           description: 'Configure AI assistant and FAQs'
         },
         {
-          href: '/doctor/ai-conversations',
-          label: 'AI Conversations',
-          icon: ChatBubbleLeftRightIcon,
-          description: 'Monitor patient AI conversations'
-        },
-        {
           href: '/doctor/products',
           label: 'Products',
           icon: CheckCircleIcon,
@@ -272,23 +283,11 @@ export default function Navigation() {
           label: 'Courses',
           icon: BookOpenIcon,
           description: 'Create and manage courses'
-        },
-        {
-          href: '/doctor/consultation-form',
-          label: 'Form',
-          icon: DocumentTextIcon,
-          description: 'Customize consultation form'
-        },
-        {
-          href: '/doctor/templates',
-          label: 'Templates',
-          icon: CogIcon,
-          description: 'Protocol templates'
         }
       ]
     },
     {
-      title: "Referrals",
+      title: "Business",
       items: [
         {
           href: '/doctor/referrals',
@@ -301,12 +300,7 @@ export default function Navigation() {
           label: 'Rewards',
           icon: GiftIcon,
           description: 'Configure rewards'
-        }
-      ]
-    },
-    {
-      title: "Partnerships",
-      items: [
+        },
         {
           href: '/doctor/refer-clinic',
           label: 'Refer Clinic',
