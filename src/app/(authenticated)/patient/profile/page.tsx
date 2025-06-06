@@ -280,7 +280,7 @@ export default function ProfilePage() {
   // Loading state
   if (!session || loading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Padding para menu lateral no desktop e header no mobile */}
         <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 lg:px-6">
@@ -382,8 +382,8 @@ export default function ProfilePage() {
   return (
     <div className={cn(
       "min-h-screen", 
-      isLightTheme ? "bg-white" : "bg-black"
-    )}>
+      isLightTheme ? "bg-white" : ""
+    )} style={!isLightTheme ? { backgroundColor: '#101010' } : undefined}>
       {/* Padding para menu lateral no desktop e header no mobile */}
       <div className={cn(
         isLightTheme 

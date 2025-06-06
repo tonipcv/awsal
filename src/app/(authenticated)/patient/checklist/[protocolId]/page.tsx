@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from 'next/link';
+import Image from 'next/image';
 import { TaskInfoModal } from "@/components/ui/task-info-modal";
 
 // Translations for internationalization
@@ -107,6 +108,7 @@ interface ActiveProtocol {
     name: string;
     duration: number;
     description?: string;
+    coverImage?: string;
     days: Array<{
       id: string;
       dayNumber: number;
@@ -511,15 +513,31 @@ export default function ProtocolChecklistPage() {
             </div>
 
             {/* Protocol Header */}
-            <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm p-6 lg:p-8">
-              <h1 className="text-2xl lg:text-3xl font-light text-white mb-2">
-                {activeProtocol.protocol.name}
-              </h1>
-              {activeProtocol.protocol.description && (
-                <p className="text-gray-300 leading-relaxed">
-                  {activeProtocol.protocol.description}
-                </p>
+            <div className="bg-gray-900/40 border border-gray-800/40 rounded-xl backdrop-blur-sm overflow-hidden">
+              {/* Cover Image */}
+              {activeProtocol.protocol.coverImage && (
+                <div className="relative w-full h-40 lg:h-56 overflow-hidden">
+                  <Image
+                    src={activeProtocol.protocol.coverImage}
+                    alt={activeProtocol.protocol.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+                </div>
               )}
+              
+              <div className="p-6 lg:p-8">
+                <h1 className="text-2xl lg:text-3xl font-light text-white mb-2">
+                  {activeProtocol.protocol.name}
+                </h1>
+                {activeProtocol.protocol.description && (
+                  <p className="text-gray-300 leading-relaxed">
+                    {activeProtocol.protocol.description}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Days */}

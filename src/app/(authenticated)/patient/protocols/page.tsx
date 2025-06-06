@@ -272,7 +272,7 @@ export default function ProtocolsPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101010' }}>
         <span className="text-xs text-gray-400">{t.loading}</span>
       </div>
     );
@@ -280,7 +280,7 @@ export default function ProtocolsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Padding para menu lateral no desktop e header no mobile */}
         <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
@@ -343,13 +343,12 @@ export default function ProtocolsPage() {
   const primaryDoctor = getPrimaryDoctor();
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Padding para menu lateral no desktop e header no mobile */}
       <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         
         {/* Hero Section Compacto */}
       <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-gray-800/10 to-gray-900/20" />
           <div className="relative py-6 lg:py-8">
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">

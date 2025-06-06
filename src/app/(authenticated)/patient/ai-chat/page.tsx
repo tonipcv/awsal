@@ -227,7 +227,7 @@ export default function PatientAIChatPage() {
 
   // Skeleton Loading Component
   const ChatSkeleton = () => (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Mobile Skeleton */}
       <div className="lg:hidden">
         <div className="fixed inset-0 bg-black flex flex-col">
@@ -355,7 +355,7 @@ export default function PatientAIChatPage() {
   // Show unavailable message only after loading is complete and no doctor found
   if (!doctorId) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Mobile: Full screen layout */}
         <div className="lg:hidden fixed inset-0 bg-black flex flex-col">
           {/* Header com botão voltar */}
@@ -415,7 +415,7 @@ export default function PatientAIChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Mobile: Full screen chat layout */}
       <div className="lg:hidden">
         <div className="fixed inset-0 bg-black flex flex-col" ref={chatContainerRef}>
