@@ -230,7 +230,7 @@ export default function PatientAIChatPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Mobile Skeleton */}
       <div className="lg:hidden">
-        <div className="fixed inset-0 bg-black flex flex-col">
+        <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#101010' }}>
           {/* Header Skeleton */}
           <div className="flex-shrink-0 pt-[100px] px-4 pb-4 border-b border-gray-800/30">
             <div className="flex items-center justify-between mb-3">
@@ -269,7 +269,7 @@ export default function PatientAIChatPage() {
           </div>
 
           {/* Input Skeleton - Fixed at bottom */}
-          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 bg-black/95 backdrop-blur-sm z-20">
+          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 backdrop-blur-sm z-20" style={{ backgroundColor: 'rgba(16, 16, 16, 0.95)' }}>
             <div className="p-4 pb-6">
               <div className="flex gap-3">
                 <div className="flex-1 h-12 bg-gray-800/50 rounded-2xl animate-pulse"></div>
@@ -281,7 +281,7 @@ export default function PatientAIChatPage() {
       </div>
 
       {/* Desktop Skeleton */}
-      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64">
+      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64" style={{ backgroundColor: '#101010' }}>
         <div className="max-w-6xl mx-auto px-6">
           
           {/* Hero Skeleton */}
@@ -357,7 +357,7 @@ export default function PatientAIChatPage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Mobile: Full screen layout */}
-        <div className="lg:hidden fixed inset-0 bg-black flex flex-col">
+        <div className="lg:hidden fixed inset-0 flex flex-col" style={{ backgroundColor: '#101010' }}>
           {/* Header com botão voltar */}
           <div className="flex-shrink-0 pt-[100px] px-4 pb-4 border-b border-gray-800/30">
             <div className="flex items-center justify-between mb-3">
@@ -418,7 +418,7 @@ export default function PatientAIChatPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Mobile: Full screen chat layout */}
       <div className="lg:hidden">
-        <div className="fixed inset-0 bg-black flex flex-col" ref={chatContainerRef}>
+        <div className="fixed inset-0 flex flex-col" ref={chatContainerRef} style={{ backgroundColor: '#101010' }}>
           {/* Header com botão voltar */}
           <div className="flex-shrink-0 pt-[100px] px-4 pb-4 border-b border-gray-800/30">
             <div className="flex items-center justify-between mb-3">
@@ -516,7 +516,7 @@ export default function PatientAIChatPage() {
           )}
 
           {/* Input fixo na parte inferior - sem espaço para navegação */}
-          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 bg-black/95 backdrop-blur-sm z-20">
+          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 backdrop-blur-sm z-20" style={{ backgroundColor: 'rgba(16, 16, 16, 0.95)' }}>
             <div className="p-4 pb-6">
               <div className="flex gap-3">
                 <Input
@@ -550,7 +550,7 @@ export default function PatientAIChatPage() {
       </div>
 
       {/* Desktop: Standard layout */}
-      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64">
+      <div className="hidden lg:block pt-[88px] pb-4 lg:ml-64" style={{ backgroundColor: '#101010' }}>
         <div className="max-w-6xl mx-auto px-6">
           
           {/* Hero Section */}
@@ -596,7 +596,7 @@ export default function PatientAIChatPage() {
           </div>
 
           {/* Chat Container */}
-          <div className="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden shadow-lg">
+          <div className="border border-gray-800/50 rounded-2xl overflow-hidden shadow-lg">
             
             {/* Messages Area */}
             <div className="h-[500px] overflow-y-auto p-6 space-y-4" ref={messagesContainerRef}>
@@ -669,9 +669,16 @@ export default function PatientAIChatPage() {
                   onClick={sendMessage}
                   disabled={loading || !currentMessage.trim()}
                   size="icon"
-                  className="rounded-xl w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black shadow-lg disabled:opacity-50"
+                  className="rounded-xl w-12 h-12 bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-black shadow-lg disabled:opacity-50 p-1"
                 >
-                  <Send className="h-5 w-5" />
+                  <div className="relative w-8 h-8">
+                    <Image
+                      src="/logo.png"
+                      alt="Send"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </Button>
               </div>
             </div>

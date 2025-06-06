@@ -349,18 +349,17 @@ export default function ProtocolsPage() {
         
         {/* Hero Section Compacto */}
       <div className="relative overflow-hidden">
-          <div className="relative py-6 lg:py-8">
+          <div className="relative py-4 lg:py-6">
             <div className="max-w-6xl mx-auto px-3 lg:px-6">
               <div className="text-center max-w-3xl mx-auto">
-                <h1 className="text-3xl lg:text-5xl font-light text-white mb-2 lg:mb-3 tracking-tight">
-                  {t.greeting(session?.user?.name || 'Paciente')}
-                </h1>
-                <h2 className="text-xl lg:text-2xl font-light text-gray-300 mb-2 lg:mb-3 tracking-tight">
-                  {t.yourProtocols}
-                </h2>
-                <p className="text-sm lg:text-lg text-gray-300 mb-4 lg:mb-6 font-light leading-relaxed">
-                  {t.trackProgress}
-                </p>
+                <div className="mb-4 lg:mb-6">
+                  <h1 className="text-2xl lg:text-3xl font-light text-white mb-1 tracking-tight">
+                    {t.greeting(session?.user?.name || 'Paciente')}
+                  </h1>
+                  <h2 className="text-lg lg:text-xl font-light text-turquoise tracking-tight">
+                    {t.yourProtocols}
+                  </h2>
+                </div>
                 
                 {/* Stats Compactas */}
                 <div className="flex items-center justify-center gap-4 lg:gap-8">

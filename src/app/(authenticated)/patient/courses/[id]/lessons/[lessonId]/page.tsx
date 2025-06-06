@@ -307,7 +307,7 @@ export default function LessonPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
           <div className="max-w-4xl mx-auto px-3 lg:px-6">
             <div className="space-y-6 pt-4 lg:pt-6">
@@ -336,7 +336,7 @@ export default function LessonPage() {
 
   if (!course || !currentLesson) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101010' }}>
         <div className="text-center">
           <h1 className="text-2xl font-light text-white mb-4">{t.lessonNotFound}</h1>
           <Link href="/patient/courses">
@@ -352,7 +352,7 @@ export default function LessonPage() {
   const currentModule = getCurrentModule();
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
         <div className="max-w-4xl mx-auto px-3 lg:px-6">
           <div className="space-y-6 pt-4 lg:pt-6">
