@@ -52,17 +52,74 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Paciente não encontrado ou não pertence a este médico' }, { status: 404 });
     }
 
-    // Verificar se já existe uma atribuição ativa
+    // Verificar se já existe uma atribuição (independente do status)
     const existingAssignment = await prisma.userProtocol.findFirst({
       where: {
         userId: patientId,
-        protocolId: protocolId,
-        isActive: true
+        protocolId: protocolId
       }
     });
 
     if (existingAssignment) {
-      return NextResponse.json({ error: 'Este protocolo já está ativo para este paciente' }, { status: 400 });
+      // Se já existe uma atribuição ativa, retornar erro
+      if (existingAssignment.isActive && existingAssignment.status === 'ACTIVE') {
+        return NextResponse.json({ error: 'Este protocolo já está ativo para este paciente' }, { status: 400 });
+      }
+      
+      // Se existe mas está inativa, reativar a atribuição existente
+      const start = new Date(startDate);
+      const end = addDays(start, (protocol.duration || 30) - 1);
+      
+      const updatedAssignment = await prisma.userProtocol.update({
+        where: { id: existingAssignment.id },
+        data: {
+          startDate: start,
+          endDate: end,
+          isActive: true,
+          status: 'ACTIVE'
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          protocol: {
+            include: {
+              doctor: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              },
+              days: {
+                include: {
+                  sessions: {
+                    include: {
+                      tasks: {
+                        orderBy: {
+                          orderIndex: 'asc'
+                        }
+                      }
+                    },
+                    orderBy: {
+                      sessionNumber: 'asc'
+                    }
+                  }
+                },
+                orderBy: {
+                  dayNumber: 'asc'
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      return NextResponse.json(updatedAssignment, { status: 200 });
     }
 
     // Calcular data de fim

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -83,62 +84,62 @@ const PatientCard = ({
 
   return (
     <Card className={cn(
-      "bg-background/10 border-border/20 hover:bg-background/20 transition-colors",
-      activeProtocol && "border-green-500/30 bg-green-500/5"
+      "bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200",
+      activeProtocol && "border-green-500/30 bg-green-50/50"
     )}>
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-turquoise/20 flex items-center justify-center text-sm font-medium text-turquoise flex-shrink-0">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="h-12 w-12 rounded-xl bg-[#5154e7]/10 flex items-center justify-center text-sm font-bold text-[#5154e7] flex-shrink-0">
               {getPatientInitials(patient.name)}
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-white truncate">
+              <h4 className="text-base font-bold text-gray-900 truncate">
                 {patient.name || 'Sem nome'}
               </h4>
-              <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+              <p className="text-sm text-gray-600 truncate font-medium">{patient.email}</p>
               {activeProtocol && (
-                <div className="flex items-center gap-1 mt-1">
-                  <CheckIcon className="h-3 w-3 text-green-400" />
-                  <span className="text-xs text-green-400">Already assigned</span>
+                <div className="flex items-center gap-2 mt-2">
+                  <CheckIcon className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-600 font-semibold">Já atribuído</span>
                 </div>
               )}
               {hasActiveProtocol && !activeProtocol && (
-                <div className="flex items-center gap-1 mt-1">
-                  <DocumentTextIcon className="h-3 w-3 text-orange-400" />
-                  <span className="text-xs text-orange-400">
-                    {patient.assignedProtocols.filter(ap => ap.isActive).length} active protocol(s)
+                <div className="flex items-center gap-2 mt-2">
+                  <DocumentTextIcon className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm text-orange-500 font-medium">
+                    {patient.assignedProtocols.filter(ap => ap.isActive).length} protocolo(s) ativo(s)
                   </span>
                 </div>
               )}
             </div>
           </div>
           
-          <div className="flex items-center gap-2 ml-4">
+          <div className="flex items-center gap-3 ml-4">
             {!activeProtocol && (
               <>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => onStartDateChange(e.target.value)}
-                  className="text-xs bg-background/30 border border-border/30 rounded px-2 py-1 text-white focus:border-turquoise/50 w-28"
+                  className="text-sm bg-white border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:border-[#5154e7] focus:ring-1 focus:ring-[#5154e7] w-32 font-medium"
                 />
                 
                 <Button
                   onClick={() => onAssign(patient.id)}
                   disabled={isAssigning}
                   size="sm"
-                  className="bg-turquoise hover:bg-turquoise/90 text-background font-medium px-3"
+                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white font-semibold px-4 rounded-xl shadow-md"
                 >
                   {isAssigning ? (
                     <>
-                      <ArrowPathIcon className="h-3 w-3 mr-1 animate-spin" />
-                      <span className="hidden sm:inline">...</span>
+                      <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                      <span className="hidden sm:inline">Atribuindo...</span>
                     </>
                   ) : (
                     <>
-                      <PlusIcon className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Assign</span>
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Atribuir</span>
                     </>
                   )}
                 </Button>
@@ -148,15 +149,15 @@ const PatientCard = ({
         </div>
         
         {!activeProtocol && (
-          <div className="mt-3 pt-3 border-t border-border/20">
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <ClockIcon className="h-3 w-3" />
-                {protocol.duration} days
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-2">
+                <ClockIcon className="h-4 w-4" />
+                <span className="font-medium">{protocol.duration} dias</span>
               </span>
-              <span className="flex items-center gap-1">
-                <CalendarDaysIcon className="h-3 w-3" />
-                Até {format(endDate, 'dd/MM/yyyy', { locale: ptBR })}
+              <span className="flex items-center gap-2">
+                <CalendarDaysIcon className="h-4 w-4" />
+                <span className="font-medium">Até {format(endDate, 'dd/MM/yyyy', { locale: ptBR })}</span>
               </span>
             </div>
           </div>
@@ -210,13 +211,13 @@ export default function AssignProtocolToPatientPage() {
 
       if (!protocolResponse.ok) {
         if (protocolResponse.status === 404) {
-          setError('Protocol not found or you do not have permission to access it');
+          setError('Protocolo não encontrado ou você não tem permissão para acessá-lo');
         } else if (protocolResponse.status === 401) {
-          setError('Session expired. Please log in again');
+          setError('Sessão expirada. Faça login novamente');
           setTimeout(() => router.push('/auth/signin'), 2000);
           return;
         } else {
-          setError('Error loading protocol data');
+          setError('Erro ao carregar dados do protocolo');
         }
         return;
       }
@@ -228,7 +229,7 @@ export default function AssignProtocolToPatientPage() {
         const patientsData = await patientsResponse.json();
         setPatients(Array.isArray(patientsData) ? patientsData : []);
       } else {
-        setError('Error loading patient list');
+        setError('Erro ao carregar lista de pacientes');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -254,11 +255,11 @@ export default function AssignProtocolToPatientPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Protocol assigned successfully!');
+        setSuccessMessage('Protocolo atribuído com sucesso!');
         await loadData(params.id as string);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Error assigning protocol');
+        setError(errorData.error || 'Erro ao atribuir protocolo');
       }
     } catch (error) {
       console.error('Error assigning protocol:', error);
@@ -284,10 +285,10 @@ export default function AssignProtocolToPatientPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <ArrowPathIcon className="h-8 w-8 text-turquoise animate-spin mx-auto mb-4" />
-          <span className="text-sm text-muted-foreground">Loading data...</span>
+          <ArrowPathIcon className="h-8 w-8 text-[#5154e7] animate-spin mx-auto mb-4" />
+          <span className="text-sm text-gray-600 font-medium">Carregando dados...</span>
         </div>
       </div>
     );
@@ -295,17 +296,17 @@ export default function AssignProtocolToPatientPage() {
 
   if (error && !protocol) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <XMarkIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-medium mb-2 text-white">{error}</h2>
+          <h2 className="text-lg font-bold mb-2 text-gray-900">{error}</h2>
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => loadData(params.id as string)} className="bg-turquoise hover:bg-turquoise/90">
+            <Button onClick={() => loadData(params.id as string)} className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold">
               <ArrowPathIcon className="h-4 w-4 mr-2" />
               Tentar Novamente
             </Button>
-            <Button variant="outline" asChild>
-              <Link href="/doctor/protocols">Back to Protocols</Link>
+            <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl shadow-md font-semibold">
+              <Link href="/doctor/protocols">Voltar aos Protocolos</Link>
             </Button>
           </div>
         </div>
@@ -314,42 +315,47 @@ export default function AssignProtocolToPatientPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Card className="min-h-screen lg:min-h-[calc(100vh-4rem)] border-0 lg:border">
-        {/* Header */}
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 sticky top-0 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/50 z-10 pt-[72px] lg:pt-6 border-b border-border/20">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild className="text-white/70 hover:text-white">
-              <Link href={`/doctor/protocols/${protocol?.id}`}>
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Back
-              </Link>
-            </Button>
-            <div>
-              <CardTitle className="text-lg font-light text-white">Assign Protocol</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <DocumentTextIcon className="h-4 w-4" />
-                <span>{protocol?.name}</span>
-                <span className="text-turquoise">•</span>
-                <span>{assignedPatients.length} assigned</span>
-                <span className="text-turquoise">•</span>
-                <span>{availablePatients.length} available</span>
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="flex items-center gap-6">
+              <Button variant="outline" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold">
+                <Link href={`/doctor/protocols/${protocol?.id}`}>
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Voltar
+                </Link>
+              </Button>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Atribuir Protocolo
+                </h1>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <span className="flex items-center gap-2">
+                    <DocumentTextIcon className="h-4 w-4" />
+                    <span className="font-medium">{protocol?.name}</span>
+                  </span>
+                  <span>•</span>
+                  <span className="font-medium">{assignedPatients.length} atribuídos</span>
+                  <span>•</span>
+                  <span className="font-medium">{availablePatients.length} disponíveis</span>
+                </div>
               </div>
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="pb-24 lg:pb-8">
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-8">
             
             {/* Messages */}
             {error && (
-              <Card className="bg-red-500/10 border-red-500/30">
-                <CardContent className="p-4">
+              <Card className="bg-red-50 border-red-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <XMarkIcon className="h-5 w-5 text-red-400" />
-                    <span className="text-sm text-red-300">{error}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300 h-8 w-8 p-0">
+                    <XMarkIcon className="h-5 w-5 text-red-600" />
+                    <span className="text-sm text-red-700 font-medium">{error}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setError(null)} className="ml-auto text-red-600 hover:text-red-700 h-8 w-8 p-0">
                       <XMarkIcon className="h-4 w-4" />
                     </Button>
                   </div>
@@ -358,12 +364,12 @@ export default function AssignProtocolToPatientPage() {
             )}
 
             {successMessage && (
-              <Card className="bg-green-500/10 border-green-500/30">
-                <CardContent className="p-4">
+              <Card className="bg-green-50 border-green-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <CheckIcon className="h-5 w-5 text-green-400" />
-                    <span className="text-sm text-green-300">{successMessage}</span>
-                    <Button variant="ghost" size="sm" onClick={() => setSuccessMessage(null)} className="ml-auto text-green-400 hover:text-green-300 h-8 w-8 p-0">
+                    <CheckIcon className="h-5 w-5 text-green-600" />
+                    <span className="text-sm text-green-700 font-medium">{successMessage}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setSuccessMessage(null)} className="ml-auto text-green-600 hover:text-green-700 h-8 w-8 p-0">
                       <XMarkIcon className="h-4 w-4" />
                     </Button>
                   </div>
@@ -373,29 +379,36 @@ export default function AssignProtocolToPatientPage() {
 
             {/* Protocol Info */}
             {protocol && (
-              <Card className="bg-background/10 border-border/20">
-                <CardContent className="p-4">
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-turquoise/10 rounded-lg">
-                      <DocumentTextIcon className="h-6 w-6 text-turquoise" />
+                    <div className="p-3 bg-[#5154e7]/10 rounded-xl">
+                      <DocumentTextIcon className="h-6 w-6 text-[#5154e7]" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-white mb-1">{protocol.name}</h3>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">{protocol.name}</h3>
+                        {protocol.isTemplate && (
+                          <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                            Template
+                          </Badge>
+                        )}
+                      </div>
                       {protocol.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{protocol.description}</p>
+                        <p className="text-sm text-gray-600 mb-4 font-medium">{protocol.description}</p>
                       )}
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
+                      <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                        <span className="flex items-center gap-2">
                           <ClockIcon className="h-4 w-4" />
-                          {protocol.duration} days
+                          <span className="font-medium">{protocol.duration} dias</span>
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-2">
                           <DocumentTextIcon className="h-4 w-4" />
-                          {protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tasks
+                          <span className="font-medium">{protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tarefas</span>
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-2">
                           <UsersIcon className="h-4 w-4" />
-                          {assignedPatients.length} active patient(s)
+                          <span className="font-medium">{assignedPatients.length} paciente(s) ativo(s)</span>
                         </span>
                       </div>
                     </div>
@@ -405,18 +418,18 @@ export default function AssignProtocolToPatientPage() {
             )}
 
             {/* Search */}
-            <Card className="bg-background/10 border-border/20">
-              <CardContent className="p-4">
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-6">
                 <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    placeholder="Search patients..."
+                    placeholder="Buscar pacientes..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-12 bg-background/20 border-border/30 focus:border-turquoise/50 text-white placeholder:text-white/50 text-base"
+                    className="pl-12 h-12 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 text-base rounded-xl font-medium"
                   />
                   {searchTerm && (
-                    <Button variant="ghost" size="sm" onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-white">
+                    <Button variant="ghost" size="sm" onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
                       <XMarkIcon className="h-4 w-4" />
                     </Button>
                   )}
@@ -424,34 +437,49 @@ export default function AssignProtocolToPatientPage() {
               </CardContent>
             </Card>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-8">
               {/* Available Patients */}
-              <Card className="bg-background/10 border-border/20">
-                <CardHeader>
-                  <CardTitle className="text-base font-normal text-white flex items-center gap-2">
-                    <PlusIcon className="h-5 w-5 text-turquoise" />
-                    Available Patients ({availablePatients.length})
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">Patients who can receive this protocol</p>
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="p-6 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
+                      <PlusIcon className="h-5 w-5 text-[#5154e7]" />
+                      Pacientes Disponíveis
+                      <Badge className="bg-[#5154e7]/10 text-[#5154e7] border-[#5154e7]/20 px-3 py-1 rounded-full text-sm font-semibold">
+                        {availablePatients.length}
+                      </Badge>
+                    </CardTitle>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2 font-medium">Pacientes que podem receber este protocolo</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="p-6 space-y-4">
                   {availablePatients.length === 0 ? (
-                    <div className="text-center py-8">
-                      <UsersIcon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground mb-2">
+                    <div className="text-center py-12">
+                      <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-bold mb-2 text-gray-900">
                         {searchTerm 
-                          ? `No patient found for "${searchTerm}"` 
+                          ? `Nenhum paciente encontrado para "${searchTerm}"` 
                           : patients.length === 0
-                            ? 'No patients registered yet'
-                            : 'All patients already have this protocol'}
+                            ? 'Nenhum paciente cadastrado ainda'
+                            : 'Todos os pacientes já possuem este protocolo'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4 font-medium">
+                        {patients.length === 0 
+                          ? 'Cadastre seu primeiro paciente para começar'
+                          : searchTerm 
+                            ? 'Tente ajustar o termo de busca'
+                            : 'Todos os pacientes já têm este protocolo atribuído'}
                       </p>
                       {patients.length === 0 ? (
-                        <Button asChild className="bg-turquoise hover:bg-turquoise/90" size="sm">
-                          <Link href="/doctor/patients">Register Patients</Link>
+                        <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm">
+                          <Link href="/doctor/patients">
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            Cadastrar Pacientes
+                          </Link>
                         </Button>
                       ) : searchTerm ? (
-                        <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
-                          Clear search
+                        <Button variant="outline" size="sm" onClick={() => setSearchTerm('')} className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl shadow-md font-semibold">
+                          Limpar busca
                         </Button>
                       ) : null}
                     </div>
@@ -473,19 +501,25 @@ export default function AssignProtocolToPatientPage() {
               </Card>
 
               {/* Patients with Assigned Protocol */}
-              <Card className="bg-background/10 border-border/20">
-                <CardHeader>
-                  <CardTitle className="text-base font-normal text-white flex items-center gap-2">
-                    <CheckIcon className="h-5 w-5 text-green-400" />
-                    Assigned Protocol ({assignedPatients.length})
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">Patients who already have this active protocol</p>
+              <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader className="p-6 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
+                      <CheckIcon className="h-5 w-5 text-green-600" />
+                      Protocolo Atribuído
+                      <Badge className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full text-sm font-semibold">
+                        {assignedPatients.length}
+                      </Badge>
+                    </CardTitle>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2 font-medium">Pacientes que já possuem este protocolo ativo</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="p-6 space-y-4">
                   {assignedPatients.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CheckIcon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">No patients with this protocol yet</p>
+                    <div className="text-center py-12">
+                      <CheckIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-bold mb-2 text-gray-900">Nenhum paciente com este protocolo ainda</h3>
+                      <p className="text-sm text-gray-500 font-medium">Atribua este protocolo aos seus pacientes para começar</p>
                     </div>
                   ) : (
                     assignedPatients.map((patient) => (
@@ -505,8 +539,8 @@ export default function AssignProtocolToPatientPage() {
               </Card>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 } 

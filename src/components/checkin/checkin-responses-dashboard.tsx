@@ -159,12 +159,12 @@ export default function CheckinResponsesDashboard({
                 <div key={option} className="flex items-center gap-3">
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-300">{option}</span>
-                      <span className="text-sm font-medium text-white">{count} ({percentage.toFixed(0)}%)</span>
+                      <span className="text-sm text-gray-600">{option}</span>
+                      <span className="text-sm font-medium text-gray-900">{count} ({percentage.toFixed(0)}%)</span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-turquoise h-2 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -186,17 +186,17 @@ export default function CheckinResponsesDashboard({
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-gray-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-400">{average.toFixed(1)}</div>
-                <div className="text-xs text-gray-400">Média</div>
+              <div className="text-center p-3 bg-turquoise/10 border border-turquoise/20 rounded-lg">
+                <div className="text-2xl font-bold text-turquoise">{average.toFixed(1)}</div>
+                <div className="text-xs text-gray-600">Média</div>
               </div>
-              <div className="text-center p-3 bg-gray-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-green-400">{max}</div>
-                <div className="text-xs text-gray-400">Máximo</div>
+              <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{max}</div>
+                <div className="text-xs text-gray-600">Máximo</div>
               </div>
-              <div className="text-center p-3 bg-gray-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-red-400">{min}</div>
-                <div className="text-xs text-gray-400">Mínimo</div>
+              <div className="text-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="text-2xl font-bold text-red-600">{min}</div>
+                <div className="text-xs text-gray-600">Mínimo</div>
               </div>
             </div>
           </div>
@@ -212,10 +212,10 @@ export default function CheckinResponsesDashboard({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-300">Sim</span>
-                  <span className="text-sm font-medium text-white">{yesCount} ({yesPercentage.toFixed(0)}%)</span>
+                  <span className="text-sm text-gray-600">Sim</span>
+                  <span className="text-sm font-medium text-gray-900">{yesCount} ({yesPercentage.toFixed(0)}%)</span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-green-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${yesPercentage}%` }}
@@ -226,10 +226,10 @@ export default function CheckinResponsesDashboard({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-300">Não</span>
-                  <span className="text-sm font-medium text-white">{noCount} ({(100 - yesPercentage).toFixed(0)}%)</span>
+                  <span className="text-sm text-gray-600">Não</span>
+                  <span className="text-sm font-medium text-gray-900">{noCount} ({(100 - yesPercentage).toFixed(0)}%)</span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-red-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${100 - yesPercentage}%` }}
@@ -244,15 +244,15 @@ export default function CheckinResponsesDashboard({
         return (
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {responses.slice(0, 5).map((response, index) => (
-              <div key={index} className="p-3 bg-gray-700/50 rounded-lg">
-                <div className="text-sm text-gray-300 mb-1">
+              <div key={index} className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-600 mb-1">
                   {response.user.name} • {format(new Date(response.date), 'dd/MM', { locale: ptBR })}
                 </div>
-                <div className="text-white text-sm">{response.answer}</div>
+                <div className="text-gray-900 text-sm">{response.answer}</div>
               </div>
             ))}
             {responses.length > 5 && (
-              <div className="text-center text-sm text-gray-400">
+              <div className="text-center text-sm text-gray-500">
                 +{responses.length - 5} respostas adicionais
               </div>
             )}
@@ -269,19 +269,19 @@ export default function CheckinResponsesDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white">Respostas do Check-in Diário</h3>
-          <p className="text-sm text-gray-400">{protocolName}</p>
+          <h3 className="text-lg font-semibold text-gray-900">Respostas do Check-in Diário</h3>
+          <p className="text-sm text-gray-600">{protocolName}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 p-4 bg-gray-800/30 rounded-xl border border-gray-700/50">
+      <div className="flex flex-wrap gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-gray-400" />
+          <Calendar className="w-4 h-4 text-gray-500" />
           <select
             value={selectedDateRange}
             onChange={(e) => setSelectedDateRange(e.target.value)}
-            className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:ring-2 focus:ring-turquoise focus:border-turquoise"
           >
             {dateRangeOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -292,11 +292,11 @@ export default function CheckinResponsesDashboard({
         </div>
 
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-gray-400" />
+          <Users className="w-4 h-4 text-gray-500" />
           <select
             value={selectedPatient}
             onChange={(e) => setSelectedPatient(e.target.value)}
-            className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:ring-2 focus:ring-turquoise focus:border-turquoise"
           >
             <option value="all">Todos os pacientes</option>
             {patients.map(patient => (
@@ -310,50 +310,50 @@ export default function CheckinResponsesDashboard({
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
+            <div className="w-10 h-10 bg-turquoise/20 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-turquoise" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{stats.totalResponses}</div>
-              <div className="text-sm text-gray-400">Total de Respostas</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.totalResponses}</div>
+              <div className="text-sm text-gray-600">Total de Respostas</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-green-400" />
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{stats.uniquePatients}</div>
-              <div className="text-sm text-gray-400">Pacientes Ativos</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.uniquePatients}</div>
+              <div className="text-sm text-gray-600">Pacientes Ativos</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <Filter className="w-5 h-5 text-purple-400" />
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Filter className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{stats.questionsAnswered}</div>
-              <div className="text-sm text-gray-400">Perguntas Respondidas</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.questionsAnswered}</div>
+              <div className="text-sm text-gray-600">Perguntas Respondidas</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-orange-400" />
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{stats.avgResponsesPerDay.toFixed(1)}</div>
-              <div className="text-sm text-gray-400">Média por Dia</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.avgResponsesPerDay.toFixed(1)}</div>
+              <div className="text-sm text-gray-600">Média por Dia</div>
             </div>
           </div>
         </div>
@@ -361,15 +361,15 @@ export default function CheckinResponsesDashboard({
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-          <p className="text-red-400">{error}</p>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600">{error}</p>
         </div>
       )}
 
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-turquoise"></div>
         </div>
       )}
 
@@ -379,13 +379,13 @@ export default function CheckinResponsesDashboard({
           {Object.values(responsesByQuestion)
             .sort((a, b) => a.question.order - b.question.order)
             .map((questionData) => (
-              <div key={questionData.question.id} className="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
+              <div key={questionData.question.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="mb-4">
-                  <h4 className="text-white font-medium mb-2">
+                  <h4 className="text-gray-900 font-medium mb-2">
                     {questionData.question.question}
                   </h4>
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="px-2 py-1 bg-gray-700/50 rounded">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="px-2 py-1 bg-gray-100 border border-gray-200 rounded">
                       {questionData.question.type === 'MULTIPLE_CHOICE' ? 'Múltipla Escolha' :
                        questionData.question.type === 'SCALE' ? 'Escala' :
                        questionData.question.type === 'YES_NO' ? 'Sim/Não' : 'Texto Livre'}
@@ -402,10 +402,10 @@ export default function CheckinResponsesDashboard({
 
       {/* Empty State */}
       {!isLoading && Object.keys(responsesByQuestion).length === 0 && (
-        <div className="text-center py-12 bg-gray-800/30 rounded-xl border border-gray-700/50">
-          <Eye className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-300 mb-2">Nenhuma resposta encontrada</h4>
-          <p className="text-gray-400">
+        <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <Eye className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h4 className="text-lg font-medium text-gray-600 mb-2">Nenhuma resposta encontrada</h4>
+          <p className="text-gray-500">
             {selectedPatient === 'all' 
               ? 'Não há respostas de check-in para o período selecionado'
               : 'Este paciente não respondeu ao check-in no período selecionado'

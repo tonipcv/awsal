@@ -9,9 +9,7 @@ import {
   InformationCircleIcon,
   ShoppingBagIcon,
   CalendarDaysIcon,
-  EyeIcon,
   DocumentTextIcon,
-  ClockIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
@@ -44,29 +42,16 @@ export function ProtocolEditTabs({
   protocolId,
   children 
 }: ProtocolEditTabsProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('basic');
 
-  // Calculate statistics for overview
-  const totalTasks = protocol.days.reduce((total: number, day: any) => {
-    const sessionTasks = day.sessions.reduce((sessionTotal: number, session: any) => 
-      sessionTotal + session.tasks.length, 0);
-    return total + sessionTasks + day.tasks.length;
-  }, 0);
-
-  const totalSessions = protocol.days.reduce((total: number, day: any) => 
-    total + day.sessions.length, 0);
+  // Check if modal content is configured
+  const hasModalContent = protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription;
+  const isModalEnabled = !!(protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription);
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
-        <TabsList className="grid w-full grid-cols-6 bg-gray-100 rounded-xl p-1">
-          <TabsTrigger 
-            value="overview" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
-          >
-            <EyeIcon className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 bg-gray-100 rounded-xl p-1">
           <TabsTrigger 
             value="basic" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
@@ -100,6 +85,15 @@ export function ProtocolEditTabs({
           >
             <DocumentTextIcon className="h-4 w-4" />
             Modal
+            {isModalEnabled ? (
+              <Badge variant="secondary" className="bg-green-600 text-white text-xs">
+                ✓
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="bg-gray-400 text-white text-xs">
+                Disabled
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger 
             value="checkin" 
@@ -110,96 +104,6 @@ export function ProtocolEditTabs({
           </TabsTrigger>
         </TabsList>
       </div>
-
-      <TabsContent value="overview" className="space-y-6">
-        <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
-              <EyeIcon className="h-6 w-6 text-[#5154e7]" />
-              Protocol Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Main Statistics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                <div className="flex items-center gap-3">
-                  <ClockIcon className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold text-blue-900">{protocol.duration}</p>
-                    <p className="text-sm text-blue-700 font-medium">Days</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-                <div className="flex items-center gap-3">
-                  <DocumentTextIcon className="h-8 w-8 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold text-green-900">{totalTasks}</p>
-                    <p className="text-sm text-green-700 font-medium">Tasks</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
-                <div className="flex items-center gap-3">
-                  <CalendarDaysIcon className="h-8 w-8 text-purple-600" />
-                  <div>
-                    <p className="text-2xl font-bold text-purple-900">{totalSessions}</p>
-                    <p className="text-sm text-purple-700 font-medium">Sessions</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-                <div className="flex items-center gap-3">
-                  <ShoppingBagIcon className="h-8 w-8 text-orange-600" />
-                  <div>
-                    <p className="text-2xl font-bold text-orange-900">{protocol.products.length}</p>
-                    <p className="text-sm text-orange-700 font-medium">Products</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Daily Summary */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Daily Summary</h3>
-              <div className="grid gap-3">
-                {protocol.days.map((day: any) => {
-                  const dayTasks = day.sessions.reduce((total: number, session: any) => 
-                    total + session.tasks.length, 0) + day.tasks.length;
-                  
-                  return (
-                    <div key={day.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-[#5154e7] text-white rounded-full flex items-center justify-center font-bold">
-                          {day.dayNumber}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">Day {day.dayNumber}</p>
-                          <p className="text-sm text-gray-600">
-                            {day.sessions.length} sessions • {dayTasks} tasks
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setActiveTab('days')}
-                        className="text-[#5154e7] border-[#5154e7] hover:bg-[#5154e7] hover:text-white"
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
 
       <TabsContent value="basic">
         {children.basicInfo}

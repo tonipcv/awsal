@@ -53,7 +53,7 @@ export async function GET() {
           clinicSlug: clinic.slug,
           clinicName: clinic.name 
         });
-      }
+    }
       
       // Senão, verificar se é membro de alguma clínica
       if (user.doctor.clinicMemberships.length > 0) {
@@ -115,7 +115,7 @@ export async function GET() {
           clinicSlug: membership.clinic.slug,
           clinicName: membership.clinic.name 
         });
-      }
+    }
     }
 
     // Se não encontrou nenhuma clínica, retornar null

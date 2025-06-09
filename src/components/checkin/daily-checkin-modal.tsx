@@ -147,7 +147,7 @@ export default function DailyCheckinModal({
       const missingResponses = requiredQuestions.filter(q => !responses[q.id]);
       
       if (missingResponses.length > 0) {
-        setError('Por favor, responda todas as perguntas obrigatórias');
+        setError('Please answer all required questions');
         return;
       }
 
@@ -170,11 +170,11 @@ export default function DailyCheckinModal({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao enviar respostas');
+        throw new Error(data.error || 'Error sending responses');
       }
 
       setSuccess(true);
-      setSuccessMessage(data.message || 'Check-in realizado com sucesso');
+      setSuccessMessage(data.message || 'Check-in completed successfully');
       setTimeout(() => {
         onSuccess?.();
         onClose();
@@ -254,7 +254,7 @@ export default function DailyCheckinModal({
       case 'YES_NO':
         return (
           <div className="flex space-x-4">
-            {['Sim', 'Não'].map((option) => (
+            {['Yes', 'No'].map((option) => (
               <label key={option} className="flex items-center space-x-3 cursor-pointer group flex-1">
                 <div className="relative">
                   <input
@@ -287,7 +287,7 @@ export default function DailyCheckinModal({
           <textarea
             value={value}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
-            placeholder="Digite sua resposta..."
+            placeholder="Type your answer..."
             className="w-full p-4 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-turquoise focus:border-turquoise resize-none transition-all duration-200"
             rows={4}
           />
@@ -350,11 +350,8 @@ export default function DailyCheckinModal({
           
           <div className="text-center">
             <h2 className="text-lg lg:text-2xl font-bold text-white mb-2">
-              {isEditing ? 'Editar Check-in' : 'Check-in Diário'}
+              {isEditing ? 'Edit Check-in' : 'Daily Check-in'}
             </h2>
-            <p className="text-xs lg:text-sm text-gray-400">
-              {isEditing ? 'Edite suas respostas do check-in de hoje' : 'Como você está se sentindo hoje?'}
-            </p>
           </div>
         </div>
 
@@ -367,7 +364,7 @@ export default function DailyCheckinModal({
           ) : success ? (
             <div className="text-center py-16">
               <h3 className="text-lg lg:text-2xl font-bold text-white mb-3">
-                {isEditing ? 'Check-in Atualizado!' : 'Check-in Realizado!'}
+                {isEditing ? 'Check-in Updated!' : 'Check-in Completed!'}
               </h3>
               <p className="text-sm lg:text-lg text-gray-400">
                 {successMessage}
@@ -375,8 +372,8 @@ export default function DailyCheckinModal({
             </div>
           ) : questions.length === 0 ? (
             <div className="text-center py-16">
-              <h3 className="text-lg lg:text-2xl font-bold text-white mb-3">Nenhuma pergunta encontrada</h3>
-              <p className="text-sm lg:text-lg text-gray-400">Não há perguntas de check-in configuradas para este protocolo.</p>
+              <h3 className="text-lg lg:text-2xl font-bold text-white mb-3">No questions found</h3>
+              <p className="text-sm lg:text-lg text-gray-400">There are no check-in questions configured for this protocol.</p>
             </div>
           ) : (
             <div className="space-y-8">
@@ -385,7 +382,7 @@ export default function DailyCheckinModal({
                 <div className="space-y-6">
                   <div className="text-center">
                     <div className="text-xs lg:text-sm text-turquoise font-semibold mb-4">
-                      {currentQuestionIndex + 1} de {questions.length}
+                      {currentQuestionIndex + 1} of {questions.length}
                     </div>
                     <h3 className="text-lg lg:text-2xl font-bold text-white leading-relaxed mb-6 lg:mb-8">
                       {questions[currentQuestionIndex].question}
@@ -411,7 +408,7 @@ export default function DailyCheckinModal({
                       : "text-gray-300 hover:text-white hover:bg-gray-800"
                   )}
                 >
-                  ← Anterior
+                  ← Previous
                 </button>
 
                 {isLastQuestion ? (
@@ -428,10 +425,10 @@ export default function DailyCheckinModal({
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 lg:h-5 lg:w-5 border-2 border-gray-400 border-t-transparent"></div>
-                        Enviando...
+                        Sending...
                       </>
                     ) : (
-                      isEditing ? "Atualizar Check-in" : "Enviar Check-in"
+                      isEditing ? "Update Check-in" : "Submit Check-in"
                     )}
                   </button>
                 ) : (
@@ -445,7 +442,7 @@ export default function DailyCheckinModal({
                         : "bg-turquoise hover:bg-turquoise/90 text-black shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-[1.02]"
                     )}
                   >
-                    Próxima →
+                    Next →
                   </button>
                 )}
               </div>

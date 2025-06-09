@@ -22,11 +22,15 @@ import {
   CheckCircleIcon,
   PaperAirplaneIcon,
   ExclamationTriangleIcon,
-  SparklesIcon
+  SparklesIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
 
 interface Patient {
   id: string;
@@ -79,6 +83,9 @@ export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [isAddingPatient, setIsAddingPatient] = useState(false);
+  const [showEditPatient, setShowEditPatient] = useState(false);
+  const [isEditingPatient, setIsEditingPatient] = useState(false);
+  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
   const [deletingPatientId, setDeletingPatientId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -86,6 +93,8 @@ export default function PatientsPage() {
   const [generatedCredentials, setGeneratedCredentials] = useState<{ email: string; password: string } | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [isImprovingNotes, setIsImprovingNotes] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);
   
   const [newPatient, setNewPatient] = useState<NewPatientForm>({
     name: '',
@@ -156,6 +165,80 @@ export default function PatientsPage() {
       notes: '',
       sendCredentials: false
     });
+  };
+
+  const openEditModal = (patient: Patient) => {
+    setPatientToEdit(patient);
+    setNewPatient({
+      name: patient.name || '',
+      email: patient.email || '',
+      phone: patient.phone || '',
+      birthDate: patient.birthDate || '',
+      gender: patient.gender || '',
+      address: patient.address || '',
+      emergencyContact: patient.emergencyContact || '',
+      emergencyPhone: patient.emergencyPhone || '',
+      medicalHistory: patient.medicalHistory || '',
+      allergies: patient.allergies || '',
+      medications: patient.medications || '',
+      notes: patient.notes || '',
+      sendCredentials: false
+    });
+    setShowEditPatient(true);
+  };
+
+  const updatePatient = async () => {
+    if (!newPatient.name.trim() || !newPatient.email.trim() || !patientToEdit) {
+      alert('Nome e email são obrigatórios');
+      return;
+    }
+
+    try {
+      setIsEditingPatient(true);
+      
+      // Prepare data for sending (remove empty fields)
+      const patientData: any = {
+        name: newPatient.name.trim(),
+        email: newPatient.email.trim()
+      };
+
+      // Add optional fields only if filled
+      if (newPatient.phone.trim()) patientData.phone = newPatient.phone.trim();
+      if (newPatient.birthDate) patientData.birthDate = newPatient.birthDate;
+      if (newPatient.gender) patientData.gender = newPatient.gender;
+      if (newPatient.address.trim()) patientData.address = newPatient.address.trim();
+      if (newPatient.emergencyContact.trim()) patientData.emergencyContact = newPatient.emergencyContact.trim();
+      if (newPatient.emergencyPhone.trim()) patientData.emergencyPhone = newPatient.emergencyPhone.trim();
+      if (newPatient.medicalHistory.trim()) patientData.medicalHistory = newPatient.medicalHistory.trim();
+      if (newPatient.allergies.trim()) patientData.allergies = newPatient.allergies.trim();
+      if (newPatient.medications.trim()) patientData.medications = newPatient.medications.trim();
+      if (newPatient.notes.trim()) patientData.notes = newPatient.notes.trim();
+
+      const response = await fetch(`/api/patients/${patientToEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(patientData)
+      });
+
+      if (response.ok) {
+        // Reload clients list
+        await loadPatients();
+        resetForm();
+        setShowEditPatient(false);
+        setPatientToEdit(null);
+        alert('Cliente atualizado com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(`Erro ao atualizar cliente: ${error.error || 'Erro ao atualizar cliente'}`);
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+      alert('Erro ao atualizar cliente');
+    } finally {
+      setIsEditingPatient(false);
+    }
   };
 
   const addPatient = async () => {
@@ -292,6 +375,28 @@ export default function PatientsPage() {
     patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination logic
+  const totalPatients = filteredPatients.length;
+  const totalPages = Math.ceil(totalPatients / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // Handle page change with smooth scroll
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Smooth scroll to top of patients section
+    const patientsSection = document.querySelector('[data-patients-section]');
+    if (patientsSection) {
+      patientsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const getPatientInitials = (name?: string) => {
     if (!name) return 'C';
@@ -819,6 +924,267 @@ export default function PatientsPage() {
             </div>
         )}
 
+        {/* Edit Patient Modal */}
+        {showEditPatient && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-gray-900">Edit Client</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowEditPatient(false);
+                      setPatientToEdit(null);
+                      resetForm();
+                    }}
+                    className="text-gray-400 hover:text-gray-600 rounded-xl"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information *</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-name" className="text-sm font-semibold text-gray-700">
+                          Full Name *
+                        </Label>
+                        <Input
+                          id="edit-name"
+                          value={newPatient.name}
+                          onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
+                          placeholder="Client's full name"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="edit-email" className="text-sm font-semibold text-gray-700">
+                          Email *
+                        </Label>
+                        <Input
+                          id="edit-email"
+                          type="email"
+                          value={newPatient.email}
+                          onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
+                          placeholder="email@example.com"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-phone" className="text-sm font-semibold text-gray-700">
+                          Phone
+                        </Label>
+                        <Input
+                          id="edit-phone"
+                          value={newPatient.phone}
+                          onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
+                          placeholder="(11) 99999-9999"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="edit-birthDate" className="text-sm font-semibold text-gray-700">
+                          Birth Date
+                        </Label>
+                        <Input
+                          id="edit-birthDate"
+                          type="date"
+                          value={newPatient.birthDate}
+                          onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
+                          className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-gender" className="text-sm font-semibold text-gray-700">
+                          Gender
+                        </Label>
+                        <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
+                          <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
+                            <SelectItem value="M">Male</SelectItem>
+                            <SelectItem value="F">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="edit-address" className="text-sm font-semibold text-gray-700">
+                          Address
+                        </Label>
+                        <Input
+                          id="edit-address"
+                          value={newPatient.address}
+                          onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
+                          placeholder="Full address"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Emergency Contact */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-emergencyContact" className="text-sm font-semibold text-gray-700">
+                          Contact Name
+                        </Label>
+                        <Input
+                          id="edit-emergencyContact"
+                          value={newPatient.emergencyContact}
+                          onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
+                          placeholder="Emergency contact name"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="edit-emergencyPhone" className="text-sm font-semibold text-gray-700">
+                          Emergency Phone
+                        </Label>
+                  <Input
+                          id="edit-emergencyPhone"
+                          value={newPatient.emergencyPhone}
+                          onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
+                          placeholder="(11) 99999-9999"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Medical Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information</h3>
+                    
+                    <div>
+                      <Label htmlFor="edit-medicalHistory" className="text-sm font-semibold text-gray-700">
+                        Medical History
+                      </Label>
+                      <Textarea
+                        id="edit-medicalHistory"
+                        value={newPatient.medicalHistory}
+                        onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
+                        placeholder="Relevant medical history, previous surgeries, etc."
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-allergies" className="text-sm font-semibold text-gray-700">
+                        Allergies
+                      </Label>
+                      <Textarea
+                        id="edit-allergies"
+                        value={newPatient.allergies}
+                        onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
+                        placeholder="Known allergies to medications, foods, etc."
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-medications" className="text-sm font-semibold text-gray-700">
+                        Current Medications
+                      </Label>
+                      <Textarea
+                        id="edit-medications"
+                        value={newPatient.medications}
+                        onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
+                        placeholder="Medications currently in use"
+                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes</h3>
+                    
+                    <div>
+                      <Label htmlFor="edit-notes" className="text-sm font-semibold text-gray-700">
+                        General Notes
+                      </Label>
+                      <div className="relative">
+                        <Textarea
+                          id="edit-notes"
+                          value={newPatient.notes}
+                          onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
+                          placeholder="General observations about the client"
+                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
+                          rows={3}
+                        />
+                        {newPatient.notes.trim() && (
+                          <button
+                            type="button"
+                            onClick={improveNotesWithAI}
+                            disabled={isImprovingNotes}
+                            className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Improve text with AI"
+                          >
+                            {isImprovingNotes ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
+                            ) : (
+                              <SparklesIcon className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditPatient(false);
+                    setPatientToEdit(null);
+                      resetForm();
+                    }}
+                    disabled={isEditingPatient}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={updatePatient}
+                    disabled={isEditingPatient}
+                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
+                  >
+                    {isEditingPatient ? 'Updating...' : 'Update Client'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
         {/* Search */}
           <Card className="mb-6 bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardContent className="p-6">
@@ -834,8 +1200,19 @@ export default function PatientsPage() {
           </CardContent>
         </Card>
 
-        {/* Clients List */}
-        {filteredPatients.length === 0 ? (
+        {/* Main Content */}
+        <div data-patients-section>
+          {/* Pagination Info */}
+          {totalPatients > 0 && (
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-gray-500 font-medium">
+                Showing {startIndex + 1}-{Math.min(endIndex, totalPatients)} of {totalPatients} clients
+              </p>
+            </div>
+          )}
+
+          {/* Clients Grid */}
+          {filteredPatients.length === 0 ? (
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardContent className="p-8">
               <div className="text-center">
@@ -862,104 +1239,72 @@ export default function PatientsPage() {
             </CardContent>
           </Card>
         ) : (
-            <div className="space-y-6">
-            {filteredPatients.map((patient) => {
+            <div className="space-y-4">
+            {currentPatients.map((patient) => {
               const activeProtocol = getActiveProtocol(patient);
               const totalProtocols = patient.assignedProtocols.length;
               
               return (
-                  <Card key={patient.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        {/* Avatar */}
-                          <div className="h-12 w-12 rounded-xl bg-teal-100 flex items-center justify-center text-sm font-bold text-teal-600">
-                          {getPatientInitials(patient.name)}
-                        </div>
-                        
+                  <Card key={patient.id} className="bg-white border-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-bold text-gray-900">
+                          <div className="flex items-center gap-2">
+                              <h3 className="text-base font-semibold text-gray-900">
                               {patient.name || 'Name not provided'}
                             </h3>
+                            <span className="text-sm text-gray-500">• {patient.email}</span>
                             {activeProtocol && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-xl text-xs bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
-                                Active Protocol
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 font-medium">
+                                Active
                               </span>
                             )}
                           </div>
-                          
-                          <div className="flex items-center gap-1 mb-3">
-                              <EnvelopeIcon className="h-3 w-3 text-gray-400" />
-                              <span className="text-sm text-gray-500 font-medium">{patient.email}</span>
-                              {patient.phone && (
-                                <>
-                                  <span className="text-gray-300 mx-2">•</span>
-                                  <span className="text-sm text-gray-500 font-medium">{patient.phone}</span>
-                                </>
-                              )}
-                          </div>
-                          
-                          {activeProtocol ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                  <DocumentTextIcon className="h-3 w-3 text-gray-400" />
-                                  <span className="text-sm font-semibold text-gray-700">{activeProtocol.protocol.name}</span>
-                              </div>
-                                <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
-                                <div className="flex items-center gap-1">
-                                  <CalendarDaysIcon className="h-3 w-3" />
-                                  <span>{activeProtocol.protocol.duration} days</span>
-                                </div>
-                                <span>
-                                  Started on {format(new Date(activeProtocol.startDate), 'MM/dd/yyyy', { locale: enUS })}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                              <div className="text-sm text-gray-500 font-medium">
-                              {totalProtocols > 0 
-                                ? `${totalProtocols} protocol${totalProtocols > 1 ? 's' : ''} completed`
-                                : 'No protocols assigned'
-                              }
-                            </div>
-                          )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           asChild
-                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
                         >
                           <Link href={`/doctor/patients/${patient.id}`}>
                             <EyeIcon className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditModal(patient)}
+                          className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
+                        >
+                          <PencilIcon className="h-3 w-3" />
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
                           disabled={sendingEmailId === patient.id}
-                          className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-xl font-semibold"
+                          className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg font-medium h-8 px-2"
                           title="Send password setup email"
                         >
                           {sendingEmailId === patient.id ? (
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
                           ) : (
-                            <PaperAirplaneIcon className="h-4 w-4" />
+                            <PaperAirplaneIcon className="h-3 w-3" />
                           )}
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           asChild
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-white hover:border-[#5154e7] rounded-xl font-semibold"
+                            className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-white hover:border-[#5154e7] rounded-lg font-medium h-8 px-2"
                         >
                           <Link href={`/doctor/patients/${patient.id}/assign`}>
-                            <DocumentTextIcon className="h-4 w-4 mr-1" />
+                            <DocumentTextIcon className="h-3 w-3 mr-1" />
                             Protocol
                           </Link>
                         </Button>
@@ -971,12 +1316,12 @@ export default function PatientsPage() {
                               setShowDeleteConfirm(true);
                             }}
                             disabled={deletingPatientId === patient.id}
-                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
                           >
                             {deletingPatientId === patient.id ? (
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
+                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
                             ) : (
-                              <TrashIcon className="h-4 w-4" />
+                              <TrashIcon className="h-3 w-3" />
                             )}
                         </Button>
                       </div>
@@ -987,6 +1332,83 @@ export default function PatientsPage() {
             })}
           </div>
         )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              {/* Previous Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+              >
+                <ChevronLeftIcon className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNumber)}
+                      className={cn(
+                        "w-8 h-8 p-0 rounded-xl",
+                        currentPage === pageNumber
+                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                      )}
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
+                
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <>
+                    <span className="text-gray-400 px-1">...</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(totalPages)}
+                      className="w-8 h-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Next Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+              >
+                Next
+                <ChevronRightIcon className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>

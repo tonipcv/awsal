@@ -425,49 +425,49 @@ export async function PUT(
           } else {
             // Dia novo - criar
             console.log(`📅 Creating new day ${dayData.dayNumber}`);
-            const protocolDay = await tx.protocolDay.create({
-              data: {
-                dayNumber: dayData.dayNumber,
-                title: dayData.title || `Dia ${dayData.dayNumber}`,
-                description: dayData.description || null,
-                protocolId: protocol.id
-              }
-            });
+          const protocolDay = await tx.protocolDay.create({
+            data: {
+              dayNumber: dayData.dayNumber,
+              title: dayData.title || `Dia ${dayData.dayNumber}`,
+              description: dayData.description || null,
+              protocolId: protocol.id
+            }
+          });
 
             // Criar sessões do novo dia
-            if (dayData.sessions && Array.isArray(dayData.sessions)) {
-              for (const sessionData of dayData.sessions) {
-                const protocolSession = await tx.protocolSession.create({
-                  data: {
-                    title: sessionData.title || sessionData.name || 'Sessão sem nome',
-                    description: sessionData.description || null,
-                    sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
-                    protocolDayId: protocolDay.id
-                  }
-                });
+          if (dayData.sessions && Array.isArray(dayData.sessions)) {
+            for (const sessionData of dayData.sessions) {
+              const protocolSession = await tx.protocolSession.create({
+                data: {
+                  title: sessionData.title || sessionData.name || 'Sessão sem nome',
+                  description: sessionData.description || null,
+                  sessionNumber: sessionData.sessionNumber || sessionData.order || 1,
+                  protocolDayId: protocolDay.id
+                }
+              });
 
                 // Criar tarefas da sessão
                 if (sessionData.tasks && Array.isArray(sessionData.tasks)) {
                   const validTasks = sessionData.tasks.filter((task: any) => task.title.trim());
                   for (const taskData of validTasks) {
-                    await tx.protocolTask.create({
-                      data: {
-                        title: taskData.title,
-                        description: taskData.description || null,
-                        type: taskData.type || 'task',
-                        duration: taskData.duration || null,
-                        orderIndex: taskData.orderIndex || taskData.order || 0,
-                        hasMoreInfo: taskData.hasMoreInfo || false,
-                        videoUrl: taskData.videoUrl || null,
-                        fullExplanation: taskData.fullExplanation || null,
-                        productId: taskData.productId || null,
-                        modalTitle: taskData.modalTitle || null,
-                        modalButtonText: taskData.modalButtonText || null,
-                        modalButtonUrl: taskData.modalButtonUrl || null,
-                        protocolSessionId: protocolSession.id
-                      }
-                    });
-                  }
+                  await tx.protocolTask.create({
+                    data: {
+                      title: taskData.title,
+                      description: taskData.description || null,
+                      type: taskData.type || 'task',
+                      duration: taskData.duration || null,
+                      orderIndex: taskData.orderIndex || taskData.order || 0,
+                      hasMoreInfo: taskData.hasMoreInfo || false,
+                      videoUrl: taskData.videoUrl || null,
+                      fullExplanation: taskData.fullExplanation || null,
+                      productId: taskData.productId || null,
+                      modalTitle: taskData.modalTitle || null,
+                      modalButtonText: taskData.modalButtonText || null,
+                      modalButtonUrl: taskData.modalButtonUrl || null,
+                      protocolSessionId: protocolSession.id
+                    }
+                  });
+                }
                 }
               }
             }

@@ -903,6 +903,30 @@ export default function EditProtocolPage() {
     }
   };
 
+  // Computed property to check if modal is enabled (has any content)
+  const isModalEnabled = !!(protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription);
+
+  // Function to toggle modal enabled state
+  const toggleModalEnabled = (enabled: boolean) => {
+    if (!enabled) {
+      // Clear all modal fields when disabling
+      setProtocol(prev => ({
+        ...prev,
+        modalTitle: '',
+        modalVideoUrl: '',
+        modalDescription: '',
+        modalButtonText: '',
+        modalButtonUrl: ''
+      }));
+    } else {
+      // Set default title when enabling
+      setProtocol(prev => ({
+        ...prev,
+        modalTitle: prev.modalTitle || 'Protocol Information'
+      }));
+    }
+  };
+
   if (isLoadingProtocol) {
     return (
       <div className="min-h-screen bg-white">
@@ -1314,74 +1338,123 @@ export default function EditProtocolPage() {
               modalConfig: (
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-lg font-bold text-gray-900">Modal for Unavailable Protocol</CardTitle>
+                    <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration (Optional)</CardTitle>
                     <p className="text-gray-600 font-medium">
-                      Configure the modal that will be displayed when this protocol is unavailable for a specific patient.
+                      Configure an optional modal that will be displayed when this protocol is unavailable or inactive for patients. If disabled, the protocol will simply not be clickable when unavailable.
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
-                          <Input
-                            id="modalTitle"
-                            value={protocol.modalTitle}
-                            onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
-                            placeholder="Ex: Protocol in Development"
-                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    {/* Modal Enable/Disable Toggle */}
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            id="modalEnabled"
+                            checked={isModalEnabled}
+                            onChange={(e) => toggleModalEnabled(e.target.checked)}
+                            className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7] w-4 h-4"
                           />
+                          <Label htmlFor="modalEnabled" className="text-gray-900 font-semibold">
+                            Enable Modal
+                          </Label>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
-                          <Input
-                            id="modalVideoUrl"
-                            value={protocol.modalVideoUrl}
-                            onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
-                            placeholder="Ex: https://www.youtube.com/embed/..."
-                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                          />
-                        </div>
+                        <Badge 
+                          variant={isModalEnabled ? "default" : "secondary"} 
+                          className={isModalEnabled 
+                            ? "bg-green-100 text-green-800 border-green-200" 
+                            : "bg-gray-100 text-gray-600 border-gray-200"
+                          }
+                        >
+                          {isModalEnabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
                       </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
-                          <Textarea
-                            id="modalDescription"
-                            value={protocol.modalDescription}
-                            onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
-                            placeholder="Describe what will be shown in the modal..."
-                            className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
-                            <Input
-                              id="modalButtonText"
-                              value={protocol.modalButtonText}
-                              onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
-                              placeholder="Ex: Learn more"
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL (optional)</Label>
-                            <Input
-                              id="modalButtonUrl"
-                              value={protocol.modalButtonUrl}
-                              onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
-                              placeholder="Ex: https://..."
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
-                            />
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-xs text-gray-600 mt-2 ml-7">
+                        {isModalEnabled 
+                          ? 'Modal will be shown when protocol is unavailable or inactive'
+                          : 'Protocol will not be clickable when unavailable or inactive'
+                        }
+                      </p>
                     </div>
+
+                    {/* Modal Configuration Fields - Only show when enabled */}
+                    {isModalEnabled && (
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
+                            <Input
+                              id="modalTitle"
+                              value={protocol.modalTitle}
+                              onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
+                              placeholder="Ex: Protocol in Development"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
+                            <Input
+                              id="modalVideoUrl"
+                              value={protocol.modalVideoUrl}
+                              onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
+                              placeholder="Ex: https://www.youtube.com/embed/..."
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
+                            <Textarea
+                              id="modalDescription"
+                              value={protocol.modalDescription}
+                              onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
+                              placeholder="Describe what will be shown in the modal..."
+                              className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                              <Input
+                                id="modalButtonText"
+                                value={protocol.modalButtonText}
+                                onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
+                                placeholder="Ex: Learn more"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL (optional)</Label>
+                              <Input
+                                id="modalButtonUrl"
+                                value={protocol.modalButtonUrl}
+                                onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
+                                placeholder="Ex: https://..."
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Disabled State Message */}
+                    {!isModalEnabled && (
+                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <DocumentTextIcon className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-700 mb-1">Modal Disabled</h3>
+                        <p className="text-xs text-gray-500">
+                          Enable the modal above to configure its content and behavior.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ),

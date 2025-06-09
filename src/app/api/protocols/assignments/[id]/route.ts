@@ -25,7 +25,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem atualizar atribuições de protocolos.' }, { status: 403 });
     }
 
-    const { status } = await request.json();
+    const { status, startDate, endDate } = await request.json();
 
     // Validar status
     if (!status || !['ACTIVE', 'INACTIVE', 'UNAVAILABLE'].includes(status)) {
@@ -50,10 +50,24 @@ export async function PUT(
       return NextResponse.json({ error: 'Atribuição de protocolo não encontrada' }, { status: 404 });
     }
 
+    // Preparar dados para atualização
+    const updateData: any = { 
+      status: status,
+      isActive: status === 'ACTIVE'
+    };
+
+    // Se startDate e endDate foram fornecidos (para reativação), atualizá-los também
+    if (startDate) {
+      updateData.startDate = new Date(startDate);
+    }
+    if (endDate) {
+      updateData.endDate = new Date(endDate);
+    }
+
     // Atualizar o status da atribuição
     const updatedAssignment = await prisma.userProtocol.update({
       where: { id: id },
-      data: { status: status },
+      data: updateData,
       include: {
         protocol: {
           select: {

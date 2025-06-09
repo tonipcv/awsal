@@ -229,8 +229,12 @@ export default function ProtocolChecklistPage() {
   // Verificar se já fez check-in hoje
   const checkTodayCheckin = useCallback(async (protocolId: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch(`/api/protocols/${protocolId}/checkin-responses?date=${today}`);
+      // Use UTC date to avoid timezone issues
+      const today = new Date();
+      const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+      const todayString = todayUTC.toISOString().split('T')[0];
+      
+      const response = await fetch(`/api/protocols/${protocolId}/checkin-responses?date=${todayString}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -427,9 +431,33 @@ export default function ProtocolChecklistPage() {
 
   const getDateForProtocolDay = useCallback((dayNumber: number): string => {
     if (!activeProtocol) return '';
-    const startDate = new Date(activeProtocol.startDate);
-    const targetDate = addDays(startDate, dayNumber - 1);
-    return format(targetDate, 'yyyy-MM-dd');
+    
+    // Parse the ISO date string directly to avoid timezone issues
+    const startDateISO = new Date(activeProtocol.startDate).toISOString();
+    const [year, month, day] = startDateISO.split('T')[0].split('-').map(Number);
+    
+    // Calculate target date directly
+    const targetYear = year;
+    const targetMonth = month;
+    const targetDay = day + (dayNumber - 1);
+    
+    // Handle month overflow
+    const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+    let finalDay = targetDay;
+    let finalMonth = targetMonth;
+    let finalYear = targetYear;
+    
+    if (finalDay > daysInMonth) {
+      finalDay = finalDay - daysInMonth;
+      finalMonth++;
+      if (finalMonth > 12) {
+        finalMonth = 1;
+        finalYear++;
+      }
+    }
+    
+    // Format as yyyy-MM-dd
+    return `${finalYear}-${finalMonth.toString().padStart(2, '0')}-${finalDay.toString().padStart(2, '0')}`;
   }, [activeProtocol]);
 
   const isTaskCompleted = useCallback((taskId: string, date: string) => {
@@ -440,14 +468,16 @@ export default function ProtocolChecklistPage() {
   const getCurrentDay = useCallback(() => {
     if (!activeProtocol) return 1;
     
+    // Parse the ISO date string directly to avoid timezone issues
+    const startDateISO = new Date(activeProtocol.startDate).toISOString();
+    const [year, month, day] = startDateISO.split('T')[0].split('-').map(Number);
+    
+    // Create UTC dates for comparison
     const today = new Date();
-    const startDate = new Date(activeProtocol.startDate);
+    const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const startDateUTC = new Date(Date.UTC(year, month - 1, day));
     
-    // Normalizar as datas para comparação (apenas data, sem hora) - mesma lógica do getDayStatus
-    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    
-    const diffTime = normalizedToday.getTime() - normalizedStartDate.getTime();
+    const diffTime = todayUTC.getTime() - startDateUTC.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
     
     return Math.max(1, Math.min(diffDays, activeProtocol.protocol.duration));
@@ -456,15 +486,18 @@ export default function ProtocolChecklistPage() {
   const getDayStatus = useCallback((dayNumber: number) => {
     if (!activeProtocol) return 'future';
     
+    // Parse the ISO date string directly to avoid timezone issues
+    const startDateISO = new Date(activeProtocol.startDate).toISOString();
+    const [year, month, day] = startDateISO.split('T')[0].split('-').map(Number);
+    
+    // Create UTC dates for comparison
     const today = new Date();
-    const startDate = new Date(activeProtocol.startDate);
-    const dayDate = addDays(startDate, dayNumber - 1);
+    const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const startDateUTC = new Date(Date.UTC(year, month - 1, day));
+    const dayDateUTC = new Date(startDateUTC.getTime() + (dayNumber - 1) * 24 * 60 * 60 * 1000);
     
-    const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const normalizedDayDate = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate());
-    
-    if (normalizedDayDate < normalizedToday) return 'past';
-    if (normalizedDayDate.getTime() === normalizedToday.getTime()) return 'current';
+    if (dayDateUTC < todayUTC) return 'past';
+    if (dayDateUTC.getTime() === todayUTC.getTime()) return 'current';
     return 'future';
   }, [activeProtocol]);
 
@@ -634,7 +667,12 @@ export default function ProtocolChecklistPage() {
                                 {day.title || `${t.day} ${day.dayNumber}`}
                               </h3>
                               <div className="text-xs lg:text-sm text-gray-400">
-                                {format(new Date(dayDate), 'EEEE, dd/MM/yyyy', { locale: dateLocale })}
+                                {(() => {
+                                  // Parse dayDate and format it properly to avoid timezone issues
+                                  const [year, month, day] = dayDate.split('-').map(Number);
+                                  const dateUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Use noon UTC to avoid timezone edge cases
+                                  return format(dateUTC, 'EEEE, dd/MM/yyyy', { locale: dateLocale });
+                                })()}
                               </div>
                             </div>
                           </div>

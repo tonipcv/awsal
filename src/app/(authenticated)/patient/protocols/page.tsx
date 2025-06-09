@@ -14,7 +14,8 @@ import {
   EyeIcon,
   PlayIcon,
   StarIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,9 +42,11 @@ const translations = {
     contactDoctor: 'Entre em contato com seu médico para obter um protocolo personalizado.',
     activeProtocolsSection: 'Protocolos Ativos',
     unavailableProtocolsSection: 'Protocolos Indisponíveis',
+    inactiveProtocolsSection: 'Protocolos Inativos',
     active: 'Ativo',
     completed: 'Concluído',
     unavailable: 'Indisponível',
+    inactive: 'Inativo',
     responsibleDoctor: 'Médico Responsável',
     duration: 'Duração',
     tasks: 'Tarefas',
@@ -65,9 +68,11 @@ const translations = {
     contactDoctor: 'Contact your doctor to get a personalized protocol.',
     activeProtocolsSection: 'Active Protocols',
     unavailableProtocolsSection: 'Unavailable Protocols',
+    inactiveProtocolsSection: 'Inactive Protocols',
     active: 'Active',
     completed: 'Completed',
     unavailable: 'Unavailable',
+    inactive: 'Inactive',
     responsibleDoctor: 'Responsible Doctor',
     duration: 'Duration',
     tasks: 'Tasks',
@@ -139,6 +144,7 @@ interface ActiveProtocol {
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  status: string;
   protocol: Protocol;
 }
 
@@ -267,6 +273,13 @@ export default function ProtocolsPage() {
   };
 
   const openModal = (protocol: Protocol) => {
+    // Only open modal if there's at least some modal content configured
+    const hasModalContent = protocol.modalTitle || protocol.modalDescription || protocol.modalVideoUrl;
+    
+    if (!hasModalContent) {
+      return; // Don't open modal if no content is configured
+    }
+    
     setModalData({
       isOpen: true,
       title: protocol.modalTitle || protocol.name,
@@ -281,6 +294,11 @@ export default function ProtocolsPage() {
     setModalData(prev => ({ ...prev, isOpen: false }));
   };
 
+  // Helper function to check if protocol has modal content
+  const hasModalContent = (protocol: Protocol) => {
+    return protocol.modalTitle || protocol.modalDescription || protocol.modalVideoUrl;
+  };
+
   // Função para obter o médico principal dos protocolos ativos
   const getPrimaryDoctor = () => {
     // Procura pelo primeiro protocolo ativo que tem informações do médico
@@ -291,9 +309,15 @@ export default function ProtocolsPage() {
     return protocolWithDoctor?.protocol.doctor || null;
   };
 
-  // Separar protocolos ativos dos inativos
-  const activeProtocols = protocols.filter(p => p.isActive);
-  const inactiveProtocols = protocols.filter(p => !p.isActive);
+  // Separar protocolos por status com hierarquia de prioridade
+  // Prioridade: UNAVAILABLE > INACTIVE > ACTIVE
+  const unavailableProtocols = protocols.filter(p => p.status === 'UNAVAILABLE');
+  const activeProtocols = protocols.filter(p => 
+    p.status === 'ACTIVE' && p.isActive
+  );
+  const inactiveProtocols = protocols.filter(p => 
+    p.status !== 'UNAVAILABLE' && (p.status === 'INACTIVE' || !p.isActive)
+  );
 
   if (!session) {
     return (
@@ -307,7 +331,7 @@ export default function ProtocolsPage() {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Padding para menu lateral no desktop e header no mobile */}
-        <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
+        <div className="pt-[88px] pb-32 lg:pt-6 lg:pb-16 lg:ml-64">
           <div className="max-w-6xl mx-auto px-3 py-2 lg:px-6 lg:py-4">
             
             {/* Hero Skeleton */}
@@ -383,7 +407,7 @@ export default function ProtocolsPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
       {/* Padding para menu lateral no desktop e header no mobile */}
-      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-32 lg:pt-6 lg:pb-16 lg:ml-64">
         
         {/* Hero Section Compacto */}
       <div className="relative overflow-hidden">
@@ -436,7 +460,7 @@ export default function ProtocolsPage() {
       </div>
 
       {/* Main Content */}
-        <div className="max-w-6xl mx-auto px-3 lg:px-6">
+        <div className="max-w-6xl mx-auto px-3 lg:px-6 pb-8 lg:pb-12">
         {totalProtocols === 0 ? (
           /* Empty State */
             <div className="text-center py-12 lg:py-16">
@@ -466,7 +490,6 @@ export default function ProtocolsPage() {
                   {activeProtocols.map(assignment => {
                     const progress = getProtocolProgress(assignment);
                     const totalTasks = getTotalTasks(assignment.protocol);
-                    const isActive = assignment.isActive;
                     const isCompleted = progress.currentDay >= progress.totalDays;
                     
                     return (
@@ -496,14 +519,13 @@ export default function ProtocolsPage() {
                                     {assignment.protocol.name}
                                   </h3>
                                   <div className="flex items-center gap-2">
-                                    {isActive && (
-                                      <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                        {t.active}
-                                      </Badge>
-                                    )}
-                                    {isCompleted && (
+                                    {isCompleted ? (
                                       <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
                                         {t.completed}
+                                      </Badge>
+                                    ) : (
+                                      <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                        {t.active}
                                       </Badge>
                                     )}
                                   </div>
@@ -609,23 +631,140 @@ export default function ProtocolsPage() {
               </section>
             )}
 
+            {/* Unavailable Protocols */}
+            {unavailableProtocols.length > 0 && (
+              <section>
+                <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
+                  <ExclamationTriangleIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
+                  {t.unavailableProtocolsSection}
+                </h2>
+                
+                <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {unavailableProtocols.map(assignment => {
+                    const totalTasks = getTotalTasks(assignment.protocol);
+                    const hasModal = hasModalContent(assignment.protocol);
+                    
+                    return (
+                      <div 
+                        key={assignment.id} 
+                        className={`group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 backdrop-blur-sm ${hasModal ? 'cursor-pointer' : ''}`}
+                        onClick={hasModal ? () => openModal(assignment.protocol) : undefined}
+                      >
+                        {/* Cover Image */}
+                        {assignment.protocol.coverImage && (
+                          <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                            <Image
+                              src={assignment.protocol.coverImage}
+                              alt={assignment.protocol.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300 grayscale"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+                          </div>
+                        )}
+                        
+                        <div className="p-3 lg:p-4">
+                          <div className="space-y-3">
+                            <div>
+                              <div className="mb-2">
+                                <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-2 mb-2">
+                                  {assignment.protocol.name}
+                                </h3>
+                                <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                  {t.unavailable}
+                                </Badge>
+                              </div>
+
+                              {/* Doctor Info - Only show if showDoctorInfo is true */}
+                              {assignment.protocol.showDoctorInfo && assignment.protocol.doctor && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                                    {assignment.protocol.doctor.image ? (
+                                      <img 
+                                        src={assignment.protocol.doctor.image} 
+                                        alt={assignment.protocol.doctor.name || t.responsibleDoctor}
+                                        className="w-full h-full object-cover grayscale"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                          if (fallback) {
+                                            fallback.style.display = 'flex';
+                                          }
+                                        }}
+                                      />
+                                    ) : null}
+                                    <div 
+                                      className="w-full h-full bg-gray-600 flex items-center justify-center"
+                                      style={{ display: assignment.protocol.doctor.image ? 'none' : 'flex' }}
+                                    >
+                                      <span className="text-xs text-gray-300 font-medium">
+                                        {assignment.protocol.doctor.name?.charAt(0) || 'M'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-400">
+                                    {assignment.protocol.doctor.name || t.responsibleDoctor}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {assignment.protocol.description && (
+                                <p className="text-xs lg:text-sm text-gray-400 leading-relaxed line-clamp-2">
+                                  {assignment.protocol.description}
+                                </p>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <CalendarDaysIcon className="h-3 w-3 text-gray-500" />
+                                  <span>{assignment.protocol.duration} {t.days}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DocumentTextIcon className="h-3 w-3 text-gray-500" />
+                                  <span>{totalTasks} {t.tasks}</span>
+                                </div>
+                              </div>
+
+                              {hasModal && (
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
+                                >
+                                  {t.seeDetails}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {/* Inactive Protocols */}
             {inactiveProtocols.length > 0 && (
               <section>
-                  <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
-                    <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
-                    Protocolos Inativos
+                <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
+                  <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
+                  {t.inactiveProtocolsSection}
                 </h2>
                 
-                  <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
                   {inactiveProtocols.map(assignment => {
                     const totalTasks = getTotalTasks(assignment.protocol);
+                    const hasModal = hasModalContent(assignment.protocol);
                     
                     return (
                         <div 
                         key={assignment.id} 
-                          className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
-                        onClick={() => openModal(assignment.protocol)}
+                          className={`group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 backdrop-blur-sm ${hasModal ? 'cursor-pointer' : ''}`}
+                        onClick={hasModal ? () => openModal(assignment.protocol) : undefined}
                       >
                           {/* Cover Image */}
                           {assignment.protocol.coverImage && (
@@ -649,7 +788,7 @@ export default function ProtocolsPage() {
                                   {assignment.protocol.name}
                                 </h3>
                                   <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                  Inativo
+                                  {t.inactive}
                                 </Badge>
                               </div>
 
@@ -705,13 +844,15 @@ export default function ProtocolsPage() {
                                   </div>
                               </div>
 
-                              <Button 
-                                variant="outline"
-                                size="sm"
-                                className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
-                              >
-                                {t.seeDetails}
-                              </Button>
+                              {hasModal && (
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
+                                >
+                                  {t.seeDetails}
+                                </Button>
+                              )}
                               </div>
                             </div>
                           </div>
