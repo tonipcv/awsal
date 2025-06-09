@@ -74,11 +74,19 @@ export default function ProtocolsPage() {
       if (response.ok) {
         setProtocols(protocols.filter(p => p.id !== protocolId));
       } else {
-        alert('Error deleting protocol');
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Error deleting protocol';
+        
+        // Show more detailed error message
+        if (errorData.activeAssignments && errorData.patients) {
+          alert(`❌ ${errorMessage}\n\n📋 Assigned to: ${errorData.patients.join(', ')}\n\n💡 Go to each patient's page and deactivate the protocol assignments first.`);
+        } else {
+          alert(`❌ ${errorMessage}`);
+        }
       }
     } catch (error) {
       console.error('Error deleting protocol:', error);
-      alert('Error deleting protocol');
+      alert('❌ Connection error. Please try again.');
     }
   };
 

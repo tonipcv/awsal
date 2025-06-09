@@ -629,8 +629,21 @@ export async function DELETE(
 
     // Verificar se há atribuições ativas
     if (existingProtocol.assignments.length > 0) {
+      const activeAssignments = existingProtocol.assignments;
+      const patientNames = await Promise.all(
+        activeAssignments.map(async (assignment) => {
+          const user = await prisma.user.findUnique({
+            where: { id: assignment.userId },
+            select: { name: true, email: true }
+          });
+          return user?.name || user?.email || 'Unknown patient';
+        })
+      );
+
       return NextResponse.json({ 
-        error: 'Não é possível excluir protocolo com atribuições ativas. Desative as atribuições primeiro.' 
+        error: `Cannot delete protocol with active assignments. This protocol is currently assigned to ${activeAssignments.length} patient(s): ${patientNames.join(', ')}. Please deactivate all assignments first by going to each patient's page and changing the protocol status to INACTIVE or removing the assignment.`,
+        activeAssignments: activeAssignments.length,
+        patients: patientNames
       }, { status: 400 });
     }
 

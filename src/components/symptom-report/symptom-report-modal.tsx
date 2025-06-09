@@ -8,10 +8,13 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   PaperAirplaneIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  MicrophoneIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import AudioRecorder from '@/components/audio-recorder/audio-recorder';
 
 interface SymptomReportModalProps {
   isOpen: boolean;
@@ -35,6 +38,7 @@ export default function SymptomReportModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [inputMethod, setInputMethod] = useState<'text' | 'audio'>('text');
 
   const handleSubmit = async () => {
     if (!symptoms.trim()) {
@@ -85,6 +89,7 @@ export default function SymptomReportModal({
         setIsNow(true);
         setCustomTime('');
         setSuccess(false);
+        setInputMethod('text');
         onSuccess?.();
         onClose();
       }, 2000);
@@ -95,6 +100,21 @@ export default function SymptomReportModal({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleAudioTranscription = (transcribedText: string) => {
+    // Append to existing text or replace if empty
+    if (symptoms.trim()) {
+      setSymptoms(prev => prev + ' ' + transcribedText);
+    } else {
+      setSymptoms(transcribedText);
+    }
+    // Switch back to text mode to allow editing
+    setInputMethod('text');
+  };
+
+  const handleAudioError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
   const getCurrentTime = () => {
@@ -153,21 +173,103 @@ export default function SymptomReportModal({
               )}
 
               <div className="space-y-8">
+                {/* Input Method Toggle */}
+                <div>
+                  <label className="block text-sm font-medium text-white mb-3">
+                    How would you like to describe your symptoms? *
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setInputMethod('text')}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200",
+                        inputMethod === 'text'
+                          ? "bg-turquoise text-black"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      )}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                      Type Text
+                    </button>
+                    <button
+                      onClick={() => setInputMethod('audio')}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200",
+                        inputMethod === 'audio'
+                          ? "bg-turquoise text-black"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      )}
+                    >
+                      <MicrophoneIcon className="h-4 w-4" />
+                      Record Audio
+                    </button>
+                  </div>
+                </div>
+
                 {/* Symptoms Description */}
                 <div>
                   <label className="block text-sm font-medium text-white mb-3">
                     Describe your symptoms *
                   </label>
-                  <textarea
-                    value={symptoms}
-                    onChange={(e) => setSymptoms(e.target.value)}
-                    placeholder="Describe in detail the symptoms you are experiencing..."
-                    className="w-full h-32 px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-turquoise focus:border-turquoise resize-none transition-all duration-200"
-                    maxLength={1000}
-                  />
-                  <p className="text-xs text-gray-400 mt-2">
-                    {symptoms.length}/1000 characters
-                  </p>
+                  
+                  {inputMethod === 'text' ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={symptoms}
+                        onChange={(e) => setSymptoms(e.target.value)}
+                        placeholder="Describe in detail the symptoms you are experiencing..."
+                        className="w-full h-32 px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-turquoise focus:border-turquoise resize-none transition-all duration-200"
+                        maxLength={1000}
+                      />
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-gray-400">
+                          {symptoms.length}/1000 characters
+                        </p>
+                        <button
+                          onClick={() => setInputMethod('audio')}
+                          className="text-xs text-turquoise hover:text-turquoise/80 transition-colors"
+                        >
+                          Switch to voice recording
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <AudioRecorder
+                        onTranscriptionComplete={handleAudioTranscription}
+                        onError={handleAudioError}
+                        disabled={isSubmitting}
+                      />
+                      
+                      {symptoms && (
+                        <div className="p-4 bg-gray-900/50 border border-gray-600 rounded-xl">
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="text-sm font-medium text-white">
+                              Transcribed Text:
+                            </label>
+                            <button
+                              onClick={() => setInputMethod('text')}
+                              className="text-xs text-turquoise hover:text-turquoise/80 transition-colors"
+                            >
+                              Edit text
+                            </button>
+                          </div>
+                          <p className="text-gray-300 text-sm leading-relaxed">
+                            {symptoms}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => setInputMethod('text')}
+                          className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                        >
+                          Prefer typing? Switch to text input
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Severity Scale */}

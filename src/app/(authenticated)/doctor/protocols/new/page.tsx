@@ -1,42 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { 
-  PlusIcon,
-  TrashIcon,
   ArrowLeftIcon,
   CheckIcon,
-  FolderPlusIcon,
-  Bars3Icon,
-  ChevronDownIcon,
+  XMarkIcon,
   InformationCircleIcon,
-  PlayIcon,
-  ShoppingBagIcon,
-  EyeIcon
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
+import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
 
 interface ProtocolTask {
   id: string;
   title: string;
-  description: string;
   order: number;
-  hasMoreInfo: boolean;
-  videoUrl: string;
-  fullExplanation: string;
-  productId: string;
-  modalTitle: string;
-  modalButtonText: string;
-  modalButtonUrl: string;
+  hasMoreInfo?: boolean;
+  videoUrl?: string;
+  fullExplanation?: string;
+  productId?: string;
+  modalTitle?: string;
+  modalButtonText?: string;
+  modalButtonUrl?: string;
 }
 
-interface ProtocolSection {
+interface ProtocolSession {
   id: string;
   name: string;
   order: number;
@@ -46,82 +43,168 @@ interface ProtocolSection {
 interface ProtocolDay {
   id: string;
   dayNumber: number;
-  sections: ProtocolSection[];
-  tasks: ProtocolTask[]; // Tarefas soltas (fora de seções)
+  tasks: ProtocolTask[];
+  sessions: ProtocolSession[];
 }
 
-interface ProtocolForm {
+interface Product {
+  id: string;
   name: string;
-  duration: number;
+  description?: string;
+  brand?: string;
+  imageUrl?: string;
+  originalPrice?: number;
+  discountPrice?: number;
+  purchaseUrl?: string;
+}
+
+interface ProtocolProduct {
+  id: string;
+  productId: string;
+  order: number;
+  isRequired: boolean;
+  notes?: string;
+  product: Product;
+}
+
+interface Protocol {
+  name: string;
   description: string;
   isTemplate: boolean;
+  showDoctorInfo: boolean;
+  modalTitle: string;
+  modalVideoUrl: string;
+  modalDescription: string;
+  modalButtonText: string;
+  modalButtonUrl: string;
   days: ProtocolDay[];
+  products: ProtocolProduct[];
 }
-
-const defaultSections = [
-  'Morning',
-  'Afternoon', 
-  'Evening',
-  'Medications',
-  'Care',
-  'Exercises',
-  'Nutrition',
-  'Notes'
-];
 
 export default function NewProtocolPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAddOptions, setShowAddOptions] = useState<{[key: number]: boolean}>({});
-  const [protocol, setProtocol] = useState<ProtocolForm>({
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const [protocol, setProtocol] = useState<Protocol>({
     name: '',
-    duration: 7,
     description: '',
     isTemplate: false,
-    days: []
+    showDoctorInfo: true,
+    modalTitle: '',
+    modalVideoUrl: '',
+    modalDescription: '',
+    modalButtonText: 'Learn more',
+    modalButtonUrl: '',
+    days: [
+      {
+        id: 'day-1',
+        dayNumber: 1,
+        tasks: [],
+        sessions: []
+      }
+    ],
+    products: []
   });
 
-  // Gerar dias automaticamente quando a duração muda
+  // Load available products
   React.useEffect(() => {
-    const newDays: ProtocolDay[] = [];
-    for (let i = 1; i <= protocol.duration; i++) {
-      const existingDay = protocol.days.find(d => d.dayNumber === i);
-      if (existingDay) {
-        newDays.push(existingDay);
-      } else {
-        newDays.push({
-          id: `day-${i}`,
-          dayNumber: i,
-          sections: [],
-          tasks: []
-        });
+    const loadProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const products = await response.json();
+          setAvailableProducts(products);
+        }
+      } catch (error) {
+        console.error('Error loading products:', error);
       }
-    }
-    setProtocol(prev => ({ ...prev, days: newDays }));
-  }, [protocol.duration]);
+    };
 
-  const toggleAddOptions = (dayNumber: number) => {
-    setShowAddOptions(prev => ({
+    loadProducts();
+  }, []);
+
+  const updateProtocolField = useCallback((field: keyof Protocol, value: any) => {
+    setProtocol(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const addDay = useCallback(() => {
+    const newDayNumber = Math.max(...protocol.days.map(d => d.dayNumber)) + 1;
+    const newDay: ProtocolDay = {
+      id: `day-${newDayNumber}`,
+      dayNumber: newDayNumber,
+      tasks: [],
+      sessions: []
+    };
+    setProtocol(prev => ({
       ...prev,
-      [dayNumber]: !prev[dayNumber]
+      days: [...prev.days, newDay]
     }));
-  };
+  }, [protocol.days]);
 
-  // Funções para seções
-  const addSection = (dayNumber: number, sectionName?: string) => {
-    const name = sectionName || `New Section`;
+  const removeDay = useCallback((dayNumber: number) => {
+    if (protocol.days.length <= 1) return;
+    
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days
+        .filter(day => day.dayNumber !== dayNumber)
+        .map((day, index) => ({
+          ...day,
+          dayNumber: index + 1,
+          id: `day-${index + 1}`
+        }))
+    }));
+  }, [protocol.days.length]);
+
+  const duplicateDay = useCallback((dayNumber: number) => {
+    const dayToDuplicate = protocol.days.find(d => d.dayNumber === dayNumber);
+    if (!dayToDuplicate) return;
+
+    const newDayNumber = Math.max(...protocol.days.map(d => d.dayNumber)) + 1;
+    const newDay: ProtocolDay = {
+      id: `day-${newDayNumber}`,
+      dayNumber: newDayNumber,
+      tasks: dayToDuplicate.tasks.map(task => ({
+        ...task,
+        id: `task-${Date.now()}-${Math.random()}`
+      })),
+      sessions: dayToDuplicate.sessions.map(session => ({
+        ...session,
+        id: `session-${Date.now()}-${Math.random()}`,
+        tasks: session.tasks.map(task => ({
+          ...task,
+          id: `task-${Date.now()}-${Math.random()}`
+        }))
+      }))
+    };
+
+    setProtocol(prev => ({
+      ...prev,
+      days: [...prev.days, newDay]
+    }));
+  }, [protocol.days]);
+
+  const updateDay = useCallback((dayNumber: number, field: string, value: string) => {
+    // For new protocols, we don't need to update day fields as they're auto-generated
+  }, []);
+
+  const addSession = useCallback((dayNumber: number) => {
     setProtocol(prev => ({
       ...prev,
       days: prev.days.map(day => 
         day.dayNumber === dayNumber 
           ? {
               ...day,
-              sections: [
-                ...day.sections,
+              sessions: [
+                ...day.sessions,
                 {
-                  id: `section-${Date.now()}`,
-                  name,
-                  order: day.sections.length,
+                  id: `session-${Date.now()}`,
+                  name: `Session ${day.sessions.length + 1}`,
+                  order: day.sessions.length,
                   tasks: []
                 }
               ]
@@ -129,195 +212,226 @@ export default function NewProtocolPage() {
           : day
       )
     }));
-    setShowAddOptions(prev => ({ ...prev, [dayNumber]: false }));
-  };
+  }, []);
 
-  const removeSection = (dayNumber: number, sectionId: string) => {
+  const removeSession = useCallback((dayNumber: number, sessionId: string) => {
     setProtocol(prev => ({
       ...prev,
       days: prev.days.map(day => 
         day.dayNumber === dayNumber 
           ? {
               ...day,
-              sections: day.sections.filter(section => section.id !== sectionId)
+              sessions: day.sessions.filter(session => session.id !== sessionId)
             }
           : day
       )
     }));
-  };
+  }, []);
 
-  const updateSectionName = (dayNumber: number, sectionId: string, name: string) => {
+  const updateSession = useCallback((dayNumber: number, sessionId: string, field: string, value: string) => {
     setProtocol(prev => ({
       ...prev,
       days: prev.days.map(day => 
         day.dayNumber === dayNumber 
           ? {
               ...day,
-              sections: day.sections.map(section => 
-                section.id === sectionId 
-                  ? { ...section, name }
-                  : section
+              sessions: day.sessions.map(session => 
+                session.id === sessionId 
+                  ? { ...session, [field]: value }
+                  : session
               )
             }
           : day
       )
     }));
-  };
+  }, []);
 
-  // Funções para tarefas dentro de seções
-  const addTaskToSection = (dayNumber: number, sectionId: string) => {
+  const addTask = useCallback((dayNumber: number, sessionId?: string) => {
+    const newTask: ProtocolTask = {
+      id: `task-${Date.now()}`,
+      title: '',
+      order: 0,
+      hasMoreInfo: false,
+      videoUrl: '',
+      fullExplanation: '',
+      productId: '',
+      modalTitle: '',
+      modalButtonText: 'Learn more',
+      modalButtonUrl: ''
+    };
+
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sections: day.sections.map(section =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      tasks: [
-                        ...section.tasks,
-                        {
-                          id: `task-${Date.now()}`,
-                          title: '',
-                          description: '',
-                          order: section.tasks.length,
-                          hasMoreInfo: false,
-                          videoUrl: '',
-                          fullExplanation: '',
-                          productId: '',
-                          modalTitle: '',
-                          modalButtonText: 'Learn more',
-                          modalButtonUrl: ''
-                        }
-                      ]
-                    }
-                  : section
-              )
-            }
-          : day
-      )
+      days: prev.days.map(day => {
+        if (day.dayNumber !== dayNumber) return day;
+
+        if (sessionId) {
+          return {
+            ...day,
+            sessions: day.sessions.map(session =>
+              session.id === sessionId
+                ? {
+                    ...session,
+                    tasks: [...session.tasks, { ...newTask, order: session.tasks.length }]
+                  }
+                : session
+            )
+          };
+        } else {
+          return {
+            ...day,
+            tasks: [...day.tasks, { ...newTask, order: day.tasks.length }]
+          };
+        }
+      })
+    }));
+  }, []);
+
+  const removeTask = useCallback((dayNumber: number, taskId: string, sessionId?: string) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber !== dayNumber) return day;
+
+        if (sessionId) {
+          return {
+            ...day,
+            sessions: day.sessions.map(session =>
+              session.id === sessionId
+                ? {
+                    ...session,
+                    tasks: session.tasks.filter(task => task.id !== taskId)
+                  }
+                : session
+            )
+          };
+        } else {
+          return {
+            ...day,
+            tasks: day.tasks.filter(task => task.id !== taskId)
+          };
+        }
+      })
+    }));
+  }, []);
+
+  const updateTask = useCallback((dayNumber: number, taskId: string, field: string, value: string | boolean, sessionId?: string) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber !== dayNumber) return day;
+
+        if (sessionId) {
+          return {
+            ...day,
+            sessions: day.sessions.map(session =>
+              session.id === sessionId
+                ? {
+                    ...session,
+                    tasks: session.tasks.map(task =>
+                      task.id === taskId
+                        ? { ...task, [field]: value }
+                        : task
+                    )
+                  }
+                : session
+            )
+          };
+        } else {
+          return {
+            ...day,
+            tasks: day.tasks.map(task =>
+              task.id === taskId
+                ? { ...task, [field]: value }
+                : task
+            )
+          };
+        }
+      })
+    }));
+  }, []);
+
+  const reorderTasks = useCallback((dayNumber: number, sessionId: string, oldIndex: number, newIndex: number) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber !== dayNumber) return day;
+
+        return {
+          ...day,
+          sessions: day.sessions.map(session => {
+            if (session.id !== sessionId) return session;
+
+            const newTasks = [...session.tasks];
+            const [reorderedTask] = newTasks.splice(oldIndex, 1);
+            newTasks.splice(newIndex, 0, reorderedTask);
+
+            return {
+              ...session,
+              tasks: newTasks.map((task, index) => ({
+                ...task,
+                order: index
+              }))
+            };
+          })
+        };
+      })
+    }));
+  }, []);
+
+  const addProduct = (productId: string) => {
+    const product = availableProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const newProtocolProduct: ProtocolProduct = {
+      id: `temp-product-${Date.now()}`,
+      productId: productId,
+      order: protocol.products.length + 1,
+      isRequired: false,
+      notes: '',
+      product: product
+    };
+
+    setProtocol(prev => ({
+      ...prev,
+      products: [...prev.products, newProtocolProduct]
     }));
   };
 
-  const removeTaskFromSection = (dayNumber: number, sectionId: string, taskId: string) => {
+  const removeProduct = (protocolProductId: string) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sections: day.sections.map(section =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      tasks: section.tasks.filter(task => task.id !== taskId)
-                    }
-                  : section
-              )
-            }
-          : day
-      )
+      products: prev.products.filter(pp => pp.id !== protocolProductId)
     }));
   };
 
-  const updateTaskInSection = (dayNumber: number, sectionId: string, taskId: string, field: keyof ProtocolTask, value: any) => {
+  const updateProtocolProduct = useCallback((protocolProductId: string, field: string, value: any) => {
     setProtocol(prev => ({
       ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              sections: day.sections.map(section =>
-                section.id === sectionId
-                  ? {
-                      ...section,
-                      tasks: section.tasks.map(task =>
-                        task.id === taskId
-                          ? { ...task, [field]: value }
-                          : task
-                      )
-                    }
-                  : section
-              )
-            }
-          : day
+      products: prev.products.map(pp =>
+        pp.id === protocolProductId
+          ? { ...pp, [field]: value }
+          : pp
       )
     }));
-  };
+  }, []);
 
-  // Funções para tarefas soltas
-  const addLooseTask = (dayNumber: number) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              tasks: [
-                ...day.tasks,
-                {
-                  id: `task-${Date.now()}`,
-                  title: '',
-                  description: '',
-                  order: day.tasks.length,
-                  hasMoreInfo: false,
-                  videoUrl: '',
-                  fullExplanation: '',
-                  productId: '',
-                  modalTitle: '',
-                  modalButtonText: 'Learn more',
-                  modalButtonUrl: ''
-                }
-              ]
-            }
-          : day
-      )
-    }));
-    setShowAddOptions(prev => ({ ...prev, [dayNumber]: false }));
-  };
-
-  const removeLooseTask = (dayNumber: number, taskId: string) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              tasks: day.tasks.filter(task => task.id !== taskId)
-            }
-          : day
-      )
-    }));
-  };
-
-  const updateLooseTask = (dayNumber: number, taskId: string, field: keyof ProtocolTask, value: any) => {
-    setProtocol(prev => ({
-      ...prev,
-      days: prev.days.map(day => 
-        day.dayNumber === dayNumber 
-          ? {
-              ...day,
-              tasks: day.tasks.map(task =>
-                task.id === taskId
-                  ? { ...task, [field]: value }
-                  : task
-              )
-            }
-          : day
-      )
-    }));
-  };
+  const availableProductsToAdd = availableProducts.filter(
+    product => !protocol.products.some(pp => pp.productId === product.id)
+  );
 
   const saveProtocol = async () => {
     if (!protocol.name.trim()) {
-      alert('Protocol name is required');
+      setErrorMessage('Protocol name is required');
+      setShowErrorAlert(true);
       return;
     }
 
     try {
       setIsLoading(true);
+      setShowSuccessAlert(false);
+      setShowErrorAlert(false);
+      setErrorMessage('');
       
       const response = await fetch('/api/protocols', {
         method: 'POST',
@@ -329,512 +443,461 @@ export default function NewProtocolPage() {
 
       if (response.ok) {
         const newProtocol = await response.json();
-        router.push(`/doctor/protocols/${newProtocol.id}`);
+        setShowSuccessAlert(true);
+        setTimeout(() => {
+          router.push(`/doctor/protocols/${newProtocol.id}`);
+        }, 1500);
       } else {
         const error = await response.json();
-        alert(error.error || 'Error creating protocol');
+        setErrorMessage(error.error || 'Error creating protocol');
+        setShowErrorAlert(true);
       }
     } catch (error) {
       console.error('Error creating protocol:', error);
-      alert('Error creating protocol');
+      setErrorMessage('Error creating protocol');
+      setShowErrorAlert(true);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Check if modal content is configured
+  const isModalEnabled = !!(protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription);
+
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
-        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+        <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
         
           {/* Header */}
           <div className="flex items-center gap-6 mb-8">
-            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold">
+            <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
               <Link href="/doctor/protocols">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
               </Link>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 New Protocol
               </h1>
               <p className="text-gray-600 font-medium">
-                Create a custom protocol for your clients
+                Create a custom protocol for your patients
               </p>
             </div>
+            <Button 
+              onClick={saveProtocol} 
+              disabled={isLoading}
+              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold"
+            >
+              <CheckIcon className="h-4 w-4 mr-2" />
+              {isLoading ? 'Saving...' : 'Save Protocol'}
+            </Button>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            
-            {/* Protocol Info */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-6 bg-white border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900">Protocol Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
-                    <Input
-                      id="name"
-                      value={protocol.name}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Post-Facial Filler Protocol"
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="duration" className="text-gray-900 font-semibold">Duration (days)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="1"
-                      max="365"
-                      value={protocol.duration}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 rounded-xl h-12"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={protocol.description}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe the purpose and characteristics of the protocol..."
-                      rows={3}
-                      className="mt-2 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="isTemplate"
-                      checked={protocol.isTemplate}
-                      onChange={(e) => setProtocol(prev => ({ ...prev, isTemplate: e.target.checked }))}
-                      className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                    />
-                    <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
-                      Save as template
-                    </Label>
-                  </div>
-
-                  <Button 
-                    onClick={saveProtocol} 
-                    disabled={isLoading}
-                    className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold shadow-md"
-                  >
-                    <CheckIcon className="h-4 w-4 mr-2" />
-                    {isLoading ? 'Saving...' : 'Save Protocol'}
-                  </Button>
-
-                  {/* Quick Add Sections */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <Label className="text-gray-900 font-semibold mb-3 block">Quick Sections</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {defaultSections.map((sectionName) => (
-                        <Button
-                          key={sectionName}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Adicionar a seção ao primeiro dia que não tem essa seção
-                            const firstDay = protocol.days.find(day => 
-                              !day.sections.some(section => section.name === sectionName)
-                            );
-                            if (firstDay) {
-                              addSection(firstDay.dayNumber, sectionName);
-                            }
-                          }}
-                          className="text-xs border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg h-8 px-2 font-medium"
-                        >
-                          {sectionName}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Protocol Days */}
-            <div className="lg:col-span-2">
-              <div className="space-y-6">
-                {protocol.days.map((day) => (
-                  <Card key={day.id} className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-bold text-gray-900">
-                          Day {day.dayNumber}
-                        </CardTitle>
-                        <div className="relative">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleAddOptions(day.dayNumber)}
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold"
-                          >
-                            <PlusIcon className="h-4 w-4 mr-2" />
-                            Add
-                            <ChevronDownIcon className="h-3 w-3 ml-2" />
-                          </Button>
-                          
-                          {showAddOptions[day.dayNumber] && (
-                            <div className="absolute right-0 top-12 z-10 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-[160px]">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => addSection(day.dayNumber)}
-                                className="w-full justify-start px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-none h-auto font-medium"
-                              >
-                                <FolderPlusIcon className="h-4 w-4 mr-3" />
-                                Add Section
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => addLooseTask(day.dayNumber)}
-                                className="w-full justify-start px-4 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-none h-auto font-medium"
-                              >
-                                <PlusIcon className="h-4 w-4 mr-3" />
-                                Add Task
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Tarefas Soltas */}
-                      {day.tasks.map((task) => (
-                        <div key={task.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                          <div className="p-6">
-                            <div className="flex items-start gap-4">
-                              <div className="flex-1 space-y-4">
-                                {/* Campos Básicos */}
-                                <div className="space-y-4">
-                                  <Input
-                                    placeholder="Task title"
-                                    value={task.title}
-                                    onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'title', e.target.value)}
-                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-12 font-semibold"
-                                  />
-                                  <Textarea
-                                    placeholder="Basic description"
-                                    value={task.description}
-                                    onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'description', e.target.value)}
-                                    rows={2}
-                                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
-                                  />
-                                </div>
-
-                                {/* Toggle para Mais Informações */}
-                                <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
-                                  <input
-                                    type="checkbox"
-                                    id={`hasMoreInfo-${task.id}`}
-                                    checked={task.hasMoreInfo}
-                                    onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'hasMoreInfo', e.target.checked)}
-                                    className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                                  />
-                                  <Label htmlFor={`hasMoreInfo-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
-                                    <InformationCircleIcon className="h-4 w-4" />
-                                    Add extra content
-                                  </Label>
-                                </div>
-
-                                {/* Campos Extras */}
-                                {task.hasMoreInfo && (
-                                  <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                    <div className="grid grid-cols-1 gap-4">
-                                      <div>
-                                        <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                          <PlayIcon className="h-4 w-4" />
-                                          Video URL
-                                        </Label>
-                                        <Input
-                                          placeholder="https://youtube.com/watch?v=..."
-                                          value={task.videoUrl}
-                                          onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'videoUrl', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                        />
-                                      </div>
-                                      
-                                      <div>
-                                        <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                          <InformationCircleIcon className="h-4 w-4" />
-                                          Full Explanation
-                                        </Label>
-                                        <Textarea
-                                          placeholder="Detailed task explanation..."
-                                          value={task.fullExplanation}
-                                          onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'fullExplanation', e.target.value)}
-                                          rows={3}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
-                                        />
-                                      </div>
-
-                                      <div>
-                                        <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                          <ShoppingBagIcon className="h-4 w-4" />
-                                          Product ID (optional)
-                                        </Label>
-                                        <Input
-                                          placeholder="Related product ID"
-                                          value={task.productId}
-                                          onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'productId', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                        />
-                                      </div>
-
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                          <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                            <EyeIcon className="h-4 w-4" />
-                                            Modal Title
-                                          </Label>
-                                          <Input
-                                            placeholder="Custom title"
-                                            value={task.modalTitle}
-                                            onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalTitle', e.target.value)}
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                          />
-                                        </div>
-                                        
-                                        <div>
-                                          <Label className="text-gray-900 font-semibold mb-2 block">
-                                            Button Text
-                                          </Label>
-                                          <Input
-                                            placeholder="Learn more"
-                                            value={task.modalButtonText}
-                                            onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalButtonText', e.target.value)}
-                                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <div>
-                                        <Label className="text-gray-900 font-semibold mb-2 block">
-                                          Button URL
-                                        </Label>
-                                        <Input
-                                          placeholder="https://example.com/product"
-                                          value={task.modalButtonUrl}
-                                          onChange={(e) => updateLooseTask(day.dayNumber, task.id, 'modalButtonUrl', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeLooseTask(day.dayNumber, task.id)}
-                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                              >
-                                <TrashIcon className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Seções */}
-                      {day.sections.map((section) => (
-                        <div key={section.id} className="border border-gray-200 rounded-xl bg-gray-50/50">
-                          {/* Section Header */}
-                          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-xl">
-                            <div className="flex items-center gap-3 flex-1">
-                              <Bars3Icon className="h-4 w-4 text-gray-500" />
-                              <Input
-                                value={section.name}
-                                onChange={(e) => updateSectionName(day.dayNumber, section.id, e.target.value)}
-                                placeholder="Section name"
-                                className="border-0 bg-transparent text-gray-900 font-semibold p-0 h-auto focus:ring-0 focus:border-0"
-                              />
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeSection(day.dayNumber, section.id)}
-                              className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
-                            >
-                              <TrashIcon className="h-3 w-3" />
-                            </Button>
-                          </div>
-
-                          {/* Section Tasks */}
-                          <div className="p-4 space-y-4">
-                            {section.tasks.map((task) => (
-                              <div key={task.id} className="border border-gray-200 rounded-xl bg-white">
-                                <div className="p-4">
-                                  <div className="flex items-start gap-4">
-                                    <div className="flex-1 space-y-4">
-                                      {/* Campos Básicos */}
-                                      <div className="space-y-3">
-                                        <Input
-                                          placeholder="Task title"
-                                          value={task.title}
-                                          onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'title', e.target.value)}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10 font-semibold"
-                                        />
-                                        <Textarea
-                                          placeholder="Basic description"
-                                          value={task.description}
-                                          onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'description', e.target.value)}
-                                          rows={2}
-                                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
-                                        />
-                                      </div>
-
-                                      {/* Toggle para Mais Informações */}
-                                      <div className="flex items-center space-x-3 pt-2 border-t border-gray-200">
-                                        <input
-                                          type="checkbox"
-                                          id={`hasMoreInfo-section-${task.id}`}
-                                          checked={task.hasMoreInfo}
-                                          onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'hasMoreInfo', e.target.checked)}
-                                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                                        />
-                                        <Label htmlFor={`hasMoreInfo-section-${task.id}`} className="text-gray-700 font-medium flex items-center gap-2">
-                                          <InformationCircleIcon className="h-4 w-4" />
-                                          Add extra content
-                                        </Label>
-                                      </div>
-
-                                      {/* Campos Extras */}
-                                      {task.hasMoreInfo && (
-                                        <div className="space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                          <div className="grid grid-cols-1 gap-4">
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <PlayIcon className="h-4 w-4" />
-                                                Video URL
-                                              </Label>
-                                              <Input
-                                                placeholder="https://youtube.com/watch?v=..."
-                                                value={task.videoUrl}
-                                                onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'videoUrl', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                              />
-                                            </div>
-                                            
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <InformationCircleIcon className="h-4 w-4" />
-                                                Full Explanation
-                                              </Label>
-                                              <Textarea
-                                                placeholder="Detailed task explanation..."
-                                                value={task.fullExplanation}
-                                                onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'fullExplanation', e.target.value)}
-                                                rows={3}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl"
-                                              />
-                                            </div>
-
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                <ShoppingBagIcon className="h-4 w-4" />
-                                                Product ID (optional)
-                                              </Label>
-                                              <Input
-                                                placeholder="Related product ID"
-                                                value={task.productId}
-                                                onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'productId', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                              />
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                              <div>
-                                                <Label className="text-gray-900 font-semibold flex items-center gap-2 mb-2">
-                                                  <EyeIcon className="h-4 w-4" />
-                                                  Modal Title
-                                                </Label>
-                                                <Input
-                                                  placeholder="Custom title"
-                                                  value={task.modalTitle}
-                                                  onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalTitle', e.target.value)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                                />
-                                              </div>
-                                              
-                                              <div>
-                                                <Label className="text-gray-900 font-semibold mb-2 block">
-                                                  Button Text
-                                                </Label>
-                                                <Input
-                                                  placeholder="Learn more"
-                                                  value={task.modalButtonText}
-                                                  onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalButtonText', e.target.value)}
-                                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                                />
-                                              </div>
-                                            </div>
-
-                                            <div>
-                                              <Label className="text-gray-900 font-semibold mb-2 block">
-                                                Button URL
-                                              </Label>
-                                              <Input
-                                                placeholder="https://example.com/product"
-                                                value={task.modalButtonUrl}
-                                                onChange={(e) => updateTaskInSection(day.dayNumber, section.id, task.id, 'modalButtonUrl', e.target.value)}
-                                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-700 placeholder:text-gray-500 rounded-xl h-10"
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => removeTaskFromSection(day.dayNumber, section.id, task.id)}
-                                      className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                                    >
-                                      <TrashIcon className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addTaskToSection(day.dayNumber, section.id)}
-                              className="w-full border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 font-semibold"
-                            >
-                              <PlusIcon className="h-4 w-4 mr-2" />
-                              Add Task
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Empty State */}
-                      {day.tasks.length === 0 && day.sections.length === 0 && (
-                        <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
-                          <PlusIcon className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-600 font-medium mb-4">No tasks or sections created</p>
-                          <p className="text-gray-500 text-sm">Click "Add" to get started</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+          {/* Success Alert */}
+          {showSuccessAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                  <CheckIcon className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-green-900">Protocol Created Successfully!</h4>
+                  <p className="text-xs text-green-700 mt-1">Redirecting to protocol details...</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSuccessAlert(false)}
+                  className="text-green-500 hover:text-green-600 hover:bg-green-100 rounded-lg h-6 w-6 p-0"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Error Alert */}
+          {showErrorAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-red-100 to-rose-100 rounded-full flex items-center justify-center">
+                  <XMarkIcon className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-red-900">Error Creating Protocol</h4>
+                  <p className="text-xs text-red-700 mt-1">{errorMessage}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowErrorAlert(false)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-100 rounded-lg h-6 w-6 p-0"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Tabs Interface */}
+          <ProtocolEditTabs
+            protocol={protocol}
+            setProtocol={setProtocol}
+            availableProducts={availableProducts}
+            availableProductsToAdd={availableProductsToAdd}
+            addProduct={addProduct}
+            removeProduct={removeProduct}
+            updateProtocolProduct={updateProtocolProduct}
+          >
+            {{
+              basicInfo: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-bold text-gray-900">Basic Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
+                          <Input
+                            id="name"
+                            value={protocol.name}
+                            onChange={(e) => updateProtocolField('name', e.target.value)}
+                            placeholder="e.g., Post-Facial Filler Protocol"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
+                          <Textarea
+                            id="description"
+                            value={protocol.description}
+                            onChange={(e) => updateProtocolField('description', e.target.value)}
+                            placeholder="Describe the purpose and characteristics of the protocol..."
+                            rows={4}
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="isTemplate"
+                              checked={protocol.isTemplate}
+                              onChange={(e) => updateProtocolField('isTemplate', e.target.checked)}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
+                              Save as template
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="showDoctorInfo"
+                              checked={protocol.showDoctorInfo}
+                              onChange={(e) => updateProtocolField('showDoctorInfo', e.target.checked)}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
+                              Show responsible doctor
+                            </Label>
+                            <span className="text-xs text-gray-500">
+                              (Shows your photo and name on patient screen)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                          <div className="flex items-start gap-3">
+                            <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-blue-900 mb-1">
+                                Day Management
+                              </p>
+                              <p className="text-xs text-blue-700">
+                                The protocol duration is automatically determined by the days you add in the "Schedule" tab. 
+                                Currently: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'day' : 'days'}</strong>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ),
+
+              modalConfig: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration</CardTitle>
+                    <p className="text-gray-600 font-medium mt-1">
+                      Configure what happens when the protocol is unavailable or inactive.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Modal Enable/Disable */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="enableModal"
+                          checked={isModalEnabled}
+                          onChange={(e) => {
+                            if (!e.target.checked) {
+                              // Clear all modal fields when disabling
+                              updateProtocolField('modalTitle', '');
+                              updateProtocolField('modalVideoUrl', '');
+                              updateProtocolField('modalDescription', '');
+                              updateProtocolField('modalButtonText', 'Learn more');
+                              updateProtocolField('modalButtonUrl', '');
+                            }
+                          }}
+                          className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                        />
+                        <Label htmlFor="enableModal" className="text-gray-900 font-semibold">
+                          Enable modal for unavailable protocol
+                        </Label>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2 ml-7">
+                        {isModalEnabled 
+                          ? 'Modal will be shown when protocol is unavailable or inactive'
+                          : 'Protocol will not be clickable when unavailable or inactive'
+                        }
+                      </p>
+                    </div>
+
+                    {/* Modal Configuration Fields - Only show when enabled */}
+                    {isModalEnabled && (
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
+                            <Input
+                              id="modalTitle"
+                              value={protocol.modalTitle}
+                              onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
+                              placeholder="Ex: Protocol in Development"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
+                            <Input
+                              id="modalVideoUrl"
+                              value={protocol.modalVideoUrl}
+                              onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
+                              placeholder="Ex: https://www.youtube.com/embed/..."
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
+                            <Textarea
+                              id="modalDescription"
+                              value={protocol.modalDescription}
+                              onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
+                              placeholder="Describe what will be shown in the modal..."
+                              className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                              <Input
+                                id="modalButtonText"
+                                value={protocol.modalButtonText}
+                                onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
+                                placeholder="Ex: Learn more"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL (optional)</Label>
+                              <Input
+                                id="modalButtonUrl"
+                                value={protocol.modalButtonUrl}
+                                onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
+                                placeholder="Ex: https://..."
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Disabled State Message */}
+                    {!isModalEnabled && (
+                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                        <p className="text-sm text-gray-600 text-center font-medium">
+                          Modal is disabled. The protocol will simply not be clickable when unavailable.
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ),
+
+              products: (
+                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-bold text-gray-900">Protocol Products</CardTitle>
+                        <p className="text-gray-600 font-medium mt-1">
+                          Add products that will be recommended to patients in this protocol.
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
+                        {protocol.products.length} products
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+
+                    {/* Add Product */}
+                    {availableProductsToAdd.length > 0 ? (
+                      <div className="space-y-3">
+                        <Label className="text-gray-900 font-semibold">Add Product</Label>
+                        <div className="flex gap-3">
+                          <Select onValueChange={addProduct}>
+                            <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
+                              <SelectValue placeholder="Select a product..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableProductsToAdd.map((product) => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{product.name}</span>
+                                    {product.brand && (
+                                      <span className="text-xs text-gray-500">({product.brand})</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                        <p className="text-sm text-gray-600 text-center font-medium">
+                          {availableProducts.length === 0 
+                            ? 'Loading products...' 
+                            : 'All available products have already been added to the protocol.'
+                          }
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Products List */}
+                    {protocol.products.length > 0 && (
+                      <div className="space-y-4">
+                        <Label className="text-gray-900 font-semibold">Added Products</Label>
+                        {protocol.products.map((protocolProduct, index) => (
+                          <div key={protocolProduct.id} className="border border-gray-200 rounded-xl bg-gray-50">
+                            <div className="p-6">
+                              <div className="flex items-start gap-4">
+                                <div className="flex-1 space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900">{protocolProduct.product.name}</h4>
+                                      {protocolProduct.product.brand && (
+                                        <p className="text-sm text-gray-600">{protocolProduct.product.brand}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex items-center space-x-3">
+                                      <input
+                                        type="checkbox"
+                                        id={`required-${protocolProduct.id}`}
+                                        checked={protocolProduct.isRequired}
+                                        onChange={(e) => updateProtocolProduct(protocolProduct.id, 'isRequired', e.target.checked)}
+                                        className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                                      />
+                                      <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
+                                        Required product
+                                      </Label>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                      <Label className="text-gray-900 font-semibold">Order</Label>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        value={protocolProduct.order}
+                                        onChange={(e) => updateProtocolProduct(protocolProduct.id, 'order', parseInt(e.target.value) || 1)}
+                                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-900 font-semibold">Notes (optional)</Label>
+                                    <Textarea
+                                      value={protocolProduct.notes || ''}
+                                      onChange={(e) => updateProtocolProduct(protocolProduct.id, 'notes', e.target.value)}
+                                      placeholder="Notes about using this product..."
+                                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                                      rows={2}
+                                    />
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeProduct(protocolProduct.id)}
+                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ),
+
+              days: (
+                <ProtocolDayEditor
+                  days={protocol.days}
+                  availableProducts={availableProducts}
+                  addTask={addTask}
+                  removeTask={removeTask}
+                  updateTask={updateTask}
+                  reorderTasks={reorderTasks}
+                  addSession={addSession}
+                  removeSession={removeSession}
+                  updateSession={updateSession}
+                  addDay={addDay}
+                  removeDay={removeDay}
+                  duplicateDay={duplicateDay}
+                  updateDay={updateDay}
+                />
+              )
+            }}
+          </ProtocolEditTabs>
         </div>
       </div>
     </div>

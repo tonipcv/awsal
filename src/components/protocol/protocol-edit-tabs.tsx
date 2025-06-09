@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   InformationCircleIcon,
-  ShoppingBagIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
   Cog6ToothIcon
@@ -51,23 +50,13 @@ export function ProtocolEditTabs({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-100 rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-4 bg-gray-100 rounded-xl p-1">
           <TabsTrigger 
             value="basic" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <InformationCircleIcon className="h-4 w-4" />
             Basic
-          </TabsTrigger>
-          <TabsTrigger 
-            value="products" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
-          >
-            <ShoppingBagIcon className="h-4 w-4" />
-            Products
-            <Badge variant="secondary" className="bg-[#5154e7] text-white text-xs">
-              {protocol.products.length}
-            </Badge>
           </TabsTrigger>
           <TabsTrigger 
             value="days" 
@@ -107,10 +96,6 @@ export function ProtocolEditTabs({
 
       <TabsContent value="basic">
         {children.basicInfo}
-      </TabsContent>
-
-      <TabsContent value="products">
-        {children.products}
       </TabsContent>
 
       <TabsContent value="days">
