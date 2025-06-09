@@ -37,7 +37,6 @@ export interface ProtocolDay {
 export interface ProtocolTask {
   id: string;
   title: string;
-  description?: string;
   order: number;
   hasMoreInfo?: boolean;
   videoUrl?: string;
@@ -194,7 +193,6 @@ export const PROTOCOL_TEMPLATES: ProtocolTemplate[] = [
 export interface ProtocolSession {
   id: string;
   name: string;
-  description?: string;
   order: number;
   tasks: ProtocolTask[];
 } 

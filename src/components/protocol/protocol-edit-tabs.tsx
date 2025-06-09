@@ -11,8 +11,10 @@ import {
   CalendarDaysIcon,
   EyeIcon,
   DocumentTextIcon,
-  ClockIcon
+  ClockIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
+import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
 
 interface ProtocolEditTabsProps {
   protocol: any;
@@ -22,6 +24,7 @@ interface ProtocolEditTabsProps {
   addProduct: (productId: string) => void;
   removeProduct: (protocolProductId: string) => void;
   updateProtocolProduct: (protocolProductId: string, field: string, value: any) => void;
+  protocolId?: string;
   children: {
     basicInfo: React.ReactNode;
     modalConfig: React.ReactNode;
@@ -38,6 +41,7 @@ export function ProtocolEditTabs({
   addProduct,
   removeProduct,
   updateProtocolProduct,
+  protocolId,
   children 
 }: ProtocolEditTabsProps) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -55,7 +59,7 @@ export function ProtocolEditTabs({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
-        <TabsList className="grid w-full grid-cols-5 bg-gray-100 rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-6 bg-gray-100 rounded-xl p-1">
           <TabsTrigger 
             value="overview" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
@@ -96,6 +100,13 @@ export function ProtocolEditTabs({
           >
             <DocumentTextIcon className="h-4 w-4" />
             Modal
+          </TabsTrigger>
+          <TabsTrigger 
+            value="checkin" 
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
+          >
+            <Cog6ToothIcon className="h-4 w-4" />
+            Check-in
           </TabsTrigger>
         </TabsList>
       </div>
@@ -204,6 +215,22 @@ export function ProtocolEditTabs({
 
       <TabsContent value="modal">
         {children.modalConfig}
+      </TabsContent>
+
+      <TabsContent value="checkin">
+        {protocolId ? (
+          <CheckinQuestionsManager protocolId={protocolId} />
+        ) : (
+          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <Cog6ToothIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Protocol ID Required</h3>
+                <p className="text-gray-600">Save the protocol first to configure check-in questions.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </TabsContent>
     </Tabs>
   );

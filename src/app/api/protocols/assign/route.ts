@@ -136,6 +136,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
+    const clinicSlug = searchParams.get('clinicSlug'); // Novo parâmetro para filtrar por clínica
 
     // Buscar o usuário para verificar o role
     const user = await prisma.user.findUnique({
@@ -208,10 +209,46 @@ export async function GET(request: Request) {
       });
     } else {
       // Paciente vê apenas seus próprios protocolos
+      if (!user.doctorId) {
+        return NextResponse.json({ error: 'Paciente não possui médico associado' }, { status: 400 });
+      }
+
+      let whereClause: any = {
+        userId: session.user.id
+      };
+
+      // Se clinicSlug foi fornecido, filtrar apenas protocolos dessa clínica
+      if (clinicSlug) {
+        // Buscar a clínica pelo slug
+        const clinic = await prisma.clinic.findUnique({
+          where: { slug: clinicSlug, isActive: true },
+          select: { id: true }
+        });
+
+        if (!clinic) {
+          return NextResponse.json({ error: 'Clínica não encontrada' }, { status: 404 });
+        }
+
+        // Filtrar protocolos de médicos que pertencem a essa clínica
+        whereClause.protocol = {
+          doctor: {
+            OR: [
+              // Médico é dono da clínica
+              { ownedClinics: { some: { id: clinic.id, isActive: true } } },
+              // Médico é membro da clínica
+              { clinicMemberships: { some: { clinicId: clinic.id, isActive: true } } }
+            ]
+          }
+        };
+      } else {
+        // Filtro original: apenas protocolos do médico do paciente
+        whereClause.protocol = {
+          doctorId: user.doctorId
+        };
+      }
+
       assignments = await prisma.userProtocol.findMany({
-        where: {
-          userId: session.user.id
-        },
+        where: whereClause,
         include: {
           protocol: {
             include: {
@@ -251,33 +288,71 @@ export async function GET(request: Request) {
       });
     }
 
-    // Transform the data to match the expected structure
-    const transformedAssignments = assignments.map(assignment => ({
-      ...assignment,
-      protocol: {
-        ...assignment.protocol,
-        days: assignment.protocol.days.map(day => ({
-          ...day,
-          sessions: day.sessions.map(session => ({
-            ...session,
-            name: session.title, // Map title to name for compatibility
-            order: session.sessionNumber - 1, // Convert to 0-based index
-            tasks: session.tasks.map(task => ({
-              ...task,
-              order: task.orderIndex,
-              hasMoreInfo: task.hasMoreInfo || false,
-              videoUrl: task.videoUrl || '',
-              fullExplanation: task.fullExplanation || '',
-              productId: task.productId || '',
-              modalTitle: task.modalTitle || '',
-              modalButtonText: task.modalButtonText || '',
-              modalButtonUrl: task.modalButtonUrl || ''
-            }))
-          })),
-          // Remove the flattened tasks array to avoid duplication
-          tasks: []
-        }))
+    // Transform the data to match the expected structure and load products
+    const transformedAssignments = await Promise.all(assignments.map(async assignment => {
+      // Get all unique product IDs from tasks
+      const productIds = new Set<string>();
+      assignment.protocol.days.forEach((day: any) => {
+        day.sessions.forEach((session: any) => {
+          session.tasks.forEach((task: any) => {
+            if (task.productId) {
+              productIds.add(task.productId);
+            }
+          });
+        });
+      });
+
+      // Load products if there are any
+      let productsMap = new Map();
+      if (productIds.size > 0) {
+        const products = await prisma.products.findMany({
+          where: {
+            id: { in: Array.from(productIds) }
+          }
+        });
+        
+        products.forEach(product => {
+          productsMap.set(product.id, {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            brand: null, // Not in schema
+            imageUrl: null, // Not in schema
+            originalPrice: Number(product.price),
+            discountPrice: null, // Not in schema
+            purchaseUrl: null // Not in schema
+          });
+        });
       }
+
+      return {
+        ...assignment,
+        protocol: {
+          ...assignment.protocol,
+          days: assignment.protocol.days.map((day: any) => ({
+            ...day,
+            sessions: day.sessions.map((session: any) => ({
+              ...session,
+              name: session.title, // Map title to name for compatibility
+              order: session.sessionNumber - 1, // Convert to 0-based index
+              tasks: session.tasks.map((task: any) => ({
+                ...task,
+                order: task.orderIndex,
+                hasMoreInfo: task.hasMoreInfo || false,
+                videoUrl: task.videoUrl || '',
+                fullExplanation: task.fullExplanation || '',
+                productId: task.productId || '',
+                modalTitle: task.modalTitle || '',
+                modalButtonText: task.modalButtonText || '',
+                modalButtonUrl: task.modalButtonUrl || '',
+                product: task.productId ? productsMap.get(task.productId) : undefined
+              }))
+            })),
+            // Remove the flattened tasks array to avoid duplication
+            tasks: []
+          }))
+        }
+      };
     }));
 
     return NextResponse.json(transformedAssignments);

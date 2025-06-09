@@ -71,7 +71,7 @@ export default function Home() {
 
   if (status === 'loading' || isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101010' }}>
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-teal-400/30 border-t-teal-400"></div>
         </div>

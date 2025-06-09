@@ -190,6 +190,7 @@ model User {
   checkpoints                                                      Checkpoint[]
   circles                                                          Circle[]
   cycles                                                           Cycle[]
+  checkinResponses                                                 DailyCheckinResponse[]
   doctorFAQs                                                       DoctorFAQ[]              @relation("DoctorFAQs")
   eisenhowerTasks                                                  EisenhowerTask[]
   habits                                                           Habit[]
@@ -229,27 +230,29 @@ model User {
 }
 
 model Protocol {
-  id                  String                @id @default(cuid())
+  id                  String                 @id @default(cuid())
   name                String
   description         String?
   doctorId            String
-  isActive            Boolean               @default(true)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @default(now()) @updatedAt
-  duration            Int?                  @default(30)
+  isActive            Boolean                @default(true)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @default(now()) @updatedAt
+  duration            Int?                   @default(30)
   modalTitle          String?
   modalVideoUrl       String?
   modalDescription    String?
-  modalButtonText     String?               @default("Saber mais")
+  modalButtonText     String?                @default("Saber mais")
   modalButtonUrl      String?
-  showDoctorInfo      Boolean?              @default(false)
-  isTemplate          Boolean?              @default(false)
+  showDoctorInfo      Boolean?               @default(false)
+  isTemplate          Boolean?               @default(false)
   coverImage          String?
+  checkinQuestions    DailyCheckinQuestion[]
+  checkinResponses    DailyCheckinResponse[]
   days                ProtocolDay[]
   ProtocolDayProgress ProtocolDayProgress[]
   assignments         UserProtocol[]
   protocol_products   protocol_products[]
-  doctor              User                  @relation("DoctorProtocols", fields: [doctorId], references: [id])
+  doctor              User                   @relation("DoctorProtocols", fields: [doctorId], references: [id])
   referrals           referrals[]
 
   @@map("protocols")
@@ -911,4 +914,42 @@ model AIAssistantSettings {
   createdAt           DateTime @default(now()) @db.Timestamp(6)
   updatedAt           DateTime @default(now()) @updatedAt @db.Timestamp(6)
   doctor              User     @relation("DoctorAISettings", fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model DailyCheckinQuestion {
+  id         String                   @id @default(cuid())
+  protocolId String
+  question   String
+  type       DailyCheckinQuestionType
+  options    String?
+  isRequired Boolean                  @default(true)
+  order      Int                      @default(0)
+  isActive   Boolean                  @default(true)
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @default(now()) @updatedAt
+  protocol   Protocol                 @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  responses  DailyCheckinResponse[]
+}
+
+model DailyCheckinResponse {
+  id         String               @id @default(cuid())
+  userId     String
+  questionId String
+  protocolId String
+  date       DateTime             @db.Date
+  answer     String
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @default(now()) @updatedAt
+  protocol   Protocol             @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  question   DailyCheckinQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId, date])
+}
+
+enum DailyCheckinQuestionType {
+  MULTIPLE_CHOICE
+  SCALE
+  TEXT
+  YES_NO
 }

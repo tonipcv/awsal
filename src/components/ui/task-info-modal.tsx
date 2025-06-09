@@ -39,17 +39,13 @@ interface TaskInfoModalProps {
 }
 
 export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
-  const modalTitle = task.modalTitle || `Mais sobre: ${task.title}`;
   const buttonText = task.modalButtonText || 'Fechar';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black border-gray-800/50 backdrop-blur-xl">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-light text-white tracking-wide">
-              {modalTitle}
-            </DialogTitle>
+          <div className="flex justify-end">
             <Button
               variant="ghost"
               size="icon"

@@ -23,7 +23,9 @@ import {
   PlayIcon,
   EyeIcon,
   PhotoIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
+  SparklesIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,7 +35,6 @@ import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
 interface ProtocolTask {
   id: string;
   title: string;
-  description: string;
   order: number;
   hasMoreInfo?: boolean;
   videoUrl?: string;
@@ -47,7 +48,6 @@ interface ProtocolTask {
 interface ProtocolSession {
   id: string;
   name: string;
-  description?: string;
   order: number;
   tasks: ProtocolTask[];
 }
@@ -55,6 +55,7 @@ interface ProtocolSession {
 interface ProtocolDay {
   id: string;
   dayNumber: number;
+  title?: string;
   sessions: ProtocolSession[];
   tasks: ProtocolTask[];
 }
@@ -115,6 +116,11 @@ export default function EditProtocolPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isImprovingName, setIsImprovingName] = useState(false);
+  const [isImprovingDescription, setIsImprovingDescription] = useState(false);
+  const [showAISuccessAlert, setShowAISuccessAlert] = useState(false);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState('');
+  const [showDuplicateSuccessAlert, setShowDuplicateSuccessAlert] = useState(false);
   const [protocol, setProtocol] = useState<ProtocolForm>({
     name: '',
     duration: 7,
@@ -188,10 +194,10 @@ export default function EditProtocolPage() {
           days: data.days.map((day: any) => ({
             id: day.id,
             dayNumber: day.dayNumber,
+            title: day.title || `Day ${day.dayNumber}`,
             sessions: day.sessions.map((session: any) => ({
               id: session.id,
               name: session.name,
-              description: session.description || '',
               order: session.order,
               tasks: session.tasks.map((task: any) => ({
                 id: task.id,
@@ -265,7 +271,6 @@ export default function EditProtocolPage() {
     const newTask: ProtocolTask = {
       id: `temp-${Date.now()}`,
       title: '',
-      description: '',
       order: 0,
       hasMoreInfo: false,
       videoUrl: '',
@@ -390,7 +395,6 @@ export default function EditProtocolPage() {
     const newSession: ProtocolSession = {
       id: `temp-session-${Date.now()}`,
       name: '',
-      description: '',
       order: 0,
       tasks: []
     };
@@ -472,14 +476,6 @@ export default function EditProtocolPage() {
     });
   }, []);
 
-  const moveTaskToSession = (dayNumber: number, taskId: string, targetSessionId: string) => {
-    // Implementation for moving tasks between sessions
-  };
-
-  const moveTaskFromSession = (dayNumber: number, taskId: string, sourceSessionId: string) => {
-    // Implementation for moving tasks from sessions
-  };
-
   const addProduct = (productId: string) => {
     const product = availableProducts.find(p => p.id === productId);
     if (!product) return;
@@ -549,7 +545,6 @@ export default function EditProtocolPage() {
           console.log(`  📝 Session ${sessionIndex + 1}:`, {
             id: session.id,
             name: session.name,
-            description: session.description,
             order: session.order,
             tasksCount: session.tasks.length
           });
@@ -575,14 +570,12 @@ export default function EditProtocolPage() {
           coverImage: protocol.coverImage,
           days: protocol.days.map(day => ({
             dayNumber: day.dayNumber,
-            sessions: day.sessions.map(session => ({
-              id: session.id,
+            title: day.title || `Day ${day.dayNumber}`,
+            sessions: day.sessions.map((session, sessionIndex) => ({
               name: session.name,
-              description: session.description,
-              order: session.order,
+              order: sessionIndex,
               tasks: session.tasks.filter(task => task.title.trim()).map((task, index) => ({
                 title: task.title,
-                description: task.description,
                 order: index,
                 hasMoreInfo: task.hasMoreInfo || false,
                 videoUrl: task.videoUrl || '',
@@ -592,19 +585,8 @@ export default function EditProtocolPage() {
                 modalButtonText: task.modalButtonText || '',
                 modalButtonUrl: task.modalButtonUrl || ''
               }))
-            })), // REMOVIDO: .filter(session => session.tasks.length > 0) - agora salva sessões vazias também
-            tasks: day.tasks.filter(task => task.title.trim()).map((task, index) => ({
-              title: task.title,
-              description: task.description,
-              order: index,
-              hasMoreInfo: task.hasMoreInfo || false,
-              videoUrl: task.videoUrl || '',
-              fullExplanation: task.fullExplanation || '',
-              productId: task.productId || null,
-              modalTitle: task.modalTitle || '',
-              modalButtonText: task.modalButtonText || '',
-              modalButtonUrl: task.modalButtonUrl || ''
-            }))
+            })),
+            tasks: [] // No more direct tasks
           }))
         }),
       });
@@ -676,7 +658,7 @@ export default function EditProtocolPage() {
   const totalTasks = protocol.days.reduce((total, day) => {
     const sessionTasks = day.sessions.reduce((sessionTotal, session) => 
       sessionTotal + session.tasks.length, 0);
-    return total + sessionTasks + day.tasks.length;
+    return total + sessionTasks;
   }, 0);
 
   const availableProductsToAdd = availableProducts.filter(product => 
@@ -712,6 +694,7 @@ export default function EditProtocolPage() {
     const newDay: ProtocolDay = {
       id: `temp-day-${Date.now()}`,
       dayNumber: newDayNumber,
+      title: `Day ${newDayNumber}`,
       sessions: [],
       tasks: []
     };
@@ -738,6 +721,58 @@ export default function EditProtocolPage() {
         duration: reorderedDays.length
       };
     });
+  };
+
+  const duplicateDay = (dayNumber: number) => {
+    const dayToDuplicate = protocol.days.find(d => d.dayNumber === dayNumber);
+    if (!dayToDuplicate) return;
+
+    const newDayNumber = Math.max(...protocol.days.map(d => d.dayNumber)) + 1;
+    
+    const duplicatedDay: ProtocolDay = {
+      id: `temp-day-${Date.now()}`,
+      dayNumber: newDayNumber,
+      title: dayToDuplicate.title || `Day ${newDayNumber}`,
+      sessions: dayToDuplicate.sessions.map(session => ({
+        id: `temp-session-${Date.now()}-${Math.random()}`,
+        name: session.name,
+        order: session.order,
+        tasks: session.tasks.map(task => ({
+          id: `temp-task-${Date.now()}-${Math.random()}`,
+          title: task.title,
+          order: task.order,
+          hasMoreInfo: task.hasMoreInfo,
+          videoUrl: task.videoUrl,
+          fullExplanation: task.fullExplanation,
+          productId: task.productId,
+          modalTitle: task.modalTitle,
+          modalButtonText: task.modalButtonText,
+          modalButtonUrl: task.modalButtonUrl
+        }))
+      })),
+      tasks: [] // No more direct tasks
+    };
+
+    setProtocol(prev => ({
+      ...prev,
+      days: [...prev.days, duplicatedDay],
+      duration: prev.days.length + 1
+    }));
+
+    // Show success notification
+    setShowDuplicateSuccessAlert(true);
+    setTimeout(() => setShowDuplicateSuccessAlert(false), 3000);
+  };
+
+  const updateDay = (dayNumber: number, field: string, value: string) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => 
+        day.dayNumber === dayNumber 
+          ? { ...day, [field]: value }
+          : day
+      )
+    }));
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -789,7 +824,83 @@ export default function EditProtocolPage() {
   };
 
   const removeCoverImage = () => {
-    updateProtocolField('coverImage', '');
+    setProtocol(prev => ({ ...prev, coverImage: '' }));
+  };
+
+  const improveNameWithAI = async () => {
+    if (!protocol.name.trim()) {
+      alert('Please write something in the protocol name before using AI to improve it.');
+      return;
+    }
+
+    try {
+      setIsImprovingName(true);
+      
+      const response = await fetch('/api/ai/improve-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: protocol.name,
+          context: 'protocol_name'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProtocol(prev => ({ ...prev, name: data.improvedText }));
+        setShowAISuccessAlert(true);
+        setAiSuccessMessage('Protocol name improved successfully with AI!');
+        setTimeout(() => setShowAISuccessAlert(false), 3000);
+      } else {
+        const errorData = await response.json();
+        alert(`Error improving text: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error improving protocol name:', error);
+      alert('Connection error while trying to improve text with AI.');
+    } finally {
+      setIsImprovingName(false);
+    }
+  };
+
+  const improveDescriptionWithAI = async () => {
+    if (!protocol.description.trim()) {
+      alert('Please write something in the protocol description before using AI to improve it.');
+      return;
+    }
+
+    try {
+      setIsImprovingDescription(true);
+      
+      const response = await fetch('/api/ai/improve-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: protocol.description,
+          context: 'protocol_description'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProtocol(prev => ({ ...prev, description: data.improvedText }));
+        setShowAISuccessAlert(true);
+        setAiSuccessMessage('Protocol description improved successfully with AI!');
+        setTimeout(() => setShowAISuccessAlert(false), 3000);
+      } else {
+        const errorData = await response.json();
+        alert(`Error improving text: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error improving protocol description:', error);
+      alert('Connection error while trying to improve text with AI.');
+    } finally {
+      setIsImprovingDescription(false);
+    }
   };
 
   if (isLoadingProtocol) {
@@ -961,6 +1072,52 @@ export default function EditProtocolPage() {
             </div>
           )}
 
+          {/* AI Success Alert */}
+          {showAISuccessAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full flex items-center justify-center">
+                  <SparklesIcon className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-purple-900">AI Improvement Complete!</h4>
+                  <p className="text-xs text-purple-700 mt-1">Text has been enhanced successfully</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAISuccessAlert(false)}
+                  className="text-purple-500 hover:text-purple-600 hover:bg-purple-100 rounded-lg h-6 w-6 p-0"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Duplicate Day Success Alert */}
+          {showDuplicateSuccessAlert && (
+            <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+                  <DocumentDuplicateIcon className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-green-900">Day Duplicated Successfully!</h4>
+                  <p className="text-xs text-green-700 mt-1">All sessions and tasks have been copied</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDuplicateSuccessAlert(false)}
+                  className="text-green-500 hover:text-green-600 hover:bg-green-100 rounded-lg h-6 w-6 p-0"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Tabs Interface */}
           <ProtocolEditTabs
             protocol={protocol}
@@ -970,6 +1127,7 @@ export default function EditProtocolPage() {
             addProduct={addProduct}
             removeProduct={removeProduct}
             updateProtocolProduct={updateProtocolProduct}
+            protocolId={params.id as string}
           >
             {{
               basicInfo: (
@@ -982,24 +1140,58 @@ export default function EditProtocolPage() {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
-                          <Input
-                            id="name"
-                            value={protocol.name}
-                            onChange={(e) => updateProtocolField('name', e.target.value)}
-                            placeholder="Ex: Post-Facial Filler"
-                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                          />
+                          <div className="relative">
+                            <Input
+                              id="name"
+                              value={protocol.name}
+                              onChange={(e) => updateProtocolField('name', e.target.value)}
+                              placeholder="Ex: Post-Facial Filler"
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 pr-12"
+                            />
+                            {protocol.name.trim() && (
+                              <button
+                                type="button"
+                                onClick={improveNameWithAI}
+                                disabled={isImprovingName}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Improve text with AI"
+                              >
+                                {isImprovingName ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
+                                ) : (
+                                  <SparklesIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
-                          <Textarea
-                            id="description"
-                            value={protocol.description}
-                            onChange={(e) => updateProtocolField('description', e.target.value)}
-                            placeholder="Describe the protocol..."
-                            className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                          />
+                          <div className="relative">
+                            <Textarea
+                              id="description"
+                              value={protocol.description}
+                              onChange={(e) => updateProtocolField('description', e.target.value)}
+                              placeholder="Describe the protocol..."
+                              className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl pr-12 resize-none"
+                            />
+                            {protocol.description.trim() && (
+                              <button
+                                type="button"
+                                onClick={improveDescriptionWithAI}
+                                disabled={isImprovingDescription}
+                                className="absolute right-3 top-3 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
+                                title="Improve text with AI"
+                              >
+                                {isImprovingDescription ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
+                                ) : (
+                                  <SparklesIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {/* Cover Image Upload */}
@@ -1327,10 +1519,10 @@ export default function EditProtocolPage() {
                   addSession={addSession}
                   removeSession={removeSession}
                   updateSession={updateSession}
-                  moveTaskToSession={moveTaskToSession}
-                  moveTaskFromSession={moveTaskFromSession}
                   addDay={addDay}
                   removeDay={removeDay}
+                  duplicateDay={duplicateDay}
+                  updateDay={updateDay}
                 />
               )
             }}

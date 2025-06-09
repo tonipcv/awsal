@@ -15,6 +15,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from 'next/link';
 import Image from 'next/image';
 import { TaskInfoModal } from "@/components/ui/task-info-modal";
+import DailyCheckinModal from "@/components/checkin/daily-checkin-modal";
 
 // Translations for internationalization
 const translations = {
@@ -55,7 +56,6 @@ interface ProtocolProgress {
   protocolTask: {
     id: string;
     title: string;
-    description?: string;
     order: number;
     protocolDay: {
       id: string;
@@ -112,15 +112,14 @@ interface ActiveProtocol {
     days: Array<{
       id: string;
       dayNumber: number;
+      title?: string;
       sessions: Array<{
         id: string;
         name: string;
-        description?: string;
         order: number;
         tasks: Array<{
           id: string;
           title: string;
-          description?: string;
           order: number;
           hasMoreInfo?: boolean;
           videoUrl?: string;
@@ -163,6 +162,8 @@ export default function ProtocolChecklistPage() {
   const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set());
   const [debounceMap, setDebounceMap] = useState<Map<string, NodeJS.Timeout>>(new Map());
   const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [hasCheckinToday, setHasCheckinToday] = useState(false);
 
   // Detect browser language
   useEffect(() => {
@@ -211,6 +212,9 @@ export default function ProtocolChecklistPage() {
         
         setProgress(Array.isArray(progressData) ? progressData : []);
         setProducts(Array.isArray(productsData) ? productsData : []);
+        
+        // Verificar se já fez check-in hoje
+        await checkTodayCheckin(targetProtocol.protocolId);
       } else {
         router.push('/protocols');
       }
@@ -221,6 +225,26 @@ export default function ProtocolChecklistPage() {
       setIsLoading(false);
     }
   }, [params.protocolId, router]);
+
+  // Verificar se já fez check-in hoje
+  const checkTodayCheckin = useCallback(async (protocolId: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/protocols/${protocolId}/checkin-responses?date=${today}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHasCheckinToday(data.responses && data.responses.length > 0);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar check-in:', error);
+    }
+  }, []);
+
+  const handleCheckinSuccess = useCallback(() => {
+    setHasCheckinToday(true);
+    // Recarregar dados se necessário
+  }, []);
 
   useEffect(() => {
     loadActiveProtocol();
@@ -529,13 +553,55 @@ export default function ProtocolChecklistPage() {
               )}
               
               <div className="p-6 lg:p-8">
-                <h1 className="text-2xl lg:text-3xl font-light text-white mb-2">
+                {/* Protocol Title */}
+                <h1 className="text-lg lg:text-2xl font-bold text-white mb-3">
                   {activeProtocol.protocol.name}
                 </h1>
+                
+                {/* Protocol Description */}
                 {activeProtocol.protocol.description && (
-                  <p className="text-gray-300 leading-relaxed">
+                  <p className="text-sm lg:text-base text-gray-300 leading-relaxed">
                     {activeProtocol.protocol.description}
                   </p>
+                )}
+              </div>
+            </div>
+
+            {/* Daily Check-in Button */}
+            <div className={cn(
+              "border rounded-xl lg:rounded-2xl p-4 lg:p-6 backdrop-blur-sm transition-all duration-200",
+              hasCheckinToday 
+                ? "bg-green-500/10 border-green-500/30" 
+                : "bg-white/[0.02] border-gray-800/60"
+            )}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 lg:gap-4">
+                  <div>
+                    <h3 className="text-base lg:text-lg font-semibold text-white mb-1">
+                      Check-in Diário
+                    </h3>
+                    <p className="text-xs lg:text-sm text-gray-400">
+                      {hasCheckinToday ? 'Clique para editar suas respostas' : 'Como você está se sentindo hoje?'}
+                    </p>
+                  </div>
+                </div>
+                
+                {hasCheckinToday ? (
+                  <button
+                    onClick={() => setShowCheckinModal(true)}
+                    className="px-3 py-2 lg:px-4 lg:py-2 bg-green-500/20 border border-green-500/40 rounded-lg lg:rounded-xl hover:bg-green-500/30 hover:border-green-500/50 transition-all duration-200 hover:scale-105"
+                  >
+                    <span className="text-xs lg:text-sm font-semibold text-green-400 uppercase tracking-wider">
+                      ✓ Concluído
+                    </span>
+                  </button>
+                ) : (
+                  <Button
+                    onClick={() => setShowCheckinModal(true)}
+                    className="bg-turquoise hover:bg-turquoise/90 text-black px-4 py-2 lg:px-6 lg:py-3 rounded-lg lg:rounded-xl font-semibold transition-all shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105"
+                  >
+                    Fazer Check-in
+                  </Button>
                 )}
               </div>
             </div>
@@ -563,17 +629,9 @@ export default function ProtocolChecklistPage() {
                       <div className="p-4 lg:p-8 border-b border-gray-800/40">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 lg:gap-4">
-                            <div className={cn(
-                              "w-10 h-10 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex items-center justify-center text-base lg:text-lg font-semibold border-2 transition-all",
-                              isCurrentDay
-                                ? "bg-turquoise/15 border-turquoise/50 text-turquoise shadow-lg shadow-turquoise/10"
-                                : "bg-gray-800/50 border-gray-700/50 text-gray-300"
-                            )}>
-                              {day.dayNumber}
-                            </div>
                             <div>
                               <h3 className="text-base lg:text-xl font-semibold text-white mb-0.5 lg:mb-1">
-                                {t.day} {day.dayNumber}
+                                {day.title || `${t.day} ${day.dayNumber}`}
                               </h3>
                               <div className="text-xs lg:text-sm text-gray-400">
                                 {format(new Date(dayDate), 'EEEE, dd/MM/yyyy', { locale: dateLocale })}
@@ -602,11 +660,6 @@ export default function ProtocolChecklistPage() {
                                   <h4 className="text-sm lg:text-base font-semibold text-turquoise mb-1 lg:mb-2">
                                     {session.name}
                                   </h4>
-                                  {session.description && (
-                                    <p className="text-xs lg:text-sm text-gray-400 leading-relaxed">
-                                      {session.description}
-                                    </p>
-                                  )}
                                 </div>
                               )}
 
@@ -639,7 +692,7 @@ export default function ProtocolChecklistPage() {
                                               ? "bg-green-400 border-green-400 text-white shadow-lg shadow-green-400/25 scale-105" 
                                               : "border-gray-600 hover:border-green-400/60 hover:bg-green-400/10 hover:scale-105",
                                             !canInteract && "cursor-not-allowed",
-                                            isPending && "animate-pulse border-green-400/70"
+                                            isPending && "border-green-400/70"
                                           )}
                                           onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
                                         >
@@ -655,14 +708,6 @@ export default function ProtocolChecklistPage() {
                                               )}>
                                                 {task.title}
                                               </h5>
-                                              {task.description && (
-                                                <p className={cn(
-                                                  "text-xs lg:text-sm leading-relaxed",
-                                                  isCompleted ? "text-turquoise/70" : "text-gray-300"
-                                                )}>
-                                                  {task.description}
-                                                </p>
-                                              )}
                                             </div>
                                             
                                             {task.hasMoreInfo && (
@@ -773,6 +818,14 @@ export default function ProtocolChecklistPage() {
               }}
             />
           )}
+
+          {/* Daily Check-in Modal */}
+          <DailyCheckinModal
+            isOpen={showCheckinModal}
+            onClose={() => setShowCheckinModal(false)}
+            protocolId={activeProtocol.protocolId}
+            onSuccess={handleCheckinSuccess}
+          />
         </div>
       </div>
     </div>

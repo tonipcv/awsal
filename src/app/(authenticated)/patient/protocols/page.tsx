@@ -145,9 +145,9 @@ interface ActiveProtocol {
 export default function ProtocolsPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [activeProtocols, setActiveProtocols] = useState<ActiveProtocol[]>([]);
-  const [unavailableProtocols, setUnavailableProtocols] = useState<Protocol[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [protocols, setProtocols] = useState<ActiveProtocol[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<'pt' | 'en'>('pt');
   const [modalData, setModalData] = useState<{
     isOpen: boolean;
@@ -174,47 +174,68 @@ export default function ProtocolsPage() {
 
   const t = translations[language];
 
-  const loadProtocols = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      
-      // Carregar protocolos ativos (assignments)
-      const assignmentsResponse = await fetch('/api/protocols/assign');
-      const assignments = await assignmentsResponse.json();
-      setActiveProtocols(Array.isArray(assignments) ? assignments : []);
-      
-      // Carregar protocolos ativos e indisponíveis
-      const protocolsResponse = await fetch('/api/protocols/available');
-      const protocolsData = await protocolsResponse.json();
-      
-      if (protocolsData.unavailable) {
-        setUnavailableProtocols(protocolsData.unavailable);
-      }
-      
-      console.log('Loaded protocols:', { assignments, protocolsData });
-    } catch (error) {
-      console.error('Error loading protocols:', error);
-      setActiveProtocols([]);
-      setUnavailableProtocols([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    const loadProtocols = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Tentar detectar o slug da clínica do localStorage ou sessionStorage
+        let clinicSlug = null;
+        if (typeof window !== 'undefined') {
+          clinicSlug = sessionStorage.getItem('clinicSlug') || localStorage.getItem('clinicSlug');
+        }
+
+        // Se não encontrou no storage, tentar buscar via API
+        if (!clinicSlug) {
+          try {
+            const clinicResponse = await fetch('/api/patient/clinic-slug');
+            if (clinicResponse.ok) {
+              const clinicData = await clinicResponse.json();
+              clinicSlug = clinicData.clinicSlug;
+            }
+          } catch (error) {
+            console.log('Could not fetch clinic slug, using default behavior');
+          }
+        }
+
+        // Construir URL da API com ou sem clinicSlug
+        let apiUrl = '/api/protocols/assign';
+        if (clinicSlug) {
+          apiUrl += `?clinicSlug=${encodeURIComponent(clinicSlug)}`;
+        }
+
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch protocols');
+        }
+
+        const data = await response.json();
+        setProtocols(data || []);
+      } catch (error) {
+        console.error('Error loading protocols:', error);
+        setError('Erro ao carregar protocolos. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadProtocols();
-  }, [loadProtocols]);
+  }, [session]);
 
   // Debug: Log doctor data when protocols are loaded
   useEffect(() => {
-    if (activeProtocols.length > 0) {
-      activeProtocols.forEach(assignment => {
+    if (protocols.length > 0) {
+      protocols.forEach(assignment => {
         if (assignment.protocol.showDoctorInfo && assignment.protocol.doctor) {
           console.log('Doctor data:', assignment.protocol.doctor);
         }
       });
     }
-  }, [activeProtocols]);
+  }, [protocols]);
 
   const getProtocolProgress = (protocol: ActiveProtocol) => {
     const today = new Date();
@@ -263,12 +284,16 @@ export default function ProtocolsPage() {
   // Função para obter o médico principal dos protocolos ativos
   const getPrimaryDoctor = () => {
     // Procura pelo primeiro protocolo ativo que tem informações do médico
-    const protocolWithDoctor = activeProtocols.find(assignment => 
+    const protocolWithDoctor = protocols.find(assignment => 
       assignment.protocol.showDoctorInfo && assignment.protocol.doctor
     );
     
     return protocolWithDoctor?.protocol.doctor || null;
   };
+
+  // Separar protocolos ativos dos inativos
+  const activeProtocols = protocols.filter(p => p.isActive);
+  const inactiveProtocols = protocols.filter(p => !p.isActive);
 
   if (!session) {
     return (
@@ -278,7 +303,7 @@ export default function ProtocolsPage() {
     );
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
         {/* Padding para menu lateral no desktop e header no mobile */}
@@ -339,7 +364,20 @@ export default function ProtocolsPage() {
     );
   }
 
-  const totalProtocols = activeProtocols.length + unavailableProtocols.length;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101010' }}>
+        <div className="text-center">
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const totalProtocols = protocols.length;
   const primaryDoctor = getPrimaryDoctor();
 
   return (
@@ -571,30 +609,30 @@ export default function ProtocolsPage() {
               </section>
             )}
 
-            {/* Unavailable Protocols */}
-            {unavailableProtocols.length > 0 && (
+            {/* Inactive Protocols */}
+            {inactiveProtocols.length > 0 && (
               <section>
                   <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
                     <ClockIcon className="h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
-                    {t.unavailableProtocolsSection}
+                    Protocolos Inativos
                 </h2>
                 
                   <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                  {unavailableProtocols.map(protocol => {
-                    const totalTasks = getTotalTasks(protocol);
+                  {inactiveProtocols.map(assignment => {
+                    const totalTasks = getTotalTasks(assignment.protocol);
                     
                     return (
                         <div 
-                        key={protocol.id} 
+                        key={assignment.id} 
                           className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
-                        onClick={() => openModal(protocol)}
+                        onClick={() => openModal(assignment.protocol)}
                       >
                           {/* Cover Image */}
-                          {protocol.coverImage && (
+                          {assignment.protocol.coverImage && (
                             <div className="relative w-full h-32 lg:h-40 overflow-hidden">
                               <Image
-                                src={protocol.coverImage}
-                                alt={protocol.name}
+                                src={assignment.protocol.coverImage}
+                                alt={assignment.protocol.name}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -608,21 +646,21 @@ export default function ProtocolsPage() {
                             <div>
                               <div className="mb-2">
                                   <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-2 mb-2">
-                                  {protocol.name}
+                                  {assignment.protocol.name}
                                 </h3>
                                   <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
-                                  {t.unavailable}
+                                  Inativo
                                 </Badge>
                               </div>
 
                               {/* Doctor Info - Only show if showDoctorInfo is true */}
-                              {protocol.showDoctorInfo && protocol.doctor && (
+                              {assignment.protocol.showDoctorInfo && assignment.protocol.doctor && (
                                   <div className="flex items-center gap-2 mb-2">
                                     <div className="w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
-                                    {protocol.doctor.image ? (
+                                    {assignment.protocol.doctor.image ? (
                                       <img 
-                                        src={protocol.doctor.image} 
-                                        alt={protocol.doctor.name || t.responsibleDoctor}
+                                        src={assignment.protocol.doctor.image} 
+                                        alt={assignment.protocol.doctor.name || t.responsibleDoctor}
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
@@ -635,22 +673,22 @@ export default function ProtocolsPage() {
                                     ) : null}
                                     <div 
                                         className="w-full h-full bg-gray-600 flex items-center justify-center"
-                                      style={{ display: protocol.doctor.image ? 'none' : 'flex' }}
+                                      style={{ display: assignment.protocol.doctor.image ? 'none' : 'flex' }}
                                     >
                                         <span className="text-xs text-gray-300 font-medium">
-                                        {protocol.doctor.name?.charAt(0) || 'M'}
+                                        {assignment.protocol.doctor.name?.charAt(0) || 'M'}
                                       </span>
                                     </div>
                                   </div>
                                     <span className="text-xs text-gray-400">
-                                    {protocol.doctor.name || t.responsibleDoctor}
+                                    {assignment.protocol.doctor.name || t.responsibleDoctor}
                                   </span>
                                 </div>
                               )}
                               
-                              {protocol.description && (
+                              {assignment.protocol.description && (
                                   <p className="text-xs lg:text-sm text-gray-400 leading-relaxed line-clamp-2">
-                                  {protocol.description}
+                                  {assignment.protocol.description}
                                 </p>
                               )}
                             </div>
@@ -659,7 +697,7 @@ export default function ProtocolsPage() {
                                 <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
                                   <div className="flex items-center gap-1">
                                     <CalendarDaysIcon className="h-3 w-3 text-gray-500" />
-                                <span>{protocol.duration} {t.days}</span>
+                                <span>{assignment.protocol.duration} {t.days}</span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <DocumentTextIcon className="h-3 w-3 text-gray-500" />
