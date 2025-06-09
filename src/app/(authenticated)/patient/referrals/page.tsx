@@ -698,46 +698,40 @@ export default function PatientReferralsPage() {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button className="bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 px-3 lg:px-4 shadow-md shadow-turquoise/25">
-                          <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                          {t.shareLink}
+                          <Copy className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                          Copy Referral Link
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="bg-gray-900 border border-gray-800 text-white">
                         <DialogHeader>
-                          <DialogTitle className="text-white">{t.shareOptions}</DialogTitle>
+                          <DialogTitle className="text-white">Copy Your Referral Link</DialogTitle>
                           <DialogDescription className="text-gray-400">
-                            {t.pageDescription}
+                            Share this link with friends to earn rewards when they sign up
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="grid grid-cols-2 gap-3 py-4">
-                          <Button
-                            onClick={shareViaWhatsApp}
-                            className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/30 flex items-center gap-2 h-10"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            {t.shareWhatsApp}
-                          </Button>
-                          <Button
-                            onClick={shareViaSMS}
-                            className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 flex items-center gap-2 h-10"
-                          >
-                            <Phone className="h-4 w-4" />
-                            {t.shareSMS}
-                          </Button>
-                          <Button
-                            onClick={shareViaEmail}
-                            className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 flex items-center gap-2 h-10"
-                          >
-                            <Mail className="h-4 w-4" />
-                            {t.shareEmail}
-                          </Button>
+                        <div className="py-4 space-y-4">
+                          <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                            <p className="text-sm text-gray-300 mb-3">
+                              Your unique referral link:
+                            </p>
+                            <div className="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-600">
+                              <code className="flex-1 text-xs text-turquoise font-mono break-all">
+                                {generateReferralLink('default')}
+                              </code>
+                            </div>
+                          </div>
                           <Button
                             onClick={copyReferralLink}
-                            className="bg-gray-700/20 hover:bg-gray-700/30 text-gray-300 border border-gray-700/30 flex items-center gap-2 h-10"
+                            className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium flex items-center justify-center gap-2 h-10"
                           >
                             <Copy className="h-4 w-4" />
-                            {t.copyLink}
+                            Copy Link to Clipboard
                           </Button>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-400">
+                              Share this link with friends and family to start earning referral credits!
+                            </p>
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -906,52 +900,46 @@ export default function PatientReferralsPage() {
                     <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
                       <UserPlus className="h-5 w-5 lg:h-6 lg:w-6 text-gray-400" />
                     </div>
-                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">{t.noReferralsYet}</div>
-                    <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">{t.startReferringDescription}</div>
+                    <div className="text-gray-500 text-sm lg:text-base mb-1 lg:mb-2">No referrals yet</div>
+                    <div className="text-gray-400 text-xs lg:text-sm mb-3 lg:mb-4">Start referring people to earn credits</div>
                     {doctorId && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button className="bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-7 lg:h-8 px-3 lg:px-4 shadow-md shadow-turquoise/25">
-                            <Share2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                            {t.startReferring}
+                            <Copy className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
+                            Copy Referral Link
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="bg-gray-900 border border-gray-800 text-white">
                           <DialogHeader>
-                            <DialogTitle className="text-white">{t.shareOptions}</DialogTitle>
+                            <DialogTitle className="text-white">Copy Your Referral Link</DialogTitle>
                             <DialogDescription className="text-gray-400">
-                              {t.pageDescription}
+                              Share this link with friends to earn rewards when they sign up
                             </DialogDescription>
                           </DialogHeader>
-                          <div className="grid grid-cols-2 gap-3 py-4">
-                            <Button
-                              onClick={shareViaWhatsApp}
-                              className="bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/30 flex items-center gap-2 h-10"
-                            >
-                              <MessageCircle className="h-4 w-4" />
-                              {t.shareWhatsApp}
-                            </Button>
-                            <Button
-                              onClick={shareViaSMS}
-                              className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 flex items-center gap-2 h-10"
-                            >
-                              <Phone className="h-4 w-4" />
-                              {t.shareSMS}
-                            </Button>
-                            <Button
-                              onClick={shareViaEmail}
-                              className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 flex items-center gap-2 h-10"
-                            >
-                              <Mail className="h-4 w-4" />
-                              {t.shareEmail}
-                            </Button>
+                          <div className="py-4 space-y-4">
+                            <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                              <p className="text-sm text-gray-300 mb-3">
+                                Your unique referral link:
+                              </p>
+                              <div className="flex items-center gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-600">
+                                <code className="flex-1 text-xs text-turquoise font-mono break-all">
+                                  {generateReferralLink('default')}
+                                </code>
+                              </div>
+                            </div>
                             <Button
                               onClick={copyReferralLink}
-                              className="bg-gray-700/20 hover:bg-gray-700/30 text-gray-300 border border-gray-700/30 flex items-center gap-2 h-10"
+                              className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium flex items-center justify-center gap-2 h-10"
                             >
                               <Copy className="h-4 w-4" />
-                              {t.copyLink}
+                              Copy Link to Clipboard
                             </Button>
+                            <div className="text-center">
+                              <p className="text-xs text-gray-400">
+                                Share this link with friends and family to start earning referral credits!
+                              </p>
+                            </div>
                           </div>
                         </DialogContent>
                       </Dialog>
