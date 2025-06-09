@@ -227,6 +227,10 @@ model User {
   subscriptions                                                    subscriptions?
   assignedCourses                                                  UserCourse[]
   lessonProgress                                                   UserLesson[]
+  
+  // New symptom reporting relations
+  symptomReports                                                   SymptomReport[]
+  reviewedSymptomReports                                           SymptomReport[]          @relation("SymptomReportReviewer")
 }
 
 model Protocol {
@@ -254,6 +258,9 @@ model Protocol {
   protocol_products   protocol_products[]
   doctor              User                   @relation("DoctorProtocols", fields: [doctorId], references: [id])
   referrals           referrals[]
+  
+  // New symptom reporting relation
+  symptomReports      SymptomReport[]
 
   @@map("protocols")
 }
@@ -952,4 +959,57 @@ enum DailyCheckinQuestionType {
   SCALE
   TEXT
   YES_NO
+}
+
+model SymptomReport {
+  id          String                    @id @default(cuid())
+  userId      String
+  protocolId  String
+  dayNumber   Int
+  title       String                    @default("Relatório de Sintomas")
+  description String?
+  symptoms    String                    // Text description of symptoms
+  severity    Int?                      @default(1) // 1-10 scale
+  reportTime  DateTime                  // When symptoms occurred (user selected)
+  isNow       Boolean                   @default(true) // If user selected "now" vs custom time
+  status      SymptomReportStatus       @default(PENDING)
+  doctorNotes String?                   // Doctor's notes/response
+  reviewedAt  DateTime?                 // When doctor reviewed
+  reviewedBy  String?                   // Doctor who reviewed
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @default(now()) @updatedAt
+  
+  // Relations
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  protocol    Protocol                  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  reviewer    User?                     @relation("SymptomReportReviewer", fields: [reviewedBy], references: [id])
+  attachments SymptomReportAttachment[]
+  
+  @@index([userId, protocolId])
+  @@index([status])
+  @@index([reportTime])
+  @@index([dayNumber])
+}
+
+model SymptomReportAttachment {
+  id               String        @id @default(cuid())
+  symptomReportId  String
+  fileName         String
+  originalName     String
+  fileSize         Int
+  mimeType         String
+  fileUrl          String        // URL to stored file
+  uploadedAt       DateTime      @default(now())
+  
+  // Relations
+  symptomReport    SymptomReport @relation(fields: [symptomReportId], references: [id], onDelete: Cascade)
+  
+  @@index([symptomReportId])
+}
+
+enum SymptomReportStatus {
+  PENDING
+  REVIEWED
+  REQUIRES_ATTENTION
+  RESOLVED
 }

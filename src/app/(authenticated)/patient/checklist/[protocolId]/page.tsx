@@ -6,7 +6,12 @@ import { ptBR, enUS } from 'date-fns/locale';
 import { 
   CheckIcon, 
   ArrowLeftIcon, 
-  InformationCircleIcon
+  InformationCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  TrophyIcon,
+  SparklesIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,6 +21,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { TaskInfoModal } from "@/components/ui/task-info-modal";
 import DailyCheckinModal from "@/components/checkin/daily-checkin-modal";
+import SymptomReportModal from '@/components/symptom-report/symptom-report-modal';
 
 // Translations for internationalization
 const translations = {
@@ -164,6 +170,12 @@ export default function ProtocolChecklistPage() {
   const [language, setLanguage] = useState<'pt' | 'en'>('pt');
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [hasCheckinToday, setHasCheckinToday] = useState(false);
+  const [showCongratsModal, setShowCongratsModal] = useState(false);
+  const [showSymptomModal, setShowSymptomModal] = useState(false);
+  const [selectedDayForSymptoms, setSelectedDayForSymptoms] = useState<number | null>(null);
+  
+  // New state for day navigation
+  const [currentViewDay, setCurrentViewDay] = useState<number | null>(null);
 
   // Detect browser language
   useEffect(() => {
@@ -465,6 +477,7 @@ export default function ProtocolChecklistPage() {
     return progressMap.get(key)?.isCompleted || false;
   }, [progressMap]);
 
+  // Get current day calculation
   const getCurrentDay = useCallback(() => {
     if (!activeProtocol) return 1;
     
@@ -483,6 +496,99 @@ export default function ProtocolChecklistPage() {
     return Math.max(1, Math.min(diffDays, activeProtocol.protocol.duration));
   }, [activeProtocol]);
 
+  const currentDay = getCurrentDay();
+
+  // Helper function to calculate completed days
+  const getCompletedDaysCount = useMemo(() => {
+    if (!activeProtocol) return 0;
+    
+    let completedDays = 0;
+    for (let dayNum = 1; dayNum <= activeProtocol.protocol.duration; dayNum++) {
+      const day = activeProtocol.protocol.days.find(d => d.dayNumber === dayNum);
+      if (day) {
+        let totalTasks = 0;
+        let completedTasks = 0;
+        
+        day.sessions.forEach(session => {
+          session.tasks.forEach(task => {
+            totalTasks++;
+            const taskDate = getDateForProtocolDay(dayNum);
+            if (isTaskCompleted(task.id, taskDate)) {
+              completedTasks++;
+            }
+          });
+        });
+        
+        if (totalTasks > 0 && completedTasks === totalTasks) {
+          completedDays++;
+        }
+      }
+    }
+    
+    return completedDays;
+  }, [activeProtocol, progressMap, getDateForProtocolDay, isTaskCompleted]);
+
+  // Helper function to check if a specific day is completed
+  const isDayCompleted = useCallback((dayNum: number) => {
+    if (!activeProtocol) return false;
+    
+    const day = activeProtocol.protocol.days.find(d => d.dayNumber === dayNum);
+    if (!day) return false;
+    
+    let totalTasks = 0;
+    let completedTasks = 0;
+    
+    day.sessions.forEach(session => {
+      session.tasks.forEach(task => {
+        totalTasks++;
+        const taskDate = getDateForProtocolDay(dayNum);
+        if (isTaskCompleted(task.id, taskDate)) {
+          completedTasks++;
+        }
+      });
+    });
+    
+    return totalTasks > 0 && completedTasks === totalTasks;
+  }, [activeProtocol, progressMap, getDateForProtocolDay, isTaskCompleted]);
+
+  // Check if entire protocol (all days) is completed - moved here to maintain hook order
+  const isEntireProtocolCompleted = useMemo(() => {
+    if (!activeProtocol) return false;
+    return getCompletedDaysCount === activeProtocol.protocol.duration;
+  }, [activeProtocol, getCompletedDaysCount]);
+
+  // Initialize currentViewDay when activeProtocol loads
+  useEffect(() => {
+    if (activeProtocol && currentViewDay === null) {
+      const currentDay = getCurrentDay();
+      setCurrentViewDay(currentDay);
+    }
+  }, [activeProtocol, currentViewDay, getCurrentDay]);
+
+  // Navigation functions
+  const goToPreviousDay = useCallback(() => {
+    if (!activeProtocol || !currentViewDay) return;
+    const newDay = Math.max(1, currentViewDay - 1);
+    setCurrentViewDay(newDay);
+  }, [activeProtocol, currentViewDay]);
+
+  const goToNextDay = useCallback(() => {
+    if (!activeProtocol || !currentViewDay) return;
+    const newDay = Math.min(activeProtocol.protocol.duration, currentViewDay + 1);
+    setCurrentViewDay(newDay);
+  }, [activeProtocol, currentViewDay]);
+
+  const goToCurrentDay = useCallback(() => {
+    const currentDay = getCurrentDay();
+    setCurrentViewDay(currentDay);
+  }, [getCurrentDay]);
+
+  // Get the day to display
+  const dayToDisplay = useMemo(() => {
+    if (!activeProtocol || currentViewDay === null) return null;
+    return activeProtocol.protocol.days.find(day => day.dayNumber === currentViewDay);
+  }, [activeProtocol, currentViewDay]);
+
   const getDayStatus = useCallback((dayNumber: number) => {
     if (!activeProtocol) return 'future';
     
@@ -500,6 +606,16 @@ export default function ProtocolChecklistPage() {
     if (dayDateUTC.getTime() === todayUTC.getTime()) return 'current';
     return 'future';
   }, [activeProtocol]);
+
+  const handleReportSymptoms = (dayNumber: number) => {
+    setSelectedDayForSymptoms(dayNumber);
+    setShowSymptomModal(true);
+  };
+
+  const handleSymptomReportSuccess = () => {
+    // Optionally refresh data or show success message
+    console.log('Symptom report submitted successfully');
+  };
 
   // Loading state
   if (isLoading) {
@@ -551,11 +667,9 @@ export default function ProtocolChecklistPage() {
     );
   }
 
-  const currentDay = getCurrentDay();
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101010' }}>
-      <div className="pt-[88px] pb-24 lg:pt-6 lg:pb-4 lg:ml-64">
+      <div className="pt-[88px] pb-32 lg:pt-6 lg:pb-12 lg:ml-64">
         <div className="max-w-4xl mx-auto px-3 lg:px-6">
           <div className="space-y-6 pt-4 lg:pt-6">
             
@@ -600,6 +714,63 @@ export default function ProtocolChecklistPage() {
               </div>
             </div>
 
+            {/* Congratulations Banner - Only show when entire protocol is completed */}
+            {isEntireProtocolCompleted && (
+              <div className="relative bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-green-500/20 border-2 border-green-400/50 rounded-xl lg:rounded-2xl p-6 lg:p-8 backdrop-blur-sm overflow-hidden animate-pulse">
+                {/* Sparkle Effects */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="absolute top-4 left-4 text-yellow-400 animate-bounce">
+                    <SparklesIcon className="h-6 w-6" />
+                  </div>
+                  <div className="absolute top-6 right-8 text-yellow-300 animate-bounce delay-300">
+                    <SparklesIcon className="h-4 w-4" />
+                  </div>
+                  <div className="absolute bottom-6 left-12 text-yellow-400 animate-bounce delay-700">
+                    <SparklesIcon className="h-5 w-5" />
+                  </div>
+                  <div className="absolute bottom-4 right-4 text-yellow-300 animate-bounce delay-500">
+                    <SparklesIcon className="h-6 w-6" />
+                  </div>
+                </div>
+                
+                <div className="relative z-10 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-green-400/20 p-4 rounded-full border-2 border-green-400/40 animate-pulse">
+                      <TrophyIcon className="h-12 w-12 lg:h-16 lg:w-16 text-green-400" />
+                    </div>
+                  </div>
+                  
+                  <h2 className="text-2xl lg:text-3xl font-bold text-green-400 mb-2 animate-bounce">
+                    🎉 Parabéns! 🎉
+                  </h2>
+                  
+                  <p className="text-lg lg:text-xl text-green-300 font-semibold mb-2">
+                    Protocolo Concluído com Sucesso!
+                  </p>
+                  
+                  <p className="text-sm lg:text-base text-green-200/80 mb-4">
+                    Você completou todas as {activeProtocol.protocol.duration} dias do protocolo{' '}
+                    <span className="font-semibold text-green-300">{activeProtocol.protocol.name}</span>.
+                    Excelente trabalho! 🌟
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                    <div className="px-4 py-2 bg-green-400/15 border border-green-400/30 rounded-lg">
+                      <span className="text-sm font-semibold text-green-400 uppercase tracking-wider">
+                        ✓ 100% Completo
+                      </span>
+                    </div>
+                    
+                    <Link href="/patient/protocols">
+                      <Button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105">
+                        Ver Outros Protocolos
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Daily Check-in Button */}
             <div className={cn(
               "border rounded-xl lg:rounded-2xl p-4 lg:p-6 backdrop-blur-sm transition-all duration-200",
@@ -639,217 +810,367 @@ export default function ProtocolChecklistPage() {
               </div>
             </div>
 
-            {/* Days */}
-            <div className="space-y-4 lg:space-y-6">
-              {activeProtocol.protocol.days
-                .sort((a, b) => a.dayNumber - b.dayNumber)
-                .map(day => {
-                  const dayDate = getDateForProtocolDay(day.dayNumber);
-                  const dayStatus = getDayStatus(day.dayNumber);
-                  const isCurrentDay = dayStatus === 'current';
-                  
-                  return (
+            {/* Day Navigation */}
+            <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl lg:rounded-2xl p-4 lg:p-6 backdrop-blur-sm">
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-400">Progresso do Protocolo</span>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    isEntireProtocolCompleted ? "text-green-400" : "text-turquoise"
+                  )}>
+                    {isEntireProtocolCompleted ? "✓ Concluído!" : `${currentDay}/${activeProtocol.protocol.duration} dias`}
+                  </span>
+                </div>
+                
+                {/* Progress Bar Container */}
+                <div className="relative">
+                  {/* Background Bar */}
+                  <div className="w-full h-2 bg-gray-800/60 rounded-full overflow-hidden">
+                    {/* Progress Fill */}
                     <div 
-                      key={day.id} 
                       className={cn(
-                        "bg-white/[0.02] border rounded-xl lg:rounded-2xl backdrop-blur-sm transition-all duration-300",
-                        isCurrentDay 
-                          ? "border-turquoise/40 shadow-lg shadow-turquoise/10" 
-                          : "border-gray-800/60 hover:border-gray-700/60"
+                        "h-full transition-all duration-500 ease-out",
+                        isEntireProtocolCompleted 
+                          ? "bg-gradient-to-r from-green-400 to-emerald-400" 
+                          : "bg-gradient-to-r from-turquoise to-turquoise-light"
                       )}
-                    >
-                      {/* Day Header */}
-                      <div className="p-4 lg:p-8 border-b border-gray-800/40">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 lg:gap-4">
-                            <div>
-                              <h3 className="text-base lg:text-xl font-semibold text-white mb-0.5 lg:mb-1">
-                                {day.title || `${t.day} ${day.dayNumber}`}
-                              </h3>
-                              <div className="text-xs lg:text-sm text-gray-400">
-                                {(() => {
-                                  // Parse dayDate and format it properly to avoid timezone issues
-                                  const [year, month, day] = dayDate.split('-').map(Number);
-                                  const dateUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Use noon UTC to avoid timezone edge cases
-                                  return format(dateUTC, 'EEEE, dd/MM/yyyy', { locale: dateLocale });
-                                })()}
-                              </div>
+                      style={{ 
+                        width: `${(getCompletedDaysCount / activeProtocol.protocol.duration) * 100}%` 
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Day Markers */}
+                  <div className="absolute -top-1 left-0 w-full">
+                    {Array.from({ length: activeProtocol.protocol.duration }, (_, index) => {
+                      const dayNum = index + 1;
+                      const dayStatus = getDayStatus(dayNum);
+                      const isCurrentView = dayNum === currentViewDay;
+                      const progressPercentage = activeProtocol.protocol.duration === 1 
+                        ? 50 
+                        : (dayNum - 1) / (activeProtocol.protocol.duration - 1) * 100;
+                      
+                      // Use the helper function instead of useMemo inside the loop
+                      const dayCompleted = isDayCompleted(dayNum);
+                      
+                      return (
+                        <button
+                          key={dayNum}
+                          onClick={() => setCurrentViewDay(dayNum)}
+                          className={cn(
+                            "absolute w-4 h-4 rounded-full border-2 transition-all duration-300 hover:scale-110 group",
+                            // Completed days (green)
+                            dayCompleted && "bg-green-400 border-green-400 shadow-lg shadow-green-400/30",
+                            // Current day (turquoise if not completed, green if completed)
+                            dayStatus === 'current' && !dayCompleted && "bg-turquoise border-turquoise shadow-lg shadow-turquoise/40 ring-2 ring-turquoise/30 ring-offset-2 ring-offset-gray-900",
+                            dayStatus === 'current' && dayCompleted && "bg-green-400 border-green-400 shadow-lg shadow-green-400/40 ring-2 ring-green-400/30 ring-offset-2 ring-offset-gray-900",
+                            // Past days (turquoise if not completed, green if completed)
+                            dayStatus === 'past' && !dayCompleted && "bg-turquoise border-turquoise shadow-lg shadow-turquoise/30",
+                            // Future days (gray)
+                            dayStatus === 'future' && "bg-gray-700 border-gray-600 hover:border-gray-500",
+                            isCurrentView && "scale-125 z-10"
+                          )}
+                          style={{
+                            left: `${progressPercentage}%`,
+                            transform: 'translateX(-50%)'
+                          }}
+                        >
+                          {/* Tooltip */}
+                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                            <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                              Dia {dayNum}
+                              {dayStatus === 'current' && ' (Hoje)'}
+                              {dayCompleted && ' ✓'}
                             </div>
                           </div>
-                          {isCurrentDay && (
-                            <div className="px-2 py-1 lg:px-4 lg:py-2 bg-turquoise/15 border border-turquoise/30 rounded-lg lg:rounded-xl">
-                              <span className="text-xs lg:text-sm font-semibold text-turquoise uppercase tracking-wider">
-                                {t.today}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Progress Stats */}
+                <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
+                  {isEntireProtocolCompleted ? (
+                    <span className="text-green-400 font-medium">
+                      🎉 Todos os dias concluídos!
+                    </span>
+                  ) : (
+                    <>
+                      <span>
+                        {(() => {
+                          let completedDays = 0;
+                          for (let dayNum = 1; dayNum <= activeProtocol.protocol.duration; dayNum++) {
+                            if (isDayCompleted(dayNum)) {
+                              completedDays++;
+                            }
+                          }
+                          return completedDays;
+                        })()} dias concluídos
+                      </span>
+                      <span>
+                        {(() => {
+                          let completedDays = 0;
+                          for (let dayNum = 1; dayNum <= activeProtocol.protocol.duration; dayNum++) {
+                            if (isDayCompleted(dayNum)) {
+                              completedDays++;
+                            }
+                          }
+                          return activeProtocol.protocol.duration - completedDays;
+                        })()} dias restantes
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={goToPreviousDay}
+                    disabled={!currentViewDay || currentViewDay <= 1}
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeftIcon className="h-5 w-5" />
+                  </Button>
+                  
+                  <div className="text-center">
+                    <h3 className="text-lg lg:text-xl font-semibold text-white">
+                      {dayToDisplay?.title || `${t.day} ${currentViewDay}`}
+                    </h3>
+                    <p className="text-xs lg:text-sm text-gray-400">
+                      {currentViewDay && (() => {
+                        const dayDate = getDateForProtocolDay(currentViewDay);
+                        const [year, month, day] = dayDate.split('-').map(Number);
+                        const dateUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+                        return format(dateUTC, 'EEEE, dd/MM/yyyy', { locale: dateLocale });
+                      })()}
+                    </p>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={goToNextDay}
+                    disabled={!currentViewDay || !activeProtocol || currentViewDay >= activeProtocol.protocol.duration}
+                    className="text-gray-400 hover:text-white hover:bg-gray-800/50 p-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRightIcon className="h-5 w-5" />
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {currentViewDay !== currentDay && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToCurrentDay}
+                      className="border-turquoise/30 text-turquoise hover:bg-turquoise/10 hover:border-turquoise/50 rounded-lg px-3 py-1.5 text-xs lg:text-sm font-medium"
+                    >
+                      Ir para {t.today}
+                    </Button>
+                  )}
+                  
+                  {currentViewDay === currentDay && (
+                    <div className="px-2 py-1 lg:px-4 lg:py-2 bg-turquoise/15 border border-turquoise/30 rounded-lg lg:rounded-xl">
+                      <span className="text-xs lg:text-sm font-semibold text-turquoise uppercase tracking-wider">
+                        {t.today}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Current Day Display */}
+            {dayToDisplay && (
+              <div className={cn(
+                "bg-white/[0.02] border rounded-xl lg:rounded-2xl backdrop-blur-sm transition-all duration-300",
+                currentViewDay === currentDay 
+                  ? "border-turquoise/40 shadow-lg shadow-turquoise/10" 
+                  : "border-gray-800/60"
+              )}>
+                {/* Tasks Section */}
+                <div className="p-4 lg:p-8">
+                  {dayToDisplay.sessions
+                    .sort((a, b) => a.order - b.order)
+                    .map((session, sessionIndex) => {
+                      const dayDate = getDateForProtocolDay(currentViewDay!);
+                      const dayStatus = getDayStatus(currentViewDay!);
+                      
+                      return (
+                        <div key={session.id} className={cn("space-y-3 lg:space-y-4", sessionIndex > 0 && "mt-6 lg:mt-8")}>
+                          {/* Session Header */}
+                          {session.name && (
+                            <div className="mb-4 lg:mb-6">
+                              <h4 className="text-sm lg:text-base font-semibold text-turquoise mb-1 lg:mb-2">
+                                {session.name}
+                              </h4>
+                            </div>
+                          )}
+
+                          {/* Tasks Grid */}
+                          <div className="space-y-2 lg:space-y-3">
+                            {session.tasks
+                              .sort((a, b) => a.order - b.order)
+                              .map(task => {
+                                const isCompleted = isTaskCompleted(task.id, dayDate);
+                                const canInteract = dayStatus !== 'future';
+                                const isPending = pendingTasks.has(task.id);
+                                
+                                return (
+                                  <div 
+                                    key={task.id}
+                                    className={cn(
+                                      "group flex items-start gap-3 lg:gap-4 p-3 lg:p-5 rounded-lg lg:rounded-xl border transition-all duration-200 hover:border-gray-600/60 hover:bg-white/[0.01]",
+                                      isCompleted 
+                                        ? "bg-turquoise/[0.08] border-turquoise/30 hover:border-turquoise/40" 
+                                        : "bg-gray-800/20 border-gray-700/40",
+                                      !canInteract && "opacity-50",
+                                      isPending && "opacity-80 scale-[0.99]"
+                                    )}
+                                  >
+                                    <button
+                                      disabled={!canInteract || isPending}
+                                      className={cn(
+                                        "w-5 h-5 lg:w-6 lg:h-6 rounded-lg lg:rounded-xl border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
+                                        isCompleted 
+                                          ? "bg-green-400 border-green-400 text-white shadow-lg shadow-green-400/25 scale-105" 
+                                          : "border-gray-600 hover:border-green-400/60 hover:bg-green-400/10 hover:scale-105",
+                                        !canInteract && "cursor-not-allowed",
+                                        isPending && "border-green-400/70"
+                                      )}
+                                      onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
+                                    >
+                                      {isCompleted && <CheckIcon className="h-3 w-3 lg:h-4 lg:w-4 transition-all duration-200" />}
+                                    </button>
+                                    
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start justify-between gap-3 lg:gap-4">
+                                        <div className="flex-1">
+                                          <h5 className={cn(
+                                            "text-sm lg:text-base font-medium leading-relaxed mb-0.5 lg:mb-1",
+                                            isCompleted ? "text-turquoise-light line-through" : "text-white"
+                                          )}>
+                                            {task.title}
+                                          </h5>
+                                        </div>
+                                        
+                                        {task.hasMoreInfo && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 h-7 w-7 lg:h-9 lg:w-9 p-0 rounded-lg lg:rounded-xl transition-all flex-shrink-0 hover:scale-105"
+                                            onClick={() => {
+                                              setSelectedTask(task);
+                                              setShowTaskInfoModal(true);
+                                            }}
+                                          >
+                                            <InformationCircleIcon className="h-4 w-4 lg:h-5 lg:w-5" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {/* Products Section */}
+            {products.length > 0 && (
+              <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl lg:rounded-2xl p-4 lg:p-8 backdrop-blur-sm">
+                <div className="mb-4 lg:mb-6">
+                  <h3 className="text-base lg:text-lg font-semibold text-white mb-1 lg:mb-2">
+                    {t.recommendedProducts}
+                  </h3>
+                  <p className="text-xs lg:text-sm text-turquoise font-medium">
+                    {t.selectedForProtocol}
+                  </p>
+                </div>
+                
+                <div className="grid gap-3 lg:gap-4">
+                  {products
+                    .sort((a, b) => a.order - b.order)
+                    .map((protocolProduct) => (
+                      <div key={protocolProduct.id} className="group flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-gray-800/30 rounded-lg lg:rounded-xl border border-gray-700/40 hover:border-turquoise/30 hover:bg-gray-800/40 transition-all duration-300">
+                        <div className="w-10 h-10 lg:w-14 lg:h-14 bg-gray-700/50 rounded-lg lg:rounded-xl flex-shrink-0 overflow-hidden">
+                          {protocolProduct.product.imageUrl ? (
+                            <img 
+                              src={protocolProduct.product.imageUrl} 
+                              alt={protocolProduct.product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700" />
+                          )}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-white text-sm lg:text-base mb-0.5 lg:mb-1">
+                            {protocolProduct.product.name}
+                          </h4>
+                          {protocolProduct.product.brand && (
+                            <p className="text-xs lg:text-sm text-gray-400 mb-1 lg:mb-2">
+                              {protocolProduct.product.brand}
+                            </p>
+                          )}
+                          {protocolProduct.isRequired && (
+                            <div className="inline-flex items-center px-2 py-0.5 lg:px-3 lg:py-1 bg-turquoise/15 border border-turquoise/30 rounded-md lg:rounded-lg">
+                              <span className="text-xs font-semibold text-turquoise uppercase tracking-wider">
+                                {t.required}
                               </span>
                             </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {/* Tasks Section */}
-                      <div className="p-4 lg:p-8">
-                        {day.sessions
-                          .sort((a, b) => a.order - b.order)
-                          .map((session, sessionIndex) => (
-                            <div key={session.id} className={cn("space-y-3 lg:space-y-4", sessionIndex > 0 && "mt-6 lg:mt-8")}>
-                              {/* Session Header */}
-                              {session.name && (
-                                <div className="mb-4 lg:mb-6">
-                                  <h4 className="text-sm lg:text-base font-semibold text-turquoise mb-1 lg:mb-2">
-                                    {session.name}
-                                  </h4>
-                                </div>
-                              )}
-
-                              {/* Tasks Grid */}
-                              <div className="space-y-2 lg:space-y-3">
-                                {session.tasks
-                                  .sort((a, b) => a.order - b.order)
-                                  .map(task => {
-                                    const isCompleted = isTaskCompleted(task.id, dayDate);
-                                    const canInteract = dayStatus !== 'future';
-                                    const isPending = pendingTasks.has(task.id);
-                                    
-                                    return (
-                                      <div 
-                                        key={task.id}
-                                        className={cn(
-                                          "group flex items-start gap-3 lg:gap-4 p-3 lg:p-5 rounded-lg lg:rounded-xl border transition-all duration-200 hover:border-gray-600/60 hover:bg-white/[0.01]",
-                                          isCompleted 
-                                            ? "bg-turquoise/[0.08] border-turquoise/30 hover:border-turquoise/40" 
-                                            : "bg-gray-800/20 border-gray-700/40",
-                                          !canInteract && "opacity-50",
-                                          isPending && "opacity-80 scale-[0.99]"
-                                        )}
-                                      >
-                                        <button
-                                          disabled={!canInteract || isPending}
-                                          className={cn(
-                                            "w-5 h-5 lg:w-6 lg:h-6 rounded-lg lg:rounded-xl border-2 flex items-center justify-center transition-all duration-300 mt-0.5 flex-shrink-0",
-                                            isCompleted 
-                                              ? "bg-green-400 border-green-400 text-white shadow-lg shadow-green-400/25 scale-105" 
-                                              : "border-gray-600 hover:border-green-400/60 hover:bg-green-400/10 hover:scale-105",
-                                            !canInteract && "cursor-not-allowed",
-                                            isPending && "border-green-400/70"
-                                          )}
-                                          onClick={() => canInteract && !isPending && toggleTask(task.id, dayDate)}
-                                        >
-                                          {isCompleted && <CheckIcon className="h-3 w-3 lg:h-4 lg:w-4 transition-all duration-200" />}
-                                        </button>
-                                        
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-start justify-between gap-3 lg:gap-4">
-                                            <div className="flex-1">
-                                              <h5 className={cn(
-                                                "text-sm lg:text-base font-medium leading-relaxed mb-0.5 lg:mb-1",
-                                                isCompleted ? "text-turquoise-light line-through" : "text-white"
-                                              )}>
-                                                {task.title}
-                                              </h5>
-                                            </div>
-                                            
-                                            {task.hasMoreInfo && (
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-turquoise hover:text-turquoise-light hover:bg-turquoise/10 h-7 w-7 lg:h-9 lg:w-9 p-0 rounded-lg lg:rounded-xl transition-all flex-shrink-0 hover:scale-105"
-                                                onClick={() => {
-                                                  setSelectedTask(task);
-                                                  setShowTaskInfoModal(true);
-                                                }}
-                                              >
-                                                <InformationCircleIcon className="h-4 w-4 lg:h-5 lg:w-5" />
-                                              </Button>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  );
-                })}
-
-              {/* Products Section */}
-              {products.length > 0 && (
-                <div className="bg-white/[0.02] border border-gray-800/60 rounded-xl lg:rounded-2xl p-4 lg:p-8 backdrop-blur-sm">
-                  <div className="mb-4 lg:mb-6">
-                    <h3 className="text-base lg:text-lg font-semibold text-white mb-1 lg:mb-2">
-                      {t.recommendedProducts}
-                    </h3>
-                    <p className="text-xs lg:text-sm text-turquoise font-medium">
-                      {t.selectedForProtocol}
-                    </p>
-                  </div>
-                  
-                  <div className="grid gap-3 lg:gap-4">
-                    {products
-                      .sort((a, b) => a.order - b.order)
-                      .map((protocolProduct) => (
-                        <div key={protocolProduct.id} className="group flex items-center gap-3 lg:gap-4 p-3 lg:p-4 bg-gray-800/30 rounded-lg lg:rounded-xl border border-gray-700/40 hover:border-turquoise/30 hover:bg-gray-800/40 transition-all duration-300">
-                          <div className="w-10 h-10 lg:w-14 lg:h-14 bg-gray-700/50 rounded-lg lg:rounded-xl flex-shrink-0 overflow-hidden">
-                            {protocolProduct.product.imageUrl ? (
-                              <img 
-                                src={protocolProduct.product.imageUrl} 
-                                alt={protocolProduct.product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700" />
-                            )}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-white text-sm lg:text-base mb-0.5 lg:mb-1">
-                              {protocolProduct.product.name}
-                            </h4>
-                            {protocolProduct.product.brand && (
-                              <p className="text-xs lg:text-sm text-gray-400 mb-1 lg:mb-2">
-                                {protocolProduct.product.brand}
-                              </p>
-                            )}
-                            {protocolProduct.isRequired && (
-                              <div className="inline-flex items-center px-2 py-0.5 lg:px-3 lg:py-1 bg-turquoise/15 border border-turquoise/30 rounded-md lg:rounded-lg">
-                                <span className="text-xs font-semibold text-turquoise uppercase tracking-wider">
-                                  {t.required}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {protocolProduct.product.purchaseUrl && (
-                            <Button 
-                              size="sm" 
-                              className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-3 py-1.5 lg:px-6 lg:py-2.5 text-xs lg:text-sm rounded-lg lg:rounded-xl shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
-                              asChild
+                        
+                        {protocolProduct.product.purchaseUrl && (
+                          <Button 
+                            size="sm" 
+                            className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold px-3 py-1.5 lg:px-6 lg:py-2.5 text-xs lg:text-sm rounded-lg lg:rounded-xl shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
+                            asChild
+                          >
+                            <a 
+                              href={protocolProduct.product.purchaseUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
                             >
-                              <a 
-                                href={protocolProduct.product.purchaseUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                              >
-                                {t.acquire}
-                              </a>
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                  </div>
+                              {t.acquire}
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                 </div>
-              )}
+              </div>
+            )}
+
+            {/* Report Symptoms Button */}
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => handleReportSymptoms(currentViewDay || 1)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-400/10 hover:bg-gray-400/20 border border-gray-400/30 hover:border-gray-400/50 text-gray-300 hover:text-gray-200 rounded-lg transition-all duration-200 hover:scale-105"
+              >
+                <ExclamationTriangleIcon className="h-4 w-4" />
+                <span className="text-sm font-medium">Report Symptoms</span>
+              </button>
             </div>
           </div>
 
           {/* Modal */}
           {showTaskInfoModal && selectedTask && (
             <TaskInfoModal
-              isOpen={showTaskInfoModal}
               task={selectedTask}
-              isCompleted={isTaskCompleted(selectedTask.id, getDateForProtocolDay(1))}
+              isOpen={showTaskInfoModal}
               onClose={() => {
                 setShowTaskInfoModal(false);
                 setSelectedTask(null);
@@ -858,11 +1179,76 @@ export default function ProtocolChecklistPage() {
           )}
 
           {/* Daily Check-in Modal */}
-          <DailyCheckinModal
-            isOpen={showCheckinModal}
-            onClose={() => setShowCheckinModal(false)}
-            protocolId={activeProtocol.protocolId}
-            onSuccess={handleCheckinSuccess}
+          {showCheckinModal && activeProtocol && (
+            <DailyCheckinModal
+              isOpen={showCheckinModal}
+              onClose={() => setShowCheckinModal(false)}
+              protocolId={activeProtocol.protocolId}
+              onSuccess={handleCheckinSuccess}
+            />
+          )}
+
+          {/* Congratulations Modal */}
+          {showCongratsModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+              <div className="relative w-full max-w-md bg-gray-900 border-2 border-green-500/30 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Sparkle Effects */}
+                <div className="absolute top-4 left-4 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div className="absolute top-8 right-6 w-1 h-1 bg-green-300 rounded-full animate-ping"></div>
+                <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute bottom-4 right-4 w-1 h-1 bg-green-400 rounded-full animate-ping"></div>
+                
+                <div className="p-8 text-center">
+                  {/* Trophy Icon */}
+                  <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 2L13 8l6 .75-4.5 4.25L16 19l-6-3.25L4 19l1.5-6L1 8.75 7 8l3-6z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  
+                  {/* Title */}
+                  <h2 className="text-2xl font-bold text-green-400 mb-2">
+                    🎉 Parabéns!
+                  </h2>
+                  
+                  {/* Message */}
+                  <p className="text-gray-300 mb-6">
+                    Você completou com sucesso o protocolo{' '}
+                    <span className="font-semibold text-green-400">
+                      {activeProtocol?.protocol.name}
+                    </span>!
+                  </p>
+                  
+                  {/* Buttons */}
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => setShowCongratsModal(false)}
+                      className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+                    >
+                      Continuar
+                    </button>
+                    <button
+                      onClick={() => router.push('/patient/protocols')}
+                      className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium rounded-lg transition-colors"
+                    >
+                      Ver Outros Protocolos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Symptom Report Modal */}
+          <SymptomReportModal
+            isOpen={showSymptomModal}
+            onClose={() => {
+              setShowSymptomModal(false);
+              setSelectedDayForSymptoms(null);
+            }}
+            protocolId={activeProtocol?.protocolId || ''}
+            dayNumber={selectedDayForSymptoms || 1}
+            onSuccess={handleSymptomReportSuccess}
           />
         </div>
       </div>

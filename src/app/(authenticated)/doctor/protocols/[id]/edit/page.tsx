@@ -316,6 +316,7 @@ export default function EditProtocolPage() {
       days: prev.days.map(day => {
         if (day.dayNumber === dayNumber) {
           if (sessionId) {
+            // Remove task from session
             return {
               ...day,
               sessions: day.sessions.map(session => {
@@ -329,11 +330,45 @@ export default function EditProtocolPage() {
               })
             };
           } else {
+            // Remove task from day
             return {
               ...day,
               tasks: day.tasks.filter(task => task.id !== taskId)
             };
           }
+        }
+        return day;
+      })
+    }));
+  };
+
+  const reorderTasks = (dayNumber: number, sessionId: string, oldIndex: number, newIndex: number) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          return {
+            ...day,
+            sessions: day.sessions.map(session => {
+              if (session.id === sessionId) {
+                const newTasks = [...session.tasks];
+                const [reorderedTask] = newTasks.splice(oldIndex, 1);
+                newTasks.splice(newIndex, 0, reorderedTask);
+                
+                // Update order property for all tasks
+                const updatedTasks = newTasks.map((task, index) => ({
+                  ...task,
+                  order: index + 1
+                }));
+                
+                return {
+                  ...session,
+                  tasks: updatedTasks
+                };
+              }
+              return session;
+            })
+          };
         }
         return day;
       })
@@ -1589,6 +1624,7 @@ export default function EditProtocolPage() {
                   addTask={addTask}
                   removeTask={removeTask}
                   updateTask={updateTask}
+                  reorderTasks={reorderTasks}
                   addSession={addSession}
                   removeSession={removeSession}
                   updateSession={updateSession}

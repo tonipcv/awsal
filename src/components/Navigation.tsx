@@ -21,7 +21,8 @@ import {
   UserIcon,
   CreditCardIcon,
   ChatBubbleLeftRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Bot } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -254,6 +255,12 @@ export default function Navigation() {
           label: 'Clients',
           icon: UsersIcon,
           description: 'Manage clients'
+        },
+        {
+          href: '/doctor/symptom-reports',
+          label: 'Symptom Reports',
+          icon: ExclamationTriangleIcon,
+          description: 'Review patient symptom reports'
         }
       ]
     },

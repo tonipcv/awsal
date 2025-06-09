@@ -328,7 +328,7 @@ export default function DailyCheckinModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-black/90 border border-gray-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="border border-gray-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl" style={{ backgroundColor: '#101010' }}>
         {/* Header */}
         <div className="relative p-8 pb-6">
           {/* Progress Bar */}

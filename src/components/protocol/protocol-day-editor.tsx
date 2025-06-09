@@ -16,8 +16,28 @@ import {
   PlayIcon,
   ShoppingBagIcon,
   DocumentDuplicateIcon,
-  SparklesIcon
+  SparklesIcon,
+  Bars3Icon
 } from '@heroicons/react/24/outline';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ProtocolDayEditorProps {
   days: any[];
@@ -25,6 +45,7 @@ interface ProtocolDayEditorProps {
   addTask: (dayNumber: number, sessionId?: string) => void;
   removeTask: (dayNumber: number, taskId: string, sessionId?: string) => void;
   updateTask: (dayNumber: number, taskId: string, field: string, value: any, sessionId?: string) => void;
+  reorderTasks: (dayNumber: number, sessionId: string, oldIndex: number, newIndex: number) => void;
   addSession: (dayNumber: number) => void;
   removeSession: (dayNumber: number, sessionId: string) => void;
   updateSession: (dayNumber: number, sessionId: string, field: string, value: string) => void;
@@ -35,7 +56,7 @@ interface ProtocolDayEditorProps {
 }
 
 // Simple Task Component
-function TaskItem({ task, dayNumber, sessionId, onUpdate, onRemove, availableProducts }: any) {
+function TaskItem({ task, dayNumber, sessionId, onUpdate, onRemove, availableProducts, dragHandleProps }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isImprovingTitle, setIsImprovingTitle] = useState(false);
   const [isImprovingExplanation, setIsImprovingExplanation] = useState(false);
@@ -115,28 +136,40 @@ function TaskItem({ task, dayNumber, sessionId, onUpdate, onRemove, availablePro
       {/* Task Header */}
       <div className="p-3 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0 relative">
-            <Input
-              placeholder="Task title"
-              value={task.title || ''}
-              onChange={(e) => onUpdate('title', e.target.value)}
-              className="border-0 p-0 h-auto text-sm font-medium bg-transparent focus:ring-0 focus:border-0 pr-8"
-            />
-            {task.title?.trim() && (
-              <button
-                type="button"
-                onClick={improveTitleWithAI}
-                disabled={isImprovingTitle}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-purple-600 hover:bg-gray-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Improve title with AI"
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Drag Handle */}
+            {dragHandleProps && (
+              <div
+                {...dragHandleProps}
+                className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 rounded"
+                title="Drag to reorder"
               >
-                {isImprovingTitle ? (
-                  <div className="h-3 w-3 animate-spin rounded-full border border-purple-600 border-t-transparent"></div>
-                ) : (
-                  <SparklesIcon className="h-3 w-3" />
-                )}
-              </button>
+                <Bars3Icon className="h-4 w-4" />
+              </div>
             )}
+            <div className="flex-1 min-w-0 relative">
+              <Input
+                placeholder="Task title"
+                value={task.title || ''}
+                onChange={(e) => onUpdate('title', e.target.value)}
+                className="border-0 p-0 h-auto text-sm font-medium bg-transparent focus:ring-0 focus:border-0 pr-8"
+              />
+              {task.title?.trim() && (
+                <button
+                  type="button"
+                  onClick={improveTitleWithAI}
+                  disabled={isImprovingTitle}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-purple-600 hover:bg-gray-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Improve title with AI"
+                >
+                  {isImprovingTitle ? (
+                    <div className="h-3 w-3 animate-spin rounded-full border border-purple-600 border-t-transparent"></div>
+                  ) : (
+                    <SparklesIcon className="h-3 w-3" />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 ml-3">
             <Button
@@ -350,9 +383,29 @@ function DayTitleEditor({ day, onUpdate }: any) {
 }
 
 // Simple Session Component
-function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTask, updateTask, availableProducts }: any) {
+function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTask, updateTask, availableProducts, reorderTasks }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isImprovingName, setIsImprovingName] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = session.tasks.findIndex((task: any) => task.id === active.id);
+      const newIndex = session.tasks.findIndex((task: any) => task.id === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderTasks(dayNumber, session.id, oldIndex, newIndex);
+      }
+    }
+  };
 
   const improveNameWithAI = async () => {
     if (!session.name?.trim()) {
@@ -444,17 +497,28 @@ function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTa
       {/* Session Content */}
       {isExpanded && (
         <div className="p-3 space-y-3">
-          {session.tasks.map((task: any) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              dayNumber={dayNumber}
-              sessionId={session.id}
-              onUpdate={(field: string, value: any) => updateTask(dayNumber, task.id, field, value, session.id)}
-              onRemove={() => removeTask(dayNumber, task.id, session.id)}
-              availableProducts={availableProducts}
-            />
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={session.tasks.map((task: any) => task.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {session.tasks.map((task: any) => (
+                <SortableTaskItem
+                  key={task.id}
+                  task={task}
+                  dayNumber={dayNumber}
+                  sessionId={session.id}
+                  onUpdate={(field: string, value: any) => updateTask(dayNumber, task.id, field, value, session.id)}
+                  onRemove={() => removeTask(dayNumber, task.id, session.id)}
+                  availableProducts={availableProducts}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
           
           <Button
             variant="outline"
@@ -471,6 +535,38 @@ function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTa
   );
 }
 
+// Sortable Task Item Component
+function SortableTaskItem({ task, dayNumber, sessionId, onUpdate, onRemove, availableProducts }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
+      <TaskItem
+        task={task}
+        dayNumber={dayNumber}
+        sessionId={sessionId}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+        availableProducts={availableProducts}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
 // Main Component
 export function ProtocolDayEditor({
   days,
@@ -478,6 +574,7 @@ export function ProtocolDayEditor({
   addTask,
   removeTask,
   updateTask,
+  reorderTasks,
   addSession,
   removeSession,
   updateSession,
@@ -621,6 +718,7 @@ export function ProtocolDayEditor({
                     removeTask={removeTask}
                     updateTask={updateTask}
                     availableProducts={availableProducts}
+                    reorderTasks={reorderTasks}
                   />
                 ))}
               </CardContent>
