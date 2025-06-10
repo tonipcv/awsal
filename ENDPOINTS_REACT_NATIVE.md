@@ -222,7 +222,7 @@ Response (200):
           "title": "Dia 1 - Avaliação",
           "protocol": {
             "id": "protocol_id",
-            "name": "Protocolo de Reabilitação",
+            "name": "Protocolo de Reabilitação Cardíaca",
             "duration": 30
           }
         }
@@ -302,6 +302,167 @@ Response (200):
     }
   }
 ]
+```
+
+---
+
+## 🎁 **SISTEMA DE INDICAÇÕES**
+
+### 7. Buscar Dashboard de Indicações
+```
+GET /api/referrals/patient
+Authorization: Bearer {token}
+
+Response (200):
+{
+  "stats": {
+    "totalReferrals": 5,
+    "convertedReferrals": 2,
+    "totalCreditsEarned": 10,
+    "totalCreditsUsed": 3,
+    "currentBalance": 7
+  },
+  "creditsBalance": 7,
+  "creditsHistory": [
+    {
+      "id": "credit_id",
+      "amount": 5,
+      "type": "SUCCESSFUL_REFERRAL",
+      "createdAt": "2024-01-15T10:30:00.000Z",
+      "lead": {
+        "name": "João Silva",
+        "email": "joao@email.com",
+        "status": "CONVERTED"
+      }
+    }
+  ],
+  "referralsMade": [
+    {
+      "id": "referral_id",
+      "name": "João Silva",
+      "email": "joao@email.com",
+      "status": "CONVERTED",
+      "createdAt": "2024-01-10T10:30:00.000Z",
+      "doctor": {
+        "id": "doctor_id",
+        "name": "Dr. Nome"
+      },
+      "credits": [
+        {
+          "id": "credit_id",
+          "amount": 5,
+          "status": "AVAILABLE"
+        }
+      ]
+    }
+  ],
+  "availableRewards": [
+    {
+      "id": "reward_id",
+      "title": "Desconto de 20%",
+      "description": "20% de desconto na próxima consulta",
+      "creditsRequired": 10,
+      "maxRedemptions": 50,
+      "currentRedemptions": 15,
+      "isActive": true
+    }
+  ],
+  "redemptionsHistory": [
+    {
+      "id": "redemption_id",
+      "creditsUsed": 10,
+      "status": "PENDING",
+      "redeemedAt": "2024-01-20T10:30:00.000Z",
+      "reward": {
+        "title": "Desconto de 20%",
+        "description": "20% de desconto na próxima consulta",
+        "creditsRequired": 10
+      }
+    }
+  ],
+  "doctorId": "doctor_id",
+  "referralCode": "ABC123"
+}
+```
+
+### 8. Criar Nova Indicação
+```
+POST /api/referrals/create
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Body:
+{
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "phone": "+5511999999999",
+  "notes": "Amigo interessado em tratamento"
+}
+
+Response (200):
+{
+  "success": true,
+  "referral": {
+    "id": "referral_id",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "phone": "+5511999999999",
+    "status": "PENDING",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "doctor": {
+      "id": "doctor_id",
+      "name": "Dr. Nome",
+      "email": "doutor@email.com"
+    }
+  },
+  "message": "Indicação criada com sucesso! O médico será notificado."
+}
+
+Response (400):
+{
+  "error": "Esta pessoa já possui uma conta no sistema"
+}
+
+Response (400):
+{
+  "error": "Já existe uma indicação pendente para este email"
+}
+```
+
+### 9. Resgatar Recompensa
+```
+POST /api/referrals/patient
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Body:
+{
+  "rewardId": "reward_id_aqui"
+}
+
+Response (200):
+{
+  "success": true,
+  "redemption": {
+    "id": "redemption_id",
+    "userId": "user_id",
+    "rewardId": "reward_id",
+    "creditsUsed": 10,
+    "status": "PENDING",
+    "redeemedAt": "2024-01-15T10:30:00.000Z"
+  },
+  "message": "Recompensa resgatada com sucesso! Aguarde a confirmação do seu médico."
+}
+
+Response (400):
+{
+  "error": "Créditos insuficientes. Você tem 5, mas precisa de 10"
+}
+
+Response (400):
+{
+  "error": "Você já resgatou esta recompensa nas últimas 24 horas"
+}
 ```
 
 ---
@@ -394,6 +555,359 @@ export const getProtocolProgress = async (protocolId, date = null) => {
   const response = await api.get(`/api/protocols/progress?${params.toString()}`);
   return response.data;
 };
+
+// Buscar dashboard de indicações
+export const getReferralsDashboard = async () => {
+  const response = await api.get('/api/referrals/patient');
+  return response.data;
+};
+
+// Criar nova indicação
+export const createReferral = async (name, email, phone = '', notes = '') => {
+  const response = await api.post('/api/referrals/create', {
+    name,
+    email,
+    phone,
+    notes
+  });
+  return response.data;
+};
+
+// Resgatar recompensa
+export const redeemReward = async (rewardId) => {
+  const response = await api.post('/api/referrals/patient', {
+    rewardId
+  });
+  return response.data;
+};
+```
+
+### Exemplo de Uso - Tela de Indicações
+```javascript
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  FlatList, 
+  Alert,
+  ScrollView 
+} from 'react-native';
+import { getReferralsDashboard, createReferral, redeemReward } from './api';
+
+const ReferralsScreen = () => {
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      const data = await getReferralsDashboard();
+      setDashboard(data);
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateReferral = async () => {
+    if (!formData.name || !formData.email) {
+      Alert.alert('Erro', 'Nome e email são obrigatórios');
+      return;
+    }
+
+    try {
+      await createReferral(
+        formData.name,
+        formData.email,
+        formData.phone,
+        formData.notes
+      );
+      
+      Alert.alert('Sucesso', 'Indicação criada com sucesso!');
+      setFormData({ name: '', email: '', phone: '', notes: '' });
+      setShowCreateForm(false);
+      loadDashboard(); // Recarregar dados
+    } catch (error) {
+      console.error('Erro ao criar indicação:', error);
+      Alert.alert('Erro', error.response?.data?.error || 'Erro ao criar indicação');
+    }
+  };
+
+  const handleRedeemReward = async (rewardId) => {
+    try {
+      await redeemReward(rewardId);
+      Alert.alert('Sucesso', 'Recompensa resgatada! Aguarde a confirmação do médico.');
+      loadDashboard(); // Recarregar dados
+    } catch (error) {
+      console.error('Erro ao resgatar recompensa:', error);
+      Alert.alert('Erro', error.response?.data?.error || 'Erro ao resgatar recompensa');
+    }
+  };
+
+  const renderReferral = ({ item }) => (
+    <View style={styles.referralItem}>
+      <Text style={styles.referralName}>{item.name}</Text>
+      <Text style={styles.referralEmail}>{item.email}</Text>
+      <Text style={[styles.status, styles[`status${item.status}`]]}>
+        {item.status === 'PENDING' ? 'Pendente' : 
+         item.status === 'CONTACTED' ? 'Contatado' : 
+         item.status === 'CONVERTED' ? 'Convertido' : 'Rejeitado'}
+      </Text>
+      {item.credits.length > 0 && (
+        <Text style={styles.credits}>
+          Créditos: {item.credits.reduce((sum, c) => sum + c.amount, 0)}
+        </Text>
+      )}
+    </View>
+  );
+
+  const renderReward = ({ item }) => (
+    <View style={styles.rewardItem}>
+      <Text style={styles.rewardTitle}>{item.title}</Text>
+      <Text style={styles.rewardDescription}>{item.description}</Text>
+      <Text style={styles.rewardCredits}>
+        {item.creditsRequired} créditos
+      </Text>
+      <TouchableOpacity
+        style={[
+          styles.redeemButton,
+          dashboard.creditsBalance < item.creditsRequired && styles.redeemButtonDisabled
+        ]}
+        onPress={() => handleRedeemReward(item.id)}
+        disabled={dashboard.creditsBalance < item.creditsRequired}
+      >
+        <Text style={styles.redeemButtonText}>
+          {dashboard.creditsBalance >= item.creditsRequired ? 'Resgatar' : 'Créditos Insuficientes'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Carregando...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Header com estatísticas */}
+      <View style={styles.statsContainer}>
+        <Text style={styles.title}>Minhas Indicações</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{dashboard.stats.totalReferrals}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{dashboard.stats.convertedReferrals}</Text>
+            <Text style={styles.statLabel}>Convertidas</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{dashboard.creditsBalance}</Text>
+            <Text style={styles.statLabel}>Créditos</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Botão para criar nova indicação */}
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => setShowCreateForm(!showCreateForm)}
+      >
+        <Text style={styles.createButtonText}>
+          {showCreateForm ? 'Cancelar' : '+ Nova Indicação'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Formulário de criação */}
+      {showCreateForm && (
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nome completo"
+            value={formData.name}
+            onChangeText={(text) => setFormData({...formData, name: text})}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={formData.email}
+            onChangeText={(text) => setFormData({...formData, email: text})}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Telefone (opcional)"
+            value={formData.phone}
+            onChangeText={(text) => setFormData({...formData, phone: text})}
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Observações (opcional)"
+            value={formData.notes}
+            onChangeText={(text) => setFormData({...formData, notes: text})}
+            multiline
+            numberOfLines={3}
+          />
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleCreateReferral}
+          >
+            <Text style={styles.submitButtonText}>Criar Indicação</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Lista de indicações */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Minhas Indicações</Text>
+        <FlatList
+          data={dashboard.referralsMade}
+          renderItem={renderReferral}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+        />
+      </View>
+
+      {/* Recompensas disponíveis */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recompensas Disponíveis</Text>
+        <FlatList
+          data={dashboard.availableRewards}
+          renderItem={renderReward}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+        />
+      </View>
+
+      {/* Código de indicação */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Seu Código de Indicação</Text>
+        <View style={styles.codeContainer}>
+          <Text style={styles.referralCode}>{dashboard.referralCode}</Text>
+          <Text style={styles.codeDescription}>
+            Compartilhe este código com seus amigos
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = {
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  statsContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    marginBottom: 10,
+  },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statNumber: { fontSize: 24, fontWeight: 'bold', color: '#007AFF' },
+  statLabel: { fontSize: 14, color: '#666' },
+  createButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    margin: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  createButtonText: { color: 'white', fontSize: 16, fontWeight: '500' },
+  formContainer: {
+    backgroundColor: 'white',
+    padding: 16,
+    margin: 16,
+    borderRadius: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  submitButton: {
+    backgroundColor: '#34C759',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: { color: 'white', fontSize: 16, fontWeight: '500' },
+  section: {
+    backgroundColor: 'white',
+    margin: 16,
+    padding: 16,
+    borderRadius: 8,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  referralItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  referralName: { fontSize: 16, fontWeight: '500' },
+  referralEmail: { fontSize: 14, color: '#666', marginTop: 2 },
+  status: { fontSize: 12, marginTop: 4, fontWeight: '500' },
+  statusPENDING: { color: '#FF9500' },
+  statusCONTACTED: { color: '#007AFF' },
+  statusCONVERTED: { color: '#34C759' },
+  statusREJECTED: { color: '#FF3B30' },
+  credits: { fontSize: 12, color: '#34C759', marginTop: 2 },
+  rewardItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  rewardTitle: { fontSize: 16, fontWeight: '500' },
+  rewardDescription: { fontSize: 14, color: '#666', marginTop: 2 },
+  rewardCredits: { fontSize: 14, color: '#007AFF', marginTop: 4 },
+  redeemButton: {
+    backgroundColor: '#34C759',
+    padding: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  redeemButtonDisabled: { backgroundColor: '#ccc' },
+  redeemButtonText: { color: 'white', fontSize: 14, fontWeight: '500' },
+  codeContainer: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
+  },
+  referralCode: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    letterSpacing: 2,
+  },
+  codeDescription: { fontSize: 14, color: '#666', marginTop: 8 },
+};
+
+export default ReferralsScreen;
 ```
 
 ### Exemplo de Uso - Tela de Checklist
@@ -564,6 +1078,9 @@ export default ProtocolChecklistScreen;
 - ✅ **Protocolos**: `/api/protocols/assignments` - **CRIADO**
 - ✅ **Marcar Progresso**: `/api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 - ✅ **Buscar Progresso**: `/api/protocols/progress` - **ATUALIZADO** (suporte mobile)
+- ✅ **Dashboard Indicações**: `/api/referrals/patient` - **ATUALIZADO** (suporte mobile)
+- ✅ **Criar Indicação**: `/api/referrals/create` - **CRIADO**
+- ✅ **Resgatar Recompensa**: `/api/referrals/patient` - **ATUALIZADO** (suporte mobile)
 
 ---
 

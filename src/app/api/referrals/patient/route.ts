@@ -1,21 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getUserCreditsBalance, ensureUserHasReferralCode } from '@/lib/referral-utils';
+import { verifyMobileAuth } from '@/lib/mobile-auth';
 
 // GET - Dashboard do paciente (créditos, indicações, recompensas)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
+    let userId = session?.user?.id;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser) {
+        userId = mobileUser.id;
+      }
+    }
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     // Verificar se é paciente
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { 
         role: true,
         doctorId: true,
@@ -26,8 +37,6 @@ export async function GET() {
     if (!user || user.role !== 'PATIENT') {
       return NextResponse.json({ error: 'Acesso negado. Apenas pacientes podem acessar esta funcionalidade.' }, { status: 403 });
     }
-
-    const userId = session.user.id;
 
     // Garantir que o usuário tenha um código de indicação
     let referralCode;
@@ -166,17 +175,27 @@ export async function GET() {
 }
 
 // POST - Resgatar recompensa
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
+    let userId = session?.user?.id;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(req);
+      if (mobileUser) {
+        userId = mobileUser.id;
+      }
+    }
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     // Verificar se é paciente
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { role: true }
     });
 
@@ -192,8 +211,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    const userId = session.user.id;
 
     // Buscar a recompensa
     const reward = await prisma.referralReward.findUnique({

@@ -51,6 +51,11 @@ openssl rand -base64 32
 - [x] `POST /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 - [x] `GET /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 
+### ✅ Sistema de Indicações:
+- [x] `GET /api/referrals/patient` - **ATUALIZADO** (suporte mobile)
+- [x] `POST /api/referrals/create` - **CRIADO**
+- [x] `POST /api/referrals/patient` - **ATUALIZADO** (resgatar recompensas)
+
 ---
 
 ## 🧪 **4. TESTES DOS ENDPOINTS**
@@ -92,6 +97,28 @@ curl -X POST http://localhost:3000/api/protocols/progress \
 ```bash
 curl -X GET "http://localhost:3000/api/protocols/progress?protocolId=PROTOCOL_ID_AQUI" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Dashboard de Indicações:
+```bash
+curl -X GET http://localhost:3000/api/referrals/patient \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Criar Indicação:
+```bash
+curl -X POST http://localhost:3000/api/referrals/create \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"João Silva","email":"joao@email.com","phone":"+5511999999999","notes":"Amigo interessado"}'
+```
+
+### Testar Resgatar Recompensa:
+```bash
+curl -X POST http://localhost:3000/api/referrals/patient \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{"rewardId":"REWARD_ID_AQUI"}'
 ```
 
 ---
@@ -208,6 +235,9 @@ module.exports = {
 - [x] **Status dos protocolos** (ACTIVE, INACTIVE, UNAVAILABLE)
 - [x] **Sistema de progresso** - marcar tarefas como concluídas
 - [x] **Histórico de progresso** - visualizar progresso por data/protocolo
+- [x] **Sistema de indicações** - criar indicações e ganhar créditos
+- [x] **Recompensas** - resgatar recompensas com créditos ganhos
+- [x] **Dashboard de indicações** - estatísticas e histórico completo
 - [x] **Autenticação segura** com JWT
 
 ### 🔄 Funcionalidades Extras (já existem):
