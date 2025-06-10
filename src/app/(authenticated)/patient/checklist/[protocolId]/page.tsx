@@ -167,7 +167,7 @@ export default function ProtocolChecklistPage() {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set());
   const [debounceMap, setDebounceMap] = useState<Map<string, NodeJS.Timeout>>(new Map());
-  const [language, setLanguage] = useState<'pt' | 'en'>('pt');
+  const [language, setLanguage] = useState<'pt' | 'en'>('en');
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [hasCheckinToday, setHasCheckinToday] = useState(false);
   const [showCongratsModal, setShowCongratsModal] = useState(false);
@@ -179,9 +179,9 @@ export default function ProtocolChecklistPage() {
 
   // Detect browser language
   useEffect(() => {
-    const browserLanguage = navigator.language || navigator.languages?.[0] || 'pt';
-    const detectedLang = browserLanguage.toLowerCase().startsWith('en') ? 'en' : 'pt';
-    setLanguage(detectedLang);
+    const browserLanguage = navigator.language || navigator.languages?.[0] || 'en';
+    const detectedLang = browserLanguage.toLowerCase().startsWith('pt') ? 'pt' : 'en';
+    setLanguage('en'); // Force English
   }, []);
 
   const t = translations[language];
@@ -741,29 +741,29 @@ export default function ProtocolChecklistPage() {
                   </div>
                   
                   <h2 className="text-2xl lg:text-3xl font-bold text-green-400 mb-2 animate-bounce">
-                    🎉 Parabéns! 🎉
+                    🎉 Congratulations! 🎉
                   </h2>
                   
                   <p className="text-lg lg:text-xl text-green-300 font-semibold mb-2">
-                    Protocolo Concluído com Sucesso!
+                    Protocol Completed Successfully!
                   </p>
                   
                   <p className="text-sm lg:text-base text-green-200/80 mb-4">
-                    Você completou todas as {activeProtocol.protocol.duration} dias do protocolo{' '}
+                    You have completed all {activeProtocol.protocol.duration} days of the protocol{' '}
                     <span className="font-semibold text-green-300">{activeProtocol.protocol.name}</span>.
-                    Excelente trabalho! 🌟
+                    Excellent work! 🌟
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                     <div className="px-4 py-2 bg-green-400/15 border border-green-400/30 rounded-lg">
                       <span className="text-sm font-semibold text-green-400 uppercase tracking-wider">
-                        ✓ 100% Completo
+                        ✓ 100% Complete
                       </span>
                     </div>
                     
                     <Link href="/patient/protocols">
                       <Button className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-semibold transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:scale-105">
-                        Ver Outros Protocolos
+                        View Other Protocols
                       </Button>
                     </Link>
                   </div>
@@ -782,10 +782,10 @@ export default function ProtocolChecklistPage() {
                 <div className="flex items-center gap-3 lg:gap-4">
                   <div>
                     <h3 className="text-base lg:text-lg font-semibold text-white mb-1">
-                      Check-in Diário
+                      Daily Check-in
                     </h3>
                     <p className="text-xs lg:text-sm text-gray-400">
-                      {hasCheckinToday ? 'Clique para editar suas respostas' : 'Como você está se sentindo hoje?'}
+                      {hasCheckinToday ? 'Click to edit your responses' : 'How are you feeling today?'}
                     </p>
                   </div>
                 </div>
@@ -796,7 +796,7 @@ export default function ProtocolChecklistPage() {
                     className="px-3 py-2 lg:px-4 lg:py-2 bg-green-500/20 border border-green-500/40 rounded-lg lg:rounded-xl hover:bg-green-500/30 hover:border-green-500/50 transition-all duration-200 hover:scale-105"
                   >
                     <span className="text-xs lg:text-sm font-semibold text-green-400 uppercase tracking-wider">
-                      ✓ Concluído
+                      ✓ Completed
                     </span>
                   </button>
                 ) : (
@@ -804,7 +804,7 @@ export default function ProtocolChecklistPage() {
                     onClick={() => setShowCheckinModal(true)}
                     className="bg-turquoise hover:bg-turquoise/90 text-black px-4 py-2 lg:px-6 lg:py-3 rounded-lg lg:rounded-xl font-semibold transition-all shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105"
                   >
-                    Fazer Check-in
+                    Make Check-in
                   </Button>
                 )}
               </div>
@@ -815,12 +815,12 @@ export default function ProtocolChecklistPage() {
               {/* Progress Bar */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-400">Progresso do Protocolo</span>
+                  <span className="text-sm text-gray-400">Protocol Progress</span>
                   <span className={cn(
                     "text-sm font-medium",
                     isEntireProtocolCompleted ? "text-green-400" : "text-turquoise"
                   )}>
-                    {isEntireProtocolCompleted ? "✓ Concluído!" : `${currentDay}/${activeProtocol.protocol.duration} dias`}
+                    {isEntireProtocolCompleted ? "✓ Completed!" : `${currentDay}/${activeProtocol.protocol.duration} days`}
                   </span>
                 </div>
                 
@@ -880,8 +880,8 @@ export default function ProtocolChecklistPage() {
                           {/* Tooltip */}
                           <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
                             <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                              Dia {dayNum}
-                              {dayStatus === 'current' && ' (Hoje)'}
+                              Day {dayNum}
+                              {dayStatus === 'current' && ' (Today)'}
                               {dayCompleted && ' ✓'}
                             </div>
                           </div>
@@ -895,7 +895,7 @@ export default function ProtocolChecklistPage() {
                 <div className="flex items-center justify-between mt-4 text-xs text-gray-400">
                   {isEntireProtocolCompleted ? (
                     <span className="text-green-400 font-medium">
-                      🎉 Todos os dias concluídos!
+                      🎉 All days completed!
                     </span>
                   ) : (
                     <>
@@ -908,7 +908,7 @@ export default function ProtocolChecklistPage() {
                             }
                           }
                           return completedDays;
-                        })()} dias concluídos
+                        })()} days completed
                       </span>
                       <span>
                         {(() => {
@@ -919,7 +919,7 @@ export default function ProtocolChecklistPage() {
                             }
                           }
                           return activeProtocol.protocol.duration - completedDays;
-                        })()} dias restantes
+                        })()} days remaining
                       </span>
                     </>
                   )}
@@ -971,7 +971,7 @@ export default function ProtocolChecklistPage() {
                       onClick={goToCurrentDay}
                       className="border-turquoise/30 text-turquoise hover:bg-turquoise/10 hover:border-turquoise/50 rounded-lg px-3 py-1.5 text-xs lg:text-sm font-medium"
                     >
-                      Ir para {t.today}
+                      Go to {t.today}
                     </Button>
                   )}
                   
@@ -1208,12 +1208,12 @@ export default function ProtocolChecklistPage() {
                   
                   {/* Title */}
                   <h2 className="text-2xl font-bold text-green-400 mb-2">
-                    🎉 Parabéns!
+                    🎉 Congratulations!
                   </h2>
                   
                   {/* Message */}
                   <p className="text-gray-300 mb-6">
-                    Você completou com sucesso o protocolo{' '}
+                    You have successfully completed the protocol{' '}
                     <span className="font-semibold text-green-400">
                       {activeProtocol?.protocol.name}
                     </span>!
@@ -1225,13 +1225,13 @@ export default function ProtocolChecklistPage() {
                       onClick={() => setShowCongratsModal(false)}
                       className="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
                     >
-                      Continuar
+                      Continue
                     </button>
                     <button
                       onClick={() => router.push('/patient/protocols')}
                       className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium rounded-lg transition-colors"
                     >
-                      Ver Outros Protocolos
+                      View Other Protocols
                     </button>
                   </div>
                 </div>
