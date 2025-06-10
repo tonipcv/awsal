@@ -41,7 +41,8 @@ export async function verifyMobileAuth(req: NextRequest) {
       id: user.id,
       email: user.email,
       name: user.name,
-      image: user.image
+      image: user.image,
+      role: user.role
     };
   } catch (error) {
     console.error("Erro na verificação de token mobile:", error);

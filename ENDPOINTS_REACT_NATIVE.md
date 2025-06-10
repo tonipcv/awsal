@@ -176,6 +176,136 @@ Response (403):
 
 ---
 
+## 📊 **PROGRESSO DOS PROTOCOLOS**
+
+### 5. Marcar Tarefa como Concluída/Não Concluída
+```
+POST /api/protocols/progress
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Body:
+{
+  "protocolTaskId": "task_id_aqui",
+  "date": "2024-01-15",
+  "notes": "Observações opcionais"
+}
+
+Response (200):
+{
+  "success": true,
+  "progress": {
+    "id": "progress_id",
+    "userId": "user_id",
+    "protocolId": "protocol_id",
+    "protocolTaskId": "task_id",
+    "dayNumber": 1,
+    "date": "2024-01-15T00:00:00.000Z",
+    "isCompleted": true,
+    "notes": "Observações...",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "protocolTask": {
+      "id": "task_id",
+      "title": "Exercício de Respiração",
+      "description": "Descrição da tarefa...",
+      "type": "task",
+      "duration": 10,
+      "orderIndex": 0,
+      "protocolSession": {
+        "id": "session_id",
+        "title": "Sessão Matinal",
+        "sessionNumber": 1,
+        "protocolDay": {
+          "id": "day_id",
+          "dayNumber": 1,
+          "title": "Dia 1 - Avaliação",
+          "protocol": {
+            "id": "protocol_id",
+            "name": "Protocolo de Reabilitação",
+            "duration": 30
+          }
+        }
+      }
+    },
+    "user": {
+      "id": "user_id",
+      "name": "Nome do Paciente",
+      "email": "paciente@email.com"
+    }
+  },
+  "action": "created", // ou "toggled"
+  "isCompleted": true
+}
+
+Response (404):
+{
+  "error": "Tarefa não encontrada"
+}
+
+Response (403):
+{
+  "error": "Acesso negado a esta tarefa"
+}
+```
+
+### 6. Buscar Progresso do Protocolo
+```
+GET /api/protocols/progress?protocolId={protocol_id}&date={date}
+Authorization: Bearer {token}
+
+Parâmetros opcionais:
+- protocolId: ID do protocolo específico
+- date: Data específica (formato: YYYY-MM-DD)
+- userId: ID do usuário (apenas para médicos)
+
+Response (200):
+[
+  {
+    "id": "progress_id",
+    "userId": "user_id",
+    "protocolId": "protocol_id",
+    "protocolTaskId": "task_id",
+    "dayNumber": 1,
+    "date": "2024-01-15T00:00:00.000Z",
+    "isCompleted": true,
+    "notes": "Tarefa concluída com sucesso",
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z",
+    "protocolTask": {
+      "id": "task_id",
+      "title": "Exercício de Respiração",
+      "description": "Respiração profunda por 5 minutos",
+      "type": "task",
+      "duration": 5,
+      "orderIndex": 0,
+      "protocolSession": {
+        "id": "session_id",
+        "title": "Sessão Matinal",
+        "sessionNumber": 1,
+        "protocolDay": {
+          "id": "day_id",
+          "dayNumber": 1,
+          "title": "Dia 1 - Avaliação Inicial",
+          "protocol": {
+            "id": "protocol_id",
+            "name": "Protocolo de Reabilitação Cardíaca",
+            "duration": 30
+          }
+        }
+      }
+    },
+    "user": {
+      "id": "user_id",
+      "name": "Nome do Paciente",
+      "email": "paciente@email.com"
+    }
+  }
+]
+```
+
+---
+
 ## 🔧 **COMO USAR NO REACT NATIVE**
 
 ### Configuração do Axios
@@ -244,40 +374,184 @@ export const getProtocols = async () => {
   const response = await api.get('/api/protocols/assignments');
   return response.data;
 };
+
+// Marcar tarefa como concluída
+export const toggleTaskProgress = async (protocolTaskId, date, notes = '') => {
+  const response = await api.post('/api/protocols/progress', {
+    protocolTaskId,
+    date,
+    notes
+  });
+  return response.data;
+};
+
+// Buscar progresso do protocolo
+export const getProtocolProgress = async (protocolId, date = null) => {
+  const params = new URLSearchParams();
+  if (protocolId) params.append('protocolId', protocolId);
+  if (date) params.append('date', date);
+  
+  const response = await api.get(`/api/protocols/progress?${params.toString()}`);
+  return response.data;
+};
 ```
 
-### Exemplo de Uso
+### Exemplo de Uso - Tela de Checklist
 ```javascript
-// Login
-const handleLogin = async (email, password) => {
-  try {
-    const { user, token } = await login(email, password);
-    await AsyncStorage.setItem('userToken', token);
-    // Navegar para tela principal
-  } catch (error) {
-    console.error('Erro no login:', error.response?.data?.error);
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { getProtocols, getProtocolProgress, toggleTaskProgress } from './api';
+
+const ProtocolChecklistScreen = ({ route }) => {
+  const { protocolId } = route.params;
+  const [protocol, setProtocol] = useState(null);
+  const [progress, setProgress] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProtocolData();
+  }, []);
+
+  const loadProtocolData = async () => {
+    try {
+      // Carregar protocolo e progresso
+      const [protocolsData, progressData] = await Promise.all([
+        getProtocols(),
+        getProtocolProgress(protocolId)
+      ]);
+
+      const currentProtocol = protocolsData.find(p => p.protocolId === protocolId);
+      setProtocol(currentProtocol);
+      setProgress(progressData);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleTask = async (taskId, date) => {
+    try {
+      // Atualização otimista
+      setProgress(prev => {
+        const existing = prev.find(p => p.protocolTaskId === taskId && p.date.startsWith(date));
+        if (existing) {
+          return prev.map(p => 
+            p.protocolTaskId === taskId && p.date.startsWith(date)
+              ? { ...p, isCompleted: !p.isCompleted }
+              : p
+          );
+        } else {
+          return [...prev, {
+            protocolTaskId: taskId,
+            date: `${date}T00:00:00.000Z`,
+            isCompleted: true,
+            _optimistic: true
+          }];
+        }
+      });
+
+      // Chamada da API
+      const result = await toggleTaskProgress(taskId, date);
+      
+      // Atualizar com dados reais
+      setProgress(prev => 
+        prev.map(p => 
+          p.protocolTaskId === taskId && p.date.startsWith(date)
+            ? result.progress
+            : p
+        )
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar tarefa:', error);
+      // Reverter mudança otimista
+      loadProtocolData();
+    }
+  };
+
+  const isTaskCompleted = (taskId, date) => {
+    const progressItem = progress.find(p => 
+      p.protocolTaskId === taskId && p.date.startsWith(date)
+    );
+    return progressItem?.isCompleted || false;
+  };
+
+  const renderTask = ({ item: task, index }) => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const isCompleted = isTaskCompleted(task.id, today);
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.taskItem,
+          isCompleted && styles.taskCompleted
+        ]}
+        onPress={() => handleToggleTask(task.id, today)}
+      >
+        <View style={styles.checkbox}>
+          {isCompleted && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+        <View style={styles.taskContent}>
+          <Text style={styles.taskTitle}>{task.title}</Text>
+          {task.description && (
+            <Text style={styles.taskDescription}>{task.description}</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  if (loading) {
+    return <Text>Carregando...</Text>;
   }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{protocol?.protocol.name}</Text>
+      
+      <FlatList
+        data={protocol?.protocol.days[0]?.sessions[0]?.tasks || []}
+        renderItem={renderTask}
+        keyExtractor={(item) => item.id}
+      />
+    </View>
+  );
 };
 
-// Carregar perfil
-const loadProfile = async () => {
-  try {
-    const { user } = await getProfile();
-    setUserData(user);
-  } catch (error) {
-    console.error('Erro ao carregar perfil:', error.response?.data?.error);
-  }
+const styles = {
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  taskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  taskCompleted: {
+    backgroundColor: '#e8f5e8',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  taskContent: { flex: 1 },
+  taskTitle: { fontSize: 16, fontWeight: '500' },
+  taskDescription: { fontSize: 14, color: '#666', marginTop: 4 },
 };
 
-// Carregar protocolos
-const loadProtocols = async () => {
-  try {
-    const protocols = await getProtocols();
-    setProtocolsData(protocols);
-  } catch (error) {
-    console.error('Erro ao carregar protocolos:', error.response?.data?.error);
-  }
-};
+export default ProtocolChecklistScreen;
 ```
 
 ---
@@ -288,6 +562,8 @@ const loadProtocols = async () => {
 - ✅ **Validar Token**: `/api/auth/mobile/validate` - **CRIADO**
 - ✅ **Perfil Paciente**: `/api/patient/profile` - **ATUALIZADO** (suporte mobile)
 - ✅ **Protocolos**: `/api/protocols/assignments` - **CRIADO**
+- ✅ **Marcar Progresso**: `/api/protocols/progress` - **ATUALIZADO** (suporte mobile)
+- ✅ **Buscar Progresso**: `/api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 
 ---
 

@@ -1,13 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { verifyMobileAuth } from '@/lib/mobile-auth';
 
 // POST /api/protocols/progress - Marcar tarefa como concluída/não concluída
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    let userId = session?.user?.id;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser) {
+        userId = mobileUser.id;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
@@ -34,7 +46,7 @@ export async function POST(request: Request) {
                   include: {
                     assignments: {
                       where: {
-                        userId: session.user.id,
+                        userId: userId,
                         isActive: true
                       }
                     }
@@ -64,7 +76,7 @@ export async function POST(request: Request) {
     // Verificar se já existe progresso para esta tarefa específica nesta data
     const existingProgress = await prisma.protocolDayProgress.findFirst({
       where: {
-        userId: session.user.id,
+        userId: userId,
         protocolTaskId: protocolTaskId,
         date: normalizedDate
       }
@@ -110,7 +122,7 @@ export async function POST(request: Request) {
       // Se não existe, criar como concluída
       progress = await prisma.protocolDayProgress.create({
         data: {
-          userId: session.user.id,
+          userId: userId,
           protocolId: protocol.id,
           dayNumber: dayNumber,
           protocolTaskId: protocolTaskId,
@@ -160,37 +172,53 @@ export async function POST(request: Request) {
 }
 
 // GET /api/protocols/progress - Buscar progresso do protocolo
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    let userId = session?.user?.id;
+    let userRole: string | undefined;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser) {
+        userId = mobileUser.id;
+        userRole = mobileUser.role;
+      }
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const protocolId = searchParams.get('protocolId');
-    const userId = searchParams.get('userId');
+    const requestedUserId = searchParams.get('userId');
     const date = searchParams.get('date');
 
-    // Buscar o usuário para verificar o role
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id }
-    });
+    // Buscar o usuário para verificar o role se não temos da sessão
+    if (!userRole) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
 
-    if (!user) {
-      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+      if (!user) {
+        return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+      }
+      userRole = user.role;
     }
 
     let whereClause: any = {};
 
-    if (user.role === 'DOCTOR') {
+    if (userRole === 'DOCTOR') {
       // Médico pode ver progresso de seus pacientes
-      if (userId && protocolId) {
+      if (requestedUserId && protocolId) {
         // Verificar se o paciente pertence ao médico
         const patient = await prisma.user.findFirst({
           where: {
-            id: userId,
-            doctorId: session.user.id
+            id: requestedUserId,
+            doctorId: userId
           }
         });
 
@@ -198,7 +226,7 @@ export async function GET(request: Request) {
           return NextResponse.json({ error: 'Paciente não encontrado' }, { status: 404 });
         }
 
-        whereClause.userId = userId;
+        whereClause.userId = requestedUserId;
         whereClause.protocolId = protocolId;
       } else {
         // Buscar progresso de todos os pacientes do médico para protocolos do médico
@@ -206,7 +234,7 @@ export async function GET(request: Request) {
           protocolSession: {
             protocolDay: {
               protocol: {
-                doctorId: session.user.id
+                doctorId: userId
               }
             }
           }
@@ -214,7 +242,7 @@ export async function GET(request: Request) {
       }
     } else {
       // Paciente vê apenas seu próprio progresso
-      whereClause.userId = session.user.id;
+      whereClause.userId = userId;
       
       if (protocolId) {
         whereClause.protocolId = protocolId;

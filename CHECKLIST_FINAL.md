@@ -47,6 +47,10 @@ openssl rand -base64 32
 ### ✅ Protocolos:
 - [x] `GET /api/protocols/assignments` - **CRIADO**
 
+### ✅ Progresso dos Protocolos:
+- [x] `POST /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
+- [x] `GET /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
+
 ---
 
 ## 🧪 **4. TESTES DOS ENDPOINTS**
@@ -73,6 +77,20 @@ curl -X GET http://localhost:3000/api/patient/profile \
 ### Testar Protocolos:
 ```bash
 curl -X GET http://localhost:3000/api/protocols/assignments \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Progresso - Marcar Tarefa:
+```bash
+curl -X POST http://localhost:3000/api/protocols/progress \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{"protocolTaskId":"TASK_ID_AQUI","date":"2024-01-15","notes":"Tarefa concluída"}'
+```
+
+### Testar Progresso - Buscar:
+```bash
+curl -X GET "http://localhost:3000/api/protocols/progress?protocolId=PROTOCOL_ID_AQUI" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
 
@@ -188,6 +206,8 @@ module.exports = {
 - [x] **Perfil completo** do paciente + dados do médico
 - [x] **Lista de protocolos** atribuídos com dias/sessões/tarefas
 - [x] **Status dos protocolos** (ACTIVE, INACTIVE, UNAVAILABLE)
+- [x] **Sistema de progresso** - marcar tarefas como concluídas
+- [x] **Histórico de progresso** - visualizar progresso por data/protocolo
 - [x] **Autenticação segura** com JWT
 
 ### 🔄 Funcionalidades Extras (já existem):
