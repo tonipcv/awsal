@@ -56,6 +56,11 @@ openssl rand -base64 32
 - [x] `POST /api/referrals/create` - **CRIADO**
 - [x] `POST /api/referrals/patient` - **ATUALIZADO** (resgatar recompensas)
 
+### ✅ Sistema de Cursos:
+- [x] `GET /api/courses/available` - **ATUALIZADO** (suporte mobile)
+- [x] `GET /api/courses/{id}` - **ATUALIZADO** (suporte mobile)
+- [x] `POST /api/courses/lessons/complete` - **CRIADO**
+
 ---
 
 ## 🧪 **4. TESTES DOS ENDPOINTS**
@@ -119,6 +124,26 @@ curl -X POST http://localhost:3000/api/referrals/patient \
   -H "Authorization: Bearer SEU_TOKEN_AQUI" \
   -H "Content-Type: application/json" \
   -d '{"rewardId":"REWARD_ID_AQUI"}'
+```
+
+### Testar Sistema de Cursos:
+```bash
+curl -X GET http://localhost:3000/api/courses/available \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Detalhes do Curso:
+```bash
+curl -X GET http://localhost:3000/api/courses/COURSE_ID \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Completar Aula:
+```bash
+curl -X POST http://localhost:3000/api/courses/lessons/complete \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{"lessonId":"LESSON_ID_AQUI"}'
 ```
 
 ---
@@ -239,6 +264,9 @@ module.exports = {
 - [x] **Recompensas** - resgatar recompensas com créditos ganhos
 - [x] **Dashboard de indicações** - estatísticas e histórico completo
 - [x] **Autenticação segura** com JWT
+- [x] **Sistema de cursos** - visualizar cursos atribuídos e disponíveis
+- [x] **Progresso de cursos** - marcar lições como concluídas
+- [x] **Módulos e lições** - estrutura organizada de conteúdo educacional
 
 ### 🔄 Funcionalidades Extras (já existem):
 - [ ] Chat com IA

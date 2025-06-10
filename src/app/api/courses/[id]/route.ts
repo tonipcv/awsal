@@ -2,28 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { verifyMobileAuth } from '@/lib/mobile-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
+    let userId = session?.user?.id;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser) {
+        userId = mobileUser.id;
+      }
+    }
     
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     const { id } = await params;
 
     // Get user role from database
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { role: true }
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
     if (user.role === 'DOCTOR') {
@@ -65,12 +76,12 @@ export async function GET(
       });
 
       if (!course) {
-        return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Curso não encontrado' }, { status: 404 });
       }
 
       // Check if doctor owns the course
-      if (course.doctorId !== session.user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (course.doctorId !== userId) {
+        return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
       }
 
       // Transform to expected format
@@ -90,7 +101,7 @@ export async function GET(
       // Patient view - course data with assignment info and lesson completion
       const assignment = await prisma.userCourse.findFirst({
         where: {
-          userId: session.user.id,
+          userId: userId,
           courseId: id
         },
         include: {
@@ -114,13 +125,13 @@ export async function GET(
       });
 
       if (!assignment) {
-        return NextResponse.json({ error: 'Course not assigned to you' }, { status: 403 });
+        return NextResponse.json({ error: 'Curso não atribuído a você' }, { status: 403 });
       }
 
       // Get user's lesson completion data
       const userLessons = await prisma.userLesson.findMany({
         where: {
-          userId: session.user.id,
+          userId: userId,
           lesson: {
             moduleId: {
               in: assignment.course.modules.map(m => m.id)

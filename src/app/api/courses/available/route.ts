@@ -2,18 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { verifyMobileAuth } from '@/lib/mobile-auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Tentar autenticação web primeiro
     const session = await getServerSession(authOptions);
+    let userId = session?.user?.id;
+
+    // Se não há sessão web, tentar autenticação mobile
+    if (!userId) {
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser) {
+        userId = mobileUser.id;
+      }
+    }
     
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     // Get user with doctor relationship
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         id: true,
         role: true,
@@ -22,7 +33,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
     // For patients, only show courses from their doctor
@@ -38,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Get user's assigned courses
     const userCourses = await prisma.userCourse.findMany({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       include: {
         course: {
           include: {
