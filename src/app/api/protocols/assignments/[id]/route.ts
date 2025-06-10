@@ -92,4 +92,63 @@ export async function PUT(
     console.error('Error updating protocol assignment status:', String(error));
     return NextResponse.json({ error: 'Erro ao atualizar status da atribuição de protocolo' }, { status: 500 });
   }
+}
+
+// DELETE /api/protocols/assignments/[id] - Remover completamente a atribuição de protocolo
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    // Verificar se é médico
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id }
+    });
+
+    if (!user || user.role !== 'DOCTOR') {
+      return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem remover atribuições de protocolos.' }, { status: 403 });
+    }
+
+    // Verificar se a atribuição existe e pertence a um paciente do médico
+    const assignment = await prisma.userProtocol.findFirst({
+      where: {
+        id: id,
+        protocol: {
+          doctorId: session.user.id
+        }
+      },
+      include: {
+        protocol: true,
+        user: true
+      }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Atribuição de protocolo não encontrada' }, { status: 404 });
+    }
+
+    // Remover completamente a atribuição
+    await prisma.userProtocol.delete({
+      where: { id: id }
+    });
+
+    return NextResponse.json({ 
+      message: 'Atribuição de protocolo removida com sucesso',
+      removedAssignment: {
+        id: assignment.id,
+        protocolName: assignment.protocol.name,
+        userName: assignment.user.name || assignment.user.email
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting protocol assignment:', String(error));
+    return NextResponse.json({ error: 'Erro ao remover atribuição de protocolo' }, { status: 500 });
+  }
 } 

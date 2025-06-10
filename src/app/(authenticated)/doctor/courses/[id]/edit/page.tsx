@@ -22,10 +22,13 @@ import {
   ArrowLeftIcon,
   BookOpenIcon,
   XMarkIcon,
-  CheckIcon
+  CheckIcon,
+  PhotoIcon,
+  CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 
 interface Lesson {
   id?: string;
@@ -47,9 +50,10 @@ interface Course {
   id: string;
   name: string;
   description: string | null;
+  coverImage: string | null;
   modalTitle: string | null;
-  modalDescription: string | null;
   modalVideoUrl: string | null;
+  modalDescription: string | null;
   modalButtonText: string | null;
   modalButtonUrl: string | null;
   modules: Array<{
@@ -82,16 +86,18 @@ export default function EditCoursePage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingCourse, setIsLoadingCourse] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Course basic info
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [coverImage, setCoverImage] = useState('');
   
   // Modal configuration for unavailable courses
   const [modalTitle, setModalTitle] = useState('');
   const [modalDescription, setModalDescription] = useState('');
   const [modalVideoUrl, setModalVideoUrl] = useState('');
-  const [modalButtonText, setModalButtonText] = useState('Learn more');
+  const [modalButtonText, setModalButtonText] = useState('Saber mais');
   const [modalButtonUrl, setModalButtonUrl] = useState('');
   
   // Course structure
@@ -114,12 +120,13 @@ export default function EditCoursePage() {
         // Set basic info
         setName(course.name);
         setDescription(course.description || '');
+        setCoverImage(course.coverImage || '');
         
         // Set modal config
         setModalTitle(course.modalTitle || '');
         setModalDescription(course.modalDescription || '');
         setModalVideoUrl(course.modalVideoUrl || '');
-        setModalButtonText(course.modalButtonText || 'Learn more');
+        setModalButtonText(course.modalButtonText || 'Saber mais');
         setModalButtonUrl(course.modalButtonUrl || '');
         
         // Set modules and lessons
@@ -248,29 +255,47 @@ export default function EditCoursePage() {
       return;
     }
 
-    setIsLoading(true);
-
     try {
+      setIsLoading(true);
+      
+      const courseData = {
+        name: name.trim(),
+        description: description.trim() || null,
+        coverImage: (coverImage || '').trim() || null,
+        modalTitle: (modalTitle || '').trim() || null,
+        modalDescription: (modalDescription || '').trim() || null,
+        modalVideoUrl: (modalVideoUrl || '').trim() || null,
+        modalButtonText: (modalButtonText || '').trim() || null,
+        modalButtonUrl: (modalButtonUrl || '').trim() || null,
+        modules: modules.map(module => ({
+          id: module.id,
+          name: (module.name || '').trim(),
+          description: (module.description || '').trim() || null,
+          lessons: module.lessons.map(lesson => ({
+            id: lesson.id,
+            title: (lesson.title || '').trim(),
+            description: (lesson.description || '').trim() || null,
+            content: (lesson.content || '').trim() || null,
+            videoUrl: (lesson.videoUrl || '').trim() || null,
+            duration: lesson.duration
+          }))
+        })),
+        directLessons: directLessons.map(lesson => ({
+          id: lesson.id,
+          title: (lesson.title || '').trim(),
+          description: (lesson.description || '').trim() || null,
+          content: (lesson.content || '').trim() || null,
+          videoUrl: (lesson.videoUrl || '').trim() || null,
+          duration: lesson.duration
+        }))
+      };
+
       const response = await fetch(`/api/courses/${courseId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          modalTitle: modalTitle.trim() || null,
-          modalDescription: modalDescription.trim() || null,
-          modalVideoUrl: modalVideoUrl.trim() || null,
-          modalButtonText: modalButtonText.trim() || 'Learn more',
-          modalButtonUrl: modalButtonUrl.trim() || null,
-          modules: modules.map(module => ({
-            name: module.name,
-            description: module.description,
-            lessons: module.lessons
-          })),
-          lessons: directLessons
-        })
+        body: JSON.stringify(courseData),
       });
 
       if (response.ok) {
@@ -309,6 +334,54 @@ export default function EditCoursePage() {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        setCoverImage(url);
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image');
+    } finally {
+      setIsUploadingImage(false);
+      // Reset the input
+      event.target.value = '';
+    }
+  };
+
+  const removeCoverImage = () => {
+    setCoverImage('');
+  };
+
   if (isLoadingCourse) {
     return (
       <div className="min-h-screen bg-white">
@@ -338,22 +411,6 @@ export default function EditCoursePage() {
                   <div className="space-y-2">
                     <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
                     <div className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Configuration Skeleton */}
-              <div className="space-y-6">
-                <div className="w-64 h-6 bg-gray-200 rounded-lg animate-pulse border-b border-gray-200 pb-2"></div>
-                <div className="h-4 bg-gray-100 rounded w-96 animate-pulse"></div>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="w-28 h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -462,6 +519,70 @@ export default function EditCoursePage() {
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[100px]"
                   />
                 </div>
+
+                {/* Cover Image Upload */}
+                <div className="space-y-2">
+                  <Label className="text-gray-900 font-semibold">Cover Image</Label>
+                  <div className="space-y-3">
+                    {coverImage ? (
+                      <div className="relative group">
+                        <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200">
+                          <Image
+                            src={coverImage}
+                            alt="Course cover"
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={removeCoverImage}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                            >
+                              <TrashIcon className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#5154e7] transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="cover-image-upload"
+                          disabled={isUploadingImage}
+                        />
+                        {isUploadingImage ? (
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#5154e7] border-t-transparent"></div>
+                            <p className="text-sm text-gray-600 font-medium">Uploading...</p>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="cover-image-upload"
+                            className="cursor-pointer flex flex-col items-center gap-3"
+                          >
+                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                              <PhotoIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Upload cover image</p>
+                              <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                            </div>
+                            <div className="border border-[#5154e7] text-[#5154e7] hover:bg-[#5154e7] hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">
+                              <CloudArrowUpIcon className="h-4 w-4" />
+                              Choose File
+                            </div>
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               </CardContent>
             </Card>
@@ -472,67 +593,67 @@ export default function EditCoursePage() {
                 <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration (Optional)</CardTitle>
                 <p className="text-sm text-gray-600 font-medium">
                   Configure an informational modal that will be displayed when the course is unavailable to a patient.
-              </p>
+                </p>
               </CardHeader>
               <CardContent className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
                     <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
-                  <Input
-                    id="modalTitle"
-                    value={modalTitle}
-                    onChange={(e) => setModalTitle(e.target.value)}
+                    <Input
+                      id="modalTitle"
+                      value={modalTitle}
+                      onChange={(e) => setModalTitle(e.target.value)}
                       placeholder="e.g. Course Coming Soon"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                  />
-                </div>
-                
-                <div className="space-y-2">
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
-                  <Input
-                    id="modalVideoUrl"
-                    value={modalVideoUrl}
-                    onChange={(e) => setModalVideoUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/embed/..."
+                    <Input
+                      id="modalVideoUrl"
+                      value={modalVideoUrl}
+                      onChange={(e) => setModalVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/embed/..."
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                  />
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
-                <Textarea
-                  id="modalDescription"
-                  value={modalDescription}
-                  onChange={(e) => setModalDescription(e.target.value)}
+                  <Textarea
+                    id="modalDescription"
+                    value={modalDescription}
+                    onChange={(e) => setModalDescription(e.target.value)}
                     placeholder="Message for the patient..."
                     className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
-                  <Input
-                    id="modalButtonText"
-                    value={modalButtonText}
-                    onChange={(e) => setModalButtonText(e.target.value)}
-                      placeholder="Learn more"
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                   />
                 </div>
-                
-                <div className="space-y-2">
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                    <Input
+                      id="modalButtonText"
+                      value={modalButtonText}
+                      onChange={(e) => setModalButtonText(e.target.value)}
+                      placeholder="Saber mais"
+                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
-                  <Input
-                    id="modalButtonUrl"
-                    value={modalButtonUrl}
-                    onChange={(e) => setModalButtonUrl(e.target.value)}
+                    <Input
+                      id="modalButtonUrl"
+                      value={modalButtonUrl}
+                      onChange={(e) => setModalButtonUrl(e.target.value)}
                       placeholder="https://example.com"
                       className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                  />
+                    />
+                  </div>
                 </div>
-              </div>
               </CardContent>
             </Card>
 

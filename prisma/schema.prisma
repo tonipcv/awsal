@@ -394,18 +394,24 @@ model PomodoroStar {
 }
 
 model Course {
-  id          String       @id(map: "Course_pkey") @default(cuid())
-  title       String
-  description String?
-  thumbnail   String?
-  isPublished Boolean      @default(false)
-  price       Decimal?     @db.Decimal(10, 2)
-  doctorId    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now()) @updatedAt
-  doctor      User         @relation("DoctorCourses", fields: [doctorId], references: [id], onDelete: Cascade, map: "Course_doctorId_fkey")
-  modules     Module[]
-  assignments UserCourse[]
+  id               String       @id(map: "Course_pkey") @default(cuid())
+  title            String
+  description      String?
+  thumbnail        String?
+  coverImage       String?
+  modalTitle       String?
+  modalVideoUrl    String?
+  modalDescription String?
+  modalButtonText  String?      @default("Saber mais")
+  modalButtonUrl   String?
+  isPublished      Boolean      @default(false)
+  price            Decimal?     @db.Decimal(10, 2)
+  doctorId         String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
+  doctor           User         @relation("DoctorCourses", fields: [doctorId], references: [id], onDelete: Cascade, map: "Course_doctorId_fkey")
+  modules          Module[]
+  assignments      UserCourse[]
 
   @@map("courses")
 }

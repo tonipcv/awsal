@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   PlayIcon, 
   ClockIcon, 
@@ -77,6 +78,7 @@ interface Course {
   id: string;
   name: string;
   description: string | null;
+  coverImage: string | null;
   status: string;
   modalTitle: string | null;
   modalVideoUrl: string | null;
@@ -307,6 +309,19 @@ export default function CoursesPage() {
                         key={course.id} 
                         className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
                       >
+                        {/* Cover Image */}
+                        {course.coverImage && (
+                          <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                            <Image
+                              src={course.coverImage}
+                              alt={course.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
+                          </div>
+                        )}
+                        
                         <div className="p-3 lg:p-4">
                           <div className="space-y-3 lg:space-y-4">
                             <div>
@@ -404,9 +419,22 @@ export default function CoursesPage() {
                     {coursesData.unavailable.map(course => (
                       <div 
                         key={course.id} 
-                        className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm"
+                        className="group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 cursor-pointer backdrop-blur-sm overflow-hidden"
                         onClick={() => openUnavailableModal(course)}
                       >
+                        {/* Cover Image */}
+                        {course.coverImage && (
+                          <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                            <Image
+                              src={course.coverImage}
+                              alt={course.name}
+                              fill
+                              className="object-cover opacity-50 group-hover:opacity-60 transition-opacity duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-gray-900/20" />
+                          </div>
+                        )}
+                        
                         <div className="p-3 lg:p-4">
                           <div className="space-y-3">
                             <div>

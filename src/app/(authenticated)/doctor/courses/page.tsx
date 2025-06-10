@@ -14,11 +14,13 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Course {
   id: string;
   name: string;
   description: string | null;
+  coverImage: string | null;
   createdAt: string;
   modules: Array<{
     id: string;
@@ -191,6 +193,18 @@ export default function DoctorCoursesPage() {
 
                 return (
                   <Card key={course.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-200">
+                    {/* Cover Image */}
+                    {course.coverImage && (
+                      <div className="relative w-full h-48 rounded-t-2xl overflow-hidden">
+                        <Image
+                          src={course.coverImage}
+                          alt={course.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">

@@ -76,11 +76,12 @@ export async function GET(request: NextRequest) {
     const transformedCourses = courses.map(course => ({
       ...course,
       name: course.title, // Map title to name for frontend compatibility
-      modalTitle: null,
-      modalVideoUrl: null,
-      modalDescription: null,
-      modalButtonText: 'Saber mais',
-      modalButtonUrl: null,
+      coverImage: course.coverImage, // Explicitly include coverImage
+      modalTitle: course.modalTitle,
+      modalVideoUrl: course.modalVideoUrl,
+      modalDescription: course.modalDescription,
+      modalButtonText: course.modalButtonText || 'Saber mais',
+      modalButtonUrl: course.modalButtonUrl,
       lessons: [], // Remove direct lessons since they don't exist in this structure
       _count: {
         ...course._count,
@@ -166,11 +167,12 @@ export async function POST(request: NextRequest) {
     const transformedCourse = {
       ...course,
       name: course.title,
-      modalTitle: null,
-      modalVideoUrl: null,
-      modalDescription: null,
-      modalButtonText: 'Saber mais',
-      modalButtonUrl: null
+      coverImage: course.coverImage,
+      modalTitle: course.modalTitle,
+      modalVideoUrl: course.modalVideoUrl,
+      modalDescription: course.modalDescription,
+      modalButtonText: course.modalButtonText || 'Saber mais',
+      modalButtonUrl: course.modalButtonUrl
     };
 
     return NextResponse.json(transformedCourse, { status: 201 });

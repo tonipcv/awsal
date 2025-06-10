@@ -11,9 +11,12 @@ import {
   CalendarIcon,
   EyeIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface SymptomReport {
@@ -62,6 +65,7 @@ export default function SymptomReportsPage() {
   const [selectedReport, setSelectedReport] = useState<SymptomReport | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'REVIEWED' | 'REQUIRES_ATTENTION'>('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchReports();
@@ -139,68 +143,82 @@ export default function SymptomReportsPage() {
   };
 
   const filteredReports = reports.filter(report => {
-    if (filter === 'ALL') return true;
-    return report.status === filter;
+    const matchesSearch = report.symptoms.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         report.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         report.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         report.protocol.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filter === 'ALL' || report.status === filter;
+
+    return matchesSearch && matchesFilter;
   });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="pt-[88px] pb-32 lg:pt-6 lg:pb-12 lg:ml-64">
-          <div className="max-w-6xl mx-auto px-3 lg:px-6">
-            <div className="space-y-6 pt-4 lg:pt-6">
-              
-              {/* Header Skeleton */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="h-8 lg:h-9 bg-gray-200 rounded-lg w-48 lg:w-56 mb-2 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
-                </div>
-              </div>
-
-              {/* Filters Skeleton */}
-              <div className="flex flex-wrap gap-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-9 bg-gray-200 rounded-lg w-20 animate-pulse"></div>
-                ))}
-              </div>
-
-              {/* Reports List Skeleton */}
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-                        <div>
-                          <div className="h-5 bg-gray-200 rounded-lg w-32 mb-1 animate-pulse"></div>
-                          <div className="h-4 bg-gray-200 rounded-lg w-40 animate-pulse"></div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="h-6 bg-gray-200 rounded-lg w-20 animate-pulse"></div>
-                        <div className="h-6 bg-gray-200 rounded-lg w-16 animate-pulse"></div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <div className="h-4 bg-gray-200 rounded-lg w-full mb-2 animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded-lg w-3/4 mb-2 animate-pulse"></div>
-                      <div className="h-4 bg-gray-200 rounded-lg w-1/2 animate-pulse"></div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="h-4 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
-                        <div className="h-4 bg-gray-200 rounded-lg w-20 animate-pulse"></div>
-                      </div>
-                      <div className="h-9 bg-gray-200 rounded-lg w-28 animate-pulse"></div>
-                    </div>
-                  </div>
-                ))}
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            
+            {/* Header Skeleton */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-3">
+                <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
               </div>
             </div>
+
+            {/* Search and Filters Skeleton */}
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl mb-6">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-10 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                    <div className="h-10 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                    <div className="h-10 bg-gray-100 rounded-xl w-24 animate-pulse"></div>
+                    <div className="h-10 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reports List Skeleton */}
+            <div className="space-y-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                          <div className="space-y-2">
+                            <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+                            <div className="h-4 bg-gray-100 rounded w-40 animate-pulse"></div>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-100 rounded w-full animate-pulse"></div>
+                          <div className="h-4 bg-gray-100 rounded w-3/4 animate-pulse"></div>
+                          <div className="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="h-4 bg-gray-100 rounded w-32 animate-pulse"></div>
+                          <div className="h-4 bg-gray-100 rounded w-20 animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-6 bg-gray-100 rounded-xl w-20 animate-pulse"></div>
+                        <div className="h-6 bg-gray-100 rounded-xl w-16 animate-pulse"></div>
+                        <div className="h-9 bg-gray-200 rounded-xl w-28 animate-pulse"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
           </div>
         </div>
       </div>
@@ -208,128 +226,159 @@ export default function SymptomReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="pt-[88px] pb-32 lg:pt-6 lg:pb-12 lg:ml-64">
-        <div className="max-w-6xl mx-auto px-3 lg:px-6">
-          <div className="space-y-6 pt-4 lg:pt-6">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-                  Symptom Reports
-                </h1>
-                <p className="text-gray-600">
-                  Manage your patients' symptom reports
-                </p>
+    <div className="min-h-screen bg-white">
+      <div className="lg:ml-64">
+        <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+          
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Symptom Reports
+              </h1>
+              <p className="text-gray-600 font-medium">
+                Manage your patients' symptom reports
+              </p>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <Card className="bg-white border-gray-200 shadow-lg rounded-2xl mb-6">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    placeholder="Search reports, patients, or protocols..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  {[
+                    { key: 'ALL', label: 'All' },
+                    { key: 'PENDING', label: 'Pending' },
+                    { key: 'REQUIRES_ATTENTION', label: 'Urgent' },
+                    { key: 'REVIEWED', label: 'Reviewed' }
+                  ].map(({ key, label }) => (
+                    <Button
+                      key={key}
+                      variant={filter === key ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilter(key as any)}
+                      className={filter === key 
+                        ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
+                      }
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Filters */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { key: 'ALL', label: 'All' },
-                { key: 'PENDING', label: 'Pending' },
-                { key: 'REQUIRES_ATTENTION', label: 'Requires Attention' },
-                { key: 'REVIEWED', label: 'Reviewed' }
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setFilter(key as any)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                    filter === key
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Reports List */}
-            <div className="space-y-4">
-              {filteredReports.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                  <ExclamationTriangleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">
-                    {filter === 'ALL' ? 'No reports found' : `No ${getStatusText(filter).toLowerCase()} reports found`}
+          {/* Reports List */}
+          {filteredReports.length === 0 ? (
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <ExclamationTriangleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold mb-2 text-gray-900">
+                    {searchTerm ? 'No reports found' : 'No symptom reports'}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4 font-medium">
+                    {searchTerm 
+                      ? 'Try adjusting your search term or filters'
+                      : filter === 'ALL' 
+                        ? 'No symptom reports have been submitted yet'
+                        : `No ${getStatusText(filter).toLowerCase()} reports found`
+                    }
                   </p>
                 </div>
-              ) : (
-                filteredReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-all shadow-sm"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-5 w-5 text-gray-600" />
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {filteredReports.map((report) => (
+                <Card
+                  key={report.id}
+                  className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-shadow"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                            <UserIcon className="h-5 w-5 text-gray-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">
+                              {report.user.name || report.user.email}
+                            </h3>
+                            <p className="text-sm text-gray-600 font-medium">
+                              {report.protocol.name} • Day {report.dayNumber}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">
-                            {report.user.name || report.user.email}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {report.protocol.name} • Day {report.dayNumber}
+                        
+                        <div className="mb-4">
+                          <p className="text-gray-700 line-clamp-3 font-medium">
+                            {report.symptoms}
                           </p>
+                        </div>
+
+                        <div className="flex items-center gap-6 text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <ClockIcon className="h-4 w-4" />
+                            <span className="font-medium">
+                              {format(new Date(report.reportTime), 'MM/dd/yyyy HH:mm', { locale: enUS })}
+                            </span>
+                          </div>
+                          {report.attachments.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <PhotoIcon className="h-4 w-4" />
+                              <span className="font-medium">
+                                {report.attachments.length} photo(s)
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "px-3 py-1 rounded-lg border text-xs font-medium",
+                          "px-3 py-1 rounded-xl border text-xs font-semibold",
                           getSeverityColor(report.severity)
                         )}>
                           Intensity: {report.severity}/10
                         </div>
                         <div className={cn(
-                          "px-3 py-1 rounded-lg border text-xs font-medium",
+                          "px-3 py-1 rounded-xl border text-xs font-semibold",
                           getStatusColor(report.status)
                         )}>
                           {getStatusText(report.status)}
                         </div>
+                        <Button
+                          onClick={() => {
+                            setSelectedReport(report);
+                            setShowModal(true);
+                          }}
+                          className="bg-[#5154e7] hover:bg-[#4145d1] text-white px-4 py-2 rounded-xl font-semibold shadow-md"
+                        >
+                          <EyeIcon className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="mb-4">
-                      <p className="text-gray-700 line-clamp-3">
-                        {report.symptoms}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <ClockIcon className="h-4 w-4" />
-                          {format(new Date(report.reportTime), 'MM/dd/yyyy HH:mm', { locale: enUS })}
-                        </div>
-                        {report.attachments.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <PhotoIcon className="h-4 w-4" />
-                            {report.attachments.length} photo(s)
-                          </div>
-                        )}
-                      </div>
-
-                      <Button
-                        onClick={() => {
-                          setSelectedReport(report);
-                          setShowModal(true);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-                      >
-                        <EyeIcon className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
 

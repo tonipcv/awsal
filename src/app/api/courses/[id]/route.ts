@@ -77,11 +77,11 @@ export async function GET(
       const transformedCourse = {
         ...course,
         name: course.title,
-        modalTitle: null,
-        modalVideoUrl: null,
-        modalDescription: null,
-        modalButtonText: 'Saber mais',
-        modalButtonUrl: null,
+        modalTitle: course.modalTitle || null,
+        modalVideoUrl: course.modalVideoUrl || null,
+        modalDescription: course.modalDescription || null,
+        modalButtonText: course.modalButtonText || 'Saber mais',
+        modalButtonUrl: course.modalButtonUrl || null,
         lessons: [] // Remove direct lessons since they don't exist in this structure
       };
 
@@ -203,8 +203,14 @@ export async function PUT(
     const {
       name,
       description,
+      coverImage,
       thumbnail,
       price,
+      modalTitle,
+      modalDescription,
+      modalVideoUrl,
+      modalButtonText,
+      modalButtonUrl,
       modules = []
     } = body;
 
@@ -252,8 +258,14 @@ export async function PUT(
         data: {
           title: name.trim(),
           description: description?.trim() || null,
+          coverImage: coverImage?.trim() || null,
           thumbnail: thumbnail?.trim() || null,
           price: price ? parseFloat(price) : null,
+          modalTitle: modalTitle?.trim() || null,
+          modalVideoUrl: modalVideoUrl?.trim() || null,
+          modalDescription: modalDescription?.trim() || null,
+          modalButtonText: modalButtonText?.trim() || null,
+          modalButtonUrl: modalButtonUrl?.trim() || null,
         }
       });
 
@@ -262,7 +274,7 @@ export async function PUT(
         const module = modules[i];
         const createdModule = await tx.module.create({
           data: {
-            title: module.name || module.title,
+            title: module.name || module.title || '',
             description: module.description || null,
             orderIndex: i,
             courseId: id
@@ -309,11 +321,11 @@ export async function PUT(
     const transformedCourse = {
       ...updatedCourse,
       name: updatedCourse?.title,
-      modalTitle: null,
-      modalVideoUrl: null,
-      modalDescription: null,
-      modalButtonText: 'Saber mais',
-      modalButtonUrl: null,
+      modalTitle: modalTitle || null,
+      modalVideoUrl: modalVideoUrl || null,
+      modalDescription: modalDescription || null,
+      modalButtonText: modalButtonText || 'Saber mais',
+      modalButtonUrl: modalButtonUrl || null,
       lessons: []
     };
 

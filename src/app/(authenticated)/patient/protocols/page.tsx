@@ -763,7 +763,7 @@ export default function ProtocolsPage() {
                     return (
                         <div 
                         key={assignment.id} 
-                          className={`group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 backdrop-blur-sm ${hasModal ? 'cursor-pointer' : ''}`}
+                          className={`group bg-gray-900/20 border border-gray-800/30 rounded-xl hover:border-gray-700/50 transition-all duration-300 backdrop-blur-sm grayscale hover:grayscale-0 ${hasModal ? 'cursor-pointer' : ''}`}
                         onClick={hasModal ? () => openModal(assignment.protocol) : undefined}
                       >
                           {/* Cover Image */}
@@ -773,7 +773,7 @@ export default function ProtocolsPage() {
                                 src={assignment.protocol.coverImage}
                                 alt={assignment.protocol.name}
                                 fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300 grayscale"
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
@@ -784,10 +784,10 @@ export default function ProtocolsPage() {
                             <div className="space-y-3">
                             <div>
                               <div className="mb-2">
-                                  <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-gray-300 transition-colors line-clamp-2 mb-2">
+                                  <h3 className="text-sm lg:text-base font-medium text-gray-400 group-hover:text-gray-300 transition-colors line-clamp-2 mb-2">
                                   {assignment.protocol.name}
                                 </h3>
-                                  <Badge className="bg-gray-700/20 text-gray-400 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                  <Badge className="bg-gray-700/20 text-gray-500 border-gray-700/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
                                   {t.inactive}
                                 </Badge>
                               </div>
@@ -800,7 +800,7 @@ export default function ProtocolsPage() {
                                       <img 
                                         src={assignment.protocol.doctor.image} 
                                         alt={assignment.protocol.doctor.name || t.responsibleDoctor}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-cover grayscale"
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
                                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -814,32 +814,32 @@ export default function ProtocolsPage() {
                                         className="w-full h-full bg-gray-600 flex items-center justify-center"
                                       style={{ display: assignment.protocol.doctor.image ? 'none' : 'flex' }}
                                     >
-                                        <span className="text-xs text-gray-300 font-medium">
+                                        <span className="text-xs text-gray-400 font-medium">
                                         {assignment.protocol.doctor.name?.charAt(0) || 'M'}
                                       </span>
                                     </div>
                                   </div>
-                                    <span className="text-xs text-gray-400">
+                                    <span className="text-xs text-gray-500">
                                     {assignment.protocol.doctor.name || t.responsibleDoctor}
                                   </span>
                                 </div>
                               )}
                               
                               {assignment.protocol.description && (
-                                  <p className="text-xs lg:text-sm text-gray-400 leading-relaxed line-clamp-2">
+                                  <p className="text-xs lg:text-sm text-gray-500 leading-relaxed line-clamp-2">
                                   {assignment.protocol.description}
                                 </p>
                               )}
                             </div>
                             
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-3 lg:gap-4 text-xs text-gray-600">
                                   <div className="flex items-center gap-1">
-                                    <CalendarDaysIcon className="h-3 w-3 text-gray-500" />
+                                    <CalendarDaysIcon className="h-3 w-3 text-gray-600" />
                                 <span>{assignment.protocol.duration} {t.days}</span>
                                   </div>
                                   <div className="flex items-center gap-1">
-                                    <DocumentTextIcon className="h-3 w-3 text-gray-500" />
+                                    <DocumentTextIcon className="h-3 w-3 text-gray-600" />
                                 <span>{totalTasks} {t.tasks}</span>
                                   </div>
                               </div>
@@ -848,7 +848,7 @@ export default function ProtocolsPage() {
                                 <Button 
                                   variant="outline"
                                   size="sm"
-                                  className="border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
+                                  className="border-gray-700 text-gray-500 hover:bg-gray-700 hover:text-white hover:border-gray-500 opacity-0 group-hover:opacity-100 transition-all duration-200 text-xs h-6 lg:h-7 px-2 lg:px-3"
                                 >
                                   {t.seeDetails}
                                 </Button>

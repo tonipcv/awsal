@@ -447,9 +447,7 @@ export default function AssignProtocolPage() {
       setError(null);
       
       const response = await fetch(`/api/protocols/assignments/${assignmentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'INACTIVE' })
+        method: 'DELETE'
       });
 
       if (response.ok) {

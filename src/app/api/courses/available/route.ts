@@ -76,25 +76,87 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Transform courses to match frontend interface
+    // Get all courses from the doctor (for unavailable courses)
+    const allDoctorCourses = await prisma.course.findMany({
+      where: { 
+        doctorId: doctorId,
+        isPublished: true
+      },
+      include: {
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        modules: {
+          include: {
+            lessons: {
+              select: {
+                id: true,
+                title: true,
+                duration: true
+              }
+            }
+          },
+          orderBy: {
+            orderIndex: 'asc'
+          }
+        },
+        _count: {
+          select: {
+            modules: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Get assigned course IDs
+    const assignedCourseIds = userCourses.map(uc => uc.course.id);
+
+    // Transform active courses
     const activeCourses = userCourses.map(uc => ({
       ...uc.course,
       name: uc.course.title, // Map title to name for frontend compatibility
+      coverImage: uc.course.coverImage, // Explicitly include coverImage
+      modalTitle: uc.course.modalTitle,
+      modalVideoUrl: uc.course.modalVideoUrl,
+      modalDescription: uc.course.modalDescription,
+      modalButtonText: uc.course.modalButtonText || 'Saber mais',
+      modalButtonUrl: uc.course.modalButtonUrl,
       status: 'active',
-      modalTitle: null,
-      modalVideoUrl: null,
-      modalDescription: null,
-      modalButtonText: 'Saber mais',
-      modalButtonUrl: null,
       modules: uc.course.modules.map(module => ({
         ...module,
         name: module.title // Map module title to name as well
       }))
     }));
 
+    // Transform unavailable courses (courses from doctor that are not assigned to patient)
+    const unavailableCourses = allDoctorCourses
+      .filter(course => !assignedCourseIds.includes(course.id))
+      .map(course => ({
+        ...course,
+        name: course.title, // Map title to name for frontend compatibility
+        coverImage: course.coverImage, // Explicitly include coverImage
+        modalTitle: course.modalTitle,
+        modalVideoUrl: course.modalVideoUrl,
+        modalDescription: course.modalDescription,
+        modalButtonText: course.modalButtonText || 'Saber mais',
+        modalButtonUrl: course.modalButtonUrl,
+        status: 'unavailable',
+        modules: course.modules.map(module => ({
+          ...module,
+          name: module.title // Map module title to name as well
+        }))
+      }));
+
     return NextResponse.json({
       active: activeCourses,
-      unavailable: []
+      unavailable: unavailableCourses
     });
   } catch (error) {
     console.error('Error fetching available courses:', error instanceof Error ? error.message : 'Unknown error');
