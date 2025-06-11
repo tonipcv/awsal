@@ -64,9 +64,9 @@ export default function ForgotPassword() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-200 mb-2">Email enviado!</h2>
+              <h2 className="text-xl font-semibold text-gray-200 mb-2">Email sent!</h2>
               <p className="text-gray-400 text-sm">
-                Enviamos um link de recuperação de senha para seu email.
+                We've sent a password recovery link to your email.
               </p>
             </div>
 
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
               className="w-full py-2.5 px-4 text-sm font-semibold text-gray-300 bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar para login
+              Back to login
             </Link>
           </div>
         </div>
@@ -100,9 +100,9 @@ export default function ForgotPassword() {
                 priority
               />
             </div>
-            <h1 className="text-xl font-semibold text-gray-200 mb-2">Esqueceu sua senha?</h1>
+            <h1 className="text-xl font-semibold text-gray-200 mb-2">Forgot your password?</h1>
             <p className="text-gray-400 text-sm">
-              Digite seu email e enviaremos um link para redefinir sua senha.
+              Enter your email and we'll send you a link to reset your password.
             </p>
           </div>
 
@@ -135,7 +135,7 @@ export default function ForgotPassword() {
               className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
               disabled={isLoading}
             >
-              {isLoading ? 'Enviando link...' : 'Recuperar senha'}
+              {isLoading ? 'Sending link...' : 'Reset password'}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
@@ -147,7 +147,7 @@ export default function ForgotPassword() {
               className="text-sm text-gray-400 hover:text-gray-200 transition-colors duration-200 flex items-center justify-center gap-2"
             >
               <ArrowLeft className="h-3 w-3" />
-              Voltar para login
+              Back to login
             </Link>
           </div>
         </div>
