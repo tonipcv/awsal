@@ -99,18 +99,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem criar protocolos.' }, { status: 403 });
     }
 
-    const { name, duration, description, isTemplate, days } = await request.json();
+    const body = await request.json();
+    console.log('Dados recebidos para criar protocolo:', JSON.stringify(body, null, 2));
+    
+    const { name, duration, description, isTemplate, days } = body;
 
-    if (!name || !duration || duration <= 0) {
-      return NextResponse.json({ error: 'Nome e duração são obrigatórios' }, { status: 400 });
+    // Validação mais robusta
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      console.log('Erro de validação: nome inválido', { name, type: typeof name });
+      return NextResponse.json({ error: 'Nome é obrigatório e deve ser um texto válido' }, { status: 400 });
     }
+
+    // Converter duration para número se for string
+    let durationNumber = duration;
+    if (typeof duration === 'string') {
+      durationNumber = parseInt(duration, 10);
+    }
+
+    if (!durationNumber || typeof durationNumber !== 'number' || durationNumber <= 0 || isNaN(durationNumber)) {
+      console.log('Erro de validação: duração inválida', { 
+        duration, 
+        durationNumber, 
+        type: typeof duration,
+        typeNumber: typeof durationNumber 
+      });
+      return NextResponse.json({ error: 'Duração é obrigatória e deve ser um número maior que zero' }, { status: 400 });
+    }
+
+    console.log('Validação passou. Criando protocolo...', { 
+      name: name.trim(), 
+      duration: durationNumber,
+      description: description?.trim() || null 
+    });
 
     // Criar protocolo
     const protocol = await prisma.protocol.create({
       data: {
-        name,
-        duration,
-        description,
+        name: name.trim(),
+        duration: durationNumber,
+        description: description?.trim() || null,
         isTemplate: isTemplate || false,
         doctorId: session.user.id
       }

@@ -70,6 +70,7 @@ interface ProtocolProduct {
 interface Protocol {
   name: string;
   description: string;
+  duration: number;
   isTemplate: boolean;
   showDoctorInfo: boolean;
   modalTitle: string;
@@ -92,6 +93,7 @@ export default function NewProtocolPage() {
   const [protocol, setProtocol] = useState<Protocol>({
     name: '',
     description: '',
+    duration: 1,
     isTemplate: false,
     showDoctorInfo: true,
     modalTitle: '',
@@ -433,12 +435,18 @@ export default function NewProtocolPage() {
       setShowErrorAlert(false);
       setErrorMessage('');
       
+      // Automatically set duration based on number of days
+      const protocolToSave = {
+        ...protocol,
+        duration: Math.max(protocol.duration || 1, protocol.days.length)
+      };
+      
       const response = await fetch('/api/protocols', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(protocol)
+        body: JSON.stringify(protocolToSave)
       });
 
       if (response.ok) {
@@ -581,6 +589,22 @@ export default function NewProtocolPage() {
                             rows={4}
                             className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                           />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="duration" className="text-gray-900 font-semibold">Duration (days)</Label>
+                          <Input
+                            id="duration"
+                            type="number"
+                            min="1"
+                            value={protocol.duration || protocol.days.length}
+                            onChange={(e) => updateProtocolField('duration', parseInt(e.target.value) || 1)}
+                            placeholder="Number of days"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                          <p className="text-xs text-gray-500">
+                            This will be automatically set to match the number of days you add in the Schedule tab
+                          </p>
                         </div>
                       </div>
 
