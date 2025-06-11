@@ -1,86 +1,93 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { hash } from "bcryptjs";
-import { sign } from "jsonwebtoken";
-import crypto from "crypto";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "default-secret";
-
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, phone } = await request.json();
 
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Nome, email e senha são obrigatórios" },
-        { status: 400 }
-      );
+    // Validações básicas
+    if (!name?.trim() || !email?.trim() || !password?.trim()) {
+      return NextResponse.json({ 
+        error: 'Nome, email e senha são obrigatórios' 
+      }, { status: 400 });
     }
 
-    // Verificar se o usuário já existe
+    if (password.length < 6) {
+      return NextResponse.json({ 
+        error: 'Senha deve ter pelo menos 6 caracteres' 
+      }, { status: 400 });
+    }
+
+    // Verificar se email já existe
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase().trim() }
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "Este email já está em uso" },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        error: 'Este email já está cadastrado' 
+      }, { status: 400 });
     }
 
-    // Criptografar a senha
-    const hashedPassword = await hash(password, 12);
+    // Hash da senha
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Gerar código de verificação
-    const verificationCode = crypto.randomInt(100000, 999999).toString();
-    
-    // Criar o usuário
+    // Criar usuário sem médico (role PATIENT_NOCLINIC)
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
         password: hashedPassword,
-      }
-    });
-
-    // Salvar o código de verificação
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token: verificationCode,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
-      }
-    });
-
-    // Enviar email com código de verificação
-    // Aqui você implementaria a lógica de envio de email
-    // Comentado para simplificar este exemplo
-    // await sendVerificationEmail(email, verificationCode);
-
-    // Criar token JWT para o cliente mobile
-    const token = sign(
-      {
-        sub: user.id,
-        email: user.email,
-        name: user.name,
+        phone: phone?.trim() || null,
+        role: 'PATIENT_NOCLINIC', // Role específica para pacientes sem clínica
+        doctorId: null, // Sem médico inicialmente
+        isActive: true
       },
-      JWT_SECRET,
-      { expiresIn: "30d" }
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        doctorId: true,
+        createdAt: true
+      }
+    });
+
+    // Gerar JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role
+      },
+      process.env.NEXTAUTH_SECRET!,
+      { expiresIn: '30d' }
     );
 
     return NextResponse.json({
-      message: "Usuário criado com sucesso. Verifique seu email para confirmar o cadastro.",
-      userId: user.id,
+      success: true,
+      message: 'Conta criada com sucesso!',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        hasClinic: false,
+        needsClinic: true,
+        createdAt: user.createdAt
+      },
       token,
-      // Retornamos o código para facilitar testes, em produção seria enviado apenas por email
-      verificationCode
+      status: 'noclinic' // Indica que precisa ser vinculado a uma clínica
     });
+
   } catch (error) {
-    console.error("Erro no registro mobile:", error);
-    return NextResponse.json(
-      { error: "Erro ao criar usuário" },
-      { status: 500 }
-    );
+    console.error('Erro no registro mobile:', error);
+    return NextResponse.json({ 
+      error: 'Erro interno do servidor' 
+    }, { status: 500 });
   }
 } 

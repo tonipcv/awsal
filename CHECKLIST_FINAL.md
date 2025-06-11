@@ -61,6 +61,10 @@ openssl rand -base64 32
 - [x] `GET /api/courses/{id}` - **ATUALIZADO** (suporte mobile)
 - [x] `POST /api/courses/lessons/complete` - **CRIADO**
 
+### ✅ Sistema de Registro e Ativação:
+- [x] `POST /api/auth/mobile/register` - **CRIADO** (registro sem clínica)
+- [x] `POST /api/doctor/activate-patient` - **CRIADO** (ativação por email)
+
 ---
 
 ## 🧪 **4. TESTES DOS ENDPOINTS**
@@ -126,24 +130,40 @@ curl -X POST http://localhost:3000/api/referrals/patient \
   -d '{"rewardId":"REWARD_ID_AQUI"}'
 ```
 
-### Testar Sistema de Cursos:
+### Testar Cursos:
 ```bash
-curl -X GET http://localhost:3000/api/courses/available \
+# Buscar cursos disponíveis
+curl -X GET "http://localhost:3000/api/courses/available" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
-```
 
-### Testar Detalhes do Curso:
-```bash
-curl -X GET http://localhost:3000/api/courses/COURSE_ID \
+# Buscar curso específico
+curl -X GET "http://localhost:3000/api/courses/COURSE_ID" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
-```
 
-### Testar Completar Aula:
-```bash
-curl -X POST http://localhost:3000/api/courses/lessons/complete \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+# Marcar lição como concluída
+curl -X POST "http://localhost:3000/api/courses/lessons/complete" \
   -H "Content-Type: application/json" \
-  -d '{"lessonId":"LESSON_ID_AQUI"}'
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{"lessonId": "LESSON_ID"}'
+```
+
+### Testar Registro e Ativação:
+```bash
+# Registro de novo paciente (sem clínica)
+curl -X POST "http://localhost:3000/api/auth/mobile/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "email": "joao@email.com", 
+    "password": "senha123",
+    "phone": "+5511999999999"
+  }'
+
+# Médico ativar paciente (NextAuth token)
+curl -X POST "http://localhost:3000/api/doctor/activate-patient" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer DOCTOR_TOKEN" \
+  -d '{"patientEmail": "joao@email.com"}'
 ```
 
 ---
@@ -267,6 +287,9 @@ module.exports = {
 - [x] **Sistema de cursos** - visualizar cursos atribuídos e disponíveis
 - [x] **Progresso de cursos** - marcar lições como concluídas
 - [x] **Módulos e lições** - estrutura organizada de conteúdo educacional
+- [x] **Registro independente** - pacientes podem se registrar sem médico
+- [x] **Ativação por médico** - médicos ativam pacientes usando email
+- [x] **Privacidade do paciente** - paciente escolhe seu médico
 
 ### 🔄 Funcionalidades Extras (já existem):
 - [ ] Chat com IA

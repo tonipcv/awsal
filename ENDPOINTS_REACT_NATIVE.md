@@ -32,7 +32,44 @@ Response (401):
 }
 ```
 
-### 2. Validar Token
+### 2. Registro Mobile (Novo Paciente)
+```
+POST /api/auth/mobile/register
+Content-Type: application/json
+
+Body:
+{
+  "name": "Nome do Paciente",
+  "email": "paciente@email.com",
+  "password": "senha123",
+  "phone": "+5511999999999"
+}
+
+Response (200):
+{
+  "success": true,
+  "message": "Conta criada com sucesso!",
+  "user": {
+    "id": "user_id",
+    "name": "Nome do Paciente",
+    "email": "paciente@email.com",
+    "phone": "+5511999999999",
+    "role": "PATIENT_NOCLINIC",
+    "hasClinic": false,
+    "needsClinic": true,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "status": "noclinic"
+}
+
+Response (400):
+{
+  "error": "Este email já está cadastrado"
+}
+```
+
+### 3. Validar Token
 ```
 POST /api/auth/mobile/validate
 Authorization: Bearer {token}
@@ -59,7 +96,7 @@ Response (401):
 
 ## 👤 **PERFIL DO PACIENTE**
 
-### 3. Buscar Perfil Completo
+### 4. Buscar Perfil Completo
 ```
 GET /api/patient/profile
 Authorization: Bearer {token}
@@ -108,7 +145,7 @@ Response (403):
 
 ## 📋 **PROTOCOLOS DO PACIENTE**
 
-### 4. Listar Protocolos Atribuídos
+### 5. Listar Protocolos Atribuídos
 ```
 GET /api/protocols/assignments
 Authorization: Bearer {token}
@@ -178,7 +215,7 @@ Response (403):
 
 ## 📊 **PROGRESSO DOS PROTOCOLOS**
 
-### 5. Marcar Tarefa como Concluída/Não Concluída
+### 6. Marcar Tarefa como Concluída/Não Concluída
 ```
 POST /api/protocols/progress
 Authorization: Bearer {token}
@@ -249,7 +286,7 @@ Response (403):
 }
 ```
 
-### 6. Buscar Progresso do Protocolo
+### 7. Buscar Progresso do Protocolo
 ```
 GET /api/protocols/progress?protocolId={protocol_id}&date={date}
 Authorization: Bearer {token}
@@ -308,7 +345,7 @@ Response (200):
 
 ## 🎁 **SISTEMA DE INDICAÇÕES**
 
-### 7. Buscar Dashboard de Indicações
+### 8. Buscar Dashboard de Indicações
 ```
 GET /api/referrals/patient
 Authorization: Bearer {token}
@@ -385,7 +422,7 @@ Response (200):
 }
 ```
 
-### 8. Criar Nova Indicação
+### 9. Criar Nova Indicação
 ```
 POST /api/referrals/create
 Authorization: Bearer {token}
@@ -429,7 +466,7 @@ Response (400):
 }
 ```
 
-### 9. Resgatar Recompensa
+### 10. Resgatar Recompensa
 ```
 POST /api/referrals/patient
 Authorization: Bearer {token}
@@ -469,7 +506,7 @@ Response (400):
 
 ## 📚 **SISTEMA DE CURSOS**
 
-### 10. Buscar Cursos Disponíveis
+### 11. Buscar Cursos Disponíveis
 ```
 GET /api/courses/available
 Authorization: Bearer {token}
@@ -523,7 +560,7 @@ Response (200):
 }
 ```
 
-### 11. Buscar Curso Específico
+### 12. Buscar Curso Específico
 ```
 GET /api/courses/{course_id}
 Authorization: Bearer {token}
@@ -568,7 +605,7 @@ Response (403):
 }
 ```
 
-### 12. Marcar Lição como Concluída
+### 13. Marcar Lição como Concluída
 ```
 POST /api/courses/lessons/complete
 Authorization: Bearer {token}
@@ -615,9 +652,63 @@ Response (403):
 
 ---
 
+## 👨‍⚕️ **ENDPOINTS PARA MÉDICOS**
+
+### 14. Ativar Paciente (Vincular à Clínica)
+```
+POST /api/doctor/activate-patient
+Authorization: Bearer {doctor_token} (NextAuth)
+Content-Type: application/json
+
+Body:
+{
+  "patientEmail": "paciente@email.com"
+}
+
+Response (200):
+{
+  "success": true,
+  "message": "Paciente ativado com sucesso!",
+  "patient": {
+    "id": "patient_id",
+    "name": "Nome do Paciente",
+    "email": "paciente@email.com",
+    "phone": "+5511999999999",
+    "role": "PATIENT",
+    "hasClinic": true,
+    "needsClinic": false,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "doctor": {
+      "id": "doctor_id",
+      "name": "Dr. Nome",
+      "email": "doutor@email.com"
+    }
+  }
+}
+
+Response (404):
+{
+  "error": "Paciente não encontrado"
+}
+
+Response (400):
+{
+  "error": "Este paciente já está vinculado a uma clínica ou não precisa de ativação"
+}
+```
+
+**Como funciona:**
+1. **Paciente se registra** no app mobile sem médico (role `PATIENT_NOCLINIC`)
+2. **Paciente informa seu email** ao médico de sua escolha
+3. **Médico usa este endpoint** para ativar/vincular o paciente à sua clínica
+4. **Sistema automaticamente** muda role para `PATIENT` e vincula ao médico
+
+---
+
 ## ✅ **STATUS DOS ENDPOINTS**
 
 - ✅ **Login Mobile**: `/api/auth/mobile/login` - **PRONTO**
+- ✅ **Registro Mobile**: `/api/auth/mobile/register` - **CRIADO**
 - ✅ **Validar Token**: `/api/auth/mobile/validate` - **CRIADO**
 - ✅ **Perfil Paciente**: `/api/patient/profile` - **ATUALIZADO** (suporte mobile)
 - ✅ **Protocolos**: `/api/protocols/assignments` - **CRIADO**
