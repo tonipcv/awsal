@@ -51,6 +51,10 @@ openssl rand -base64 32
 - [x] `POST /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 - [x] `GET /api/protocols/progress` - **ATUALIZADO** (suporte mobile)
 
+### ✅ Daily Check-in Mobile:
+- [x] `GET /api/mobile/daily-checkin` - **CRIADO** (buscar perguntas e status)
+- [x] `POST /api/mobile/daily-checkin` - **CRIADO** (submeter respostas)
+
 ### ✅ Sistema de Indicações:
 - [x] `GET /api/referrals/patient` - **ATUALIZADO** (suporte mobile)
 - [x] `POST /api/referrals/create` - **CRIADO**
@@ -92,6 +96,32 @@ curl -X GET http://localhost:3000/api/patient/profile \
 ```bash
 curl -X GET http://localhost:3000/api/protocols/assignments \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Daily Check-in Mobile - Buscar Perguntas:
+```bash
+curl -X GET "http://localhost:3000/api/mobile/daily-checkin?protocolId=PROTOCOL_ID_AQUI" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Daily Check-in Mobile - Submeter Respostas:
+```bash
+curl -X POST http://localhost:3000/api/mobile/daily-checkin \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "protocolId": "PROTOCOL_ID_AQUI",
+    "responses": [
+      {
+        "questionId": "QUESTION_ID_1",
+        "answer": "Muito bem"
+      },
+      {
+        "questionId": "QUESTION_ID_2", 
+        "answer": "8"
+      }
+    ]
+  }'
 ```
 
 ### Testar Progresso - Marcar Tarefa:
@@ -280,6 +310,9 @@ module.exports = {
 - [x] **Status dos protocolos** (ACTIVE, INACTIVE, UNAVAILABLE)
 - [x] **Sistema de progresso** - marcar tarefas como concluídas
 - [x] **Histórico de progresso** - visualizar progresso por data/protocolo
+- [x] **Daily Check-in** - responder perguntas diárias do protocolo
+- [x] **Status do Check-in** - verificar se já fez check-in hoje
+- [x] **Editar Check-in** - atualizar respostas do dia
 - [x] **Sistema de indicações** - criar indicações e ganhar créditos
 - [x] **Recompensas** - resgatar recompensas com créditos ganhos
 - [x] **Dashboard de indicações** - estatísticas e histórico completo
@@ -306,7 +339,8 @@ Com este checklist completo, seu sistema está **100% funcional** para:
 1. ✅ **Autenticação mobile** segura
 2. ✅ **Perfil do paciente** completo
 3. ✅ **Protocolos médicos** detalhados
-4. ✅ **Segurança** com JWT e variáveis de ambiente
-5. ✅ **Pronto para Git** sem informações sensíveis
+4. ✅ **Daily Check-in mobile** completo
+5. ✅ **Segurança** com JWT e variáveis de ambiente
+6. ✅ **Pronto para Git** sem informações sensíveis
 
 **Próximo passo**: Implementar o app React Native usando os endpoints documentados! 
