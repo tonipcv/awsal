@@ -32,6 +32,8 @@ openssl rand -base64 32
 - [ ] ✅ `ProtocolDay` (dias do protocolo)
 - [ ] ✅ `ProtocolSession` (sessões)
 - [ ] ✅ `ProtocolTask` (tarefas)
+- [ ] ✅ `SymptomReport` (relatórios de sintomas)
+- [ ] ✅ `SymptomReportAttachment` (anexos dos relatórios)
 
 ---
 
@@ -54,6 +56,10 @@ openssl rand -base64 32
 ### ✅ Daily Check-in Mobile:
 - [x] `GET /api/mobile/daily-checkin` - **CRIADO** (buscar perguntas e status)
 - [x] `POST /api/mobile/daily-checkin` - **CRIADO** (submeter respostas)
+
+### ✅ Symptom Reports Mobile:
+- [x] `GET /api/mobile/symptom-reports` - **CRIADO** (buscar relatórios com paginação)
+- [x] `POST /api/mobile/symptom-reports` - **CRIADO** (criar novo relatório)
 
 ### ✅ Sistema de Indicações:
 - [x] `GET /api/referrals/patient` - **ATUALIZADO** (suporte mobile)
@@ -121,6 +127,32 @@ curl -X POST http://localhost:3000/api/mobile/daily-checkin \
         "answer": "8"
       }
     ]
+  }'
+```
+
+### Testar Symptom Reports Mobile - Buscar Relatórios:
+```bash
+curl -X GET "http://localhost:3000/api/mobile/symptom-reports?limit=10&offset=0" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+# Filtrar por protocolo específico
+curl -X GET "http://localhost:3000/api/mobile/symptom-reports?protocolId=PROTOCOL_ID_AQUI" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI"
+```
+
+### Testar Symptom Reports Mobile - Criar Relatório:
+```bash
+curl -X POST http://localhost:3000/api/mobile/symptom-reports \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "protocolId": "PROTOCOL_ID_AQUI",
+    "dayNumber": 5,
+    "symptoms": "Dor de cabeça intensa na região temporal, acompanhada de náusea leve",
+    "severity": 7,
+    "isNow": true,
+    "title": "Dor de cabeça matinal",
+    "description": "Sintoma começou logo após acordar"
   }'
 ```
 
@@ -202,7 +234,7 @@ curl -X POST "http://localhost:3000/api/doctor/activate-patient" \
 
 ### Dependências Necessárias:
 ```bash
-npm install axios @react-native-async-storage/async-storage
+npm install axios @react-native-async-storage/async-storage date-fns
 ```
 
 ### Configurar API Base URL:
@@ -313,6 +345,10 @@ module.exports = {
 - [x] **Daily Check-in** - responder perguntas diárias do protocolo
 - [x] **Status do Check-in** - verificar se já fez check-in hoje
 - [x] **Editar Check-in** - atualizar respostas do dia
+- [x] **Relatórios de Sintomas** - criar e visualizar relatórios detalhados
+- [x] **Lista de Relatórios** - histórico completo com paginação
+- [x] **Detalhes do Relatório** - visualização completa com status médico
+- [x] **Escala de Intensidade** - sintomas de 1-10 com cores visuais
 - [x] **Sistema de indicações** - criar indicações e ganhar créditos
 - [x] **Recompensas** - resgatar recompensas com créditos ganhos
 - [x] **Dashboard de indicações** - estatísticas e histórico completo
@@ -327,7 +363,7 @@ module.exports = {
 ### 🔄 Funcionalidades Extras (já existem):
 - [ ] Chat com IA
 - [ ] Transcrição de áudio
-- [ ] Relatórios de sintomas
+- [ ] Upload de imagens nos relatórios
 - [ ] Estatísticas do paciente
 
 ---
@@ -340,7 +376,8 @@ Com este checklist completo, seu sistema está **100% funcional** para:
 2. ✅ **Perfil do paciente** completo
 3. ✅ **Protocolos médicos** detalhados
 4. ✅ **Daily Check-in mobile** completo
-5. ✅ **Segurança** com JWT e variáveis de ambiente
-6. ✅ **Pronto para Git** sem informações sensíveis
+5. ✅ **Relatórios de Sintomas mobile** completo
+6. ✅ **Segurança** com JWT e variáveis de ambiente
+7. ✅ **Pronto para Git** sem informações sensíveis
 
 **Próximo passo**: Implementar o app React Native usando os endpoints documentados! 
