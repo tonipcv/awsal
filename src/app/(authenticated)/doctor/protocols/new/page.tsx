@@ -381,6 +381,27 @@ export default function NewProtocolPage() {
     }));
   }, []);
 
+  const reorderSessions = useCallback((dayNumber: number, oldIndex: number, newIndex: number) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber !== dayNumber) return day;
+
+        const newSessions = [...day.sessions];
+        const [reorderedSession] = newSessions.splice(oldIndex, 1);
+        newSessions.splice(newIndex, 0, reorderedSession);
+
+        return {
+          ...day,
+          sessions: newSessions.map((session, index) => ({
+            ...session,
+            order: index
+          }))
+        };
+      })
+    }));
+  }, []);
+
   const addProduct = (productId: string) => {
     const product = availableProducts.find(p => p.id === productId);
     if (!product) return;
@@ -911,6 +932,7 @@ export default function NewProtocolPage() {
                   removeTask={removeTask}
                   updateTask={updateTask}
                   reorderTasks={reorderTasks}
+                  reorderSessions={reorderSessions}
                   addSession={addSession}
                   removeSession={removeSession}
                   updateSession={updateSession}

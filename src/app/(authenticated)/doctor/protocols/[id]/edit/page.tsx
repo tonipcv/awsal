@@ -962,6 +962,31 @@ export default function EditProtocolPage() {
     }
   };
 
+  const reorderSessions = (dayNumber: number, oldIndex: number, newIndex: number) => {
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => {
+        if (day.dayNumber === dayNumber) {
+          const newSessions = [...day.sessions];
+          const [reorderedSession] = newSessions.splice(oldIndex, 1);
+          newSessions.splice(newIndex, 0, reorderedSession);
+          
+          // Update order property for all sessions
+          const updatedSessions = newSessions.map((session, index) => ({
+            ...session,
+            order: index + 1
+          }));
+          
+          return {
+            ...day,
+            sessions: updatedSessions
+          };
+        }
+        return day;
+      })
+    }));
+  };
+
   if (isLoadingProtocol) {
     return (
       <div className="min-h-screen bg-white">
@@ -1625,6 +1650,7 @@ export default function EditProtocolPage() {
                   removeTask={removeTask}
                   updateTask={updateTask}
                   reorderTasks={reorderTasks}
+                  reorderSessions={reorderSessions}
                   addSession={addSession}
                   removeSession={removeSession}
                   updateSession={updateSession}

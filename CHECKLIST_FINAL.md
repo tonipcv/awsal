@@ -57,9 +57,7 @@ openssl rand -base64 32
 - [x] `GET /api/mobile/daily-checkin` - **CRIADO** (buscar perguntas e status)
 - [x] `POST /api/mobile/daily-checkin` - **CRIADO** (submeter respostas)
 
-### ✅ Symptom Reports Mobile:
-- [x] `GET /api/mobile/symptom-reports` - **CRIADO** (buscar relatórios com paginação)
-- [x] `POST /api/mobile/symptom-reports` - **CRIADO** (criar novo relatório)
+n
 
 ### ✅ Sistema de Indicações:
 - [x] `GET /api/referrals/patient` - **ATUALIZADO** (suporte mobile)

@@ -46,6 +46,7 @@ interface ProtocolDayEditorProps {
   removeTask: (dayNumber: number, taskId: string, sessionId?: string) => void;
   updateTask: (dayNumber: number, taskId: string, field: string, value: any, sessionId?: string) => void;
   reorderTasks: (dayNumber: number, sessionId: string, oldIndex: number, newIndex: number) => void;
+  reorderSessions: (dayNumber: number, oldIndex: number, newIndex: number) => void;
   addSession: (dayNumber: number) => void;
   removeSession: (dayNumber: number, sessionId: string) => void;
   updateSession: (dayNumber: number, sessionId: string, field: string, value: string) => void;
@@ -383,7 +384,7 @@ function DayTitleEditor({ day, onUpdate }: any) {
 }
 
 // Simple Session Component
-function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTask, updateTask, availableProducts, reorderTasks }: any) {
+function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTask, updateTask, availableProducts, reorderTasks, dragHandleProps }: any) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isImprovingName, setIsImprovingName] = useState(false);
 
@@ -447,29 +448,41 @@ function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTa
       {/* Session Header */}
       <div className="p-3 border-b border-blue-200 bg-blue-100 rounded-t-lg">
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="relative">
-              <Input
-                placeholder="Session name"
-                value={session.name || ''}
-                onChange={(e) => onUpdate('name', e.target.value)}
-                className="border-0 p-0 h-auto text-sm font-medium bg-transparent focus:ring-0 focus:border-0 pr-8"
-              />
-              {session.name?.trim() && (
-                <button
-                  type="button"
-                  onClick={improveNameWithAI}
-                  disabled={isImprovingName}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-purple-600 hover:bg-gray-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Improve name with AI"
-                >
-                  {isImprovingName ? (
-                    <div className="h-3 w-3 animate-spin rounded-full border border-purple-600 border-t-transparent"></div>
-                  ) : (
-                    <SparklesIcon className="h-3 w-3" />
-                  )}
-                </button>
-              )}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Drag Handle */}
+            {dragHandleProps && (
+              <div
+                {...dragHandleProps}
+                className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 rounded"
+                title="Drag to reorder"
+              >
+                <Bars3Icon className="h-4 w-4" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="relative">
+                <Input
+                  placeholder="Session name"
+                  value={session.name || ''}
+                  onChange={(e) => onUpdate('name', e.target.value)}
+                  className="border-0 p-0 h-auto text-sm font-medium bg-transparent focus:ring-0 focus:border-0 pr-8"
+                />
+                {session.name?.trim() && (
+                  <button
+                    type="button"
+                    onClick={improveNameWithAI}
+                    disabled={isImprovingName}
+                    className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-purple-600 hover:bg-gray-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Improve name with AI"
+                  >
+                    {isImprovingName ? (
+                      <div className="h-3 w-3 animate-spin rounded-full border border-purple-600 border-t-transparent"></div>
+                    ) : (
+                      <SparklesIcon className="h-3 w-3" />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1 ml-2">
@@ -567,6 +580,41 @@ function SortableTaskItem({ task, dayNumber, sessionId, onUpdate, onRemove, avai
   );
 }
 
+// Sortable Session Component
+function SortableSessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTask, updateTask, availableProducts, reorderTasks }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: session.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={isDragging ? 'z-50' : ''}>
+      <SessionItem
+        session={session}
+        dayNumber={dayNumber}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+        addTask={addTask}
+        removeTask={removeTask}
+        updateTask={updateTask}
+        availableProducts={availableProducts}
+        reorderTasks={reorderTasks}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
 // Main Component
 export function ProtocolDayEditor({
   days,
@@ -575,6 +623,7 @@ export function ProtocolDayEditor({
   removeTask,
   updateTask,
   reorderTasks,
+  reorderSessions,
   addSession,
   removeSession,
   updateSession,
@@ -585,17 +634,40 @@ export function ProtocolDayEditor({
 }: ProtocolDayEditorProps) {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
-  const toggleDay = useCallback((dayId: string) => {
+  const toggleDay = (dayId: string) => {
     setExpandedDays(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(dayId)) {
-        newSet.delete(dayId);
+      const next = new Set(prev);
+      if (next.has(dayId)) {
+        next.delete(dayId);
       } else {
-        newSet.add(dayId);
+        next.add(dayId);
       }
-      return newSet;
+      return next;
     });
-  }, []);
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleSessionDragEnd = (event: DragEndEvent, dayNumber: number) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const day = days.find(d => d.dayNumber === dayNumber);
+      if (!day) return;
+
+      const oldIndex = day.sessions.findIndex((session: any) => session.id === active.id);
+      const newIndex = day.sessions.findIndex((session: any) => session.id === over?.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderSessions(dayNumber, oldIndex, newIndex);
+      }
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -706,21 +778,31 @@ export function ProtocolDayEditor({
 
             {isDayExpanded && (
               <CardContent className="space-y-4 pt-0">
-                {/* Sessions */}
-                {day.sessions.map((session: any) => (
-                  <SessionItem
-                    key={session.id}
-                    session={session}
-                    dayNumber={day.dayNumber}
-                    onUpdate={(field: string, value: string) => updateSession(day.dayNumber, session.id, field, value)}
-                    onRemove={() => removeSession(day.dayNumber, session.id)}
-                    addTask={addTask}
-                    removeTask={removeTask}
-                    updateTask={updateTask}
-                    availableProducts={availableProducts}
-                    reorderTasks={reorderTasks}
-                  />
-                ))}
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={(event) => handleSessionDragEnd(event, day.dayNumber)}
+                >
+                  <SortableContext
+                    items={day.sessions.map((session: any) => session.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {day.sessions.map((session: any) => (
+                      <SortableSessionItem
+                        key={session.id}
+                        session={session}
+                        dayNumber={day.dayNumber}
+                        onUpdate={(field: string, value: string) => updateSession(day.dayNumber, session.id, field, value)}
+                        onRemove={() => removeSession(day.dayNumber, session.id)}
+                        addTask={addTask}
+                        removeTask={removeTask}
+                        updateTask={updateTask}
+                        availableProducts={availableProducts}
+                        reorderTasks={reorderTasks}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
               </CardContent>
             )}
           </Card>
