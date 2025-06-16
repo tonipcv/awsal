@@ -16,6 +16,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
@@ -26,6 +27,7 @@ interface Protocol {
   description?: string;
   isTemplate: boolean;
   createdAt: Date;
+  coverImage?: string;
   assignments: Array<{
     id: string;
     user: {
@@ -298,56 +300,65 @@ export default function ProtocolsPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredProtocols.map((protocol) => {
                 const activeAssignments = getActiveAssignments(protocol);
                 
                 return (
-                  <Card key={protocol.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="text-xl font-bold text-gray-900">{protocol.name}</h3>
-                            {protocol.isTemplate && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm bg-[#5154e7] text-white font-semibold">
-                                Template
-                              </span>
-                            )}
-                            {activeAssignments > 0 && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
-                                {activeAssignments} active
-                              </span>
-                            )}
-                          </div>
-                          
-                          {protocol.description && (
-                            <p className="text-gray-600 mb-4 font-medium">
-                              {protocol.description}
-                            </p>
-                          )}
-                          
-                          <div className="flex items-center gap-6 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
-                              <CalendarDaysIcon className="h-4 w-4" />
-                              <span className="font-medium">{protocol.duration} days</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <UsersIcon className="h-4 w-4" />
-                              <span className="font-medium">{protocol.assignments.length} assignment{protocol.assignments.length !== 1 ? 's' : ''}</span>
-                            </div>
-                            <span className="font-medium">
-                              Created on {format(new Date(protocol.createdAt), 'MM/dd/yyyy', { locale: enUS })}
+                  <Card key={protocol.id} className="bg-white border-gray-200 shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300 overflow-hidden group">
+                    {protocol.coverImage && (
+                      <div className="relative w-full h-48">
+                        <Image
+                          src={protocol.coverImage}
+                          alt={protocol.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/20 to-gray-900/60" />
+                      </div>
+                    )}
+                    <CardContent className={`p-6 ${protocol.coverImage ? 'relative' : ''}`}>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
+                            {protocol.name}
+                          </h3>
+                          {protocol.isTemplate && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs bg-[#5154e7] text-white font-semibold">
+                              Template
                             </span>
-                          </div>
+                          )}
+                          {activeAssignments > 0 && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
+                              {activeAssignments} active
+                            </span>
+                          )}
                         </div>
                         
-                        <div className="flex items-center gap-2">
+                        {protocol.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2 font-medium">
+                            {protocol.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDaysIcon className="h-3.5 w-3.5" />
+                            <span className="font-medium">{protocol.duration} days</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <UsersIcon className="h-3.5 w-3.5" />
+                            <span className="font-medium">{protocol.assignments.length} assignment{protocol.assignments.length !== 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-3 flex items-center justify-end gap-2 border-t border-gray-100">
                           <Button
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}`}>
                               <EyeIcon className="h-4 w-4" />
@@ -357,7 +368,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             asChild
-                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
                           >
                             <Link href={`/doctor/protocols/${protocol.id}/edit`}>
                               <PencilIcon className="h-4 w-4" />
@@ -367,7 +378,7 @@ export default function ProtocolsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteProtocol(protocol.id)}
-                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </Button>

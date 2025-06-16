@@ -22,7 +22,8 @@ import {
   CreditCardIcon,
   ChatBubbleLeftRightIcon,
   SparklesIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 import { Bot } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -255,6 +256,12 @@ export default function Navigation() {
           label: 'Clients',
           icon: UsersIcon,
           description: 'Manage clients'
+        },
+        {
+          href: '/doctor/notifications',
+          label: 'Notifications',
+          icon: BellIcon,
+          description: 'Send notifications to patients'
         },
         {
           href: '/doctor/symptom-reports',
@@ -782,6 +789,24 @@ export default function Navigation() {
                     <DocumentTextIcon className={cn(
                       "h-4 w-4 stroke-current transition-all duration-300",
                       pathname === '/doctor/protocols' ? "drop-shadow-sm" : ""
+                    )} />
+                  </Button>
+                </Link>
+                
+                {/* Notifications */}
+                <Link href="/doctor/notifications" className="flex-1 max-w-[50px]">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
+                      pathname === '/doctor/notifications' 
+                        ? "bg-[#5154e7] text-white shadow-lg scale-110" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 hover:scale-105"
+                    )}
+                  >
+                    <BellIcon className={cn(
+                      "h-4 w-4 stroke-current transition-all duration-300",
+                      pathname === '/doctor/notifications' ? "drop-shadow-sm" : ""
                     )} />
                   </Button>
                 </Link>
