@@ -21,7 +21,8 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   GlobeAltIcon,
-  CameraIcon
+  CameraIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -92,6 +93,7 @@ export default function EditClinicPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -215,6 +217,32 @@ export default function EditClinicPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this clinic? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/admin/clinics/${clinicId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Clinic deleted successfully');
+        router.push('/admin/clinics');
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error deleting clinic');
+      }
+    } catch (error) {
+      console.error('Error deleting clinic:', error);
+      toast.error('Error deleting clinic');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getSubscriptionStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE': return 'bg-green-100 text-green-800';
@@ -333,6 +361,24 @@ export default function EditClinicPage() {
                   <>
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
                     Save Changes
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={handleDelete}
+                disabled={isDeleting}
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold shadow-lg shadow-red-600/25 hover:shadow-red-600/40 hover:scale-105 transition-all duration-200"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Delete Clinic
                   </>
                 )}
               </Button>

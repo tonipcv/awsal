@@ -15,9 +15,11 @@ import {
   StarIcon,
   EyeIcon,
   PlusIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface DoctorSubscription {
   status: string;
@@ -43,6 +45,7 @@ export default function DoctorsPage() {
   const { data: session } = useSession();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     const loadDoctors = async () => {
@@ -85,6 +88,32 @@ export default function DoctorsPage() {
     const daysLeft = Math.ceil((new Date(d.subscription.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     return daysLeft <= 3;
   }).length;
+
+  const handleDelete = async (doctorId: string) => {
+    if (!confirm('Are you sure you want to delete this doctor? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(doctorId);
+      const response = await fetch(`/api/admin/doctors/${doctorId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Doctor deleted successfully');
+        setDoctors(doctors.filter(d => d.id !== doctorId));
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Error deleting doctor');
+      }
+    } catch (error) {
+      console.error('Error deleting doctor:', error);
+      toast.error('Error deleting doctor');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -354,6 +383,25 @@ export default function DoctorsPage() {
                                   Subscription
                                 </Button>
                               </Link>
+                              <Button 
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(doctor.id)}
+                                disabled={isDeleting === doctor.id}
+                                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                              >
+                                {isDeleting === doctor.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <TrashIcon className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </div>
                         </div>

@@ -250,25 +250,35 @@ export async function DELETE(
     const { id: clinicId } = await params;
 
     // Check if clinic exists
-    const clinic = await prisma.clinic.findUnique({
+    const existingClinic = await prisma.clinic.findUnique({
       where: { id: clinicId }
     });
 
-    if (!clinic) {
+    if (!existingClinic) {
       return NextResponse.json({ error: 'Clinic not found' }, { status: 404 });
     }
 
-    // Delete the clinic (this will cascade delete related records)
-    await prisma.clinic.delete({
-      where: { id: clinicId }
-    });
+    // Delete clinic and all related data
+    await prisma.$transaction([
+      // Delete clinic members
+      prisma.clinicMember.deleteMany({
+        where: { clinicId }
+      }),
+      // Delete clinic subscription
+      prisma.clinicSubscription.deleteMany({
+        where: { clinicId }
+      }),
+      // Delete the clinic
+      prisma.clinic.delete({
+        where: { id: clinicId }
+      })
+    ]);
 
     return NextResponse.json({ message: 'Clinic deleted successfully' });
-
   } catch (error) {
     console.error('Error deleting clinic:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Error deleting clinic' },
       { status: 500 }
     );
   }
