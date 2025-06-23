@@ -189,22 +189,53 @@ export async function POST(request: Request) {
     if (medications) patientData.medications = medications;
     if (notes) patientData.notes = notes;
 
-    // Criar paciente
-    const patient = await prisma.user.create({
-      data: patientData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        birthDate: true,
-        gender: true,
-        address: true,
-        emergencyContact: true,
-        emergencyPhone: true,
-        emailVerified: true,
-        image: true
+    // Buscar protocolos padrão do médico
+    const doctorDefaultProtocols = await prisma.doctorDefaultProtocol.findMany({
+      where: { doctorId: session.user.id },
+      include: {
+        protocol: {
+          select: {
+            id: true,
+            duration: true
+          }
+        }
       }
+    });
+
+    // Criar paciente e atribuir protocolos padrão em uma transação
+    const patient = await prisma.$transaction(async (tx) => {
+      // Criar paciente
+      const newPatient = await tx.user.create({
+        data: patientData,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          birthDate: true,
+          gender: true,
+          address: true,
+          emergencyContact: true,
+          emergencyPhone: true,
+          emailVerified: true,
+          image: true
+        }
+      });
+
+      // Atribuir protocolos padrão como indisponíveis se existirem
+      if (doctorDefaultProtocols.length > 0) {
+        await tx.userProtocol.createMany({
+          data: doctorDefaultProtocols.map((defaultProtocol: any) => ({
+            userId: newPatient.id,
+            protocolId: defaultProtocol.protocol.id,
+            status: 'UNAVAILABLE',
+            startDate: new Date(),
+            endDate: new Date(new Date().setDate(new Date().getDate() + (defaultProtocol.protocol.duration || 30)))
+          }))
+        });
+      }
+
+      return newPatient;
     });
 
     console.log('🔍 DEBUG API: Created patient:', patient);

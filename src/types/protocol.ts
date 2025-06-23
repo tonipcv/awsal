@@ -78,8 +78,14 @@ export interface UserProtocol {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  onboardingLink?: string;
   user?: User;
   protocol?: Protocol;
+  status: string;
+  currentDay: number;
+  consultationDate?: Date;
+  preConsultationTemplateId?: string;
+  preConsultationStatus?: string;
 }
 
 export interface ProtocolDayProgress {

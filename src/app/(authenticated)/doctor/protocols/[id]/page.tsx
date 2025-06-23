@@ -24,6 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
 import CheckinResponsesDashboard from '@/components/checkin/checkin-responses-dashboard';
+import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
 
 interface ProtocolTask {
   id: string;
@@ -84,10 +85,11 @@ interface Protocol {
   description?: string;
   isTemplate: boolean;
   createdAt: Date;
+  consultation_date?: string | null;
   days: ProtocolDay[];
   assignments: Assignment[];
   products?: ProtocolProduct[];
-  doctor: {
+  doctor?: {
     id: string;
     name?: string;
     email?: string;
@@ -151,6 +153,30 @@ export default function ProtocolDetailPage() {
       style: 'currency',
       currency: 'BRL'
     }).format(price);
+  };
+
+  const handleConsultationDateChange = async (date: Date | null) => {
+    if (!protocol) return;
+
+    try {
+      const response = await fetch(`/api/protocols/${protocol.id}/consultation-date`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consultationDate: date })
+      });
+
+      if (response.ok) {
+        const updatedProtocol = await response.json();
+        setProtocol(prev => prev ? {
+          ...prev,
+          consultation_date: updatedProtocol.consultation_date
+        } : null);
+      } else {
+        console.error('Failed to update consultation date');
+      }
+    } catch (error) {
+      console.error('Error updating consultation date:', error);
+    }
   };
 
   if (isLoading) {
@@ -408,32 +434,10 @@ export default function ProtocolDetailPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-[#5154e7] bg-opacity-10 rounded-xl">
-                        <CheckCircleIcon className="h-5 w-5 text-[#5154e7]" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 font-medium">Total Tasks</p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {protocol.days.reduce((acc, day) => {
-                            // Count session tasks
-                            const sessionTasks = day.sessions?.reduce((sessionAcc, session) => 
-                              sessionAcc + (session.tasks?.length || 0), 0) || 0;
-                            
-                            // Count direct day tasks (if any)
-                            const directTasks = day.tasks?.length || 0;
-                            
-                            return acc + sessionTasks + directTasks;
-                          }, 0)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-sm text-gray-600 font-medium">
-                        Created on {format(new Date(protocol.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
-                      </p>
-                    </div>
+                    <ConsultationDatePicker
+                      consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
+                      onDateChange={handleConsultationDateChange}
+                    />
                   </CardContent>
                 </Card>
 

@@ -229,15 +229,20 @@ export async function GET(request: Request) {
             }
           },
           protocol: {
-            include: {
-              doctor: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  image: true
-                }
-              },
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              duration: true,
+              consultation_date: true,
+              showDoctorInfo: true,
+              modalTitle: true,
+              modalVideoUrl: true,
+              modalDescription: true,
+              modalButtonText: true,
+              modalButtonUrl: true,
+              coverImage: true,
+              onboardingTemplateId: true,
               days: {
                 include: {
                   sessions: {
@@ -255,6 +260,14 @@ export async function GET(request: Request) {
                 },
                 orderBy: {
                   dayNumber: 'asc'
+                }
+              },
+              doctor: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true
                 }
               }
             }
@@ -308,7 +321,20 @@ export async function GET(request: Request) {
         where: whereClause,
         include: {
           protocol: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              duration: true,
+              consultation_date: true,
+              showDoctorInfo: true,
+              modalTitle: true,
+              modalVideoUrl: true,
+              modalDescription: true,
+              modalButtonText: true,
+              modalButtonUrl: true,
+              coverImage: true,
+              onboardingTemplateId: true,
               days: {
                 include: {
                   sessions: {

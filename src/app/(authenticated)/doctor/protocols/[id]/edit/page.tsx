@@ -31,6 +31,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
+import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
 
 interface ProtocolTask {
   id: string;
@@ -103,6 +104,8 @@ interface ProtocolForm {
   coverImage: string;
   days: ProtocolDay[];
   products: ProtocolProduct[];
+  consultation_date?: string | null;
+  onboardingTemplateId?: string | null;
 }
 
 export default function EditProtocolPage() {
@@ -121,6 +124,7 @@ export default function EditProtocolPage() {
   const [showAISuccessAlert, setShowAISuccessAlert] = useState(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState('');
   const [showDuplicateSuccessAlert, setShowDuplicateSuccessAlert] = useState(false);
+  const [availableOnboardingTemplates, setAvailableOnboardingTemplates] = useState<Array<{ id: string; name: string }>>([]);
   const [protocol, setProtocol] = useState<ProtocolForm>({
     name: '',
     duration: 7,
@@ -134,15 +138,39 @@ export default function EditProtocolPage() {
     modalButtonUrl: '',
     coverImage: '',
     days: [],
-    products: []
+    products: [],
+    consultation_date: undefined,
+    onboardingTemplateId: null
   });
 
   useEffect(() => {
     if (params.id) {
       loadProtocol(params.id as string);
       loadAvailableProducts();
+      loadAvailableOnboardingTemplates();
     }
   }, [params.id]);
+
+  const loadAvailableOnboardingTemplates = async () => {
+    try {
+      console.log('🔍 Loading available onboarding templates...');
+      const response = await fetch('/api/onboarding-templates');
+      console.log('📡 Onboarding Templates API response status:', response.status);
+      console.log('📡 Onboarding Templates API response ok:', response.ok);
+      
+      if (response.ok) {
+        const templates = await response.json();
+        console.log('✅ Available onboarding templates loaded:', templates.length);
+        setAvailableOnboardingTemplates(templates);
+      } else {
+        console.error('❌ Failed to load onboarding templates:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+      }
+    } catch (error) {
+      console.error('❌ Error loading onboarding templates:', error);
+    }
+  };
 
   const loadProtocol = async (protocolId: string) => {
     try {
@@ -162,7 +190,8 @@ export default function EditProtocolPage() {
           name: data.name,
           doctorId: data.doctorId,
           duration: data.duration,
-          daysCount: data.days?.length || 0
+          daysCount: data.days?.length || 0,
+          onboardingTemplateId: data.onboardingTemplateId
         });
         
         // Load protocol products
@@ -227,7 +256,9 @@ export default function EditProtocolPage() {
               modalButtonUrl: task.modalButtonUrl || ''
             })) || []
           })),
-          products: protocolProducts
+          products: protocolProducts,
+          consultation_date: data.consultation_date || undefined,
+          onboardingTemplateId: data.onboardingTemplateId || null
         });
         
         setIsProtocolLoaded(true);
@@ -567,7 +598,8 @@ export default function EditProtocolPage() {
         name: protocol.name,
         duration: protocol.duration,
         daysCount: protocol.days.length,
-        productsCount: protocol.products.length
+        productsCount: protocol.products.length,
+        onboardingTemplateId: protocol.onboardingTemplateId
       });
 
       // Detailed session logs before sending
@@ -585,7 +617,7 @@ export default function EditProtocolPage() {
           });
         });
       });
-
+      
       const response = await fetch(`/api/protocols/${params.id}`, {
         method: 'PUT',
         headers: {
@@ -593,7 +625,6 @@ export default function EditProtocolPage() {
         },
         body: JSON.stringify({
           name: protocol.name,
-          duration: protocol.duration,
           description: protocol.description,
           isTemplate: protocol.isTemplate,
           showDoctorInfo: protocol.showDoctorInfo,
@@ -603,6 +634,8 @@ export default function EditProtocolPage() {
           modalButtonText: protocol.modalButtonText,
           modalButtonUrl: protocol.modalButtonUrl,
           coverImage: protocol.coverImage,
+          consultation_date: protocol.consultation_date,
+          onboardingTemplateId: protocol.onboardingTemplateId,
           days: protocol.days.map(day => ({
             dayNumber: day.dayNumber,
             title: day.title || `Day ${day.dayNumber}`,
@@ -1258,88 +1291,38 @@ export default function EditProtocolPage() {
                               value={protocol.description}
                               onChange={(e) => updateProtocolField('description', e.target.value)}
                               placeholder="Describe the protocol..."
-                              className="min-h-[120px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl pr-12 resize-none"
+                              rows={4}
+                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
                             />
-                            {protocol.description.trim() && (
-                              <button
-                                type="button"
-                                onClick={improveDescriptionWithAI}
-                                disabled={isImprovingDescription}
-                                className="absolute right-3 top-3 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-10"
-                                title="Improve text with AI"
-                              >
-                                {isImprovingDescription ? (
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
-                                ) : (
-                                  <SparklesIcon className="h-4 w-4" />
-                                )}
-                              </button>
-                            )}
                           </div>
                         </div>
 
-                        {/* Cover Image Upload */}
+                        <ConsultationDatePicker
+                          consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
+                          onDateChange={(date) => updateProtocolField('consultation_date', date?.toISOString() || null)}
+                        />
+
                         <div className="space-y-2">
-                          <Label className="text-gray-900 font-semibold">Cover Image</Label>
-                          <div className="space-y-3">
-                            {protocol.coverImage ? (
-                              <div className="relative group">
-                                <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200">
-                                  <Image
-                                    src={protocol.coverImage}
-                                    alt="Protocol cover"
-                                    fill
-                                    className="object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={removeCoverImage}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-red-500 hover:bg-red-600 text-white rounded-lg"
-                                    >
-                                      <TrashIcon className="h-4 w-4 mr-2" />
-                                      Remove
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#5154e7] transition-colors">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleImageUpload}
-                                  className="hidden"
-                                  id="cover-image-upload"
-                                  disabled={isUploadingImage}
-                                />
-                                {isUploadingImage ? (
-                                  <div className="flex flex-col items-center gap-3">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#5154e7] border-t-transparent"></div>
-                                    <p className="text-sm text-gray-600 font-medium">Uploading...</p>
-                                  </div>
-                                ) : (
-                                  <label
-                                    htmlFor="cover-image-upload"
-                                    className="cursor-pointer flex flex-col items-center gap-3"
-                                  >
-                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                                      <PhotoIcon className="h-6 w-6 text-gray-400" />
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Upload cover image</p>
-                                      <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
-                                    </div>
-                                    <div className="border border-[#5154e7] text-[#5154e7] hover:bg-[#5154e7] hover:text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2">
-                                      <CloudArrowUpIcon className="h-4 w-4" />
-                                      Choose File
-                                    </div>
-                                  </label>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <Label htmlFor="onboardingTemplate" className="text-gray-900 font-semibold">Onboarding Template</Label>
+                          <Select
+                            value={protocol.onboardingTemplateId || 'none'}
+                            onValueChange={(value) => updateProtocolField('onboardingTemplateId', value === 'none' ? null : value)}
+                          >
+                            <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12">
+                              <SelectValue placeholder="Select an onboarding template..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No template</SelectItem>
+                              {availableOnboardingTemplates.map((template) => (
+                                <SelectItem key={template.id} value={template.id}>
+                                  {template.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-gray-500">
+                            Select a template that patients will need to fill out before their consultation.
+                          </p>
                         </div>
                       </div>
 

@@ -65,6 +65,46 @@ export async function GET(
           orderBy: {
             createdAt: 'desc'
           }
+        },
+        // Include onboarding responses
+        onboardingResponses: {
+          select: {
+            id: true,
+            status: true,
+            completedAt: true,
+            template: {
+              select: {
+                id: true,
+                name: true,
+                steps: {
+                  select: {
+                    id: true,
+                    question: true,
+                    type: true,
+                    required: true,
+                  },
+                  orderBy: {
+                    order: 'asc'
+                  }
+                }
+              }
+            },
+            answers: {
+              select: {
+                id: true,
+                stepId: true,
+                answer: true,
+              },
+              orderBy: {
+                step: {
+                  order: 'asc'
+                }
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
         }
       }
     });

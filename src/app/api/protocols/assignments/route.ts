@@ -78,6 +78,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    console.log('Assignments:', assignments.map(a => ({
+      id: a.protocol.id,
+      name: a.protocol.name,
+      consultation_date: a.protocol.consultation_date,
+      preConsultationTemplateId: a.preConsultationTemplateId
+    })));
+
     return NextResponse.json(assignments);
   } catch (error) {
     console.error('Error fetching patient protocol assignments:', error);

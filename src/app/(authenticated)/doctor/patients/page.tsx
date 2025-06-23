@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,14 @@ import {
   SparklesIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  PencilIcon
+  PencilIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { toast } from 'react-hot-toast';
 
 interface Patient {
   id: string;
@@ -76,6 +78,15 @@ interface NewPatientForm {
   sendCredentials: boolean;
 }
 
+interface ImportResults {
+  message: string;
+  errors: Array<{
+    row: number;
+    email: string;
+    error: string;
+  }>;
+}
+
 export default function PatientsPage() {
   const { data: session } = useSession();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -111,6 +122,11 @@ export default function PatientsPage() {
     notes: '',
     sendCredentials: false
   });
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResults, setImportResults] = useState<ImportResults | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadPatients();
@@ -443,6 +459,53 @@ export default function PatientsPage() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Please upload a CSV file');
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/patients/import', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error importing patients');
+      }
+
+      setImportResults(data);
+      
+      // Reload patients list
+      loadPatients();
+      
+      // Show success message
+      toast.success(data.message);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error importing patients:', error);
+      toast.error('Error importing patients');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -517,14 +580,136 @@ export default function PatientsPage() {
             </p>
           </div>
           
-          <Button 
-            onClick={() => setShowAddPatient(true)}
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => setShowImportModal(true)}
+              variant="outline"
+              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl px-6 shadow-md font-semibold"
+            >
+              <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <Button 
+              onClick={() => setShowAddPatient(true)}
               className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Client
-          </Button>
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Client
+            </Button>
+          </div>
         </div>
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900">Import Clients</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResults(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 rounded-xl"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <div className="p-6">
+                {!importResults ? (
+                  <div className="space-y-4">
+                                          <div className="text-sm text-gray-600">
+                        <p className="mb-2">Upload a CSV file with the following columns:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                          <li><strong>Required:</strong> name, email</li>
+                          <li>
+                            <strong>Optional:</strong> phone, birthDate (YYYY-MM-DD), gender, address, 
+                            emergencyContact, emergencyPhone, medicalHistory, allergies, medications, notes
+                          </li>
+                        </ul>
+                        <div className="mt-2">
+                          <a 
+                            href="/example-patients.csv" 
+                            download
+                            className="text-[#5154e7] hover:text-[#4145d1] font-medium flex items-center gap-1"
+                          >
+                            <ArrowUpTrayIcon className="h-4 w-4" />
+                            Download example CSV
+                          </a>
+                        </div>
+                      </div>
+                    
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <ArrowUpTrayIcon className="w-8 h-8 mb-3 text-gray-400" />
+                          <p className="mb-2 text-sm text-gray-500">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500">.CSV file only</p>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".csv"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          disabled={isImporting}
+                        />
+                      </label>
+                    </div>
+
+                    {isImporting && (
+                      <div className="text-center text-sm text-gray-600">
+                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-r-transparent"></div>
+                        <span className="ml-2">Importing clients...</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-green-50 text-green-700 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <CheckCircleIcon className="h-5 w-5" />
+                        <p className="font-medium">{importResults.message}</p>
+                      </div>
+                    </div>
+
+                    {importResults.errors.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-2">Errors:</h3>
+                        <div className="bg-red-50 rounded-xl p-4">
+                          <ul className="space-y-2 text-sm text-red-700">
+                            {importResults.errors.map((error, index) => (
+                              <li key={index}>
+                                Row {error.row} ({error.email}): {error.error}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => {
+                          setShowImportModal(false);
+                          setImportResults(null);
+                        }}
+                        className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add Patient Modal */}
         {showAddPatient && (

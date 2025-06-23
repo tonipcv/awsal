@@ -194,12 +194,16 @@ model User {
   doctorFAQs                                                       DoctorFAQ[]              @relation("DoctorFAQs")
   eisenhowerTasks                                                  EisenhowerTask[]
   habits                                                           Habit[]
+  onboardingResponses                                              OnboardingResponse[]
+  doctorTemplates                                                  OnboardingTemplate[]     @relation("DoctorTemplates")
   doctorConversations                                              PatientAIConversation[]  @relation("DoctorConversations")
   patientConversations                                             PatientAIConversation[]  @relation("PatientConversations")
   reviewedMessages                                                 PatientAIMessage[]       @relation("MessageReviewer")
   pomodoroStars                                                    PomodoroStar[]
   protocolProgress                                                 ProtocolDayProgress[]
   sessions                                                         Session[]
+  reviewedSymptomReports                                           SymptomReport[]          @relation("SymptomReportReviewer")
+  symptomReports                                                   SymptomReport[]
   thoughts                                                         Thought[]
   doctor                                                           User?                    @relation("DoctorPatient", fields: [doctorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   patients                                                         User[]                   @relation("DoctorPatient")
@@ -211,6 +215,7 @@ model User {
   consultation_submissions_consultation_submissions_doctorIdToUser ConsultationSubmission[] @relation("consultation_submissions_doctorIdToUser")
   convertedConsultations                                           ConsultationSubmission[] @relation("ConvertedConsultations")
   createdCourses                                                   Course[]                 @relation("DoctorCourses")
+  defaultProtocols                                                 DoctorDefaultProtocol[]
   subscription                                                     DoctorSubscription?      @relation("DoctorSubscription")
   leads                                                            leads[]
   createdProducts                                                  products[]               @relation("DoctorProducts")
@@ -227,41 +232,41 @@ model User {
   subscriptions                                                    subscriptions?
   assignedCourses                                                  UserCourse[]
   lessonProgress                                                   UserLesson[]
-  
-  // New symptom reporting relations
-  symptomReports                                                   SymptomReport[]
-  reviewedSymptomReports                                           SymptomReport[]          @relation("SymptomReportReviewer")
 }
 
 model Protocol {
-  id                  String                 @id @default(cuid())
+  id                  String                  @id @default(cuid())
   name                String
   description         String?
   doctorId            String
-  isActive            Boolean                @default(true)
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @default(now()) @updatedAt
-  duration            Int?                   @default(30)
+  isActive            Boolean                 @default(true)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @default(now()) @updatedAt
+  duration            Int?                    @default(30)
   modalTitle          String?
   modalVideoUrl       String?
   modalDescription    String?
-  modalButtonText     String?                @default("Saber mais")
+  modalButtonText     String?                 @default("Saber mais")
   modalButtonUrl      String?
-  showDoctorInfo      Boolean?               @default(false)
-  isTemplate          Boolean?               @default(false)
+  showDoctorInfo      Boolean?                @default(false)
+  isTemplate          Boolean?                @default(false)
   coverImage          String?
+  consultation_date   DateTime?               @db.Timestamp(6)
+  onboardingTemplateId String?
   checkinQuestions    DailyCheckinQuestion[]
   checkinResponses    DailyCheckinResponse[]
   days                ProtocolDay[]
   ProtocolDayProgress ProtocolDayProgress[]
-  assignments         UserProtocol[]
-  protocol_products   protocol_products[]
-  doctor              User                   @relation("DoctorProtocols", fields: [doctorId], references: [id])
-  referrals           referrals[]
-  
-  // New symptom reporting relation
   symptomReports      SymptomReport[]
+  assignments         UserProtocol[]
+  defaultFor          DoctorDefaultProtocol[]
+  protocol_products   protocol_products[]
+  doctor              User                    @relation("DoctorProtocols", fields: [doctorId], references: [id])
+  onboardingTemplate  OnboardingTemplate?     @relation(fields: [onboardingTemplateId], references: [id])
+  referrals           referrals[]
 
+  @@index([doctorId])
+  @@index([onboardingTemplateId])
   @@map("protocols")
 }
 
@@ -323,20 +328,25 @@ model ProtocolContent {
 }
 
 model UserProtocol {
-  id         String    @id @default(cuid())
-  userId     String
-  protocolId String
-  startDate  DateTime  @default(now())
-  endDate    DateTime?
-  status     String    @default("ACTIVE")
-  currentDay Int       @default(1)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now()) @updatedAt
-  isActive   Boolean?  @default(true)
-  protocol   Protocol  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                        String    @id @default(cuid())
+  userId                    String
+  protocolId                String
+  startDate                 DateTime  @default(now())
+  endDate                   DateTime?
+  status                    String    @default("ACTIVE")
+  currentDay                Int       @default(1)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @default(now()) @updatedAt
+  isActive                  Boolean?  @default(true)
+  consultationDate          DateTime? @db.Timestamptz(6)
+  preConsultationTemplateId String?
+  preConsultationStatus     String?
+  onboardingLink            String?   @unique
+  protocol                  Protocol  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, protocolId])
+  @@map("UserProtocol")
 }
 
 model ProtocolDayProgress {
@@ -398,17 +408,17 @@ model Course {
   title            String
   description      String?
   thumbnail        String?
+  isPublished      Boolean      @default(false)
+  price            Decimal?     @db.Decimal(10, 2)
+  doctorId         String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
   coverImage       String?
   modalTitle       String?
   modalVideoUrl    String?
   modalDescription String?
   modalButtonText  String?      @default("Saber mais")
   modalButtonUrl   String?
-  isPublished      Boolean      @default(false)
-  price            Decimal?     @db.Decimal(10, 2)
-  doctorId         String
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @default(now()) @updatedAt
   doctor           User         @relation("DoctorCourses", fields: [doctorId], references: [id], onDelete: Cascade, map: "Course_doctorId_fkey")
   modules          Module[]
   assignments      UserCourse[]
@@ -566,26 +576,27 @@ model SystemMetrics {
 }
 
 model Clinic {
-  id           String              @id @default(cuid())
-  name         String
-  description  String?
-  ownerId      String
-  isActive     Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @default(now()) @updatedAt
-  email        String?
-  phone        String?
-  address      String?
-  city         String?
-  state        String?
-  zipCode      String?
-  country      String?
-  website      String?
-  logo         String?
-  slug         String?             @unique @db.VarChar(255)
-  members      ClinicMember[]
-  subscription ClinicSubscription?
-  owner        User                @relation("ClinicOwner", fields: [ownerId], references: [id])
+  id                  String               @id @default(cuid())
+  name                String
+  description         String?
+  ownerId             String
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @default(now()) @updatedAt
+  email               String?
+  phone               String?
+  address             String?
+  city                String?
+  state               String?
+  zipCode             String?
+  country             String?
+  website             String?
+  logo                String?
+  slug                String?              @unique @db.VarChar(255)
+  onboardingTemplates OnboardingTemplate[]
+  members             ClinicMember[]
+  subscription        ClinicSubscription?
+  owner               User                 @relation("ClinicOwner", fields: [ownerId], references: [id])
 
   @@index([ownerId])
   @@index([slug])
@@ -960,13 +971,6 @@ model DailyCheckinResponse {
   @@unique([userId, questionId, date])
 }
 
-enum DailyCheckinQuestionType {
-  MULTIPLE_CHOICE
-  SCALE
-  TEXT
-  YES_NO
-}
-
 model SymptomReport {
   id          String                    @id @default(cuid())
   userId      String
@@ -974,23 +978,21 @@ model SymptomReport {
   dayNumber   Int
   title       String                    @default("Relatório de Sintomas")
   description String?
-  symptoms    String                    // Text description of symptoms
-  severity    Int?                      @default(1) // 1-10 scale
-  reportTime  DateTime                  // When symptoms occurred (user selected)
-  isNow       Boolean                   @default(true) // If user selected "now" vs custom time
+  symptoms    String
+  severity    Int?                      @default(1)
+  reportTime  DateTime
+  isNow       Boolean                   @default(true)
   status      SymptomReportStatus       @default(PENDING)
-  doctorNotes String?                   // Doctor's notes/response
-  reviewedAt  DateTime?                 // When doctor reviewed
-  reviewedBy  String?                   // Doctor who reviewed
+  doctorNotes String?
+  reviewedAt  DateTime?
+  reviewedBy  String?
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @default(now()) @updatedAt
-  
-  // Relations
-  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   protocol    Protocol                  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
   reviewer    User?                     @relation("SymptomReportReviewer", fields: [reviewedBy], references: [id])
+  user        User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   attachments SymptomReportAttachment[]
-  
+
   @@index([userId, protocolId])
   @@index([status])
   @@index([reportTime])
@@ -998,24 +1000,131 @@ model SymptomReport {
 }
 
 model SymptomReportAttachment {
-  id               String        @id @default(cuid())
-  symptomReportId  String
-  fileName         String
-  originalName     String
-  fileSize         Int
-  mimeType         String
-  fileUrl          String        // URL to stored file
-  uploadedAt       DateTime      @default(now())
-  
-  // Relations
-  symptomReport    SymptomReport @relation(fields: [symptomReportId], references: [id], onDelete: Cascade)
-  
+  id              String        @id @default(cuid())
+  symptomReportId String
+  fileName        String
+  originalName    String
+  fileSize        Int
+  mimeType        String
+  fileUrl         String
+  uploadedAt      DateTime      @default(now())
+  symptomReport   SymptomReport @relation(fields: [symptomReportId], references: [id], onDelete: Cascade)
+
   @@index([symptomReportId])
+}
+
+model OnboardingTemplate {
+  id                 String               @id @default(cuid())
+  name               String
+  description        String?
+  doctorId           String
+  clinicId           String?
+  isActive           Boolean              @default(true)
+  isPublic           Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  welcomeTitle       String?
+  welcomeDescription String?
+  welcomeVideoUrl    String?
+  welcomeButtonText  String?
+  successTitle       String?
+  successDescription String?
+  successVideoUrl    String?
+  successButtonText  String?
+  successButtonUrl   String?
+  welcomeItems       String[]
+  estimatedTime      Int?
+  nextSteps          String[]
+  contactEmail       String?
+  contactPhone       String?
+  responses          OnboardingResponse[]
+  steps              OnboardingStep[]
+  clinic             Clinic?              @relation(fields: [clinicId], references: [id])
+  doctor             User                 @relation("DoctorTemplates", fields: [doctorId], references: [id])
+  protocols          Protocol[]
+
+  @@index([doctorId])
+  @@index([clinicId])
+}
+
+model OnboardingStep {
+  id           String             @id @default(cuid())
+  templateId   String
+  question     String
+  description  String?
+  type         String
+  options      String[]           @default([])
+  required     Boolean            @default(true)
+  showToDoctor Boolean            @default(true)
+  order        Int
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  answers      OnboardingAnswer[]
+  template     OnboardingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model OnboardingResponse {
+  id          String             @id @default(cuid())
+  templateId  String
+  userId      String?
+  email       String
+  token       String             @unique
+  status      String             @default("PENDING")
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  answers     OnboardingAnswer[]
+  template    OnboardingTemplate @relation(fields: [templateId], references: [id])
+  user        User?              @relation(fields: [userId], references: [id])
+
+  @@index([templateId])
+  @@index([userId])
+  @@index([token])
+}
+
+model OnboardingAnswer {
+  id         String             @id @default(cuid())
+  responseId String
+  stepId     String
+  answer     String
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  response   OnboardingResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  step       OnboardingStep     @relation(fields: [stepId], references: [id])
+
+  @@index([responseId])
+  @@index([stepId])
+}
+
+model DoctorDefaultProtocol {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  doctorId   String
+  protocolId String
+  doctor     User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  protocol   Protocol @relation(fields: [protocolId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, protocolId])
+  @@index([doctorId])
+  @@index([protocolId])
+  @@index([doctorId], map: "idx_doctor_default_protocols_doctor_id")
+  @@index([protocolId], map: "idx_doctor_default_protocols_protocol_id")
+  @@map("doctor_default_protocols")
+}
+
+enum DailyCheckinQuestionType {
+  MULTIPLE_CHOICE
+  SCALE
+  TEXT
+  YES_NO
 }
 
 enum SymptomReportStatus {
   PENDING
   REVIEWED
-  REQUIRES_ATTENTION
+  URGENT
   RESOLVED
 }

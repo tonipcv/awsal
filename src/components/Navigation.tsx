@@ -258,6 +258,12 @@ export default function Navigation() {
           description: 'Manage clients'
         },
         {
+          href: '/doctor/onboarding',
+          label: 'Onboarding',
+          icon: DocumentTextIcon,
+          description: 'Manage onboarding forms'
+        },
+        {
           href: '/doctor/notifications',
           label: 'Notifications',
           icon: BellIcon,

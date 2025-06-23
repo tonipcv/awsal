@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeftIcon,
@@ -27,6 +28,7 @@ import {
 import Link from 'next/link';
 import { format, addDays } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
 
 interface Protocol {
   id: string;
@@ -34,6 +36,7 @@ interface Protocol {
   duration: number;
   description?: string;
   isTemplate?: boolean;
+  consultation_date?: string | null;
   days: Array<{
     id: string;
     dayNumber: number;
@@ -47,10 +50,11 @@ interface Protocol {
 interface Assignment {
   id: string;
   protocolId: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE';
   startDate: Date;
   endDate: Date;
   isActive: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' | 'SOON';
+  consultation_date?: string | null;
   protocol: {
     id: string;
     name: string;
@@ -68,7 +72,13 @@ interface Patient {
 
 interface ProtocolWithAssignment extends Protocol {
   assignment?: Assignment;
-  assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE';
+  assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' | 'SOON';
+}
+
+interface AssignmentForm {
+  protocolId: string;
+  startDate: Date;
+  consultationDate: Date | null;
 }
 
 // Status utilities with clean, minimalist design
@@ -92,6 +102,12 @@ const getStatusInfo = (status: string) => {
         icon: <StopIcon className="h-4 w-4" />,
         text: 'Stopped'
       };
+    case 'SOON':
+      return {
+        color: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+        icon: <CalendarDaysIcon className="h-4 w-4" />,
+        text: 'Coming Soon'
+      };
     default:
       return {
         color: 'text-gray-700 bg-gray-50 border-gray-200',
@@ -113,7 +129,8 @@ const ProtocolCard = ({
   startDate,
   onStartDateChange,
   pendingStatus,
-  hasPendingChanges
+  hasPendingChanges,
+  onConsultationDateChange
 }: {
   protocol: ProtocolWithAssignment;
   onStatusChange?: (assignmentId: string, status: string) => void;
@@ -126,6 +143,7 @@ const ProtocolCard = ({
   onStartDateChange?: (date: string) => void;
   pendingStatus?: string;
   hasPendingChanges?: boolean;
+  onConsultationDateChange?: (assignmentId: string, protocolId: string, date: Date | null) => void;
 }) => {
   const assignment = protocol.assignment;
   const totalTasks = protocol.days.reduce((acc, day) => acc + day.tasks.length, 0);
@@ -204,6 +222,17 @@ const ProtocolCard = ({
               )}
             </div>
 
+            {/* Consultation Date Picker for assigned protocols */}
+            {isAssigned && assignment && onConsultationDateChange && (
+              <div className="mt-4">
+                <ConsultationDatePicker
+                  consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
+                  onDateChange={(date) => onConsultationDateChange(assignment.id, protocol.id, date)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -226,11 +255,12 @@ const ProtocolCard = ({
                   value={currentStatus}
                   onChange={(e) => onStatusChange(assignment.id, e.target.value)}
                   disabled={isLoading}
-                  className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 disabled:opacity-50 min-w-[110px]"
+                  className="form-select border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-lg text-sm"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Paused</option>
                   <option value="UNAVAILABLE">Stopped</option>
+                  <option value="SOON">Coming Soon</option>
                 </select>
                 
                 {onRemove && (
@@ -302,6 +332,12 @@ export default function AssignProtocolPage() {
   const [assignStartDate, setAssignStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [pendingChanges, setPendingChanges] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
+  const [form, setForm] = useState<AssignmentForm>({
+    protocolId: '',
+    startDate: new Date(),
+    consultationDate: null
+  });
 
   useEffect(() => {
     if (params.id) {
@@ -465,19 +501,48 @@ export default function AssignProtocolPage() {
     }
   };
 
+  const handleConsultationDateChange = async (assignmentId: string, protocolId: string, date: Date | null) => {
+    try {
+      const response = await fetch(`/api/protocols/${protocolId}/consultation-date`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consultationDate: date })
+      });
+
+      if (response.ok) {
+        // Reload data to reflect changes
+        await loadData(params.id as string);
+      } else {
+        console.error('Failed to update consultation date');
+      }
+    } catch (error) {
+      console.error('Error updating consultation date:', error);
+    }
+  };
+
   // Process protocols with their assignment status
   const processedProtocols: ProtocolWithAssignment[] = protocols.map(protocol => {
     const assignment = patient?.assignedProtocols.find(a => a.protocolId === protocol.id);
     
-    let assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' = 'UNASSIGNED';
+    let assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' | 'SOON' = 'UNASSIGNED';
     
     if (assignment) {
       if (assignment.status === 'UNAVAILABLE') {
         assignmentStatus = 'UNAVAILABLE';
       } else if (assignment.status === 'INACTIVE' || !assignment.isActive) {
         assignmentStatus = 'INACTIVE';
+      } else if (assignment.status === 'SOON') {
+        assignmentStatus = 'SOON';
       } else if (assignment.isActive && assignment.status === 'ACTIVE') {
         assignmentStatus = 'ACTIVE';
+      }
+
+      // Atualizar status para SOON se tiver data de consulta futura
+      if (assignment.consultation_date) {
+        const consultationDate = new Date(assignment.consultation_date);
+        if (consultationDate > new Date()) {
+          assignmentStatus = 'SOON';
+        }
       }
     }
     
@@ -496,11 +561,33 @@ export default function AssignProtocolPage() {
 
   // Separate protocols by status
   const assignedProtocols = filteredProtocols.filter(p => 
-    p.assignmentStatus === 'ACTIVE' || p.assignmentStatus === 'INACTIVE' || p.assignmentStatus === 'UNAVAILABLE'
+    p.assignmentStatus === 'ACTIVE' || p.assignmentStatus === 'INACTIVE' || p.assignmentStatus === 'UNAVAILABLE' || p.assignmentStatus === 'SOON'
   );
   const availableProtocols = filteredProtocols.filter(p => p.assignmentStatus === 'UNASSIGNED');
 
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(`/api/patients/${patient?.id}/protocols`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          protocolId: form.protocolId,
+          startDate: form.startDate.toISOString(),
+          consultationDate: form.consultationDate?.toISOString() || null
+        })
+      });
+
+      if (response.ok) {
+        router.push(`/doctor/patients/${patient?.id}`);
+      } else {
+        console.error('Failed to assign protocol');
+      }
+    } catch (error) {
+      console.error('Error assigning protocol:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -768,6 +855,7 @@ export default function AssignProtocolPage() {
                       isRemoving={removingAssignment === protocol.assignment!.id}
                       pendingStatus={pendingChanges[protocol.assignment!.id]}
                       hasPendingChanges={!!pendingChanges[protocol.assignment!.id]}
+                      onConsultationDateChange={handleConsultationDateChange}
                     />
                   ))
                 )}
@@ -847,6 +935,38 @@ export default function AssignProtocolPage() {
                   className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium px-6 py-2 rounded-xl"
                 >
                   Clear search
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedProtocol && (
+            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-bold text-gray-900">Assignment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-gray-900 font-semibold">Start Date</Label>
+                  <Input
+                    type="date"
+                    value={format(form.startDate, 'yyyy-MM-dd')}
+                    onChange={(e) => setForm(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12"
+                  />
+                </div>
+
+                <ConsultationDatePicker
+                  consultationDate={form.consultationDate}
+                  onDateChange={(date) => setForm(prev => ({ ...prev, consultationDate: date }))}
+                />
+
+                <Button
+                  onClick={handleSubmit}
+                  className="w-full bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 font-semibold"
+                >
+                  <CheckIcon className="h-4 w-4 mr-2" />
+                  Assign Protocol
                 </Button>
               </CardContent>
             </Card>

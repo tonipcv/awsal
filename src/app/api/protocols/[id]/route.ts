@@ -76,6 +76,12 @@ export async function GET(
           orderBy: {
             createdAt: 'desc'
           }
+        },
+        onboardingTemplate: {
+          select: {
+            id: true,
+            name: true
+          }
         }
       }
     });
@@ -127,7 +133,7 @@ export async function GET(
             modalButtonUrl: task.modalButtonUrl || ''
           }))
         }))
-      }))
+      })),
     };
 
     return NextResponse.json(transformedProtocol);
@@ -147,7 +153,7 @@ export async function PUT(
   
   // Declarar variáveis no escopo da função para estarem disponíveis no catch
   let updateData: any = {};
-  let days: any;
+  let protocolDays: any;
   
   try {
     const session = await getServerSession(authOptions);
@@ -177,11 +183,14 @@ export async function PUT(
       modalDescription,
       modalButtonText,
       modalButtonUrl,
-      coverImage
+      coverImage,
+      consultation_date,
+      onboardingTemplateId,
+      days
     } = body;
     
     // Atribuir days para estar disponível no catch
-    days = body.days;
+    protocolDays = days;
 
     // Verificar se o protocolo pertence ao médico
     const existingProtocol = await prisma.protocol.findFirst({
@@ -198,38 +207,81 @@ export async function PUT(
     // Se está atualizando apenas campos de disponibilidade/modal, não precisa validar name/duration
     const isAvailabilityUpdate = (
       isAvailable !== undefined || 
-      modalTitle !== undefined || 
-      modalVideoUrl !== undefined || 
-      modalDescription !== undefined || 
-      modalButtonText !== undefined || 
+      modalTitle !== undefined ||
+      modalVideoUrl !== undefined ||
+      modalDescription !== undefined ||
+      modalButtonText !== undefined ||
       modalButtonUrl !== undefined ||
-      coverImage !== undefined
-    ) && !name && !duration && !days;
+      consultation_date !== undefined ||
+      onboardingTemplateId !== undefined
+    );
 
-    // Validar campos obrigatórios apenas se não for uma atualização de disponibilidade
-    if (!isAvailabilityUpdate && (!name || !duration)) {
-      return NextResponse.json({ error: 'Nome e duração são obrigatórios' }, { status: 400 });
+    // Validar campos obrigatórios
+    if (!isAvailabilityUpdate) {
+      if (!name?.trim()) {
+        return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
+      }
     }
 
     // Preparar dados para atualização
-    if (name !== undefined) updateData.name = name;
-    if (duration !== undefined) updateData.duration = duration;
-    if (description !== undefined) updateData.description = description;
-    if (isTemplate !== undefined) updateData.isTemplate = isTemplate;
-    if (showDoctorInfo !== undefined) updateData.showDoctorInfo = showDoctorInfo;
-    if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
-    if (modalTitle !== undefined) updateData.modalTitle = modalTitle;
-    if (modalVideoUrl !== undefined) updateData.modalVideoUrl = modalVideoUrl;
-    if (modalDescription !== undefined) updateData.modalDescription = modalDescription;
-    if (modalButtonText !== undefined) updateData.modalButtonText = modalButtonText;
-    if (modalButtonUrl !== undefined) updateData.modalButtonUrl = modalButtonUrl;
-    if (coverImage !== undefined) updateData.coverImage = coverImage;
+    updateData = {
+      name,
+      description,
+      isTemplate,
+      showDoctorInfo,
+      isAvailable,
+      modalTitle,
+      modalVideoUrl,
+      modalDescription,
+      modalButtonText,
+      modalButtonUrl,
+      coverImage,
+      consultation_date,
+      onboardingTemplateId
+    };
 
     // Se é apenas atualização de disponibilidade/modal, fazer update simples
     if (isAvailabilityUpdate) {
       const updatedProtocol = await prisma.protocol.update({
         where: { id: protocolId },
-        data: updateData
+        data: updateData,
+        include: {
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          days: {
+            include: {
+              sessions: {
+                include: {
+                  tasks: {
+                    include: {
+                      ProtocolContent: true
+                    },
+                    orderBy: {
+                      orderIndex: 'asc'
+                    }
+                  }
+                },
+                orderBy: {
+                  sessionNumber: 'asc'
+                }
+              }
+            },
+            orderBy: {
+              dayNumber: 'asc'
+            }
+          },
+          onboardingTemplate: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
       });
 
       return NextResponse.json(updatedProtocol);
@@ -244,10 +296,10 @@ export async function PUT(
       });
 
       // Se há dias para atualizar, fazer update incremental
-      if (days && Array.isArray(days)) {
+      if (protocolDays && Array.isArray(protocolDays)) {
         console.log('🔄 Processing days data incrementally:', {
-          daysCount: days.length,
-          days: days.map(d => ({
+          daysCount: protocolDays.length,
+          days: protocolDays.map(d => ({
             dayNumber: d.dayNumber,
             sessionsCount: d.sessions?.length || 0,
             tasksCount: d.tasks?.length || 0
@@ -270,7 +322,7 @@ export async function PUT(
         const existingDaysMap = new Map(existingDays.map(day => [day.dayNumber, day]));
 
         // Processar cada dia
-        for (const dayData of days) {
+        for (const dayData of protocolDays) {
           const existingDay = existingDaysMap.get(dayData.dayNumber);
           
           if (existingDay) {
@@ -475,7 +527,7 @@ export async function PUT(
         }
 
         // Remover dias que não existem mais
-        const newDayNumbers = new Set(days.map(d => d.dayNumber));
+        const newDayNumbers = new Set(protocolDays.map(d => d.dayNumber));
         for (const existingDay of existingDays) {
           if (!newDayNumbers.has(existingDay.dayNumber)) {
             console.log(`🗑️ Removing day ${existingDay.dayNumber}`);
@@ -513,14 +565,14 @@ export async function PUT(
         });
 
         // Se há dias para atualizar, fazer separadamente
-        if (days && Array.isArray(days)) {
+        if (protocolDays && Array.isArray(protocolDays)) {
           // Remover dados existentes
           await prisma.protocolDay.deleteMany({
             where: { protocolId: protocolId }
           });
 
           // Criar novos dias
-          for (const dayData of days) {
+          for (const dayData of protocolDays) {
             const protocolDay = await prisma.protocolDay.create({
               data: {
                 dayNumber: dayData.dayNumber,

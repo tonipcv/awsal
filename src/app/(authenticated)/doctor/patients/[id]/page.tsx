@@ -26,6 +26,7 @@ import {
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
 
 interface ProtocolAssignment {
   id: string;
@@ -66,6 +67,27 @@ interface Course {
   };
 }
 
+interface OnboardingResponse {
+  id: string;
+  status: string;
+  completedAt: string;
+  template: {
+    id: string;
+    name: string;
+    steps: {
+      id: string;
+      question: string;
+      type: string;
+      required: boolean;
+    }[];
+  };
+  answers: {
+    id: string;
+    stepId: string;
+    answer: string;
+  }[];
+}
+
 interface Patient {
   id: string;
   name?: string;
@@ -75,6 +97,7 @@ interface Patient {
   referralCode?: string;
   assignedProtocols: ProtocolAssignment[];
   assignedCourses?: CourseAssignment[];
+  onboardingResponses: OnboardingResponse[];
 }
 
 export default function PatientDetailPage() {
@@ -326,31 +349,31 @@ export default function PatientDetailPage() {
               asChild 
               className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-4 py-2 rounded-xl"
             >
-            <Link href="/doctor/patients">
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              <Link href="/doctor/patients">
+                <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
-            </Link>
-          </Button>
-          <div className="flex-1">
+              </Link>
+            </Button>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Client Details
-            </h1>
+              </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <span className="flex items-center gap-2">
                   <UserIcon className="h-4 w-4" />
                   {patient.name || patient.email}
                 </span>
-              <span>•</span>
+                <span>•</span>
                 <span className="flex items-center gap-2">
                   <DocumentTextIcon className="h-4 w-4" />
                   {totalProtocols} protocols
                 </span>
-              <span>•</span>
+                <span>•</span>
                 <span className="flex items-center gap-2">
                   <CheckCircleIcon className="h-4 w-4" />
                   {activeProtocols.length} active
                 </span>
-              <span>•</span>
+                <span>•</span>
                 <span className="flex items-center gap-2">
                   <BookOpenIcon className="h-4 w-4" />
                   {totalCourses} courses
@@ -520,6 +543,61 @@ export default function PatientDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+            {/* Onboarding Responses */}
+            {patient.onboardingResponses && patient.onboardingResponses.length > 0 && (
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-gray-900">
+                    Onboarding Forms
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8">
+                  <div className="space-y-8">
+                    {patient.onboardingResponses.map((response) => (
+                      <div key={response.id} className="border-b border-gray-200 pb-8 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {response.template.name}
+                          </h3>
+                          <Badge
+                            className={cn(
+                              "rounded-lg px-2 py-1",
+                              response.status === "COMPLETED"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                            )}
+                          >
+                            {response.status === "COMPLETED" ? "Completed" : "Pending"}
+                          </Badge>
+                        </div>
+                        
+                        {response.answers.map((answer) => {
+                          const step = response.template.steps.find(
+                            (s) => s.id === answer.stepId
+                          );
+                          return (
+                            <div key={answer.id} className="mb-4 last:mb-0">
+                              <p className="text-sm font-medium text-gray-700 mb-1">
+                                {step?.question}
+                                {step?.required && <span className="text-red-500 ml-1">*</span>}
+                              </p>
+                              <p className="text-base text-gray-900">{answer.answer}</p>
+                            </div>
+                          );
+                        })}
+                        
+                        {response.completedAt && (
+                          <p className="text-sm text-gray-500 mt-4">
+                            Completed on {format(new Date(response.completedAt), "MMMM d, yyyy 'at' h:mm a", { locale: enUS })}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid lg:grid-cols-3 gap-8">
             {/* Active Protocols */}

@@ -15,7 +15,8 @@ import {
   PlayIcon,
   StarIcon,
   AcademicCapIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import Image from 'next/image';
 import ProtocolModal from '@/components/ProtocolModal';
+import { toast } from 'sonner';
 
 // Translations for internationalization
 const translations = {
@@ -43,10 +45,12 @@ const translations = {
     activeProtocolsSection: 'Protocolos Ativos',
     unavailableProtocolsSection: 'Protocolos Indisponíveis',
     inactiveProtocolsSection: 'Protocolos Inativos',
+    soonProtocolsSection: 'Protocolos Em Breve',
     active: 'Ativo',
     completed: 'Concluído',
     unavailable: 'Indisponível',
     inactive: 'Inativo',
+    soon: 'Em Breve',
     responsibleDoctor: 'Médico Responsável',
     duration: 'Duração',
     tasks: 'Tarefas',
@@ -54,7 +58,10 @@ const translations = {
     dayOf: (current: number, total: number) => `Dia ${current} de ${total}`,
     continue: 'Continuar',
     seeDetails: 'Ver detalhes',
-    loading: 'Carregando...'
+    loading: 'Carregando...',
+    consultation: 'Consulta',
+    fillOnboard: 'Preencher onboard',
+    waitingForConsultation: 'Aguardando consulta'
   },
   en: {
     greeting: (name: string) => `Hi, ${name}!`,
@@ -69,10 +76,12 @@ const translations = {
     activeProtocolsSection: 'Active Protocols',
     unavailableProtocolsSection: 'Unavailable Protocols',
     inactiveProtocolsSection: 'Inactive Protocols',
+    soonProtocolsSection: 'Coming Soon Protocols',
     active: 'Active',
     completed: 'Completed',
     unavailable: 'Unavailable',
     inactive: 'Inactive',
+    soon: 'Coming Soon',
     responsibleDoctor: 'Responsible Doctor',
     duration: 'Duration',
     tasks: 'Tasks',
@@ -80,7 +89,10 @@ const translations = {
     dayOf: (current: number, total: number) => `Day ${current} of ${total}`,
     continue: 'Continue',
     seeDetails: 'See details',
-    loading: 'Loading...'
+    loading: 'Loading...',
+    consultation: 'Consultation',
+    fillOnboard: 'Fill onboard',
+    waitingForConsultation: 'Waiting for consultation'
   }
 };
 
@@ -89,6 +101,7 @@ interface Protocol {
   name: string;
   duration: number;
   description?: string;
+  consultation_date?: string | null;
   showDoctorInfo?: boolean;
   modalTitle?: string;
   modalVideoUrl?: string;
@@ -96,6 +109,7 @@ interface Protocol {
   modalButtonText?: string;
   modalButtonUrl?: string;
   coverImage?: string;
+  onboardingTemplateId?: string | null;
   days: Array<{
     id: string;
     dayNumber: number;
@@ -145,6 +159,7 @@ interface ActiveProtocol {
   endDate: Date;
   isActive: boolean;
   status: string;
+  preConsultationTemplateId?: string | null;
   protocol: Protocol;
 }
 
@@ -220,6 +235,12 @@ export default function ProtocolsPage() {
         }
 
         const data = await response.json();
+        console.log('Loaded protocols:', data.map((p: any) => ({
+          id: p.protocol.id,
+          name: p.protocol.name,
+          status: p.status,
+          onboardingTemplateId: p.protocol.onboardingTemplateId
+        })));
         setProtocols(data || []);
       } catch (error) {
         console.error('Error loading protocols:', error);
@@ -231,6 +252,22 @@ export default function ProtocolsPage() {
 
     loadProtocols();
   }, [session]);
+
+  // Debug: Log protocols when they change
+  useEffect(() => {
+    console.log('Active protocols:', protocols.filter(p => p.status === 'ACTIVE').map(p => ({
+      id: p.protocol.id,
+      name: p.protocol.name,
+      status: p.status,
+      onboardingTemplateId: p.protocol.onboardingTemplateId
+    })));
+    console.log('Soon protocols:', protocols.filter(p => p.status === 'SOON').map(p => ({
+      id: p.protocol.id,
+      name: p.protocol.name,
+      status: p.status,
+      onboardingTemplateId: p.protocol.onboardingTemplateId
+    })));
+  }, [protocols]);
 
   // Debug: Log doctor data when protocols are loaded
   useEffect(() => {
@@ -310,14 +347,47 @@ export default function ProtocolsPage() {
   };
 
   // Separar protocolos por status com hierarquia de prioridade
-  // Prioridade: UNAVAILABLE > INACTIVE > ACTIVE
+  // Prioridade: UNAVAILABLE > INACTIVE > SOON > ACTIVE
   const unavailableProtocols = protocols.filter(p => p.status === 'UNAVAILABLE');
+  const soonProtocols = protocols.filter(p => p.status === 'SOON' && p.isActive);
   const activeProtocols = protocols.filter(p => 
     p.status === 'ACTIVE' && p.isActive
   );
   const inactiveProtocols = protocols.filter(p => 
     p.status !== 'UNAVAILABLE' && (p.status === 'INACTIVE' || !p.isActive)
   );
+
+  const handleOnboardClick = async (templateId: string, patientId: string) => {
+    try {
+      const response = await fetch('/api/onboarding/generate-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId,
+          patientId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate onboarding link');
+      }
+
+      const data = await response.json();
+      router.push(`/onboarding/${data.token}`);
+    } catch (error) {
+      console.error('Error generating onboarding link:', error);
+      toast.error('Error generating onboarding link');
+    }
+  };
+
+  const handleOnboardButtonClick = (templateId: string, patientId: string) => {
+    if (!templateId || !patientId) return;
+    handleOnboardClick(templateId, patientId).catch(error => {
+      console.error('Error in handleOnboardButtonClick:', error);
+    });
+  };
 
   if (!session) {
     return (
@@ -427,10 +497,10 @@ export default function ProtocolsPage() {
                 <div className="flex items-center justify-center gap-4 lg:gap-8">
                   <div className="text-center">
                     <div className="text-lg lg:text-2xl font-light text-white mb-0.5">
-                    {activeProtocols.length}
+                    {activeProtocols.length + soonProtocols.length}
                   </div>
                     <div className="text-xs lg:text-sm text-gray-400">
-                      {activeProtocols.length === 1 ? t.activeProtocol : t.activeProtocols}
+                      {(activeProtocols.length + soonProtocols.length) === 1 ? t.activeProtocol : t.activeProtocols}
               </div>
                   </div>
                   <div className="w-px h-6 lg:h-8 bg-gray-700" />
@@ -491,7 +561,19 @@ export default function ProtocolsPage() {
                     const progress = getProtocolProgress(assignment);
                     const totalTasks = getTotalTasks(assignment.protocol);
                     const isCompleted = progress.currentDay >= progress.totalDays;
+                    const hasModal = assignment.protocol.modalTitle || assignment.protocol.modalVideoUrl;
+                    const consultationDate = assignment.protocol.consultation_date ? new Date(assignment.protocol.consultation_date) : null;
+                    const consultationPending = consultationDate && consultationDate > new Date();
+                    const consultationIsFuture = consultationDate && consultationDate > new Date();
                     
+                    console.log('Protocol:', {
+                      id: assignment.protocol.id,
+                      name: assignment.protocol.name,
+                      consultationDate,
+                      consultationIsFuture,
+                      onboardingTemplateId: assignment.protocol.onboardingTemplateId
+                    });
+
                     return (
                         <div 
                         key={assignment.id} 
@@ -519,12 +601,29 @@ export default function ProtocolsPage() {
                                     {assignment.protocol.name}
                                   </h3>
                                   <div className="flex items-center gap-2">
-                                    {isCompleted ? (
-                                      <Badge className="bg-gray-600/20 text-gray-300 border-gray-600/30 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                    {/* Status Badge */}
+                                    {consultationPending ? (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="bg-turquoise/10 text-turquoise border-turquoise/20 gap-1 pl-1.5"
+                                      >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-turquoise animate-pulse" />
+                                        {t.soon}
+                                      </Badge>
+                                    ) : isCompleted ? (
+                                      <Badge 
+                                        variant="outline" 
+                                        className="bg-green-500/10 text-green-500 border-green-500/20 gap-1 pl-1.5"
+                                      >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                                         {t.completed}
                                       </Badge>
                                     ) : (
-                                      <Badge className="bg-turquoise/15 text-turquoise border-turquoise/25 text-xs px-1.5 py-0.5 lg:px-2 lg:py-1">
+                                      <Badge 
+                                        variant="outline" 
+                                        className="bg-turquoise/10 text-turquoise border-turquoise/20 gap-1 pl-1.5"
+                                      >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-turquoise" />
                                         {t.active}
                                       </Badge>
                                     )}
@@ -610,21 +709,202 @@ export default function ProtocolsPage() {
                                 />
                             </div>
 
-                              {/* Action Button Compacto */}
+                              {/* Action Button */}
                               <div className="pt-1">
-                              <Button 
-                                asChild
-                                  className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200"
-                              >
-                                <Link href={`/patient/checklist/${assignment.protocolId}`}>
-                                    <PlayIcon className="h-3 w-3 lg:h-4 lg:w-4 mr-1.5 lg:mr-2" />
-                                  {t.continue}
-                                </Link>
-                              </Button>
+                                {assignment.protocol.onboardingTemplateId ? (
+                                  <button 
+                                    type="button"
+                                    className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
+                                    onClick={() => {
+                                      if (session?.user?.id) {
+                                        handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
+                                      }
+                                    }}
+                                  >
+                                    {t.fillOnboard}
+                                  </button>
+                                ) : (
+                                  <button 
+                                    type="button"
+                                    disabled
+                                    className="w-full bg-gray-700/50 text-gray-400 font-medium text-xs lg:text-sm h-8 lg:h-9 cursor-not-allowed rounded-md"
+                                  >
+                                    {t.waitingForConsultation}
+                                  </button>
+                                )}
                               </div>
+
+                              {consultationDate && (
+                                <div className="mt-3 flex items-center gap-2">
+                                  <CalendarDaysIcon className="h-4 w-4 text-turquoise" />
+                                  <span className="text-xs text-gray-300">
+                                    {t.consultation}: {format(consultationDate, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Soon Protocols */}
+            {soonProtocols.length > 0 && (
+              <section>
+                <h2 className="text-lg lg:text-xl font-light text-white mb-3 lg:mb-4 flex items-center gap-2">
+                  <CalendarDaysIcon className="h-4 w-4 lg:h-5 lg:w-5 text-turquoise" />
+                  {t.soonProtocolsSection}
+                </h2>
+                
+                <div className="grid gap-3 lg:gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {soonProtocols.map(assignment => {
+                    const progress = getProtocolProgress(assignment);
+                    const totalTasks = getTotalTasks(assignment.protocol);
+                    const isCompleted = progress.currentDay >= progress.totalDays;
+                    const hasModal = assignment.protocol.modalTitle || assignment.protocol.modalVideoUrl;
+                    const consultationDate = assignment.protocol.consultation_date ? new Date(assignment.protocol.consultation_date) : null;
+                    const consultationPending = consultationDate && consultationDate > new Date();
+                    const consultationIsFuture = consultationDate && consultationDate > new Date();
+                    
+                    return (
+                      <div 
+                        key={assignment.id} 
+                        className="group bg-gray-900/40 border border-gray-800/40 rounded-xl hover:border-turquoise/30 transition-all duration-300 overflow-hidden backdrop-blur-sm"
+                      >
+                        {/* Cover Image */}
+                        {assignment.protocol.coverImage && (
+                          <div className="relative w-full h-32 lg:h-40 overflow-hidden">
+                            <Image
+                              src={assignment.protocol.coverImage}
+                              alt={assignment.protocol.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent" />
+                          </div>
+                        )}
+                        
+                        <div className="p-3 lg:p-4">
+                          <div className="space-y-3 lg:space-y-4">
+                            <div>
+                              <div className="mb-2">
+                                <h3 className="text-sm lg:text-base font-medium text-white group-hover:text-turquoise transition-colors line-clamp-2 mb-2">
+                                  {assignment.protocol.name}
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                  <Badge 
+                                    variant="outline" 
+                                    className="bg-turquoise/10 text-turquoise border-turquoise/20 gap-1 pl-1.5"
+                                  >
+                                    <div className="w-1.5 h-1.5 rounded-full bg-turquoise" />
+                                    {t.soon}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Doctor Info - Only show if showDoctorInfo is true */}
+                              {assignment.protocol.showDoctorInfo && assignment.protocol.doctor && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="w-4 h-4 lg:w-5 lg:h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                                    {assignment.protocol.doctor.image ? (
+                                      <img 
+                                        src={assignment.protocol.doctor.image} 
+                                        alt={assignment.protocol.doctor.name || t.responsibleDoctor}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                          if (fallback) {
+                                            fallback.style.display = 'flex';
+                                          }
+                                        }}
+                                      />
+                                    ) : null}
+                                    <div 
+                                      className="w-full h-full bg-gray-600 flex items-center justify-center"
+                                      style={{ display: assignment.protocol.doctor.image ? 'none' : 'flex' }}
+                                    >
+                                      <span className="text-xs text-gray-300 font-medium">
+                                        {assignment.protocol.doctor.name?.charAt(0) || 'M'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-400">
+                                    {assignment.protocol.doctor.name || t.responsibleDoctor}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {assignment.protocol.description && (
+                                <p className="text-xs lg:text-sm text-gray-300 leading-relaxed line-clamp-2">
+                                  {assignment.protocol.description}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Protocol Stats Compactas */}
+                            <div className="grid grid-cols-2 gap-3 lg:gap-4 text-xs lg:text-sm">
+                              <div className="flex items-center gap-1.5 lg:gap-2">
+                                <CalendarDaysIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
+                                <div>
+                                  <div className="text-gray-400">{t.duration}</div>
+                                  <div className="text-white font-medium">
+                                    {assignment.protocol.duration} {t.days}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-1.5 lg:gap-2">
+                                <DocumentTextIcon className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400" />
+                                <div>
+                                  <div className="text-gray-400">{t.tasks}</div>
+                                  <div className="text-white font-medium">
+                                    {totalTasks}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="pt-1">
+                              {assignment.protocol.onboardingTemplateId ? (
+                                <button 
+                                  type="button"
+                                  className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
+                                  onClick={() => {
+                                    if (session?.user?.id) {
+                                      handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
+                                    }
+                                  }}
+                                >
+                                  {t.fillOnboard}
+                                </button>
+                              ) : (
+                                <button 
+                                  type="button"
+                                  disabled
+                                  className="w-full bg-gray-700/50 text-gray-400 font-medium text-xs lg:text-sm h-8 lg:h-9 cursor-not-allowed rounded-md"
+                                >
+                                  {t.waitingForConsultation}
+                                </button>
+                              )}
+                            </div>
+
+                            {consultationDate && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <CalendarDaysIcon className="h-4 w-4 text-turquoise" />
+                                <span className="text-xs text-gray-300">
+                                  {t.consultation}: {format(consultationDate, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

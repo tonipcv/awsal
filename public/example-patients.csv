@@ -1,0 +1,3 @@
+name,email,phone,birthDate,gender,address,emergencyContact,emergencyPhone,medicalHistory,allergies,medications,notes
+John Doe,john@example.com,+1234567890,1990-01-01,Male,123 Main St,Jane Doe,+1987654321,No major issues,None,None,Regular checkups
+Jane Smith,jane@example.com,+1234567891,1985-05-15,Female,456 Oak Ave,John Smith,+1987654322,Asthma,Pollen,"Albuterol, Flonase",Needs regular monitoring 
