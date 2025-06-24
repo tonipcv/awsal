@@ -61,7 +61,8 @@ const translations = {
     loading: 'Carregando...',
     consultation: 'Consulta',
     fillOnboard: 'Preencher onboard',
-    waitingForConsultation: 'Aguardando consulta'
+    waitingForConsultation: 'Aguardando consulta',
+    onboardingCompleted: 'Onboarding preenchido'
   },
   en: {
     greeting: (name: string) => `Hi, ${name}!`,
@@ -92,7 +93,8 @@ const translations = {
     loading: 'Loading...',
     consultation: 'Consultation',
     fillOnboard: 'Fill onboard',
-    waitingForConsultation: 'Waiting for consultation'
+    waitingForConsultation: 'Waiting for consultation',
+    onboardingCompleted: 'Onboarding completed'
   }
 };
 
@@ -159,7 +161,8 @@ interface ActiveProtocol {
   endDate: Date;
   isActive: boolean;
   status: string;
-  preConsultationTemplateId?: string | null;
+  currentDay: number;
+  preConsultationStatus?: string;
   protocol: Protocol;
 }
 
@@ -712,17 +715,24 @@ export default function ProtocolsPage() {
                               {/* Action Button */}
                               <div className="pt-1">
                                 {assignment.protocol.onboardingTemplateId ? (
-                                  <button 
-                                    type="button"
-                                    className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
-                                    onClick={() => {
-                                      if (session?.user?.id) {
-                                        handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
-                                      }
-                                    }}
-                                  >
-                                    {t.fillOnboard}
-                                  </button>
+                                  assignment.preConsultationStatus === 'COMPLETED' ? (
+                                    <div className="w-full bg-green-500/10 text-green-500 font-medium text-xs lg:text-sm h-8 lg:h-9 rounded-md flex items-center justify-center gap-2">
+                                      <CheckIcon className="h-4 w-4" />
+                                      <span>{t.onboardingCompleted}</span>
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      type="button"
+                                      className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
+                                      onClick={() => {
+                                        if (session?.user?.id) {
+                                          handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
+                                        }
+                                      }}
+                                    >
+                                      {t.fillOnboard}
+                                    </button>
+                                  )
                                 ) : (
                                   <button 
                                     type="button"
@@ -872,17 +882,24 @@ export default function ProtocolsPage() {
                             {/* Action Button */}
                             <div className="pt-1">
                               {assignment.protocol.onboardingTemplateId ? (
-                                <button 
-                                  type="button"
-                                  className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
-                                  onClick={() => {
-                                    if (session?.user?.id) {
-                                      handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
-                                    }
-                                  }}
-                                >
-                                  {t.fillOnboard}
-                                </button>
+                                assignment.preConsultationStatus === 'COMPLETED' ? (
+                                  <div className="w-full bg-green-500/10 text-green-500 font-medium text-xs lg:text-sm h-8 lg:h-9 rounded-md flex items-center justify-center gap-2">
+                                    <CheckIcon className="h-4 w-4" />
+                                    <span>{t.onboardingCompleted}</span>
+                                  </div>
+                                ) : (
+                                  <button 
+                                    type="button"
+                                    className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
+                                    onClick={() => {
+                                      if (session?.user?.id) {
+                                        handleOnboardClick(assignment.protocol.onboardingTemplateId!, session.user.id);
+                                      }
+                                    }}
+                                  >
+                                    {t.fillOnboard}
+                                  </button>
+                                )
                               ) : (
                                 <button 
                                   type="button"

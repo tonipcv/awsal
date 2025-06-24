@@ -4,9 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     
@@ -24,7 +24,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const { id: doctorId } = params;
+    const { id: doctorId } = await context.params;
 
     // Check if doctor exists
     const existingDoctor = await prisma.user.findUnique({

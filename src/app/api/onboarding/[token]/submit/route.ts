@@ -13,10 +13,10 @@ interface OnboardingStep {
 
 export async function POST(
   request: Request,
-  { params }: { params: { token: string } }
-) {
+  context: { params: Promise<{ token: string }> }
+): Promise<NextResponse> {
   try {
-    const { token } = params;
+    const { token } = await context.params;
     const { email, answers } = await request.json();
 
     if (!token || !email || !answers) {

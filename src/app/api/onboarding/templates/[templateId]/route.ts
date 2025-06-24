@@ -5,11 +5,11 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { templateId: string } }
-) {
+  context: { params: Promise<{ templateId: string }> }
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
-    const { templateId } = context.params;
+    const { templateId } = await context.params;
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -42,11 +42,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { templateId: string } }
-) {
+  context: { params: Promise<{ templateId: string }> }
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
-    const { templateId } = context.params;
+    const { templateId } = await context.params;
 
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
