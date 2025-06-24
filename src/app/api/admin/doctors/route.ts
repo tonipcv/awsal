@@ -205,21 +205,21 @@ export async function POST(request: NextRequest) {
 
       await transporter.sendMail({
         from: {
-          name: 'AwLov',
+          name: 'CXLUS',
           address: process.env.SMTP_FROM as string
         },
         to: email,
-        subject: 'Invitation to AwLov - Set your password',
+        subject: 'Invitation to CXLUS - Set your password',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Welcome to AwLov!</h1>
+            <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Welcome to CXLUS!</h1>
             
             <p style="color: #475569; font-size: 16px; line-height: 1.6;">
               Hello <strong>${name}</strong>,
             </p>
             
             <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-              You have been invited to join the AwLov platform as a doctor. To start using the platform, you need to set your password.
+              You have been invited to join the CXLUS platform as a doctor. To start using the platform, you need to set your password.
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
             
             <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-              AwLov - Medical Platform<br>
+              CXLUS - Medical Platform<br>
               This is an automated email, please do not reply.
             </p>
           </div>

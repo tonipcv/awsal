@@ -64,7 +64,7 @@ export async function sendReferralNotification(leadId: string) {
     // Email para o médico
     await transporter.sendMail({
       from: {
-        name: clinicInfo?.name || 'BOOP',
+        name: clinicInfo?.name || 'CXLUS',
         address: process.env.SMTP_FROM as string
       },
       to: lead.doctor.email,
@@ -96,7 +96,7 @@ export async function sendReferralNotification(leadId: string) {
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
           <p style="color: #64748b; font-size: 12px; text-align: center;">
-            ${clinicInfo?.name || 'BOOP'} - Sistema de Indicações<br>
+            ${clinicInfo?.name || 'CXLUS'} - Sistema de Indicações<br>
             Este é um email automático, não responda.
           </p>
         </div>
@@ -107,7 +107,7 @@ export async function sendReferralNotification(leadId: string) {
     if (lead.email && lead.status === 'PENDING') {
       await transporter.sendMail({
         from: {
-          name: clinicInfo?.name || lead.doctor.name || 'BOOP',
+          name: clinicInfo?.name || lead.doctor.name || 'CXLUS',
           address: process.env.SMTP_FROM as string
         },
         to: lead.email,
@@ -179,7 +179,7 @@ export async function sendReferralNotification(leadId: string) {
                   Obrigado por permitir que ${referrer ? referrer.name : 'alguém especial'} compartilhe nossos serviços com você!
                 </p>
                 <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                  ${clinicInfo?.name || 'BOOP'} - Cuidando de você com excelência<br>
+                  ${clinicInfo?.name || 'CXLUS'} - Cuidando de você com excelência<br>
                   Este é um email automático, mas você pode responder se tiver dúvidas.
                 </p>
               </div>
@@ -194,7 +194,7 @@ export async function sendReferralNotification(leadId: string) {
     if (referrer?.email && lead.status === 'PENDING') {
       await transporter.sendMail({
         from: {
-          name: clinicInfo?.name || 'BOOP',
+          name: clinicInfo?.name || 'CXLUS',
           address: process.env.SMTP_FROM as string
         },
         to: referrer.email,
@@ -234,7 +234,7 @@ export async function sendReferralNotification(leadId: string) {
       // Se já convertido, enviar email de parabéns
       await transporter.sendMail({
         from: {
-          name: clinicInfo?.name || 'BOOP',
+          name: clinicInfo?.name || 'CXLUS',
           address: process.env.SMTP_FROM as string
         },
         to: referrer.email,
@@ -312,7 +312,7 @@ export async function sendCreditNotification(creditId: string) {
 
     await transporter.sendMail({
       from: {
-        name: 'BOOP',
+        name: 'CXLUS',
         address: process.env.SMTP_FROM as string
       },
       to: user.email,
@@ -346,7 +346,7 @@ export async function sendCreditNotification(creditId: string) {
           
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
           <p style="color: #64748b; font-size: 12px; text-align: center;">
-            BOOP - Sistema de Indicações<br>
+            CXLUS - Sistema de Indicações<br>
             Este é um email automático, não responda.
           </p>
         </div>

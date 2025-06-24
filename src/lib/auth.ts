@@ -12,7 +12,22 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      role?: string | null;
     }
+  }
+
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string | null;
   }
 }
 
@@ -58,6 +73,7 @@ export const authOptions: AuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+          role: user.role,
         };
       }
     })
@@ -69,9 +85,16 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role;
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (session?.user) {
         session.user.id = token.sub!;
+        session.user.role = token.role;
       }
       return session;
     },

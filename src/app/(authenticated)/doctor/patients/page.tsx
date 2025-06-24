@@ -75,7 +75,6 @@ interface NewPatientForm {
   allergies: string;
   medications: string;
   notes: string;
-  sendCredentials: boolean;
 }
 
 interface ImportResults {
@@ -106,6 +105,7 @@ export default function PatientsPage() {
   const [isImprovingNotes, setIsImprovingNotes] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
   
   const [newPatient, setNewPatient] = useState<NewPatientForm>({
     name: '',
@@ -119,8 +119,7 @@ export default function PatientsPage() {
     medicalHistory: '',
     allergies: '',
     medications: '',
-    notes: '',
-    sendCredentials: false
+    notes: ''
   });
 
   const [showImportModal, setShowImportModal] = useState(false);
@@ -178,9 +177,9 @@ export default function PatientsPage() {
       medicalHistory: '',
       allergies: '',
       medications: '',
-      notes: '',
-      sendCredentials: false
+      notes: ''
     });
+    setShowOptionalFields(false);
   };
 
   const openEditModal = (patient: Patient) => {
@@ -197,8 +196,7 @@ export default function PatientsPage() {
       medicalHistory: patient.medicalHistory || '',
       allergies: patient.allergies || '',
       medications: patient.medications || '',
-      notes: patient.notes || '',
-      sendCredentials: false
+      notes: patient.notes || ''
     });
     setShowEditPatient(true);
   };
@@ -269,8 +267,7 @@ export default function PatientsPage() {
       // Prepare data for sending (remove empty fields)
       const patientData: any = {
         name: newPatient.name.trim(),
-        email: newPatient.email.trim(),
-        sendCredentials: newPatient.sendCredentials
+        email: newPatient.email.trim()
       };
 
       // Add optional fields only if filled
@@ -293,31 +290,24 @@ export default function PatientsPage() {
         body: JSON.stringify(patientData)
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('🔍 DEBUG: Patient creation result:', result);
-        console.log('🔍 DEBUG: Result email:', result.email);
-        console.log('🔍 DEBUG: Result patient:', result.patient);
-        console.log('🔍 DEBUG: Result patient email:', result.patient?.email);
-        
-        // Reload clients list
-        await loadPatients();
-        resetForm();
-        setShowAddPatient(false);
-        
-        // Automatically send password reset email instead of showing credentials
-        if (newPatient.sendCredentials && result.patient?.id) {
-          await sendPasswordResetEmail(result.patient.id, result.patient.email || newPatient.email);
-        } else {
-          alert('Cliente criado com sucesso!');
-        }
-      } else {
-        const error = await response.json();
-        alert(`Erro ao criar cliente: ${error.error || 'Erro ao adicionar cliente'}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar paciente');
       }
-    } catch (error) {
-      console.error('Error adding client:', error);
-      alert('Erro ao criar cliente');
+
+      // Automatically send password reset email
+      if (result.id) {
+        await sendPasswordResetEmail(result.id, result.email || newPatient.email);
+      }
+
+      toast.success('Cliente criado com sucesso!');
+      loadPatients();
+      setShowAddPatient(false);
+      resetForm();
+    } catch (err) {
+      console.error('Error creating patient:', err);
+      toast.error(err instanceof Error ? err.message : 'Erro ao criar paciente');
     } finally {
       setIsAddingPatient(false);
     }
@@ -763,212 +753,210 @@ export default function PatientsPage() {
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Contact Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
-                          Phone
-                        </Label>
-                        <Input
-                          id="phone"
-                          value={newPatient.phone}
-                          onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
-                          placeholder="(11) 99999-9999"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="birthDate" className="text-sm font-semibold text-gray-700">
-                          Birth Date
-                        </Label>
-                        <Input
-                          id="birthDate"
-                          type="date"
-                          value={newPatient.birthDate}
-                          onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
-                          className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="gender" className="text-sm font-semibold text-gray-700">
-                          Gender
-                        </Label>
-                        <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
-                          <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
-                            <SelectItem value="M">Male</SelectItem>
-                            <SelectItem value="F">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
-                          Address
-                        </Label>
-                        <Input
-                          id="address"
-                          value={newPatient.address}
-                          onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
-                          placeholder="Full address"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
+                    <div className="flex items-center justify-center pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowOptionalFields(!showOptionalFields)}
+                        className="text-gray-600 hover:text-gray-900"
+                      >
+                        {showOptionalFields ? 'Hide Optional Fields' : 'Show Optional Fields'}
+                        <ChevronRightIcon className={cn("h-4 w-4 ml-2 transition-transform", showOptionalFields ? "rotate-90" : "")} />
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Emergency Contact */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="emergencyContact" className="text-sm font-semibold text-gray-700">
-                          Contact Name
-                        </Label>
-                        <Input
-                          id="emergencyContact"
-                          value={newPatient.emergencyContact}
-                          onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
-                          placeholder="Emergency contact name"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
+                  {showOptionalFields && (
+                    <>
+                      {/* Contact Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information (Optional)</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                              Phone
+                            </Label>
+                            <Input
+                              id="phone"
+                              value={newPatient.phone}
+                              onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
+                              placeholder="(11) 99999-9999"
+                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="birthDate" className="text-sm font-semibold text-gray-700">
+                              Birth Date
+                            </Label>
+                            <Input
+                              id="birthDate"
+                              type="date"
+                              value={newPatient.birthDate}
+                              onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
+                              className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="gender" className="text-sm font-semibold text-gray-700">
+                              Gender
+                            </Label>
+                            <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
+                              <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
+                                <SelectItem value="M">Male</SelectItem>
+                                <SelectItem value="F">Female</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
+                              Address
+                            </Label>
+                            <Input
+                              id="address"
+                              value={newPatient.address}
+                              onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
+                              placeholder="Full address"
+                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div>
-                        <Label htmlFor="emergencyPhone" className="text-sm font-semibold text-gray-700">
-                          Emergency Phone
-                        </Label>
-                  <Input
-                          id="emergencyPhone"
-                          value={newPatient.emergencyPhone}
-                          onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
-                          placeholder="(11) 99999-9999"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
+
+                      {/* Emergency Contact */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact (Optional)</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="emergencyContact" className="text-sm font-semibold text-gray-700">
+                              Contact Name
+                            </Label>
+                            <Input
+                              id="emergencyContact"
+                              value={newPatient.emergencyContact}
+                              onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
+                              placeholder="Emergency contact name"
+                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="emergencyPhone" className="text-sm font-semibold text-gray-700">
+                              Emergency Phone
+                            </Label>
+                            <Input
+                              id="emergencyPhone"
+                              value={newPatient.emergencyPhone}
+                              onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
+                              placeholder="(11) 99999-9999"
+                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Medical Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information</h3>
-                    
-                    <div>
-                      <Label htmlFor="medicalHistory" className="text-sm font-semibold text-gray-700">
-                        Medical History
-                      </Label>
-                      <Textarea
-                        id="medicalHistory"
-                        value={newPatient.medicalHistory}
-                        onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
-                        placeholder="Relevant medical history, previous surgeries, etc."
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="allergies" className="text-sm font-semibold text-gray-700">
-                        Allergies
-                      </Label>
-                      <Textarea
-                        id="allergies"
-                        value={newPatient.allergies}
-                        onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
-                        placeholder="Known allergies to medications, foods, etc."
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="medications" className="text-sm font-semibold text-gray-700">
-                        Current Medications
-                      </Label>
-                      <Textarea
-                        id="medications"
-                        value={newPatient.medications}
-                        onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
-                        placeholder="Medications currently in use"
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
+                      {/* Medical Information */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information (Optional)</h3>
+                        
+                        <div>
+                          <Label htmlFor="medicalHistory" className="text-sm font-semibold text-gray-700">
+                            Medical History
+                          </Label>
+                          <Textarea
+                            id="medicalHistory"
+                            value={newPatient.medicalHistory}
+                            onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
+                            placeholder="Relevant medical history, previous surgeries, etc."
+                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="allergies" className="text-sm font-semibold text-gray-700">
+                            Allergies
+                          </Label>
+                          <Textarea
+                            id="allergies"
+                            value={newPatient.allergies}
+                            onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
+                            placeholder="Known allergies to medications, foods, etc."
+                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                            rows={2}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="medications" className="text-sm font-semibold text-gray-700">
+                            Current Medications
+                          </Label>
+                          <Textarea
+                            id="medications"
+                            value={newPatient.medications}
+                            onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
+                            placeholder="Medications currently in use"
+                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
+                            rows={2}
+                          />
+                        </div>
+                      </div>
 
-                  {/* Notes */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes</h3>
-                    
-                    <div>
-                      <Label htmlFor="notes" className="text-sm font-semibold text-gray-700">
-                        General Notes
-                      </Label>
-                      <div className="relative">
-                        <Textarea
-                          id="notes"
-                          value={newPatient.notes}
-                          onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
-                          placeholder="General observations about the client"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
-                          rows={3}
-                        />
-                        {newPatient.notes.trim() && (
-                          <button
-                            type="button"
-                            onClick={improveNotesWithAI}
-                            disabled={isImprovingNotes}
-                            className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Improve text with AI"
-                          >
-                            {isImprovingNotes ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
-                            ) : (
-                              <SparklesIcon className="h-4 w-4" />
+                      {/* Notes */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes (Optional)</h3>
+                        
+                        <div>
+                          <Label htmlFor="notes" className="text-sm font-semibold text-gray-700">
+                            General Notes
+                          </Label>
+                          <div className="relative">
+                            <Textarea
+                              id="notes"
+                              value={newPatient.notes}
+                              onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
+                              placeholder="General observations about the client"
+                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
+                              rows={3}
+                            />
+                            {newPatient.notes.trim() && (
+                              <button
+                                type="button"
+                                onClick={improveNotesWithAI}
+                                disabled={isImprovingNotes}
+                                className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Improve text with AI"
+                              >
+                                {isImprovingNotes ? (
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
+                                ) : (
+                                  <SparklesIcon className="h-4 w-4" />
+                                )}
+                              </button>
                             )}
-                          </button>
-                        )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Settings */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Settings</h3>
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="sendCredentials"
-                        checked={newPatient.sendCredentials}
-                        onChange={(e) => setNewPatient({...newPatient, sendCredentials: e.target.checked})}
-                        className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                      />
-                      <Label htmlFor="sendCredentials" className="text-sm text-gray-700 font-medium">
-                        Send password setup email to client after creation
-                      </Label>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddPatient(false);
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddPatient(false);
                       resetForm();
                     }}
                     disabled={isAddingPatient}

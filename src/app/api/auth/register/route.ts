@@ -75,13 +75,13 @@ export async function POST(req: Request) {
 
       await transporter.sendMail({
         from: {
-          name: 'BOOP',
-          address: 'ai@booplabs.com'
+          name: 'CXLUS',
+          address: process.env.SMTP_FROM as string
         },
         to: email,
         subject: 'Verifique seu email',
         html: `
-          <h1>Bem-vindo ao BOOP!</h1>
+          <h1>Bem-vindo ao CXLUS!</h1>
           <p>Para confirmar seu cadastro, use o código abaixo:</p>
           <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
             <strong>${verificationCode}</strong>

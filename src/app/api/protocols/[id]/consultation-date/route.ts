@@ -15,7 +15,17 @@ export async function PATCH(
     }
 
     const { id: protocolId } = await params;
-    const { consultationDate } = await request.json();
+    const { consultationDate, userId } = await request.json();
+
+    // Buscar o usuário para verificar o role
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+    }
 
     // Verificar se o usuário tem acesso ao protocolo
     const protocol = await prisma.protocol.findFirst({
@@ -25,9 +35,6 @@ export async function PATCH(
           { doctorId: session.user.id },
           { assignments: { some: { userId: session.user.id } } }
         ]
-      },
-      include: {
-        assignments: true
       }
     });
 
@@ -35,18 +42,24 @@ export async function PATCH(
       return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
     }
 
-    // Atualizar a data da consulta no protocolo
-    const updatedProtocol = await prisma.protocol.update({
-      where: { id: protocolId },
-      data: {
-        consultation_date: consultationDate ? new Date(consultationDate) : null
-      }
-    });
+    // Se não foi fornecido um userId específico e o usuário é médico, atualizar apenas o protocolo (template)
+    if (!userId && user.role === 'DOCTOR') {
+      const updatedProtocol = await prisma.protocol.update({
+        where: { id: protocolId },
+        data: {
+          consultation_date: consultationDate ? new Date(consultationDate) : null
+        }
+      });
+      return NextResponse.json(updatedProtocol);
+    }
 
-    // Atualizar a data da consulta em todas as atribuições ativas deste protocolo
-    await prisma.userProtocol.updateMany({
+    // Se foi fornecido um userId ou o usuário é paciente, atualizar apenas a atribuição específica
+    const targetUserId = userId || session.user.id;
+    
+    const updatedAssignment = await prisma.userProtocol.updateMany({
       where: {
         protocolId: protocolId,
+        userId: targetUserId,
         status: 'ACTIVE'
       },
       data: {
@@ -54,7 +67,7 @@ export async function PATCH(
       }
     });
 
-    return NextResponse.json(updatedProtocol);
+    return NextResponse.json({ success: true, updated: updatedAssignment });
   } catch (error) {
     console.error('Error updating consultation date:', error);
     return NextResponse.json(

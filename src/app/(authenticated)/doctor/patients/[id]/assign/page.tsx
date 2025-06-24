@@ -26,7 +26,7 @@ import {
   StopIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
 
@@ -81,6 +81,13 @@ interface AssignmentForm {
   consultationDate: Date | null;
 }
 
+interface PendingChange {
+  status?: string;
+  consultationDate?: Date | null;
+  startDate?: Date;
+  endDate?: Date;
+}
+
 // Status utilities with clean, minimalist design
 const getStatusInfo = (status: string) => {
   switch (status) {
@@ -118,19 +125,23 @@ const getStatusInfo = (status: string) => {
 };
 
 // Clean Protocol Card with minimalist design
-const ProtocolCard = ({ 
-  protocol, 
-  onStatusChange, 
-  onRemove, 
+const ProtocolCard = ({
+  protocol,
+  onStatusChange,
+  onRemove,
   onAssign,
-  isUpdating, 
+  isUpdating,
   isRemoving,
   isAssigning,
   startDate,
   onStartDateChange,
   pendingStatus,
+  pendingConsultationDate,
+  pendingStartDate,
+  pendingEndDate,
   hasPendingChanges,
-  onConsultationDateChange
+  onConsultationDateChange,
+  onTreatmentDatesChange,
 }: {
   protocol: ProtocolWithAssignment;
   onStatusChange?: (assignmentId: string, status: string) => void;
@@ -142,8 +153,12 @@ const ProtocolCard = ({
   startDate?: string;
   onStartDateChange?: (date: string) => void;
   pendingStatus?: string;
+  pendingConsultationDate?: Date | null;
+  pendingStartDate?: Date;
+  pendingEndDate?: Date;
   hasPendingChanges?: boolean;
   onConsultationDateChange?: (assignmentId: string, protocolId: string, date: Date | null) => void;
+  onTreatmentDatesChange?: (assignmentId: string, startDate: Date, endDate: Date) => void;
 }) => {
   const assignment = protocol.assignment;
   const totalTasks = protocol.days.reduce((acc, day) => acc + day.tasks.length, 0);
@@ -151,7 +166,16 @@ const ProtocolCard = ({
   const currentStatus = pendingStatus || assignment?.status || 'UNASSIGNED';
   const statusInfo = getStatusInfo(currentStatus);
   const isReactivation = protocol.assignmentStatus === 'INACTIVE';
-  const endDate = startDate ? addDays(new Date(startDate), protocol.duration - 1) : null;
+
+  // Use pending dates if available, otherwise use assignment dates
+  const currentStartDate = pendingStartDate || (assignment ? new Date(assignment.startDate) : new Date());
+  const currentEndDate = pendingEndDate || (assignment ? new Date(assignment.endDate) : addDays(new Date(), protocol.duration - 1));
+
+  const handleStartDateChange = (date: Date) => {
+    if (!onTreatmentDatesChange || !assignment) return;
+    const newEndDate = addDays(date, protocol.duration - 1);
+    onTreatmentDatesChange(assignment.id, date, newEndDate);
+  };
 
   // Show loading state during operations
   const isLoading = isUpdating || isRemoving || isAssigning;
@@ -214,22 +238,58 @@ const ProtocolCard = ({
                   {format(new Date(assignment.startDate), 'MMM dd', { locale: enUS })} - {format(new Date(assignment.endDate), 'MMM dd', { locale: enUS })}
                 </span>
               )}
-              {endDate && !assignment && (
+              {currentEndDate && !assignment && (
                 <span className="flex items-center gap-1.5">
                   <CalendarDaysIcon className="h-4 w-4" />
-                  Until {format(endDate, 'MMM dd, yyyy', { locale: enUS })}
+                  Until {format(currentEndDate, 'MMM dd, yyyy', { locale: enUS })}
                 </span>
               )}
             </div>
 
-            {/* Consultation Date Picker for assigned protocols */}
-            {isAssigned && assignment && onConsultationDateChange && (
+            {/* Treatment Period */}
+            {isAssigned && (
+              <div className="mt-4">
+                <Label className="text-sm font-medium text-gray-700">Treatment Period</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startDate" className="text-xs text-gray-500">Start Date</Label>
+                    <Input
+                      type="date"
+                      id="startDate"
+                      value={format(currentStartDate, 'yyyy-MM-dd')}
+                      onChange={(e) => handleStartDateChange(new Date(e.target.value))}
+                      className="mt-1"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="endDate" className="text-xs text-gray-500">End Date</Label>
+                    <Input
+                      type="date"
+                      id="endDate"
+                      value={format(currentEndDate, 'yyyy-MM-dd')}
+                      disabled
+                      className="mt-1 bg-gray-50"
+                    />
+                  </div>
+                </div>
+                {hasPendingChanges && (
+                  <p className="text-xs text-[#5154e7]">* Pending changes</p>
+                )}
+              </div>
+            )}
+
+            {/* Consultation Date Picker */}
+            {isAssigned && assignment && (
               <div className="mt-4">
                 <ConsultationDatePicker
-                  consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
-                  onDateChange={(date) => onConsultationDateChange(assignment.id, protocol.id, date)}
+                  consultationDate={pendingConsultationDate !== undefined ? pendingConsultationDate : (protocol.consultation_date ? new Date(protocol.consultation_date) : null)}
+                  onDateChange={(date) => onConsultationDateChange?.(assignment.id, protocol.id, date)}
                   disabled={isLoading}
                 />
+                {hasPendingChanges && (
+                  <p className="text-xs text-[#5154e7] mt-1">* Pending changes</p>
+                )}
               </div>
             )}
 
@@ -330,7 +390,7 @@ export default function AssignProtocolPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [assignStartDate, setAssignStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [pendingChanges, setPendingChanges] = useState<Record<string, string>>({});
+  const [pendingChanges, setPendingChanges] = useState<Record<string, PendingChange>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(null);
   const [form, setForm] = useState<AssignmentForm>({
@@ -434,42 +494,88 @@ export default function AssignProtocolPage() {
     }
   };
 
-  const handleStatusChange = (assignmentId: string, newStatus: string) => {
+  const handleConsultationDateChange = (assignmentId: string, protocolId: string, date: Date | null) => {
     setPendingChanges(prev => ({
       ...prev,
-      [assignmentId]: newStatus
+      [assignmentId]: {
+        ...prev[assignmentId],
+        consultationDate: date
+      }
+    }));
+  };
+
+  const handleStatusChange = (assignmentId: string, status: string) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [assignmentId]: {
+        ...prev[assignmentId],
+        status
+      }
+    }));
+  };
+
+  const handleTreatmentDatesChange = (assignmentId: string, startDate: Date, endDate: Date) => {
+    setPendingChanges(prev => ({
+      ...prev,
+      [assignmentId]: {
+        ...prev[assignmentId],
+        startDate,
+        endDate
+      }
     }));
   };
 
   const saveChanges = async () => {
-    if (Object.keys(pendingChanges).length === 0) return;
-
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      setError(null);
+      // Salvar todas as mudanças pendentes
+      for (const [assignmentId, changes] of Object.entries(pendingChanges)) {
+        const assignment = processedProtocols
+          .find(p => p.assignment?.id === assignmentId)?.assignment;
 
-      // Save all pending changes
-      const promises = Object.entries(pendingChanges).map(([assignmentId, status]) =>
-        fetch(`/api/protocols/assignments/${assignmentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status })
-        })
-      );
+        if (!assignment) continue;
 
-      const results = await Promise.all(promises);
-      const hasErrors = results.some(result => !result.ok);
+        // Atualizar status se houver mudança
+        if (changes.status) {
+          await fetch(`/api/protocols/assignments/${assignmentId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: changes.status })
+          });
+        }
 
-      if (hasErrors) {
-        setError('Some changes could not be saved. Please try again.');
-      } else {
-        setSuccessMessage('All changes saved successfully!');
-        setPendingChanges({});
-        await loadData(params.id as string);
+        // Atualizar data de consulta se houver mudança
+        if ('consultationDate' in changes) {
+          await fetch(`/api/protocols/${assignment.protocolId}/consultation-date`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              consultationDate: changes.consultationDate,
+              userId: params.id
+            })
+          });
+        }
+
+        // Atualizar datas do tratamento se houver mudança
+        if (changes.startDate && changes.endDate) {
+          await fetch(`/api/protocols/assignments/${assignmentId}/dates`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              startDate: changes.startDate,
+              endDate: changes.endDate
+            })
+          });
+        }
       }
+
+      // Recarregar dados após salvar
+      await loadData(params.id as string);
+      setPendingChanges({});
+      setSuccessMessage('Changes saved successfully');
     } catch (error) {
       console.error('Error saving changes:', error);
-      setError('Connection error. Please try again');
+      setError('Failed to save changes');
     } finally {
       setIsSaving(false);
     }
@@ -498,25 +604,6 @@ export default function AssignProtocolPage() {
       setError('Error removing protocol');
     } finally {
       setRemovingAssignment(null);
-    }
-  };
-
-  const handleConsultationDateChange = async (assignmentId: string, protocolId: string, date: Date | null) => {
-    try {
-      const response = await fetch(`/api/protocols/${protocolId}/consultation-date`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ consultationDate: date })
-      });
-
-      if (response.ok) {
-        // Reload data to reflect changes
-        await loadData(params.id as string);
-      } else {
-        console.error('Failed to update consultation date');
-      }
-    } catch (error) {
-      console.error('Error updating consultation date:', error);
     }
   };
 
@@ -669,7 +756,7 @@ export default function AssignProtocolPage() {
   const unavailableCount = assignedProtocols.filter(p => p.assignmentStatus === 'UNAVAILABLE').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-12">
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           
@@ -724,23 +811,25 @@ export default function AssignProtocolPage() {
 
             {/* Save Button */}
             {hasPendingChanges && (
-              <Button
-                onClick={saveChanges}
-                disabled={isSaving}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow-sm"
-              >
-                {isSaving ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Saving...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4" />
-                    <span>Save Changes</span>
-                  </div>
-                )}
-              </Button>
+              <div className="fixed bottom-6 right-6 z-50">
+                <Button
+                  onClick={saveChanges}
+                  disabled={isSaving}
+                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 py-3 font-semibold shadow-lg flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
             )}
           </div>
 
@@ -853,9 +942,13 @@ export default function AssignProtocolPage() {
                       onRemove={removeAssignment}
                       isUpdating={updatingStatus === protocol.assignment!.id}
                       isRemoving={removingAssignment === protocol.assignment!.id}
-                      pendingStatus={pendingChanges[protocol.assignment!.id]}
+                      pendingStatus={pendingChanges[protocol.assignment!.id]?.status}
+                      pendingConsultationDate={pendingChanges[protocol.assignment!.id]?.consultationDate}
+                      pendingStartDate={pendingChanges[protocol.assignment!.id]?.startDate}
+                      pendingEndDate={pendingChanges[protocol.assignment!.id]?.endDate}
                       hasPendingChanges={!!pendingChanges[protocol.assignment!.id]}
                       onConsultationDateChange={handleConsultationDateChange}
+                      onTreatmentDatesChange={handleTreatmentDatesChange}
                     />
                   ))
                 )}

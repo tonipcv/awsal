@@ -99,7 +99,7 @@ export async function POST(
     // Determinar nome do remetente (clínica ou médico)
     const senderName = doctorWithClinic?.clinicMemberships?.[0]?.clinic?.name || 
                       doctorWithClinic?.name || 
-                      'BOOP';
+                      'CXLUS';
 
     try {
       // Verificar conexão SMTP

@@ -70,8 +70,8 @@ export async function POST(req: Request) {
 
       await transporter.sendMail({
         from: {
-          name: 'BOOP',
-          address: 'ai@booplabs.com'
+          name: 'CXLUS',
+          address: process.env.SMTP_FROM as string
         },
         to: email,
         subject: 'Novo código de verificação',

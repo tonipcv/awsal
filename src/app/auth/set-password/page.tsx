@@ -2,12 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/ui/logo";
+import Image from 'next/image';
 import Link from "next/link";
+import { ArrowRight } from 'lucide-react';
 
 function SetPasswordForm() {
   const router = useRouter();
@@ -22,7 +19,7 @@ function SetPasswordForm() {
 
   useEffect(() => {
     if (!token) {
-      setError("Token de convite inválido ou ausente");
+      setError("Invalid or missing invitation token");
     }
   }, [token]);
 
@@ -31,17 +28,17 @@ function SetPasswordForm() {
     setError("");
 
     if (!token) {
-      setError("Token de convite inválido");
+      setError("Invalid invitation token");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
+      setError("Password must be at least 6 characters long");
       return;
     }
 
@@ -57,7 +54,7 @@ function SetPasswordForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Algo deu errado');
+        throw new Error(data.message || 'Something went wrong');
       }
 
       setIsSuccess(true);
@@ -65,7 +62,7 @@ function SetPasswordForm() {
         router.push('/auth/signin');
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Algo deu errado');
+      setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
@@ -73,93 +70,127 @@ function SetPasswordForm() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-        <div className="w-full max-w-[400px] mx-auto">
-          <Card className="border-none shadow-lg bg-white">
-            <CardHeader className="space-y-1 pb-4 text-center">
-              <Logo className="flex justify-center h-8 w-8 mx-auto mb-4" />
-              <CardTitle className="text-2xl font-light text-slate-800">Senha Definida!</CardTitle>
-              <CardDescription className="text-slate-600">
-                Sua senha foi definida com sucesso. Redirecionando para o login...
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4">
+          <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+            <div className="text-center">
+              <div className="flex justify-center items-center mb-4">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={40}
+                  height={13}
+                  className="object-contain"
+                  priority
+                />
               </div>
-            </CardContent>
-          </Card>
+              <h2 className="text-xl font-medium text-gray-200 mb-2">Password Set!</h2>
+              <p className="text-gray-400 text-sm">
+                Your password has been set successfully. Redirecting to login...
+              </p>
+              <div className="flex items-center justify-center space-x-2 mt-4">
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background font-['Helvetica'] font-light px-4">
-      <div className="w-full max-w-[400px] mx-auto">
-        <Card className="border-none shadow-lg bg-white">
-          <CardHeader className="space-y-1 pb-4 text-center">
-            <Logo className="flex justify-center h-8 w-8 mx-auto mb-4" />
-            <CardTitle className="text-2xl font-light text-slate-800">Defina sua Senha</CardTitle>
-            <CardDescription className="text-slate-600">
-              Bem-vindo ao AwLov! Defina uma senha segura para sua conta.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm text-slate-700">Nova senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                  minLength={6}
-                  className="bg-white border-slate-300 text-slate-800 placeholder:text-slate-400"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm text-slate-700">Confirme a nova senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repita a senha"
-                  required
-                  className="bg-white border-slate-300 text-slate-800 placeholder:text-slate-400"
-                />
-              </div>
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                  {error}
-                </div>
-              )}
-              <Button 
-                type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
-                disabled={isLoading || !token}
-              >
-                {isLoading ? "Definindo senha..." : "Definir Senha e Acessar"}
-              </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="text-center">
-            <p className="text-sm text-slate-500 w-full">
-              Já tem uma conta?{" "}
-              <Link 
-                href="/auth/signin" 
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Fazer login
-              </Link>
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center items-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={13}
+                className="object-contain"
+                priority
+              />
+            </div>
+            <h2 className="text-xl font-medium text-gray-200 mb-2">Set Your Password</h2>
+            <p className="text-gray-400 text-sm">
+              Welcome to CXLUS! Set a secure password for your account.
             </p>
-          </CardFooter>
-        </Card>
+          </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-6 text-red-400 text-center text-sm">{error}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                New password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                required
+                minLength={6}
+                className="w-full px-4 py-2.5 text-sm bg-[#1a1a1a] border border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-600/20 focus:border-gray-500 transition-all duration-200 text-gray-200"
+              />
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                Confirm new password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repeat password"
+                required
+                className="w-full px-4 py-2.5 text-sm bg-[#1a1a1a] border border-gray-700 rounded-lg focus:ring-2 focus:ring-gray-600/20 focus:border-gray-500 transition-all duration-200 text-gray-200"
+              />
+            </div>
+            <button 
+              type="submit" 
+              className="w-full py-2.5 px-4 text-sm font-semibold text-white bg-[#1a1a1a] hover:bg-[#2a2a2a] rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700"
+              disabled={isLoading || !token}
+            >
+              {isLoading ? "Setting password..." : "Set Password & Access"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          <div className="mt-4 text-center">
+            <Link 
+              href="/auth/signin" 
+              className="text-sm text-gray-400 hover:text-gray-200 transition-colors duration-200"
+            >
+              Already have an account? Sign in
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] font-normal tracking-[-0.03em] relative z-10">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-[420px] bg-[#0f0f0f] rounded-2xl border border-gray-800 p-8 shadow-lg relative z-20">
+          <div className="text-center">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mx-auto"></div>
+            <p className="mt-4 text-gray-400 text-sm">Loading...</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -167,14 +198,7 @@ function SetPasswordForm() {
 
 export default function SetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Carregando...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingFallback />}>
       <SetPasswordForm />
     </Suspense>
   );
