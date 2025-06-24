@@ -24,10 +24,7 @@ export async function GET(request: NextRequest) {
 
     const templates = await prisma.onboardingTemplate.findMany({
       where: {
-        OR: [
-          { doctorId: session.user.id },
-          { isPublic: true }
-        ],
+        doctorId: session.user.id,
         isActive: true
       },
       select: {

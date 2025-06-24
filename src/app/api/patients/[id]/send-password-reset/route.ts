@@ -45,11 +45,15 @@ export async function POST(
     }
 
     // Buscar o paciente
-    const patient = await prisma.user.findUnique({
+    const patient = await prisma.user.findFirst({
       where: {
-        id: id, // Use the awaited id
-        doctorId: session.user.id, // Garantir que o paciente pertence ao médico
-        role: 'PATIENT'
+        id: id,
+        role: 'PATIENT',
+        patientRelationships: {
+          some: {
+            doctorId: session.user.id
+          }
+        }
       }
     });
 

@@ -30,7 +30,12 @@ export async function GET(
       where: {
         id: id,
         role: 'PATIENT',
-        doctorId: session.user.id // Garantir que o paciente pertence ao médico
+        patientRelationships: {
+          some: {
+            doctorId: session.user.id,
+            isActive: true
+          }
+        }
       },
       select: {
         id: true,
@@ -39,6 +44,17 @@ export async function GET(
         emailVerified: true,
         image: true,
         referralCode: true,
+        patientRelationships: {
+          where: {
+            doctorId: session.user.id,
+            isActive: true
+          },
+          select: {
+            id: true,
+            isPrimary: true,
+            speciality: true
+          }
+        },
         assignedProtocols: {
           where: {
             // Only include protocols that belong to the current doctor
@@ -68,6 +84,11 @@ export async function GET(
         },
         // Include onboarding responses
         onboardingResponses: {
+          where: {
+            template: {
+              doctorId: session.user.id // Only include responses from templates created by the current doctor
+            }
+          },
           select: {
             id: true,
             status: true,

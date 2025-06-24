@@ -41,60 +41,60 @@ export async function GET() {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem acessar lista de pacientes.' }, { status: 403 });
     }
 
-    const patients = await prisma.user.findMany({
+    // Buscar pacientes através dos relacionamentos
+    const relationships = await prisma.doctorPatientRelationship.findMany({
       where: {
         doctorId: session.user.id,
-        role: 'PATIENT'
+        isActive: true
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        birthDate: true,
-        gender: true,
-        address: true,
-        emergencyContact: true,
-        emergencyPhone: true,
-        medicalHistory: true,
-        allergies: true,
-        medications: true,
-        notes: true,
-        emailVerified: true,
-        image: true
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    });
-
-    // Buscar protocolos ativos para cada paciente separadamente
-    const patientsWithProtocols = await Promise.all(
-      patients.map(async (patient) => {
-        const activeProtocols = await prisma.userProtocol.findMany({
-          where: {
-            userId: patient.id,
-            isActive: true
-          },
-          include: {
-            protocol: {
-              select: {
-                id: true,
-                name: true,
-                duration: true
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            birthDate: true,
+            gender: true,
+            address: true,
+            emergencyContact: true,
+            emergencyPhone: true,
+            medicalHistory: true,
+            allergies: true,
+            medications: true,
+            notes: true,
+            emailVerified: true,
+            image: true,
+            assignedProtocols: {
+              where: {
+                isActive: true
+              },
+              include: {
+                protocol: {
+                  select: {
+                    id: true,
+                    name: true,
+                    duration: true
+                  }
+                }
               }
             }
           }
-        });
+        }
+      }
+    });
 
-        return {
-          ...patient,
-          assignedProtocols: activeProtocols
-        };
-      })
+    // Transformar os relacionamentos em uma lista de pacientes
+    const patients = relationships.map(rel => ({
+      ...rel.patient,
+      isPrimary: rel.isPrimary,
+      speciality: rel.speciality,
+      relationshipId: rel.id
+    })).sort((a, b) => 
+      (a.name || '').localeCompare(b.name || '')
     );
 
-    return NextResponse.json(patientsWithProtocols);
+    return NextResponse.json(patients);
   } catch (error) {
     console.error('Error fetching patients:', error);
     return NextResponse.json({ error: 'Erro ao buscar pacientes' }, { status: 500 });
@@ -118,86 +118,119 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem criar pacientes.' }, { status: 403 });
     }
 
-    const { 
-      name, 
-      email,
-      phone,
-      birthDate,
-      gender,
-      address,
-      emergencyContact,
-      emergencyPhone,
-      medicalHistory,
-      allergies,
-      medications,
-      notes
-    } = await request.json();
+    const data = await request.json();
+    const { email, ...patientData } = data;
 
-    if (!name || !email) {
-      return NextResponse.json({ error: 'Nome e email são obrigatórios' }, { status: 400 });
-    }
-
-    // Validações adicionais
-    if (phone && !/^[\d\s\(\)\-\+]+$/.test(phone)) {
-      return NextResponse.json({ error: 'Formato de telefone inválido' }, { status: 400 });
-    }
-
-    if (emergencyPhone && !/^[\d\s\(\)\-\+]+$/.test(emergencyPhone)) {
-      return NextResponse.json({ error: 'Formato de telefone de emergência inválido' }, { status: 400 });
-    }
-
-    if (gender && !['M', 'F', 'Outro'].includes(gender)) {
-      return NextResponse.json({ error: 'Gênero deve ser M, F ou Outro' }, { status: 400 });
-    }
-
-    // Verificar se o email já está em uso
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return NextResponse.json({ error: 'Este email já está em uso' }, { status: 400 });
-    }
-
-    // Preparar dados do paciente
-    const patientData: any = {
-      name,
-      email,
-      role: 'PATIENT',
-      doctorId: session.user.id,
-      emailVerified: null // Email will be verified after password setup
-    };
-
-    // Adicionar campos opcionais se fornecidos
-    if (phone) patientData.phone = phone;
-    if (birthDate) patientData.birthDate = new Date(birthDate);
-    if (gender) patientData.gender = gender;
-    if (address) patientData.address = address;
-    if (emergencyContact) patientData.emergencyContact = emergencyContact;
-    if (emergencyPhone) patientData.emergencyPhone = emergencyPhone;
-    if (medicalHistory) patientData.medicalHistory = medicalHistory;
-    if (allergies) patientData.allergies = allergies;
-    if (medications) patientData.medications = medications;
-    if (notes) patientData.notes = notes;
-
-    // Buscar protocolos padrão do médico
-    const doctorDefaultProtocols = await prisma.doctorDefaultProtocol.findMany({
-      where: { doctorId: session.user.id },
+    // Verificar se o email já existe
+    const existingPatient = await prisma.user.findUnique({
+      where: { email },
       include: {
-        protocol: {
-          select: {
-            id: true,
-            duration: true
+        patientRelationships: {
+          include: {
+            doctor: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
           }
         }
       }
     });
 
-    // Criar paciente e atribuir protocolos padrão em uma transação
-    const patient = await prisma.$transaction(async (tx) => {
+    console.log('🔍 Debug - Doctor trying to create patient:', {
+      doctorId: session.user.id,
+      doctorName: user.name,
+      patientEmail: email
+    });
+
+    // Se o paciente já existe
+    if (existingPatient) {
+      console.log('🔍 Debug - Existing patient found:', {
+        patientId: existingPatient.id,
+        patientName: existingPatient.name,
+        existingRelationships: existingPatient.patientRelationships.map(rel => ({
+          doctorId: rel.doctorId,
+          doctorName: rel.doctor.name,
+          isPrimary: rel.isPrimary
+        }))
+      });
+
+      // Verificar se já tem relacionamento com este médico específico
+      const existingRelationshipWithThisDoctor = existingPatient.patientRelationships.find(
+        rel => rel.doctorId === session.user.id
+      );
+
+      if (existingRelationshipWithThisDoctor) {
+        console.log('❌ Patient already linked to this doctor');
+        return NextResponse.json({ 
+          error: `Este paciente já está vinculado a você. O relacionamento foi criado em ${existingRelationshipWithThisDoctor.createdAt.toLocaleDateString('pt-BR')}.` 
+        }, { status: 400 });
+      }
+
+      console.log('✅ Creating new relationship for existing patient');
+
+      // Se não tem relacionamento, criar um novo
+      const result = await prisma.$transaction(async (tx) => {
+        // Se o paciente já tem algum relacionamento primário, não definir o novo como primário
+        const hasExistingPrimary = await tx.doctorPatientRelationship.findFirst({
+          where: {
+            patientId: existingPatient.id,
+            isPrimary: true
+          }
+        });
+
+        // Criar relacionamento médico-paciente
+        const relationship = await tx.doctorPatientRelationship.create({
+          data: {
+            patientId: existingPatient.id,
+            doctorId: session.user.id,
+            isPrimary: !hasExistingPrimary // Será primário apenas se não houver outro primário
+          }
+        });
+
+        // Buscar protocolos padrão do médico
+        const doctorDefaultProtocols = await tx.doctorDefaultProtocol.findMany({
+          where: { doctorId: session.user.id },
+          include: { protocol: true }
+        });
+
+        // Atribuir protocolos padrão se existirem
+        if (doctorDefaultProtocols.length > 0) {
+          await tx.userProtocol.createMany({
+            data: doctorDefaultProtocols.map((defaultProtocol: any) => ({
+              userId: existingPatient.id,
+              protocolId: defaultProtocol.protocol.id,
+              status: 'UNAVAILABLE',
+              startDate: new Date(),
+              endDate: new Date(new Date().setDate(new Date().getDate() + (defaultProtocol.protocol.duration || 30)))
+            }))
+          });
+        }
+
+        return {
+          ...existingPatient,
+          relationship
+        };
+      });
+
+      return NextResponse.json(result);
+    }
+
+    // Se o paciente não existe, criar novo
+    const result = await prisma.$transaction(async (tx) => {
+      // Preparar dados do paciente
+      const newPatientData: any = {
+        name: patientData.name,
+        email: patientData.email,
+        role: 'PATIENT',
+        emailVerified: null, // Email will be verified after password setup
+        ...patientData
+      };
+
       // Criar paciente
       const newPatient = await tx.user.create({
-        data: patientData,
+        data: newPatientData,
         select: {
           id: true,
           name: true,
@@ -213,7 +246,22 @@ export async function POST(request: Request) {
         }
       });
 
-      // Atribuir protocolos padrão como indisponíveis se existirem
+      // Criar relacionamento médico-paciente
+      const relationship = await tx.doctorPatientRelationship.create({
+        data: {
+          patientId: newPatient.id,
+          doctorId: session.user.id,
+          isPrimary: true // Primeiro médico será o primário
+        }
+      });
+
+      // Buscar protocolos padrão do médico
+      const doctorDefaultProtocols = await tx.doctorDefaultProtocol.findMany({
+        where: { doctorId: session.user.id },
+        include: { protocol: true }
+      });
+
+      // Atribuir protocolos padrão se existirem
       if (doctorDefaultProtocols.length > 0) {
         await tx.userProtocol.createMany({
           data: doctorDefaultProtocols.map((defaultProtocol: any) => ({
@@ -226,7 +274,10 @@ export async function POST(request: Request) {
         });
       }
 
-      return newPatient;
+      return {
+        ...newPatient,
+        relationship
+      };
     });
 
     // Gerar token de reset de senha
@@ -235,7 +286,7 @@ export async function POST(request: Request) {
 
     // Salvar token no banco
     await prisma.user.update({
-      where: { id: patient.id },
+      where: { id: result.id },
       data: {
         resetToken,
         resetTokenExpiry
@@ -282,7 +333,7 @@ export async function POST(request: Request) {
         name: senderName,
         address: process.env.SMTP_FROM as string
       },
-      to: patient.email!,
+      to: result.email!,
       subject: `Welcome! Set Your Password - ${senderName}`,
       html: `
         <!DOCTYPE html>
@@ -310,7 +361,7 @@ export async function POST(request: Request) {
             <!-- Main Content -->
             <div style="padding: 40px 30px; background-color: #ffffff;">
               <div style="margin-bottom: 30px;">
-                <h2 style="color: #000000; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${patient.name},</h2>
+                <h2 style="color: #000000; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">Hello ${result.name},</h2>
                 <p style="color: #666666; margin: 0 0 16px 0; font-size: 16px;">
                   Your doctor has created an account for you on our healthcare platform. To start using the system, you need to set your password.
                 </p>
@@ -328,7 +379,7 @@ export async function POST(request: Request) {
               <div style="background-color: #f8f8f8; border-left: 4px solid #000000; padding: 20px; margin: 30px 0;">
                 <h3 style="color: #000000; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">Your Account</h3>
                 <div style="color: #666666; font-size: 14px;">
-                  <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${patient.email}</p>
+                  <p style="margin: 0 0 8px 0;"><strong>Email:</strong> ${result.email}</p>
                   <p style="margin: 0 0 8px 0;"><strong>Healthcare Provider:</strong> ${user.name}</p>
                   <p style="margin: 0;"><strong>Clinic:</strong> ${senderName}</p>
                 </div>
@@ -392,7 +443,7 @@ export async function POST(request: Request) {
       `
     });
 
-    return NextResponse.json(patient);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error creating patient:', error);
     return NextResponse.json({ error: 'Erro ao criar paciente' }, { status: 500 });

@@ -68,7 +68,7 @@ export async function GET() {
     }));
 
     return NextResponse.json({
-      predefined: PROTOCOL_TEMPLATES,
+      predefined: [],
       custom: transformedCustomTemplates
     });
   } catch (error) {

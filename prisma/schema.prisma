@@ -232,6 +232,8 @@ model User {
   subscriptions                                                    subscriptions?
   assignedCourses                                                  UserCourse[]
   lessonProgress                                                   UserLesson[]
+  doctorRelationships    DoctorPatientRelationship[] @relation("DoctorPatients")
+  patientRelationships   DoctorPatientRelationship[] @relation("PatientDoctors")
 }
 
 model Protocol {
@@ -597,6 +599,7 @@ model Clinic {
   members             ClinicMember[]
   subscription        ClinicSubscription?
   owner               User                 @relation("ClinicOwner", fields: [ownerId], references: [id])
+  doctorPatientRelationships DoctorPatientRelationship[]
 
   @@index([ownerId])
   @@index([slug])
@@ -1127,4 +1130,29 @@ enum SymptomReportStatus {
   REVIEWED
   URGENT
   RESOLVED
+}
+
+model DoctorPatientRelationship {
+  id            String    @id @default(cuid())
+  patientId     String    @map("patient_id")
+  doctorId      String    @map("doctor_id")
+  clinicId      String?   @map("clinic_id")
+  isActive      Boolean   @default(true) @map("is_active")
+  isPrimary     Boolean   @default(false) @map("is_primary")
+  speciality    String?
+  notes         String?
+  startDate     DateTime  @default(now()) @map("start_date")
+  endDate       DateTime? @map("end_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  patient       User      @relation("PatientDoctors", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        User      @relation("DoctorPatients", fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic        Clinic?   @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  @@unique([patientId, doctorId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([clinicId])
+  @@map("doctor_patient_relationships")
 }

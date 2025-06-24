@@ -26,7 +26,9 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   PencilIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  UserPlusIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -134,31 +136,29 @@ export default function PatientsPage() {
   const loadPatients = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/patients');
+      console.log('🔄 Loading patients...');
+      
+      const response = await fetch('/api/patients', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('📥 API Response status:', response.status);
+      
+      const data = await response.json();
+      console.log('📦 API Response data:', data);
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('🔍 DEBUG: Patients loaded from API:', data);
-        
-        // Debug each patient's email
-        data.forEach((patient: Patient, index: number) => {
-          console.log(`Patient ${index + 1}:`, {
-            id: patient.id,
-            name: patient.name,
-            email: patient.email,
-            emailType: typeof patient.email,
-            emailValue: patient.email === null ? 'NULL' : patient.email === undefined ? 'UNDEFINED' : patient.email
-          });
-        });
-        
         setPatients(Array.isArray(data) ? data : []);
+        console.log('✅ Patients loaded:', data.length || 0);
       } else {
-        const errorData = await response.json();
-        console.error('API Error:', response.status, errorData);
-        alert(`Erro ao carregar clientes: ${errorData.error || 'Erro desconhecido'}`);
+        console.error('❌ Error loading patients:', data.error);
+        toast.error(`Erro ao carregar pacientes: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error loading clients:', error);
-      alert('Erro de Conexão ao carregar clientes');
+      console.error('❌ Error in loadPatients:', error);
+      toast.error('Erro ao carregar pacientes');
     } finally {
       setIsLoading(false);
     }
@@ -558,1030 +558,132 @@ export default function PatientsPage() {
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
-        
-        {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              Clients
-            </h1>
-              <p className="text-gray-600 font-medium">
-              Manage your clients and assigned protocols
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => setShowImportModal(true)}
-              variant="outline"
-              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl px-6 shadow-md font-semibold"
-            >
-              <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
-              Import CSV
-            </Button>
-            <Button 
-              onClick={() => setShowAddPatient(true)}
-              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Client
-            </Button>
-          </div>
-        </div>
-
-        {/* Import Modal */}
-        {showImportModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">Import Clients</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowImportModal(false);
-                    setImportResults(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 rounded-xl"
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </Button>
-              </div>
-              
-              <div className="p-6">
-                {!importResults ? (
-                  <div className="space-y-4">
-                                          <div className="text-sm text-gray-600">
-                        <p className="mb-2">Upload a CSV file with the following columns:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li><strong>Required:</strong> name, email</li>
-                          <li>
-                            <strong>Optional:</strong> phone, birthDate (YYYY-MM-DD), gender, address, 
-                            emergencyContact, emergencyPhone, medicalHistory, allergies, medications, notes
-                          </li>
-                        </ul>
-                        <div className="mt-2">
-                          <a 
-                            href="/example-patients.csv" 
-                            download
-                            className="text-[#5154e7] hover:text-[#4145d1] font-medium flex items-center gap-1"
-                          >
-                            <ArrowUpTrayIcon className="h-4 w-4" />
-                            Download example CSV
-                          </a>
-                        </div>
-                      </div>
-                    
-                    <div className="flex items-center justify-center w-full">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <ArrowUpTrayIcon className="w-8 h-8 mb-3 text-gray-400" />
-                          <p className="mb-2 text-sm text-gray-500">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </p>
-                          <p className="text-xs text-gray-500">.CSV file only</p>
-                        </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept=".csv"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          disabled={isImporting}
-                        />
-                      </label>
-                    </div>
-
-                    {isImporting && (
-                      <div className="text-center text-sm text-gray-600">
-                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-r-transparent"></div>
-                        <span className="ml-2">Importing clients...</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-green-50 text-green-700 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="h-5 w-5" />
-                        <p className="font-medium">{importResults.message}</p>
-                      </div>
-                    </div>
-
-                    {importResults.errors.length > 0 && (
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-2">Errors:</h3>
-                        <div className="bg-red-50 rounded-xl p-4">
-                          <ul className="space-y-2 text-sm text-red-700">
-                            {importResults.errors.map((error, index) => (
-                              <li key={index}>
-                                Row {error.row} ({error.email}): {error.error}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={() => {
-                          setShowImportModal(false);
-                          setImportResults(null);
-                        }}
-                        className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
-                      >
-                        Done
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Patient Modal */}
-        {showAddPatient && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-gray-900">Add New Client</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowAddPatient(false);
-                      resetForm();
-                    }}
-                    className="text-gray-400 hover:text-gray-600 rounded-xl"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information *</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
-                          Full Name *
-                        </Label>
-                        <Input
-                          id="name"
-                          value={newPatient.name}
-                          onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
-                          placeholder="Client's full name"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
-                          Email *
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={newPatient.email}
-                          onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
-                          placeholder="email@example.com"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-center pt-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowOptionalFields(!showOptionalFields)}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        {showOptionalFields ? 'Hide Optional Fields' : 'Show Optional Fields'}
-                        <ChevronRightIcon className={cn("h-4 w-4 ml-2 transition-transform", showOptionalFields ? "rotate-90" : "")} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {showOptionalFields && (
-                    <>
-                      {/* Contact Information */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information (Optional)</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
-                              Phone
-                            </Label>
-                            <Input
-                              id="phone"
-                              value={newPatient.phone}
-                              onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
-                              placeholder="(11) 99999-9999"
-                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="birthDate" className="text-sm font-semibold text-gray-700">
-                              Birth Date
-                            </Label>
-                            <Input
-                              id="birthDate"
-                              type="date"
-                              value={newPatient.birthDate}
-                              onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
-                              className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="gender" className="text-sm font-semibold text-gray-700">
-                              Gender
-                            </Label>
-                            <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
-                              <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
-                                <SelectItem value="M">Male</SelectItem>
-                                <SelectItem value="F">Female</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="address" className="text-sm font-semibold text-gray-700">
-                              Address
-                            </Label>
-                            <Input
-                              id="address"
-                              value={newPatient.address}
-                              onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
-                              placeholder="Full address"
-                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Emergency Contact */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact (Optional)</h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="emergencyContact" className="text-sm font-semibold text-gray-700">
-                              Contact Name
-                            </Label>
-                            <Input
-                              id="emergencyContact"
-                              value={newPatient.emergencyContact}
-                              onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
-                              placeholder="Emergency contact name"
-                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                            />
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="emergencyPhone" className="text-sm font-semibold text-gray-700">
-                              Emergency Phone
-                            </Label>
-                            <Input
-                              id="emergencyPhone"
-                              value={newPatient.emergencyPhone}
-                              onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
-                              placeholder="(11) 99999-9999"
-                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Medical Information */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information (Optional)</h3>
-                        
-                        <div>
-                          <Label htmlFor="medicalHistory" className="text-sm font-semibold text-gray-700">
-                            Medical History
-                          </Label>
-                          <Textarea
-                            id="medicalHistory"
-                            value={newPatient.medicalHistory}
-                            onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
-                            placeholder="Relevant medical history, previous surgeries, etc."
-                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                            rows={3}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="allergies" className="text-sm font-semibold text-gray-700">
-                            Allergies
-                          </Label>
-                          <Textarea
-                            id="allergies"
-                            value={newPatient.allergies}
-                            onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
-                            placeholder="Known allergies to medications, foods, etc."
-                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                            rows={2}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="medications" className="text-sm font-semibold text-gray-700">
-                            Current Medications
-                          </Label>
-                          <Textarea
-                            id="medications"
-                            value={newPatient.medications}
-                            onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
-                            placeholder="Medications currently in use"
-                            className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                            rows={2}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Notes */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes (Optional)</h3>
-                        
-                        <div>
-                          <Label htmlFor="notes" className="text-sm font-semibold text-gray-700">
-                            General Notes
-                          </Label>
-                          <div className="relative">
-                            <Textarea
-                              id="notes"
-                              value={newPatient.notes}
-                              onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
-                              placeholder="General observations about the client"
-                              className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
-                              rows={3}
-                            />
-                            {newPatient.notes.trim() && (
-                              <button
-                                type="button"
-                                onClick={improveNotesWithAI}
-                                disabled={isImprovingNotes}
-                                className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Improve text with AI"
-                              >
-                                {isImprovingNotes ? (
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
-                                ) : (
-                                  <SparklesIcon className="h-4 w-4" />
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                
-                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-                  <Button 
-                    variant="outline"
-                    onClick={() => {
-                      setShowAddPatient(false);
-                      resetForm();
-                    }}
-                    disabled={isAddingPatient}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={addPatient}
-                    disabled={isAddingPatient}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
-                  >
-                    {isAddingPatient ? 'Creating...' : 'Create Client'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Confirmation Modal */}
-          {showDeleteConfirm && patientToDelete && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
-                <div className="p-6">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-                      <TrashIcon className="h-6 w-6 text-red-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">Delete Client</h3>
-                      <p className="text-sm text-gray-500 font-medium">This action cannot be undone</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-8">
-                    <p className="text-gray-700 leading-relaxed font-medium">
-                      Are you sure you want to delete the client{' '}
-                      <span className="font-bold text-gray-900">"{patientToDelete.name}"</span>?
-                    </p>
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                      <p className="text-sm text-amber-800 font-medium">
-                        ⚠️ All related data, including protocols and history, will be permanently lost.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <Button
-                      variant="ghost"
-                      onClick={handleDeleteCancel}
-                      disabled={deletingPatientId === patientToDelete.id}
-                      className="flex-1 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 rounded-xl font-semibold"
-                >
-                  Cancel
-                </Button>
-                    <Button
-                      onClick={handleDeleteConfirm}
-                      disabled={deletingPatientId === patientToDelete.id}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white shadow-md rounded-xl font-semibold"
-                    >
-                      {deletingPatientId === patientToDelete.id ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
-                          Deleting...
-                        </>
-                      ) : (
-                        'Delete'
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Generated Credentials Modal */}
-          {showCredentials && generatedCredentials && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
-                <div className="p-6">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                      <CheckCircleIcon className="h-6 w-6 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">Client Created Successfully!</h3>
-                      <p className="text-sm text-gray-500 font-medium">Temporary credentials generated</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 mb-8">
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
-                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded-xl border border-gray-200 mt-1">
-                            {generatedCredentials.email}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Temporary Password</label>
-                          <p className="text-sm font-mono text-gray-900 bg-white p-2 rounded-xl border border-gray-200 mt-1">
-                            {generatedCredentials.password}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                      <p className="text-sm text-blue-800 font-medium">
-                        💡 Share these credentials with the client. They should change the password on first login.
-              </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`Email: ${generatedCredentials.email}\nPassword: ${generatedCredentials.password}`);
-                      }}
-                      className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
-                    >
-                      Copy Credentials
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowCredentials(false);
-                        setGeneratedCredentials(null);
-                      }}
-                      className="flex-1 bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
-                    >
-                      Close
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-        )}
-
-        {/* Edit Patient Modal */}
-        {showEditPatient && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200">
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-gray-900">Edit Client</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowEditPatient(false);
-                      setPatientToEdit(null);
-                      resetForm();
-                    }}
-                    className="text-gray-400 hover:text-gray-600 rounded-xl"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </Button>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Basic Information *</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-name" className="text-sm font-semibold text-gray-700">
-                          Full Name *
-                        </Label>
-                        <Input
-                          id="edit-name"
-                          value={newPatient.name}
-                          onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
-                          placeholder="Client's full name"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="edit-email" className="text-sm font-semibold text-gray-700">
-                          Email *
-                        </Label>
-                        <Input
-                          id="edit-email"
-                          type="email"
-                          value={newPatient.email}
-                          onChange={(e) => setNewPatient({...newPatient, email: e.target.value})}
-                          placeholder="email@example.com"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Contact Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-phone" className="text-sm font-semibold text-gray-700">
-                          Phone
-                        </Label>
-                        <Input
-                          id="edit-phone"
-                          value={newPatient.phone}
-                          onChange={(e) => setNewPatient({...newPatient, phone: e.target.value})}
-                          placeholder="(11) 99999-9999"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="edit-birthDate" className="text-sm font-semibold text-gray-700">
-                          Birth Date
-                        </Label>
-                        <Input
-                          id="edit-birthDate"
-                          type="date"
-                          value={newPatient.birthDate}
-                          onChange={(e) => setNewPatient({...newPatient, birthDate: e.target.value})}
-                          className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-gender" className="text-sm font-semibold text-gray-700">
-                          Gender
-                        </Label>
-                        <Select value={newPatient.gender} onValueChange={(value) => setNewPatient({...newPatient, gender: value})}>
-                          <SelectTrigger className="mt-2 bg-white text-gray-900 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12">
-                            <SelectValue placeholder="Select gender" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
-                            <SelectItem value="M">Male</SelectItem>
-                            <SelectItem value="F">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="edit-address" className="text-sm font-semibold text-gray-700">
-                          Address
-                        </Label>
-                        <Input
-                          id="edit-address"
-                          value={newPatient.address}
-                          onChange={(e) => setNewPatient({...newPatient, address: e.target.value})}
-                          placeholder="Full address"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Emergency Contact */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Emergency Contact</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="edit-emergencyContact" className="text-sm font-semibold text-gray-700">
-                          Contact Name
-                        </Label>
-                        <Input
-                          id="edit-emergencyContact"
-                          value={newPatient.emergencyContact}
-                          onChange={(e) => setNewPatient({...newPatient, emergencyContact: e.target.value})}
-                          placeholder="Emergency contact name"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="edit-emergencyPhone" className="text-sm font-semibold text-gray-700">
-                          Emergency Phone
-                        </Label>
-                  <Input
-                          id="edit-emergencyPhone"
-                          value={newPatient.emergencyPhone}
-                          onChange={(e) => setNewPatient({...newPatient, emergencyPhone: e.target.value})}
-                          placeholder="(11) 99999-9999"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Medical Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information</h3>
-                    
-                    <div>
-                      <Label htmlFor="edit-medicalHistory" className="text-sm font-semibold text-gray-700">
-                        Medical History
-                      </Label>
-                      <Textarea
-                        id="edit-medicalHistory"
-                        value={newPatient.medicalHistory}
-                        onChange={(e) => setNewPatient({...newPatient, medicalHistory: e.target.value})}
-                        placeholder="Relevant medical history, previous surgeries, etc."
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="edit-allergies" className="text-sm font-semibold text-gray-700">
-                        Allergies
-                      </Label>
-                      <Textarea
-                        id="edit-allergies"
-                        value={newPatient.allergies}
-                        onChange={(e) => setNewPatient({...newPatient, allergies: e.target.value})}
-                        placeholder="Known allergies to medications, foods, etc."
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="edit-medications" className="text-sm font-semibold text-gray-700">
-                        Current Medications
-                      </Label>
-                      <Textarea
-                        id="edit-medications"
-                        value={newPatient.medications}
-                        onChange={(e) => setNewPatient({...newPatient, medications: e.target.value})}
-                        placeholder="Medications currently in use"
-                        className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2">Notes</h3>
-                    
-                    <div>
-                      <Label htmlFor="edit-notes" className="text-sm font-semibold text-gray-700">
-                        General Notes
-                      </Label>
-                      <div className="relative">
-                        <Textarea
-                          id="edit-notes"
-                          value={newPatient.notes}
-                          onChange={(e) => setNewPatient({...newPatient, notes: e.target.value})}
-                          placeholder="General observations about the client"
-                          className="mt-2 bg-white text-gray-900 border-gray-300 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl pr-12"
-                          rows={3}
-                        />
-                        {newPatient.notes.trim() && (
-                          <button
-                            type="button"
-                            onClick={improveNotesWithAI}
-                            disabled={isImprovingNotes}
-                            className="absolute right-3 top-4 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Improve text with AI"
-                          >
-                            {isImprovingNotes ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
-                            ) : (
-                              <SparklesIcon className="h-4 w-4" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setShowEditPatient(false);
-                    setPatientToEdit(null);
-                      resetForm();
-                    }}
-                    disabled={isEditingPatient}
-                    className="border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl font-semibold"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={updatePatient}
-                    disabled={isEditingPatient}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
-                  >
-                    {isEditingPatient ? 'Updating...' : 'Update Client'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* Search */}
-          <Card className="mb-6 bg-white border-gray-200 shadow-lg rounded-2xl">
-            <CardContent className="p-6">
-            <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search clients..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-gray-300 bg-white text-gray-700 placeholder:text-gray-500 focus:border-[#5154e7] focus:ring-[#5154e7] rounded-xl h-12"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content */}
-        <div data-patients-section>
-          {/* Pagination Info */}
-          {totalPatients > 0 && (
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-sm text-gray-500 font-medium">
-                Showing {startIndex + 1}-{Math.min(endIndex, totalPatients)} of {totalPatients} clients
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Clients</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage your clients and their protocols
               </p>
             </div>
-          )}
-
-          {/* Clients Grid */}
-          {filteredPatients.length === 0 ? (
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-            <CardContent className="p-8">
-              <div className="text-center">
-                  <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold mb-2 text-gray-900">
-                  {searchTerm ? 'No clients found' : 'No clients registered'}
-                </h3>
-                  <p className="text-sm text-gray-500 mb-4 font-medium">
-                  {searchTerm 
-                    ? 'Try adjusting your search term'
-                    : 'Start by adding your first client'
-                  }
-                </p>
-                {!searchTerm && (
-                  <Button 
-                    onClick={() => setShowAddPatient(true)}
-                      className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add First Client
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-            <div className="space-y-4">
-            {currentPatients.map((patient) => {
-              const activeProtocol = getActiveProtocol(patient);
-              const totalProtocols = patient.assignedProtocols.length;
-              
-              return (
-                  <Card key={patient.id} className="bg-white border-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                              <h3 className="text-base font-semibold text-gray-900">
-                              {patient.name || 'Name not provided'}
-                            </h3>
-                            <span className="text-sm text-gray-500">• {patient.email}</span>
-                            {activeProtocol && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 font-medium">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          asChild
-                            className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
-                        >
-                          <Link href={`/doctor/patients/${patient.id}`}>
-                            <EyeIcon className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditModal(patient)}
-                          className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
-                        >
-                          <PencilIcon className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
-                          disabled={sendingEmailId === patient.id}
-                          className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg font-medium h-8 px-2"
-                          title="Send password setup email"
-                        >
-                          {sendingEmailId === patient.id ? (
-                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
-                          ) : (
-                            <PaperAirplaneIcon className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-[#5154e7] hover:text-white hover:border-[#5154e7] rounded-lg font-medium h-8 px-2"
-                        >
-                          <Link href={`/doctor/patients/${patient.id}/assign`}>
-                            <DocumentTextIcon className="h-3 w-3 mr-1" />
-                            Protocol
-                          </Link>
-                        </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setPatientToDelete({ id: patient.id, name: patient.name || 'Client' });
-                              setShowDeleteConfirm(true);
-                            }}
-                            disabled={deletingPatientId === patient.id}
-                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
-                          >
-                            {deletingPatientId === patient.id ? (
-                              <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
-                            ) : (
-                              <TrashIcon className="h-3 w-3" />
-                            )}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              {/* Previous Button */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+                onClick={() => setShowAddPatient(true)}
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
               >
-                <ChevronLeftIcon className="h-4 w-4 mr-1" />
-                Previous
+                <UserPlusIcon className="h-5 w-5 mr-2" />
+                Add Client
               </Button>
+            </div>
+          </div>
 
-              {/* Page Numbers */}
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNumber;
-                  if (totalPages <= 5) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNumber = totalPages - 4 + i;
-                  } else {
-                    pageNumber = currentPage - 2 + i;
-                  }
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5154e7] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+              <p className="mt-4 text-gray-600">Loading clients...</p>
+            </div>
+          ) : patients.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="mb-4">
+                <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+              </div>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No clients registered</h3>
+              <p className="mt-1 text-sm text-gray-500">Start by adding your first client</p>
+              <div className="mt-6">
+                <Button
+                  onClick={() => setShowAddPatient(true)}
+                  className="bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
+                >
+                  <UserPlusIcon className="h-5 w-5 mr-2" />
+                  Add Client
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <div className="flex-1">
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search clients..."
+                      className="block w-full rounded-xl border-0 py-3 pl-10 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#5154e7] sm:text-sm sm:leading-6"
+                    />
+                  </div>
+                </div>
+              </div>
 
+              <div className="space-y-4">
+                {currentPatients.map((patient) => {
+                  const activeProtocol = getActiveProtocol(patient);
+                  const totalProtocols = patient.assignedProtocols?.length || 0;
+                  
                   return (
-                    <Button
-                      key={pageNumber}
-                      variant={currentPage === pageNumber ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(pageNumber)}
-                      className={cn(
-                        "w-8 h-8 p-0 rounded-xl",
-                        currentPage === pageNumber
-                          ? "bg-[#5154e7] text-white hover:bg-[#4145d1]"
-                          : "border-gray-300 text-gray-700 hover:bg-gray-100"
-                      )}
-                    >
-                      {pageNumber}
-                    </Button>
+                    <Card key={patient.id} className="bg-white border-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-base font-semibold text-gray-900">
+                                  {patient.name || 'Name not provided'}
+                                </h3>
+                                <span className="text-sm text-gray-500">• {patient.email}</span>
+                                {activeProtocol && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 font-medium">
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              asChild
+                              className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
+                            >
+                              <Link href={`/doctor/patients/${patient.id}`}>
+                                <EyeIcon className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditModal(patient)}
+                              className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
+                            >
+                              <PencilIcon className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
+                              disabled={sendingEmailId === patient.id}
+                              className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg font-medium h-8 px-2"
+                              title="Send password setup email"
+                            >
+                              {sendingEmailId === patient.id ? (
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                              ) : (
+                                <PaperAirplaneIcon className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
-                  <>
-                    <span className="text-gray-400 px-1">...</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange(totalPages)}
-                      className="w-8 h-8 p-0 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-xl"
-                    >
-                      {totalPages}
-                    </Button>
-                  </>
-                )}
               </div>
-
-              {/* Next Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
-              >
-                Next
-                <ChevronRightIcon className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
+            </>
           )}
-        </div>
         </div>
       </div>
     </div>

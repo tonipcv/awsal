@@ -154,7 +154,7 @@ export default function EditProtocolPage() {
   const loadAvailableOnboardingTemplates = async () => {
     try {
       console.log('🔍 Loading available onboarding templates...');
-      const response = await fetch('/api/onboarding-templates');
+      const response = await fetch('/api/onboarding/templates');
       console.log('📡 Onboarding Templates API response status:', response.status);
       console.log('📡 Onboarding Templates API response ok:', response.ok);
       
