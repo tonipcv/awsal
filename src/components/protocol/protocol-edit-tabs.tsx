@@ -13,6 +13,9 @@ import {
 } from '@heroicons/react/24/outline';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
 import ProtocolCoursesManager from '@/components/protocol/protocol-courses-manager';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { ProtocolDatePicker } from './protocol-date-picker';
 
 interface ProtocolEditTabsProps {
   protocol: any;
@@ -88,6 +91,26 @@ export function ProtocolEditTabs({
 
       <TabsContent value="basic">
         {children.basicInfo}
+        <Card className="bg-white border-gray-200 shadow-lg rounded-2xl mt-6">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-gray-900">Configurações de Prescrição</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ProtocolDatePicker
+                label="Disponível a partir de"
+                date={protocol.availableFrom ? new Date(protocol.availableFrom) : null}
+                onDateChange={(date) => setProtocol({ ...protocol, availableFrom: date?.toISOString() })}
+              />
+              
+              <ProtocolDatePicker
+                label="Disponível até"
+                date={protocol.availableUntil ? new Date(protocol.availableUntil) : null}
+                onDateChange={(date) => setProtocol({ ...protocol, availableUntil: date?.toISOString() })}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </TabsContent>
 
       <TabsContent value="days">

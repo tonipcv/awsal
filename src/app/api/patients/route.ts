@@ -6,6 +6,7 @@ import { hash } from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { createSetPasswordEmail } from '@/email-templates/auth/set-password';
+import { createId } from '@paralleldrive/cuid2';
 
 // Configuração do transporter de email
 if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD || !process.env.SMTP_FROM) {
@@ -222,6 +223,7 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // Preparar dados do paciente (remover protocolIds que não existe no modelo)
       const newPatientData = {
+        id: createId(),
         name: patientData.name,
         email: email,
         role: 'PATIENT',
