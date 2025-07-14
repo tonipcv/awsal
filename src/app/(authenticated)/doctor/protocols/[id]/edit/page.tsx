@@ -1297,7 +1297,7 @@ export default function EditProtocolPage() {
           {/* Header */}
           <div className="flex items-center gap-6">
             <Button variant="ghost" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-3">
-              <Link href={`/doctor/protocols/${params.id}`}>
+              <Link href="/doctor/protocols">
                 <ArrowLeftIcon className="h-4 w-4 mr-2" />
                 Back
               </Link>

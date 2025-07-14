@@ -141,12 +141,17 @@ export function ProtocolImagePicker({
                   onChange={handleImageUpload}
                   className="sr-only"
                   disabled={isUploading}
+                  id="image-upload"
                 />
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
                   className="bg-white/90 hover:bg-white text-gray-900"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('image-upload')?.click();
+                  }}
                 >
                   Change Image
                 </Button>
