@@ -124,63 +124,56 @@ export function ProtocolImagePicker({
   // Full mode with predefined images (for edit page)
   return (
     <div className="space-y-4">
-      {selectedImage && (
-        <div className="flex justify-end mb-4">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onSelectImage('')}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            Cancel
-          </Button>
-        </div>
-      )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {/* PREDEFINED_IMAGES.map((image) => ( */}
-          <Button
-            type="button"
-            variant="outline"
-            className={`h-40 relative hover:border-blue-500 hover:bg-blue-50 p-0 overflow-hidden ${
-              selectedImage === '' ? 'ring-2 ring-blue-500' : '' // Changed to '' for no image selected
-            }`}
-            onClick={() => {
-              onSelectImage(''); // Changed to '' for no image selected
-            }}
-          >
+      <div className="relative h-[200px] w-full rounded-xl overflow-hidden border border-gray-200">
+        {selectedImage ? (
+          <>
             <Image
               src={selectedImage}
               alt="Current cover image"
               fill
               className="object-cover"
             />
-          </Button>
-        {/* ))} */}
-        
-        <label className="relative block">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="sr-only"
-            disabled={isUploading}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            className="h-40 w-full relative hover:border-blue-500 hover:bg-blue-50"
-            disabled={isUploading}
-          >
-            <PhotoIcon className="h-8 w-8 text-gray-400" />
-            <span className="sr-only">Upload custom image</span>
-            {isUploading && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-              </div>
-            )}
-          </Button>
-        </label>
+            <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="sr-only"
+                  disabled={isUploading}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/90 hover:bg-white text-gray-900"
+                >
+                  Change Image
+                </Button>
+              </label>
+            </div>
+          </>
+        ) : (
+          <label className="block h-full">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="sr-only"
+              disabled={isUploading}
+            />
+            <div className="h-full w-full flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
+              <PhotoIcon className="h-8 w-8 text-gray-400" />
+              <span className="text-sm text-gray-600 font-medium">Click to upload image</span>
+              <span className="text-xs text-gray-500">(max 5MB)</span>
+            </div>
+          </label>
+        )}
+        {isUploading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          </div>
+        )}
       </div>
 
       {error && (
@@ -188,10 +181,6 @@ export function ProtocolImagePicker({
           {error}
         </div>
       )}
-
-      <p className="text-sm text-gray-500">
-        Select a pre-made image or upload your own (max 5MB)
-      </p>
     </div>
   );
 } 
