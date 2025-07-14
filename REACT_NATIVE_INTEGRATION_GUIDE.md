@@ -486,6 +486,88 @@ Response:
 }
 ```
 
+## 👤 Perfil do Usuário
+
+### Buscar Perfil
+```typescript
+GET /api/patient/profile
+Authorization: Bearer {token}
+
+Response:
+{
+  "user": {
+    "id": string,
+    "name": string,
+    "email": string,
+    "phone": string | null,
+    "birthDate": string | null,
+    "gender": string | null,
+    "address": string | null,
+    "emergencyContact": string | null,
+    "emergencyPhone": string | null,
+    "medicalHistory": string | null,
+    "allergies": string | null,
+    "medications": string | null,
+    "notes": string | null,
+    "image": string | null,
+    "role": "PATIENT",
+    "doctorId": string | null,
+    "doctor": {
+      "id": string,
+      "name": string,
+      "email": string,
+      "phone": string,
+      "image": string
+    }
+  }
+}
+```
+
+### Atualizar Perfil
+```typescript
+PUT /api/patient/profile
+Authorization: Bearer {token}
+Content-Type: application/json
+
+Request:
+{
+  "name"?: string,
+  "phone"?: string | null,
+  "birthDate"?: string | null,  // ISO date string
+  "gender"?: string | null,
+  "address"?: string | null,
+  "emergencyContact"?: string | null,
+  "emergencyPhone"?: string | null,
+  "medicalHistory"?: string | null,
+  "allergies"?: string | null,
+  "medications"?: string | null,
+  "notes"?: string | null,
+  "image"?: string | null
+}
+
+Response:
+{
+  "user": {
+    // Mesmos campos do GET
+  }
+}
+
+Response (400):
+{
+  "error": "Invalid data"
+}
+
+Response (401):
+{
+  "error": "Unauthorized"
+}
+
+Response (403):
+{
+  "error": "Access denied. Only patients can update their profile."
+}
+```
+
 ## 📝 Funcionalidades Adicionais
 
 ### Check-in Diário
