@@ -32,16 +32,24 @@ export async function POST(
       where: {
         id: prescriptionId,
         protocolId: protocolId,
-        userId: userId,
-        status: 'PRESCRIBED'
+        userId: userId
       }
     });
 
     if (!prescription) {
-      return NextResponse.json({ error: 'Prescrição não encontrada ou não está no estado correto' }, { status: 404 });
+      return NextResponse.json({ error: 'Prescrição não encontrada' }, { status: 404 });
     }
 
-    // Update prescription status to ACTIVE
+    // Check if protocol has already been started
+    if (prescription.actualStartDate) {
+      return NextResponse.json({ 
+        error: 'Protocolo já foi iniciado',
+        startDate: prescription.actualStartDate,
+        status: prescription.status
+      }, { status: 400 });
+    }
+
+    // Update prescription with start date
     const updatedPrescription = await prisma.protocolPrescription.update({
       where: { id: prescriptionId },
       data: {
