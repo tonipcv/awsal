@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import sharp from 'sharp';
@@ -168,21 +168,21 @@ export async function POST(
 
 // GET /api/mobile/symptom-reports/[id]/attachments - List attachments
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
+    const { id } = context.params
+
     const user = await requireMobileAuth(request);
     if (!user) {
       return unauthorizedResponse();
     }
 
-    const reportId = params.id;
-
     // Verify access to symptom report
     const symptomReport = await prisma.symptomReport.findFirst({
       where: {
-        id: reportId,
+        id: id,
         userId: user.id
       },
       include: {

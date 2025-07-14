@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PDFService } from '@/lib/pdf-service';
+import { extractTextFromPDF } from '@/lib/pdf-service';
 import { OpenAIService } from '@/lib/openai-service';
 import { ProtocolService } from '@/lib/protocol-service';
 import { getServerSession } from 'next-auth';
@@ -35,8 +35,7 @@ export async function POST(request: Request) {
     const blob = new Blob([await file.arrayBuffer()], { type: file.type });
 
     // Extract text from PDF
-    const pdfService = new PDFService();
-    const text = await pdfService.extractText(blob);
+    const text = await extractTextFromPDF(blob);
 
     // Use OpenAI to analyze the text and create protocol
     const openAIService = new OpenAIService();

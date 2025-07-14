@@ -1,11 +1,11 @@
-'use client';
+'use server'
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { PDFService } from '@/lib/pdf-service';
-import { ProtocolService } from '@/lib/protocol-service';
-import { AIService } from '@/lib/ai-service';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { extractTextFromPDF, validatePDF } from '@/lib/pdf-service';
+import { ProtocolService } from '@/lib/protocol-service'
+import { AIService } from '@/lib/ai-service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Validate PDF
-      PDFService.validatePDF(file);
+      await validatePDF(file);
     } catch (error) {
       return NextResponse.json({ error: (error as Error).message }, { status: 400 });
     }
@@ -36,8 +36,7 @@ export async function POST(request: NextRequest) {
     const blob = new Blob([await file.arrayBuffer()], { type: file.type });
 
     // Extract text from PDF
-    const pdfService = new PDFService();
-    const text = await pdfService.extractText(blob);
+    const text = await extractTextFromPDF(blob);
 
     // Use AIService to analyze the text and create protocol
     const protocolData = await AIService.analyzePDFContent(text);

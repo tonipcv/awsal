@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,21 +9,21 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
-export default function VerifyPage() {
+function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailParam = searchParams.get('email');
 
   const [email, setEmail] = useState(emailParam || "");
   const [code, setCode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+    setLoading(true);
 
     try {
       const response = await fetch('/api/auth/verify', {
@@ -37,7 +37,7 @@ export default function VerifyPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setIsSuccess(true);
+        setSuccess(true);
         // Wait a moment before redirecting
         setTimeout(() => {
           router.push(data.redirectUrl);
@@ -48,7 +48,7 @@ export default function VerifyPage() {
     } catch (error) {
       setError("Error verifying email. Please try again.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -58,7 +58,7 @@ export default function VerifyPage() {
       return;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError("");
 
     try {
@@ -81,15 +81,14 @@ export default function VerifyPage() {
     } catch (error) {
       setError("Error sending verification code. Please try again.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card className="bg-white shadow-xl rounded-2xl border-0">
-          <CardContent className="p-8">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 Verify Your Email
@@ -112,7 +111,7 @@ export default function VerifyPage() {
                   placeholder="Enter your email"
                   className="mt-2"
                   required
-                  disabled={isLoading || isSuccess}
+                  disabled={loading || success}
                 />
               </div>
 
@@ -127,7 +126,7 @@ export default function VerifyPage() {
                   placeholder="Enter verification code"
                   className="mt-2"
                   required
-                  disabled={isLoading || isSuccess}
+                  disabled={loading || success}
                 />
               </div>
 
@@ -138,7 +137,7 @@ export default function VerifyPage() {
                 </Alert>
               )}
 
-              {isSuccess && (
+              {success && (
                 <Alert className="bg-green-50 text-green-700 border-green-200">
                   <CheckCircleIcon className="h-4 w-4" />
                   <AlertDescription>Email verified successfully! Redirecting...</AlertDescription>
@@ -149,9 +148,9 @@ export default function VerifyPage() {
                 <Button
                   type="submit"
                   className="w-full h-12"
-                  disabled={isLoading || isSuccess}
+                  disabled={loading || success}
                 >
-                  {isLoading ? 'Verifying...' : 'Verify Email'}
+                  {loading ? 'Verifying...' : 'Verify Email'}
                 </Button>
 
                 <Button
@@ -159,15 +158,22 @@ export default function VerifyPage() {
                   variant="outline"
                   onClick={handleResendCode}
                   className="w-full h-12"
-                  disabled={isLoading || isSuccess}
+                  disabled={loading || success}
                 >
                   Resend Code
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyContent />
+    </Suspense>
+  )
 } 

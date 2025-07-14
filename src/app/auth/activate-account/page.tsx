@@ -1,29 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 
-export default function ActivateAccountPage() {
+function ActivateAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [activatedCount, setActivatedCount] = useState(0);
 
   useEffect(() => {
     if (!token) {
       setError("No activation token provided");
+      setLoading(false);
       return;
     }
 
     const activateAccount = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         const response = await fetch('/api/protocols/activate', {
           method: 'POST',
           headers: {
@@ -35,7 +35,7 @@ export default function ActivateAccountPage() {
         const data = await response.json();
 
         if (response.ok) {
-          setIsSuccess(true);
+          setSuccess(true);
           setActivatedCount(data.activatedCount || 0);
         } else {
           setError(data.error || 'Failed to activate account');
@@ -43,7 +43,7 @@ export default function ActivateAccountPage() {
       } catch (err) {
         setError('An error occurred while activating your account');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
@@ -77,7 +77,7 @@ export default function ActivateAccountPage() {
 
           {/* Content */}
           <div className="space-y-6">
-            {isLoading ? (
+            {loading ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
                 <p className="text-gray-400 text-center">
@@ -99,7 +99,7 @@ export default function ActivateAccountPage() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-            ) : isSuccess ? (
+            ) : success ? (
               <div className="text-center py-6">
                 <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
                 <h2 className="text-lg font-semibold text-emerald-400 mb-2">
@@ -135,4 +135,12 @@ export default function ActivateAccountPage() {
       </div>
     </div>
   );
+}
+
+export default function ActivateAccountPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ActivateAccountContent />
+    </Suspense>
+  )
 } 
