@@ -701,7 +701,7 @@ export default function ProtocolsPage() {
                                     <Link href={`/patient/checklist/${assignment.protocol.id}`}>
                                       <button 
                                         type="button"
-                                        className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium text-xs lg:text-sm h-8 lg:h-9 shadow-md shadow-turquoise/25 hover:shadow-turquoise/40 transition-all duration-200 rounded-md"
+                                        className="w-full bg-black/20 hover:bg-black/30 text-white font-medium text-xs lg:text-sm h-8 lg:h-9 rounded-md border border-white/10 hover:border-white/20 transition-all duration-200"
                                       >
                                         {t.continue}
                                       </button>
