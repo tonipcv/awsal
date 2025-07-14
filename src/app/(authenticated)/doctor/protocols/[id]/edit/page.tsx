@@ -31,6 +31,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
+import { ProtocolImagePicker } from '@/components/protocol/protocol-image-picker';
 
 interface ProtocolTask {
   id: string;
@@ -1055,7 +1056,7 @@ export default function EditProtocolPage() {
       setIsUploadingImage(true);
       
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('file', file);
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',
@@ -1452,161 +1453,83 @@ export default function EditProtocolPage() {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-gray-900 font-semibold">Protocol Name</Label>
-                          <div className="relative">
-                            <Input
-                              id="name"
-                              value={protocol.name}
-                              onChange={(e) => updateProtocolField('name', e.target.value)}
-                              placeholder="Ex: Post-Facial Filler"
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 pr-12"
-                            />
-                            {protocol.name.trim() && (
-                              <button
-                                type="button"
-                                onClick={improveNameWithAI}
-                                disabled={isImprovingName}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-[#5154e7] hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Improve text with AI"
-                              >
-                                {isImprovingName ? (
-                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#5154e7] border-t-transparent"></div>
-                                ) : (
-                                  <SparklesIcon className="h-4 w-4" />
-                                )}
-                              </button>
-                            )}
-                          </div>
+                          <Input
+                            id="name"
+                            value={protocol.name}
+                            onChange={(e) => updateProtocolField('name', e.target.value)}
+                            placeholder="e.g., Post-Facial Filler Protocol"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
                         </div>
 
                         <div className="space-y-2">
                           <Label htmlFor="description" className="text-gray-900 font-semibold">Description</Label>
-                          <div className="relative">
-                            <Textarea
-                              id="description"
-                              value={protocol.description}
-                              onChange={(e) => updateProtocolField('description', e.target.value)}
-                              placeholder="Describe the protocol..."
-                              rows={4}
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                            />
-                          </div>
+                          <Textarea
+                            id="description"
+                            value={protocol.description}
+                            onChange={(e) => updateProtocolField('description', e.target.value)}
+                            placeholder="Describe the purpose and characteristics of the protocol..."
+                            rows={4}
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                          />
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="isRecurring"
-                              checked={protocol.isRecurring}
-                              onChange={(e) => updateProtocolField('isRecurring', e.target.checked)}
-                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                            />
-                            <Label htmlFor="isRecurring" className="text-gray-900 font-medium">
-                              Recurring Protocol
-                            </Label>
-                          </div>
-
-                          {protocol.isRecurring && (
-                            <>
-                              <div className="space-y-2">
-                                <Label htmlFor="recurringInterval" className="text-gray-900 font-semibold">Recurrence Interval</Label>
-                                <Select
-                                  value={protocol.recurringInterval}
-                                  onValueChange={(value) => updateProtocolField('recurringInterval', value)}
-                                >
-                                  <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="DAILY">Daily</SelectItem>
-                                    <SelectItem value="WEEKLY">Weekly</SelectItem>
-                                    <SelectItem value="MONTHLY">Monthly</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </>
-                          )}
+                        <div className="space-y-2">
+                          <Label htmlFor="duration" className="text-gray-900 font-semibold">Duration (days)</Label>
+                          <Input
+                            id="duration"
+                            type="number"
+                            min="1"
+                            value={protocol.duration || protocol.days.length}
+                            onChange={(e) => updateProtocolField('duration', parseInt(e.target.value) || 1)}
+                            placeholder="Number of days"
+                            className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                          />
+                          <p className="text-xs text-gray-500">
+                            This will be automatically set to match the number of days you add in the Schedule tab
+                          </p>
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="onboardingTemplate" className="text-gray-900 font-semibold">Onboarding Template</Label>
-                          <Select
-                            value={protocol.onboardingTemplateId || 'none'}
-                            onValueChange={(value) => updateProtocolField('onboardingTemplateId', value === 'none' ? null : value)}
-                          >
-                            <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12">
-                              <SelectValue placeholder="Select a template..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {availableOnboardingTemplates.map((template) => (
-                                <SelectItem key={template.id} value={template.id}>
-                                  {template.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="isTemplate"
+                              checked={protocol.isTemplate}
+                              onChange={(e) => updateProtocolField('isTemplate', e.target.checked)}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
+                              Save as template
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="showDoctorInfo"
+                              checked={protocol.showDoctorInfo}
+                              onChange={(e) => updateProtocolField('showDoctorInfo', e.target.checked)}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
+                              Show responsible doctor
+                            </Label>
+                            <span className="text-xs text-gray-500">
+                              (Shows your photo and name on patient screen)
+                            </span>
+                          </div>
                         </div>
 
-                        {protocol.isRecurring && protocol.recurringInterval !== 'DAILY' && (
-                          <div className="space-y-2">
-                            <Label className="text-gray-900 font-semibold">
-                              {protocol.recurringInterval === 'WEEKLY' ? 'Days of Week' : 'Days of Month'}
-                            </Label>
-                            <div className="flex flex-wrap gap-2">
-                              {protocol.recurringInterval === 'WEEKLY' ? (
-                                // Days of week selection
-                                ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
-                                  <Button
-                                    key={index}
-                                    type="button"
-                                    variant={protocol.recurringDays.includes(index + 1) ? 'default' : 'outline'}
-                                    className={cn(
-                                      "rounded-xl h-10 px-4",
-                                      protocol.recurringDays.includes(index + 1) 
-                                        ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" 
-                                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                                    )}
-                                    onClick={() => {
-                                      const dayNumber = index + 1;
-                                      const newDays = protocol.recurringDays.includes(dayNumber)
-                                        ? protocol.recurringDays.filter(d => d !== dayNumber)
-                                        : [...protocol.recurringDays, dayNumber].sort((a, b) => a - b);
-                                      updateProtocolField('recurringDays', newDays);
-                                    }}
-                                  >
-                                    {day.slice(0, 3)}
-                                  </Button>
-                                ))
-                              ) : (
-                                // Days of month selection
-                                Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                  <Button
-                                    key={day}
-                                    type="button"
-                                    variant={protocol.recurringDays.includes(day) ? 'default' : 'outline'}
-                                    className={cn(
-                                      "rounded-xl h-10 w-10 p-0",
-                                      protocol.recurringDays.includes(day) 
-                                        ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" 
-                                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                                    )}
-                                    onClick={() => {
-                                      const newDays = protocol.recurringDays.includes(day)
-                                        ? protocol.recurringDays.filter(d => d !== day)
-                                        : [...protocol.recurringDays, day].sort((a, b) => a - b);
-                                      updateProtocolField('recurringDays', newDays);
-                                    }}
-                                  >
-                                    {day}
-                                  </Button>
-                                ))
-                              )}
-                            </div>
-                          </div>
-                        )}
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Cover Image</Label>
+                          <ProtocolImagePicker
+                            selectedImage={protocol.coverImage || ''}
+                            onSelectImage={(url) => updateProtocolField('coverImage', url)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </CardContent>

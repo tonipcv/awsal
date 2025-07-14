@@ -2,57 +2,49 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { PhotoIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
-
-const PREDEFINED_IMAGES = [
-  {
-    id: 'protocol-1',
-    src: '/images/protocol-1.jpg',
-    alt: 'Medical Protocol 1',
-    thumbnail: '/images/protocol-1-thumb.jpg'
-  },
-  {
-    id: 'protocol-2',
-    src: '/images/protocol-2.jpg',
-    alt: 'Medical Protocol 2',
-    thumbnail: '/images/protocol-2-thumb.jpg'
-  },
-  {
-    id: 'protocol-3',
-    src: '/images/protocol-3.jpg',
-    alt: 'Medical Protocol 3',
-    thumbnail: '/images/protocol-3-thumb.jpg'
-  },
-  {
-    id: 'protocol-4',
-    src: '/images/protocol-4.jpg',
-    alt: 'Medical Protocol 4',
-    thumbnail: '/images/protocol-4-thumb.jpg'
-  }
-];
 
 interface ProtocolImagePickerProps {
   selectedImage: string;
   onSelectImage: (imageSrc: string) => void;
+  mode?: 'full' | 'upload-only';
 }
 
-export function ProtocolImagePicker({ selectedImage, onSelectImage }: ProtocolImagePickerProps) {
+export function ProtocolImagePicker({ 
+  selectedImage, 
+  onSelectImage,
+  mode = 'full'
+}: ProtocolImagePickerProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size must be less than 5MB');
+      return;
+    }
+
     try {
       setIsUploading(true);
+      setError(null);
       
       // Create FormData
       const formData = new FormData();
       formData.append('file', file);
 
       // Upload image
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/upload-image', {
         method: 'POST',
         body: formData
       });
@@ -61,36 +53,110 @@ export function ProtocolImagePicker({ selectedImage, onSelectImage }: ProtocolIm
         const { url } = await response.json();
         onSelectImage(url);
       } else {
-        throw new Error('Failed to upload image');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
       }
     } catch (error) {
       console.error('Error uploading image:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setIsUploading(false);
+      // Reset the input
+      e.target.value = '';
     }
   };
 
+  // Upload-only mode (for new protocol page)
+  if (mode === 'upload-only') {
+    return (
+      <div className="space-y-4">
+        {selectedImage ? (
+          <div className="relative h-[200px] w-full rounded-xl overflow-hidden border border-gray-200">
+            <Image
+              src={selectedImage}
+              alt="Selected cover image"
+              fill
+              className="object-cover"
+            />
+            <div className="absolute top-2 right-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => onSelectImage('')}
+                className="bg-white/90 hover:bg-white text-gray-900"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <label className="block">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="sr-only"
+              disabled={isUploading}
+            />
+            <div className="h-[200px] w-full border-2 border-dashed border-gray-300 rounded-xl hover:border-[#5154e7] transition-colors cursor-pointer flex flex-col items-center justify-center gap-2">
+              <PhotoIcon className="h-8 w-8 text-gray-400" />
+              <span className="text-sm text-gray-600 font-medium">Click to upload image</span>
+              <span className="text-xs text-gray-500">(max 5MB)</span>
+              {isUploading && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+                </div>
+              )}
+            </div>
+          </label>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Full mode with predefined images (for edit page)
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {PREDEFINED_IMAGES.map((image) => (
+      {selectedImage && (
+        <div className="flex justify-end mb-4">
           <Button
-            key={image.id}
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onSelectImage('')}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {/* PREDEFINED_IMAGES.map((image) => ( */}
+          <Button
             type="button"
             variant="outline"
             className={`h-40 relative hover:border-blue-500 hover:bg-blue-50 p-0 overflow-hidden ${
-              selectedImage === image.src ? 'ring-2 ring-blue-500' : ''
+              selectedImage === '' ? 'ring-2 ring-blue-500' : '' // Changed to '' for no image selected
             }`}
-            onClick={() => onSelectImage(image.src)}
+            onClick={() => {
+              onSelectImage(''); // Changed to '' for no image selected
+            }}
           >
             <Image
-              src={image.thumbnail}
-              alt={image.alt}
+              src={selectedImage}
+              alt="Current cover image"
               fill
               className="object-cover"
             />
           </Button>
-        ))}
+        {/* ))} */}
         
         <label className="relative block">
           <input
@@ -117,8 +183,14 @@ export function ProtocolImagePicker({ selectedImage, onSelectImage }: ProtocolIm
         </label>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <p className="text-sm text-gray-500">
-        Select a pre-made image or upload your own
+        Select a pre-made image or upload your own (max 5MB)
       </p>
     </div>
   );

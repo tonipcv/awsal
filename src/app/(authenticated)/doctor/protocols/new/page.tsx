@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
+import { ProtocolImagePicker } from '@/components/protocol/protocol-image-picker';
 
 interface ProtocolTask {
   id: string;
@@ -80,6 +81,7 @@ interface Protocol {
   modalButtonUrl: string;
   days: ProtocolDay[];
   products: ProtocolProduct[];
+  coverImage?: string;
 }
 
 export default function NewProtocolPage() {
@@ -109,7 +111,8 @@ export default function NewProtocolPage() {
         sessions: []
       }
     ],
-    products: []
+    products: [],
+    coverImage: ''
   });
 
   // Load available products
@@ -493,6 +496,10 @@ export default function NewProtocolPage() {
   // Check if modal content is configured
   const isModalEnabled = !!(protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription);
 
+  const handleImageSelect = useCallback((url: string) => {
+    updateProtocolField('coverImage', url);
+  }, [updateProtocolField]);
+
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
@@ -574,11 +581,12 @@ export default function NewProtocolPage() {
           <ProtocolEditTabs
             protocol={protocol}
             setProtocol={setProtocol}
-            availableProducts={availableProducts}
-            availableProductsToAdd={availableProductsToAdd}
-            addProduct={addProduct}
-            removeProduct={removeProduct}
-            updateProtocolProduct={updateProtocolProduct}
+            availableCourses={[]}
+            addCourse={() => {}}
+            removeCourse={() => {}}
+            updateCourse={() => {}}
+            reorderCourses={() => {}}
+            protocolId=""
           >
             {{
               basicInfo: (
@@ -661,26 +669,19 @@ export default function NewProtocolPage() {
                           </div>
                         </div>
 
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                          <div className="flex items-start gap-3">
-                            <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-900 mb-1">
-                                Day Management
-                              </p>
-                              <p className="text-xs text-blue-700">
-                                The protocol duration is automatically determined by the days you add in the "Schedule" tab. 
-                                Currently: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'day' : 'days'}</strong>
-                              </p>
-                            </div>
-                          </div>
+                        <div className="space-y-2">
+                          <Label className="text-gray-900 font-semibold">Cover Image</Label>
+                          <ProtocolImagePicker
+                            selectedImage={protocol.coverImage || ''}
+                            onSelectImage={handleImageSelect}
+                            mode="upload-only"
+                          />
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ),
-
               modalConfig: (
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="pb-4">
@@ -690,240 +691,97 @@ export default function NewProtocolPage() {
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Modal Enable/Disable */}
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          id="enableModal"
+                          id="modalEnabled"
                           checked={isModalEnabled}
                           onChange={(e) => {
                             if (!e.target.checked) {
-                              // Clear all modal fields when disabling
                               updateProtocolField('modalTitle', '');
                               updateProtocolField('modalVideoUrl', '');
                               updateProtocolField('modalDescription', '');
-                              updateProtocolField('modalButtonText', 'Learn more');
+                              updateProtocolField('modalButtonText', '');
                               updateProtocolField('modalButtonUrl', '');
                             }
                           }}
                           className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
                         />
-                        <Label htmlFor="enableModal" className="text-gray-900 font-semibold">
-                          Enable modal for unavailable protocol
+                        <Label htmlFor="modalEnabled" className="text-gray-900 font-medium">
+                          Enable modal
                         </Label>
                       </div>
-                      <p className="text-xs text-gray-600 mt-2 ml-7">
-                        {isModalEnabled 
-                          ? 'Modal will be shown when protocol is unavailable or inactive'
-                          : 'Protocol will not be clickable when unavailable or inactive'
-                        }
-                      </p>
-                    </div>
 
-                    {/* Modal Configuration Fields - Only show when enabled */}
-                    {isModalEnabled && (
-                      <div className="grid lg:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
-                            <Input
-                              id="modalTitle"
-                              value={protocol.modalTitle}
-                              onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
-                              placeholder="Ex: Protocol in Development"
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
-                            <Input
-                              id="modalVideoUrl"
-                              value={protocol.modalVideoUrl}
-                              onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
-                              placeholder="Ex: https://www.youtube.com/embed/..."
-                              className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
-                            <Textarea
-                              id="modalDescription"
-                              value={protocol.modalDescription}
-                              onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
-                              placeholder="Describe what will be shown in the modal..."
-                              className="min-h-[80px] border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
+                      {isModalEnabled && (
+                        <div className="grid lg:grid-cols-2 gap-6">
+                          <div className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                              <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
                               <Input
-                                id="modalButtonText"
-                                value={protocol.modalButtonText}
-                                onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
-                                placeholder="Ex: Learn more"
-                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                id="modalTitle"
+                                value={protocol.modalTitle}
+                                onChange={(e) => updateProtocolField('modalTitle', e.target.value)}
+                                placeholder="Ex: Protocol in Development"
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                               />
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL (optional)</Label>
+                              <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL (optional)</Label>
                               <Input
-                                id="modalButtonUrl"
-                                value={protocol.modalButtonUrl}
-                                onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
-                                placeholder="Ex: https://..."
-                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-10"
+                                id="modalVideoUrl"
+                                value={protocol.modalVideoUrl}
+                                onChange={(e) => updateProtocolField('modalVideoUrl', e.target.value)}
+                                placeholder="Ex: https://www.youtube.com/embed/..."
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
                               />
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
 
-                    {/* Disabled State Message */}
-                    {!isModalEnabled && (
-                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                        <p className="text-sm text-gray-600 text-center font-medium">
-                          Modal is disabled. The protocol will simply not be clickable when unavailable.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ),
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Description</Label>
+                              <Textarea
+                                id="modalDescription"
+                                value={protocol.modalDescription}
+                                onChange={(e) => updateProtocolField('modalDescription', e.target.value)}
+                                placeholder="Ex: This protocol is currently in development and will be available soon..."
+                                rows={4}
+                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
+                              />
+                            </div>
 
-              products: (
-                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg font-bold text-gray-900">Protocol Products</CardTitle>
-                        <p className="text-gray-600 font-medium mt-1">
-                          Add products that will be recommended to patients in this protocol.
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
-                        {protocol.products.length} products
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
+                                <Input
+                                  id="modalButtonText"
+                                  value={protocol.modalButtonText}
+                                  onChange={(e) => updateProtocolField('modalButtonText', e.target.value)}
+                                  placeholder="Ex: Learn More"
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                                />
+                              </div>
 
-                    {/* Add Product */}
-                    {availableProductsToAdd.length > 0 ? (
-                      <div className="space-y-3">
-                        <Label className="text-gray-900 font-semibold">Add Product</Label>
-                        <div className="flex gap-3">
-                          <Select onValueChange={addProduct}>
-                            <SelectTrigger className="flex-1 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-12">
-                              <SelectValue placeholder="Select a product..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableProductsToAdd.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{product.name}</span>
-                                    {product.brand && (
-                                      <span className="text-xs text-gray-500">({product.brand})</span>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                        <p className="text-sm text-gray-600 text-center font-medium">
-                          {availableProducts.length === 0 
-                            ? 'Loading products...' 
-                            : 'All available products have already been added to the protocol.'
-                          }
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Products List */}
-                    {protocol.products.length > 0 && (
-                      <div className="space-y-4">
-                        <Label className="text-gray-900 font-semibold">Added Products</Label>
-                        {protocol.products.map((protocolProduct, index) => (
-                          <div key={protocolProduct.id} className="border border-gray-200 rounded-xl bg-gray-50">
-                            <div className="p-6">
-                              <div className="flex items-start gap-4">
-                                <div className="flex-1 space-y-4">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900">{protocolProduct.product.name}</h4>
-                                      {protocolProduct.product.brand && (
-                                        <p className="text-sm text-gray-600">{protocolProduct.product.brand}</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex items-center space-x-3">
-                                      <input
-                                        type="checkbox"
-                                        id={`required-${protocolProduct.id}`}
-                                        checked={protocolProduct.isRequired}
-                                        onChange={(e) => updateProtocolProduct(protocolProduct.id, 'isRequired', e.target.checked)}
-                                        className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                                      />
-                                      <Label htmlFor={`required-${protocolProduct.id}`} className="text-gray-900 font-medium">
-                                        Required product
-                                      </Label>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                      <Label className="text-gray-900 font-semibold">Order</Label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={protocolProduct.order}
-                                        onChange={(e) => updateProtocolProduct(protocolProduct.id, 'order', parseInt(e.target.value) || 1)}
-                                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 rounded-xl h-10"
-                                      />
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-2">
-                                    <Label className="text-gray-900 font-semibold">Notes (optional)</Label>
-                                    <Textarea
-                                      value={protocolProduct.notes || ''}
-                                      onChange={(e) => updateProtocolProduct(protocolProduct.id, 'notes', e.target.value)}
-                                      placeholder="Notes about using this product..."
-                                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                                      rows={2}
-                                    />
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeProduct(protocolProduct.id)}
-                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl h-8 w-8 p-0"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </Button>
+                              <div className="space-y-2">
+                                <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
+                                <Input
+                                  id="modalButtonUrl"
+                                  value={protocol.modalButtonUrl}
+                                  onChange={(e) => updateProtocolField('modalButtonUrl', e.target.value)}
+                                  placeholder="Ex: https://..."
+                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
+                                />
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ),
-
               days: (
                 <ProtocolDayEditor
                   days={protocol.days}
