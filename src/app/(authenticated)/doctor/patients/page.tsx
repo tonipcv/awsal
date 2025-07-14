@@ -35,6 +35,7 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface Patient {
   id: string;
@@ -90,6 +91,7 @@ interface ImportResults {
 
 export default function PatientsPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -567,11 +569,13 @@ export default function PatientsPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                onClick={() => setShowAddPatient(true)}
+                asChild
                 className="bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
               >
-                <UserPlusIcon className="h-5 w-5 mr-2" />
-                Add Client
+                <Link href="/doctor/patients/smart-add">
+                  <UserPlusIcon className="h-5 w-5 mr-2" />
+                  Add Client
+                </Link>
               </Button>
             </div>
           </div>
@@ -590,11 +594,13 @@ export default function PatientsPage() {
               <p className="mt-1 text-sm text-gray-500">Start by adding your first client</p>
               <div className="mt-6">
                 <Button
-                  onClick={() => setShowAddPatient(true)}
+                  asChild
                   className="bg-[#5154e7] hover:bg-[#4145d1] text-white shadow-md rounded-xl font-semibold"
                 >
-                  <UserPlusIcon className="h-5 w-5 mr-2" />
-                  Add Client
+                  <Link href="/doctor/patients/smart-add">
+                    <UserPlusIcon className="h-5 w-5 mr-2" />
+                    Add First Client
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -662,6 +668,23 @@ export default function PatientsPage() {
                               <PencilIcon className="h-3 w-3" />
                             </Button>
                             <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setPatientToDelete({ id: patient.id, name: patient.name || 'Unnamed Patient' });
+                                setShowDeleteConfirm(true);
+                              }}
+                              disabled={deletingPatientId === patient.id}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
+                              title="Delete patient"
+                            >
+                              {deletingPatientId === patient.id ? (
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
+                              ) : (
+                                <TrashIcon className="h-3 w-3" />
+                              )}
+                            </Button>
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
@@ -686,6 +709,59 @@ export default function PatientsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && patientToDelete && (
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-red-600">
+                <ExclamationTriangleIcon className="h-6 w-6" />
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="text-gray-600 pt-2">
+                Are you sure you want to delete the patient <strong>"{patientToDelete.name}"</strong>?
+                <br />
+                <br />
+                This action cannot be undone and will permanently remove:
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>Patient profile and personal information</li>
+                  <li>All assigned protocols and progress</li>
+                  <li>All medical history and notes</li>
+                  <li>All associated data</li>
+                </ul>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleDeleteCancel}
+                disabled={deletingPatientId !== null}
+                className="mt-3 sm:mt-0 sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                disabled={deletingPatientId !== null}
+                className="bg-red-600 hover:bg-red-700 text-white sm:w-auto"
+              >
+                {deletingPatientId === patientToDelete.id ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="h-4 w-4 mr-2" />
+                    Delete Patient
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 } 

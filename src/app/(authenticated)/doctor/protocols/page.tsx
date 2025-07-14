@@ -13,7 +13,9 @@ import {
   MagnifyingGlassIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowPathIcon,
+  ArrowUpTrayIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -37,6 +39,7 @@ interface Protocol {
     };
     isActive: boolean;
   }>;
+  isRecurring: boolean;
 }
 
 export default function ProtocolsPage() {
@@ -180,10 +183,10 @@ export default function ProtocolsPage() {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 Protocols
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-gray-600 font-small">
                 Manage your protocols and templates
               </p>
             </div>
@@ -197,6 +200,16 @@ export default function ProtocolsPage() {
                 <Link href="/doctor/templates">
                   <DocumentTextIcon className="h-4 w-4 mr-2" />
                   Templates
+                </Link>
+              </Button>
+              <Button 
+                asChild
+                variant="outline"
+                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-6 shadow-md font-semibold"
+              >
+                <Link href="/doctor/protocols/upload">
+                  <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                  Upload PDF
                 </Link>
               </Button>
               <Button 
@@ -288,6 +301,12 @@ export default function ProtocolsPage() {
                           Create Protocol
                         </Link>
                       </Button>
+                      <Button asChild variant="outline" className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl shadow-md font-semibold">
+                        <Link href="/doctor/protocols/upload">
+                          <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                          Upload PDF
+                        </Link>
+                      </Button>
                       <Button variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl shadow-md font-semibold">
                         <Link href="/doctor/templates">
                           <DocumentTextIcon className="h-4 w-4 mr-2" />
@@ -327,6 +346,12 @@ export default function ProtocolsPage() {
                           {protocol.isTemplate && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs bg-[#5154e7] text-white font-semibold">
                               Template
+                            </span>
+                          )}
+                          {protocol.isRecurring && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs bg-purple-100 text-purple-700 border border-purple-200 font-semibold">
+                              <ArrowPathIcon className="h-3 w-3 mr-1" />
+                              Recurring
                             </span>
                           )}
                           {activeAssignments > 0 && (

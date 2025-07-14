@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -19,14 +18,23 @@ import {
   EyeIcon,
   ShieldCheckIcon,
   ExclamationTriangleIcon,
-  BookOpenIcon,
-  AcademicCapIcon,
-  ClipboardDocumentIcon
+  ChartBarIcon,
+  BellIcon,
+  HeartIcon,
+  PhotoIcon,
+  MicrophoneIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AudioRecorder from '@/components/audio-recorder/audio-recorder';
+import VoiceNoteModal from '@/components/voice-note/voice-note-modal';
+import VoiceNoteList from '@/components/voice-note/voice-note-list';
+import PatientDocuments from '@/components/patient/patient-documents';
 
 interface ProtocolAssignment {
   id: string;
@@ -100,6 +108,61 @@ interface Patient {
   onboardingResponses: OnboardingResponse[];
 }
 
+interface SymptomReport {
+  id: string;
+  title: string;
+  symptoms: string;
+  severity: number;
+  reportTime: string;
+  status: 'PENDING' | 'REVIEWED' | 'REQUIRES_ATTENTION' | 'RESOLVED';
+  doctorNotes?: string;
+  reviewedAt?: string;
+  reviewer?: {
+    name?: string;
+  };
+  attachments: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+  }>;
+}
+
+interface DailyCheckin {
+  id: string;
+  date: string;
+  responses: Array<{
+    questionId: string;
+    answer: string;
+  }>;
+}
+
+interface Protocol {
+  id: string;
+  name: string;
+  description: string;
+  duration: number;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
+interface VoiceNote {
+  id: string;
+  status: 'PROCESSING' | 'TRANSCRIBED' | 'ANALYZED' | 'ERROR';
+  audioUrl: string;
+  duration: number;
+  transcription: string | null;
+  summary: string | null;
+  createdAt: string;
+  checklist: {
+    items: Array<{
+      title: string;
+      description: string;
+      type: 'exam' | 'medication' | 'referral' | 'followup';
+      status: 'pending' | 'completed';
+      dueDate?: string;
+    }>;
+  } | null;
+}
+
 export default function PatientDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -109,11 +172,28 @@ export default function PatientDetailPage() {
   const [isAssigningCourse, setIsAssigningCourse] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [showCourseModal, setShowCourseModal] = useState(false);
+  const [symptomReports, setSymptomReports] = useState<SymptomReport[]>([]);
+  const [dailyCheckins, setDailyCheckins] = useState<DailyCheckin[]>([]);
+  const [availableProtocols, setAvailableProtocols] = useState<Protocol[]>([]);
+  const [selectedProtocolId, setSelectedProtocolId] = useState<string>('');
+  const [showProtocolModal, setShowProtocolModal] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<SymptomReport | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isUpdatingReport, setIsUpdatingReport] = useState(false);
+  const [showVoiceNoteModal, setShowVoiceNoteModal] = useState(false);
+  const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
+  const [isProcessingVoiceNote, setIsProcessingVoiceNote] = useState(false);
+  const [isLoadingVoiceNotes, setIsLoadingVoiceNotes] = useState(true);
 
   useEffect(() => {
     if (params.id) {
       loadPatient(params.id as string);
       loadAvailableCourses();
+      loadSymptomReports(params.id as string);
+      loadDailyCheckins(params.id as string);
+      loadAvailableProtocols();
+      loadVoiceNotes(params.id as string);
     }
   }, [params.id]);
 
@@ -193,6 +273,181 @@ export default function PatientDetailPage() {
     }
   };
 
+  const loadSymptomReports = async (patientId: string) => {
+    try {
+      const response = await fetch(`/api/symptom-reports?userId=${patientId}&limit=5`);
+      if (response.ok) {
+        const data = await response.json();
+        setSymptomReports(data);
+      }
+    } catch (error) {
+      console.error('Error loading symptom reports:', error);
+    }
+  };
+
+  const loadDailyCheckins = async (patientId: string) => {
+    try {
+      const response = await fetch(`/api/daily-checkin?userId=${patientId}&limit=5`);
+      if (response.ok) {
+        const data = await response.json();
+        setDailyCheckins(data);
+      }
+    } catch (error) {
+      console.error('Error loading daily check-ins:', error);
+    }
+  };
+
+  const loadAvailableProtocols = async () => {
+    try {
+      const response = await fetch('/api/protocols?status=PUBLISHED');
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableProtocols(data);
+      }
+    } catch (error) {
+      console.error('Error loading available protocols:', error);
+    }
+  };
+
+  const loadVoiceNotes = async (patientId: string) => {
+    try {
+      setIsLoadingVoiceNotes(true);
+      const response = await fetch(`/api/voice-notes?patientId=${patientId}`);
+      if (!response.ok) throw new Error('Failed to load voice notes');
+      const data = await response.json();
+      setVoiceNotes(data);
+    } catch (error) {
+      console.error('Error loading voice notes:', error);
+    } finally {
+      setIsLoadingVoiceNotes(false);
+    }
+  };
+
+  const assignProtocol = async () => {
+    if (!selectedProtocolId) return;
+
+    try {
+      setIsAssigning(true);
+      const response = await fetch(`/api/protocols/assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          protocolId: selectedProtocolId,
+          userId: params.id,
+          startDate: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh patient data to show new protocol
+        await loadPatient(params.id as string);
+        setShowProtocolModal(false);
+        setSelectedProtocolId('');
+      }
+    } catch (error) {
+      console.error('Error assigning protocol:', error);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const updateReportStatus = async (reportId: string, status: string, notes?: string) => {
+    try {
+      setIsUpdatingReport(true);
+      const response = await fetch(`/api/symptom-reports/${reportId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, doctorNotes: notes }),
+      });
+
+      if (response.ok) {
+        // Refresh reports
+        await loadSymptomReports(params.id as string);
+        setShowReportModal(false);
+        setSelectedReport(null);
+      }
+    } catch (error) {
+      console.error('Error updating report status:', error);
+    } finally {
+      setIsUpdatingReport(false);
+    }
+  };
+
+  const handleVoiceNoteTranscription = async (text: string) => {
+    const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
+    if (!patientId) return;
+    
+    try {
+      setIsProcessingVoiceNote(true);
+      
+      // Create voice note
+      const response = await fetch('/api/voice-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          patientId,
+          transcription: text
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create voice note');
+      }
+
+      // Get the created voice note
+      const voiceNote = await response.json();
+
+      // Start transcription
+      const transcribeResponse = await fetch('/api/voice-notes/transcribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          voiceNoteId: voiceNote.id
+        })
+      });
+
+      if (!transcribeResponse.ok) {
+        throw new Error('Failed to transcribe voice note');
+      }
+
+      // Get the transcribed voice note
+      const transcribedNote = await transcribeResponse.json();
+
+      // Start analysis
+      const analyzeResponse = await fetch('/api/voice-notes/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          voiceNoteId: transcribedNote.id
+        })
+      });
+
+      if (!analyzeResponse.ok) {
+        throw new Error('Failed to analyze voice note');
+      }
+
+      // Reload voice notes
+      await loadVoiceNotes(patientId);
+      setShowVoiceNoteModal(false);
+
+    } catch (error) {
+      console.error('Error processing voice note:', error);
+      alert('Error processing voice note. Please try again.');
+    } finally {
+      setIsProcessingVoiceNote(false);
+    }
+  };
+
   const getPatientInitials = (name?: string) => {
     if (!name) return 'P';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -255,7 +510,7 @@ export default function PatientDetailPage() {
     }
   };
 
-  const getProtocolProgress = (assignment: ProtocolAssignment) => {
+  const calculateProgress = (assignment: ProtocolAssignment) => {
     const startDate = new Date(assignment.startDate);
     const endDate = new Date(assignment.endDate);
     const currentDate = new Date();
@@ -293,15 +548,15 @@ export default function PatientDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <div className="lg:ml-64">
           <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-64 mb-6"></div>
               <div className="space-y-6">
                 <div className="h-32 bg-gray-100 rounded-2xl"></div>
-                <div className="grid lg:grid-cols-3 gap-6">
-                  {[1, 2, 3].map((i) => (
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {[1, 2].map((i) => (
                     <div key={i} className="h-64 bg-gray-100 rounded-2xl"></div>
                   ))}
                 </div>
@@ -315,14 +570,14 @@ export default function PatientDetailPage() {
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gray-50">
         <div className="lg:ml-64">
           <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
             <div className="text-center py-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Client not found</h2>
-              <Button asChild className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl">
+              <Button asChild variant="default">
                 <Link href="/doctor/patients">Back to Clients</Link>
-          </Button>
+              </Button>
             </div>
           </div>
         </div>
@@ -333,577 +588,453 @@ export default function PatientDetailPage() {
   const activeProtocols = getActiveProtocols();
   const completedProtocols = getCompletedProtocols();
   const totalProtocols = patient.assignedProtocols.length;
-  const activeCourses = getActiveCourses();
-  const completedCourses = getCompletedCourses();
-  const totalCourses = patient.assignedCourses?.length || 0;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
-        
-        {/* Header */}
-          <div className="flex items-center gap-6 mb-8">
-            <Button 
-              variant="outline" 
-              asChild 
-              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-4 py-2 rounded-xl"
-            >
-              <Link href="/doctor/patients">
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                Back
-              </Link>
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Client Details
-              </h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-2">
-                  <UserIcon className="h-4 w-4" />
-                  {patient.name || patient.email}
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-2">
-                  <DocumentTextIcon className="h-4 w-4" />
-                  {totalProtocols} protocols
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-2">
-                  <CheckCircleIcon className="h-4 w-4" />
-                  {activeProtocols.length} active
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-2">
-                  <BookOpenIcon className="h-4 w-4" />
-                  {totalCourses} courses
-                </span>
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" asChild size="sm">
+                <Link href="/doctor/patients">
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                  Back
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-large font-bold text-gray-900">Client Details</h1>
+                <p className="text-sm text-gray-500 mt-1">View and manage patient protocols</p>
               </div>
             </div>
-            <div className="flex gap-3">
-            <Dialog open={showCourseModal} onOpenChange={setShowCourseModal}>
-              <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
-                  >
-                  <AcademicCapIcon className="h-4 w-4 mr-2" />
-                    Assign Course
-                </Button>
-              </DialogTrigger>
-                <DialogContent className="bg-white border border-gray-200 shadow-xl rounded-2xl">
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-gray-900">Assign Course to Client</DialogTitle>
-                </DialogHeader>
-                  <div className="space-y-6 p-2">
-                  <div>
-                      <label className="text-sm font-semibold text-gray-700 mb-3 block">
-                        Select Course
-                    </label>
-                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                        <SelectTrigger className="border-gray-300 bg-white text-gray-900 h-12 rounded-xl focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
-                          <SelectValue placeholder="Choose a course..." />
-                      </SelectTrigger>
-                        <SelectContent className="bg-white border-gray-200 shadow-lg rounded-xl">
-                        {getAvailableCoursesForAssignment().map((course) => (
-                          <SelectItem 
-                            key={course.id} 
-                            value={course.id} 
-                              className="hover:bg-gray-50 focus:bg-gray-50 text-gray-900 cursor-pointer p-3"
-                          >
-                            <div>
-                                <div className="font-semibold text-gray-900">{course.name}</div>
-                                <div className="text-sm text-gray-600">
-                                  {course._count?.modules || 0} modules • {course._count?.lessons || 0} lessons
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            <div className="flex items-center gap-2">
+              <Dialog open={showVoiceNoteModal} onOpenChange={setShowVoiceNoteModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MicrophoneIcon className="h-4 w-4 mr-2" />
+                    Record Note
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Record Voice Note</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <AudioRecorder
+                      onTranscriptionComplete={handleVoiceNoteTranscription}
+                      onError={(error) => alert(error)}
+                      disabled={isProcessingVoiceNote}
+                    />
                   </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowCourseModal(false)}
-                        className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold px-6 py-3 rounded-xl"
-                    >
-                        Cancel
-                    </Button>
-                    <Button 
-                      onClick={assignCourse}
-                      disabled={!selectedCourseId || isAssigningCourse}
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                    >
-                        {isAssigningCourse ? (
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                            <span>Assigning...</span>
-                          </div>
-                        ) : (
-                          'Assign Course'
-                        )}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-              <Button 
-                asChild 
-                className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-              >
-              <Link href={`/doctor/patients/${patient.id}/assign`}>
-                <PlusIcon className="h-4 w-4 mr-2" />
-                  Assign Protocol
-              </Link>
-            </Button>
-          </div>
-        </div>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={showProtocolModal} onOpenChange={setShowProtocolModal}>
+                <DialogTrigger asChild>
+                  <Button variant="default" size="sm">
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Protocol
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Protocol</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Select Protocol</label>
+                      <Select value={selectedProtocolId} onValueChange={setSelectedProtocolId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a protocol..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableProtocols
+                            .filter(p => !patient?.assignedProtocols.some(a => a.protocol.id === p.id))
+                            .map(protocol => (
+                              <SelectItem key={protocol.id} value={protocol.id}>
+                                {protocol.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <div className="max-w-6xl mx-auto space-y-8">
-          
-          {/* Patient Info Card */}
-            <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
-              <CardContent className="p-8">
-                <div className="flex items-start gap-8">
-                {/* Avatar */}
-                <div className="flex-shrink-0">
-                    <div className="h-24 w-24 rounded-2xl bg-teal-100 flex items-center justify-center text-2xl font-bold text-teal-600">
-                    {getPatientInitials(patient.name)}
-                  </div>
-                </div>
-                
-                {/* Patient Details */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                          {patient.name || 'Name not provided'}
-                      </h2>
-                        <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
-                          <EnvelopeIcon className="h-5 w-5" />
-                        <span>{patient.email}</span>
-                        {patient.emailVerified ? (
-                            <Badge className="bg-green-50 text-green-700 border-green-200 flex items-center gap-2 px-3 py-1 rounded-full">
-                              <ShieldCheckIcon className="h-4 w-4" />
-                              Verified
-                          </Badge>
-                        ) : (
-                            <Badge className="bg-orange-50 text-orange-700 border-orange-200 flex items-center gap-2 px-3 py-1 rounded-full">
-                              <ExclamationTriangleIcon className="h-4 w-4" />
-                              Pending
-                          </Badge>
-                        )}
-                      </div>
-                      {patient.referralCode && (
-                          <div className="flex items-center gap-3 text-base text-gray-600 mb-6">
-                            <ClipboardDocumentIcon className="h-5 w-5" />
-                            <span>Referral code: <strong className="text-gray-900">{patient.referralCode}</strong></span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={copyReferralCode}
-                              className="h-8 px-3 text-sm border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg"
-                          >
-                              Copy
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-                      <div className="text-center p-4 bg-gray-50 rounded-xl">
-                        <div className="text-2xl font-bold text-gray-900">{totalProtocols}</div>
-                        <div className="text-sm text-gray-600 font-medium">Protocols</div>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 rounded-xl">
-                        <div className="text-2xl font-bold text-green-600">{activeProtocols.length}</div>
-                        <div className="text-sm text-gray-600 font-medium">P. Active</div>
-                    </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-xl">
-                        <div className="text-2xl font-bold text-blue-600">{completedProtocols.length}</div>
-                        <div className="text-sm text-gray-600 font-medium">P. Completed</div>
-                    </div>
-                      <div className="text-center p-4 bg-teal-50 rounded-xl">
-                        <div className="text-2xl font-bold text-teal-600">{totalCourses}</div>
-                        <div className="text-sm text-gray-600 font-medium">Courses</div>
-                    </div>
-                      <div className="text-center p-4 bg-teal-50 rounded-xl">
-                        <div className="text-2xl font-bold text-teal-600">{activeCourses.length}</div>
-                        <div className="text-sm text-gray-600 font-medium">C. Active</div>
-                    </div>
-                      <div className="text-center p-4 bg-blue-50 rounded-xl">
-                        <div className="text-2xl font-bold text-blue-600">{completedCourses.length}</div>
-                        <div className="text-sm text-gray-600 font-medium">C. Completed</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-            {/* Onboarding Responses */}
-            {patient.onboardingResponses && patient.onboardingResponses.length > 0 && (
-              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-900">
-                    Onboarding Forms
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                  <div className="space-y-8">
-                    {patient.onboardingResponses.map((response) => (
-                      <div key={response.id} className="border-b border-gray-200 pb-8 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {response.template.name}
-                          </h3>
-                          <Badge
-                            className={cn(
-                              "rounded-lg px-2 py-1",
-                              response.status === "COMPLETED"
-                                ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                            )}
-                          >
-                            {response.status === "COMPLETED" ? "Completed" : "Pending"}
-                          </Badge>
-                        </div>
-                        
-                        {response.answers.map((answer) => {
-                          const step = response.template.steps.find(
-                            (s) => s.id === answer.stepId
-                          );
-                          return (
-                            <div key={answer.id} className="mb-4 last:mb-0">
-                              <p className="text-sm font-medium text-gray-700 mb-1">
-                                {step?.question}
-                                {step?.required && <span className="text-red-500 ml-1">*</span>}
-                              </p>
-                              <p className="text-base text-gray-900">{answer.answer}</p>
-                            </div>
-                          );
-                        })}
-                        
-                        {response.completedAt && (
-                          <p className="text-sm text-gray-500 mt-4">
-                            Completed on {format(new Date(response.completedAt), "MMMM d, yyyy 'at' h:mm a", { locale: enUS })}
+                    {selectedProtocolId && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium text-gray-700">Protocol Details</h4>
+                        {availableProtocols.find(p => p.id === selectedProtocolId)?.description && (
+                          <p className="text-sm text-gray-600">
+                            {availableProtocols.find(p => p.id === selectedProtocolId)?.description}
                           </p>
                         )}
+                        <p className="text-sm text-gray-600">
+                          Duration: {availableProtocols.find(p => p.id === selectedProtocolId)?.duration} days
+                        </p>
                       </div>
-                    ))}
+                    )}
+
+                    <div className="pt-4">
+                      <Button 
+                        onClick={assignProtocol}
+                        disabled={!selectedProtocolId || isAssigning}
+                        className="w-full"
+                      >
+                        {isAssigning ? 'Assigning...' : 'Assign Protocol'}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column - Patient Info */}
+            <div className="col-span-12 lg:col-span-4 space-y-6">
+              {/* Patient Card */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center text-center mb-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white mb-2">
+                      {getPatientInitials(patient.name)}
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900">{patient.name || 'Name not provided'}</h2>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                      <EnvelopeIcon className="h-3 w-3" />
+                      {patient.email}
+                    </div>
+                    {patient.emailVerified ? (
+                      <Badge variant="default" className="mt-1 bg-green-100 text-green-700 hover:bg-green-200 text-xs">
+                        <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                        Verified Account
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="mt-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs">
+                        <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                        Pending Verification
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-xs font-medium text-gray-600">Active Protocols</p>
+                      <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-xs font-medium text-gray-600">Total Protocols</p>
+                      <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            )}
 
-            <div className="grid lg:grid-cols-3 gap-8">
-            {/* Active Protocols */}
-              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="p-6 border-b border-gray-200">
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <CheckCircleIcon className="h-6 w-6 text-green-600" />
-                    Active Protocols
-                    <Badge className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full text-sm font-semibold">
-                    {activeProtocols.length}
-                  </Badge>
-                </CardTitle>
-                  <p className="text-sm text-gray-600 mt-2">Protocols in progress</p>
-              </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                {activeProtocols.length === 0 ? (
-                    <div className="text-center py-12">
-                      <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-600 mb-4">
-                        No active protocols
-                    </p>
-                      <Button 
-                        asChild 
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                      >
-                      <Link href={`/doctor/patients/${patient.id}/assign`}>
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                          Assign First Protocol
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  activeProtocols.map((assignment) => {
-                    const progress = getProtocolProgress(assignment);
-                    
-                    return (
-                        <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-base font-semibold text-gray-900">
-                                  {assignment.protocol.name}
-                                </h3>
-                                {getStatusBadge(assignment.status)}
-                              </div>
-                              {assignment.protocol.description && (
-                                  <p className="text-sm text-gray-600 mb-2">
-                                  {assignment.protocol.description}
-                                </p>
-                              )}
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                <div className="flex items-center gap-1">
-                                    <ClockIcon className="h-4 w-4" />
-                                    <span>{assignment.protocol.duration} days</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <CalendarDaysIcon className="h-4 w-4" />
-                                  <span>
-                                      Started {safeFormatDate(assignment.startDate)}
-                                  </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                asChild 
-                                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
-                              >
-                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
-                                  <EyeIcon className="h-4 w-4 mr-1" />
-                                  View
-                              </Link>
-                            </Button>
-                          </div>
-                          
-                          {/* Progress Bar */}
-                          <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600 font-medium">Progress</span>
-                                <span className="text-teal-600 font-semibold">{progress.progress}%</span>
-                            </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                  className="bg-teal-600 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${progress.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Active Courses */}
-              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="p-6 border-b border-gray-200">
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <AcademicCapIcon className="h-6 w-6 text-teal-600" />
-                    Active Courses
-                    <Badge className="bg-teal-50 text-teal-700 border-teal-200 px-3 py-1 rounded-full text-sm font-semibold">
-                    {activeCourses.length}
-                  </Badge>
-                </CardTitle>
-                  <p className="text-sm text-gray-600 mt-2">Courses in progress</p>
-              </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                {activeCourses.length === 0 ? (
-                    <div className="text-center py-12">
-                      <BookOpenIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-600 mb-4">
-                        No active courses
-                    </p>
-                    <Button 
-                      onClick={() => setShowCourseModal(true)}
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-2" />
-                        Assign First Course
-                    </Button>
-                  </div>
-                ) : (
-                  activeCourses.map((assignment) => (
-                      <Card key={assignment.id} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-base font-semibold text-gray-900">
-                                {assignment.course.name}
-                              </h3>
-                              {getCourseStatusBadge(assignment.status)}
-                            </div>
-                            {assignment.course.description && (
-                                <p className="text-sm text-gray-600 mb-2">
-                                {assignment.course.description}
-                              </p>
-                            )}
-                              <div className="flex items-center gap-4 text-sm text-gray-500">
-                              <div className="flex items-center gap-1">
-                                  <BookOpenIcon className="h-4 w-4" />
-                                  <span>{assignment.course._count?.modules || 0} modules</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                  <CalendarDaysIcon className="h-4 w-4" />
-                                <span>
-                                    Started {safeFormatDate(assignment.startDate)}
-                                </span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              asChild 
-                              className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-xl"
-                            >
-                            <Link href={`/doctor/courses/${assignment.course.id}`}>
-                                <EyeIcon className="h-4 w-4 mr-1" />
-                                View
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-              {/* Complete History */}
-              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
-                <CardHeader className="p-6 border-b border-gray-200">
-                  <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <DocumentTextIcon className="h-6 w-6 text-gray-600" />
-                    Complete History
-                    <Badge className="bg-gray-50 text-gray-700 border-gray-200 px-3 py-1 rounded-full text-sm font-semibold">
-                    {totalProtocols + totalCourses}
-                  </Badge>
-                </CardTitle>
-                  <p className="text-sm text-gray-600 mt-2">All assigned protocols and courses</p>
-              </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                {totalProtocols === 0 && totalCourses === 0 ? (
-                    <div className="text-center py-12">
-                      <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-600 mb-4">
-                        No protocols or courses assigned yet
-                    </p>
-                      <div className="flex gap-3 justify-center">
-                        <Button 
-                          asChild 
-                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                        >
-                        <Link href={`/doctor/patients/${patient.id}/assign`}>
-                          <PlusIcon className="h-4 w-4 mr-2" />
-                            Assign Protocol
-                        </Link>
-                      </Button>
-                      <Button 
-                        onClick={() => setShowCourseModal(true)}
-                          className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                          Assign Course
-                      </Button>
+              {/* Quick Stats */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>Protocol Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DocumentTextIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Active Protocols</span>
+                      </div>
+                      <span className="text-sm font-semibold">{activeProtocols.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircleIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Completed</span>
+                      </div>
+                      <span className="text-sm font-semibold">{completedProtocols.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ChartBarIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Overall Progress</span>
+                      </div>
+                      <span className="text-sm font-semibold">
+                        {Math.round((completedProtocols.length / totalProtocols) * 100)}%
+                      </span>
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Protocol History */}
-                    {patient.assignedProtocols.map((assignment) => (
-                        <Card key={`protocol-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                          <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                                assignment.status === 'ACTIVE' 
-                                  ? 'bg-green-100 text-green-600' 
-                                  : assignment.status === 'INACTIVE'
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-orange-100 text-orange-600'
-                              }`}>
-                                  <DocumentTextIcon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-base font-semibold text-gray-900">{assignment.protocol.name}</p>
-                                  {getStatusBadge(assignment.status)}
-                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Protocol</Badge>
-                                </div>
-                                  <p className="text-sm text-gray-600">
-                                  {assignment.status === 'INACTIVE' 
-                                      ? `Completed ${safeFormatDate(assignment.endDate)}`
-                                      : `Started ${safeFormatDate(assignment.startDate)}`
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                asChild 
-                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
-                              >
-                              <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
-                                  <EyeIcon className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    
-                    {/* Course History */}
-                    {(patient.assignedCourses || []).map((assignment) => (
-                        <Card key={`course-${assignment.id}`} className="bg-white border border-gray-200 shadow-sm rounded-xl">
-                          <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                                assignment.status === 'active' 
-                                    ? 'bg-teal-100 text-teal-600' 
-                                  : assignment.status === 'completed'
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-orange-100 text-orange-600'
-                              }`}>
-                                  <AcademicCapIcon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-base font-semibold text-gray-900">{assignment.course.name}</p>
-                                  {getCourseStatusBadge(assignment.status)}
-                                    <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">Course</Badge>
+                </CardContent>
+              </Card>
+
+              {/* Voice Notes Card */}
+              <VoiceNoteList 
+                voiceNotes={voiceNotes.map(note => ({
+                  ...note,
+                  createdAt: new Date(note.createdAt)
+                }))} 
+                onRefresh={() => {
+                  const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
+                  if (patientId) {
+                    loadVoiceNotes(patientId);
+                  }
+                }}
+              />
+
+              {/* Add Documents Section */}
+              <PatientDocuments patientId={params.id as string} />
+
+            </div>
+
+            {/* Right Column - Protocol Details */}
+            <div className="col-span-12 lg:col-span-8 space-y-6">
+              {/* Active Protocols */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Protocols</CardTitle>
+                  <CardDescription>Currently active treatment protocols</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {activeProtocols.map((assignment) => {
+                        const progress = calculateProgress(assignment);
+                        return (
+                          <Card key={assignment.id} className="bg-white">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">{assignment.protocol.name}</h3>
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                    <CalendarDaysIcon className="h-4 w-4" />
+                                    Started {format(new Date(assignment.startDate), 'MMM d, yyyy')}
                                   </div>
-                                  <p className="text-sm text-gray-600">
-                                    Started {safeFormatDate(assignment.startDate)}
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
+                                    <EyeIcon className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </Link>
+                                </Button>
+                              </div>
+
+                              {/* Progress Bar */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">Progress</span>
+                                  <span className="font-medium text-violet-600">{progress.progress}%</span>
+                                </div>
+                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-violet-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${progress.progress}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Daily Check-in & Symptoms */}
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    {dailyCheckins.find(checkin => 
+                                      format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                                    ) 
+                                      ? 'Completed today'
+                                      : 'Not completed today'
+                                    }
+                                  </p>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <HeartIcon className="h-4 w-4 text-red-600" />
+                                    <span className="text-sm font-medium text-gray-700">Symptoms</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    {symptomReports.filter(report => {
+                                      const reportDate = new Date(report.reportTime);
+                                      const weekAgo = new Date();
+                                      weekAgo.setDate(weekAgo.getDate() - 7);
+                                      return reportDate >= weekAgo;
+                                    }).length} reports this week
                                   </p>
                                 </div>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                asChild 
-                                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 h-10 w-10 p-0 rounded-xl"
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Recent Symptom Reports */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Symptom Reports</CardTitle>
+                  <CardDescription>Latest patient symptoms and observations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-4">
+                      {symptomReports.map((report) => (
+                        <Card key={report.id} className="bg-white">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <HeartIcon className="h-4 w-4 text-red-600" />
+                                <span className="font-medium text-gray-900">{report.title}</span>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "bg-yellow-50 text-yellow-700",
+                                  report.severity <= 3 && "bg-green-50 text-green-700",
+                                  report.severity >= 7 && "bg-red-50 text-red-700"
+                                )}
                               >
-                              <Link href={`/doctor/courses/${assignment.course.id}`}>
-                                  <EyeIcon className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                                Severity: {report.severity}/10
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              {report.symptoms.length > 100 
+                                ? `${report.symptoms.substring(0, 100)}...` 
+                                : report.symptoms
+                              }
+                            </p>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-500">
+                                <ClockIcon className="h-4 w-4 inline mr-1" />
+                                {formatDistanceToNow(new Date(report.reportTime), { addSuffix: true })}
+                              </span>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  setSelectedReport(report);
+                                  setShowReportModal(true);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {symptomReports.length === 0 && (
+                        <div className="text-center py-6">
+                          <HeartIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-600">No symptom reports yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </div>
+      <Dialog open={showReportModal} onOpenChange={setShowReportModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Symptom Report Details</DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedReport.title}</h3>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "bg-yellow-50 text-yellow-700",
+                      selectedReport.severity <= 3 && "bg-green-50 text-green-700",
+                      selectedReport.severity >= 7 && "bg-red-50 text-red-700"
+                    )}
+                  >
+                    Severity: {selectedReport.severity}/10
+                  </Badge>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Reported {formatDistanceToNow(new Date(selectedReport.reportTime), { addSuffix: true })}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700">Symptoms Description</h4>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedReport.symptoms}</p>
+              </div>
+
+              {selectedReport.attachments.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Attachments</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedReport.attachments.map(attachment => (
+                      <a 
+                        key={attachment.id}
+                        href={attachment.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <PhotoIcon className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-600 truncate">{attachment.fileName}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedReport.reviewedAt && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">Review Notes</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedReport.doctorNotes}</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Reviewed by {selectedReport.reviewer?.name} on{' '}
+                      {format(new Date(selectedReport.reviewedAt), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 space-x-2 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReportModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => updateReportStatus(
+                    selectedReport.id,
+                    'REVIEWED',
+                    'Thank you for reporting your symptoms. I will review this in detail during our next session.'
+                  )}
+                  disabled={isUpdatingReport}
+                >
+                  {isUpdatingReport ? 'Updating...' : 'Mark as Reviewed'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      <VoiceNoteModal
+        isOpen={showVoiceNoteModal}
+        onClose={() => setShowVoiceNoteModal(false)}
+        patientId={typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : ''}
+        onVoiceNoteCreated={() => {
+          const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
+          if (patientId) {
+            loadVoiceNotes(patientId);
+          }
+        }}
+      />
     </div>
   );
 } 

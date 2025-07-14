@@ -55,6 +55,11 @@ export default async function middleware(request: NextRequestWithAuth) {
     request.nextUrl.pathname.startsWith(route)
   )
 
+  // Redirect clinic-specific login URLs to standard login
+  if (request.nextUrl.pathname.startsWith('/login/')) {
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  }
+
   // Se for uma rota protegida e o usuário não está autenticado
   if (isProtectedRoute && !isAuthenticated) {
     const redirectUrl = new URL('/auth/signin', request.url)
@@ -91,6 +96,7 @@ export const config = {
     '/patient/:path*',
     '/courses/:path*',
     '/clinic/:path*',
-    '/doctor-info/:path*'
+    '/doctor-info/:path*',
+    '/login/:path*'  // Add login path to matcher
   ]
 } 

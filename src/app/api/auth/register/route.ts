@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
+import { createVerificationEmail } from "@/email-templates/auth/verification";
 
 if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD || !process.env.SMTP_FROM) {
   throw new Error('Missing SMTP configuration environment variables');
@@ -68,10 +69,17 @@ export async function POST(req: Request) {
     });
 
     console.log('Sending verification email to:', email);
-    // Send verification email
+    
+    // Send verification email using new template
     try {
       await transporter.verify();
       console.log('SMTP connection verified');
+
+      const emailHtml = createVerificationEmail({
+        name,
+        code: verificationCode,
+        expiryHours: 1
+      });
 
       await transporter.sendMail({
         from: {
@@ -79,17 +87,10 @@ export async function POST(req: Request) {
           address: process.env.SMTP_FROM as string
         },
         to: email,
-        subject: 'Verifique seu email',
-        html: `
-          <h1>Bem-vindo ao CXLUS!</h1>
-          <p>Para confirmar seu cadastro, use o código abaixo:</p>
-          <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
-            <strong>${verificationCode}</strong>
-          </div>
-          <p>Este código é válido por 1 hora.</p>
-          <p>Se você não solicitou este cadastro, ignore este email.</p>
-        `
+        subject: '[Cxlus] Verify Your Email',
+        html: emailHtml
       });
+
       console.log('Verification email sent successfully');
     } catch (emailError) {
       console.error('Email sending error:', emailError);

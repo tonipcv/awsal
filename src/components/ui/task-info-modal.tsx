@@ -1,205 +1,94 @@
-'use client';
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  PlayIcon, 
-  ShoppingBagIcon, 
-  XMarkIcon,
-  ArrowTopRightOnSquareIcon
-} from '@heroicons/react/24/outline';
+import { XMarkIcon, PlayIcon } from '@heroicons/react/24/outline';
 
 interface TaskInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  task: {
-    id: string;
-    title: string;
-    description?: string;
-    hasMoreInfo?: boolean;
-    modalTitle?: string;
-    videoUrl?: string;
-    fullExplanation?: string;
-    modalButtonText?: string;
-    modalButtonUrl?: string;
-    product?: {
-      id: string;
-      name: string;
-      description?: string;
-      brand?: string;
-      imageUrl?: string;
-      originalPrice?: number;
-      discountPrice?: number;
-      purchaseUrl?: string;
-    };
-  };
-  isCompleted?: boolean;
+  title?: string;
+  description?: string;
+  videoUrl?: string;
+  buttonText?: string;
+  buttonUrl?: string;
 }
 
-export function TaskInfoModal({ isOpen, onClose, task }: TaskInfoModalProps) {
-  const buttonText = task.modalButtonText || 'Fechar';
+export function TaskInfoModal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  videoUrl,
+  buttonText,
+  buttonUrl,
+}: TaskInfoModalProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black border-gray-800/50 backdrop-blur-xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="icon"
+          <div className="flex items-start justify-between">
+            <DialogTitle className="text-lg lg:text-2xl font-bold text-white">
+              {title}
+            </DialogTitle>
+            <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white hover:bg-gray-800/50"
+              className="p-2 hover:bg-gray-800 rounded-full transition-colors"
             >
-              <XMarkIcon className="h-5 w-5" />
-            </Button>
+              <XMarkIcon className="h-5 w-5 text-gray-400" />
+            </button>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Vídeo */}
-          {task.videoUrl && (
-            <div className="space-y-3">
-              <div className="aspect-video rounded-xl overflow-hidden bg-gray-900/50 border border-gray-800/50">
+        <div className="space-y-6">
+          {/* Video Section */}
+          {videoUrl && (
+            <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-800">
+              {isPlaying ? (
                 <iframe
-                  src={task.videoUrl}
-                  className="w-full h-full"
+                  src={videoUrl}
+                  className="absolute inset-0 h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  title="Vídeo explicativo da tarefa"
                 />
-              </div>
-            </div>
-          )}
-
-          {/* Explicação Completa */}
-          {task.fullExplanation && (
-            <div className="space-y-3">
-              <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
-                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                  {task.fullExplanation}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Produto Relacionado */}
-          {task.product && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ShoppingBagIcon className="h-5 w-5 text-teal-400" />
-                <h3 className="text-lg font-medium text-white">Produto Recomendado</h3>
-              </div>
-              <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-800/50">
-                <div className="flex items-start gap-4">
-                  {/* Imagem do Produto */}
-                  <div className="w-16 h-16 rounded-xl bg-gray-800/50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {task.product.imageUrl ? (
-                      <img 
-                        src={task.product.imageUrl} 
-                        alt={task.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 bg-gray-700 rounded" />
-                    )}
-                  </div>
-
-                  {/* Info do Produto */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-medium mb-1">
-                      {task.product.name}
-                    </h4>
-                    {task.product.brand && (
-                      <p className="text-sm text-gray-400 mb-2">
-                        {task.product.brand}
-                      </p>
-                    )}
-                    {task.product.description && (
-                      <p className="text-sm text-gray-300 mb-3">
-                        {task.product.description}
-                      </p>
-                    )}
-
-                    {/* Preço */}
-                    {(task.product.originalPrice || task.product.discountPrice) && (
-                      <div className="mb-3">
-                        {task.product.discountPrice && task.product.originalPrice ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-teal-400">
-                              R$ {task.product.discountPrice.toFixed(2)}
-                            </span>
-                            <span className="text-sm text-gray-500 line-through">
-                              R$ {task.product.originalPrice.toFixed(2)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-lg font-bold text-white">
-                            R$ {(task.product.originalPrice || task.product.discountPrice)?.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Link de Compra */}
-                    {task.product.purchaseUrl && (
-                      <Button 
-                        size="sm" 
-                        className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
-                        asChild
-                      >
-                        <a 
-                          href={task.product.purchaseUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2"
-                        >
-                          Adquirir Produto
-                          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Botão de Ação */}
-          <div className="flex justify-end pt-4">
-            {task.modalButtonUrl ? (
-              <div className="flex gap-3">
-                <Button 
-                  onClick={onClose}
-                  variant="outline"
-                  className="bg-transparent border-gray-700/50 text-gray-300 hover:bg-gray-800/50 hover:text-white"
-                >
-                  Fechar
-                </Button>
-                <Button 
-                  className="bg-turquoise hover:bg-turquoise/90 text-black font-semibold shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-105 transition-all duration-200"
-                  asChild
-                >
-                  <a 
-                    href={task.modalButtonUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => setIsPlaying(true)}
+                    className="flex items-center justify-center h-16 w-16 rounded-full bg-turquoise text-black hover:bg-turquoise/90 transition-colors"
                   >
-                    {buttonText}
-                    <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-                  </a>
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                onClick={onClose}
-                className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700/50"
+                    <PlayIcon className="h-8 w-8" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Description */}
+          {description && (
+            <DialogDescription className="text-sm lg:text-base text-gray-300 leading-relaxed">
+              {description}
+            </DialogDescription>
+          )}
+
+          {/* Action Button */}
+          {buttonText && buttonUrl && (
+            <div className="pt-2">
+              <Button
+                onClick={() => window.open(buttonUrl, '_blank')}
+                className="w-full bg-turquoise hover:bg-turquoise/90 text-black font-medium"
               >
                 {buttonText}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

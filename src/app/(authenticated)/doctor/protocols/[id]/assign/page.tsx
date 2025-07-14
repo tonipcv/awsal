@@ -38,6 +38,9 @@ interface Protocol {
       title: string;
     }>;
   }>;
+  isRecurring: boolean;
+  recurringInterval?: string;
+  recurringDays?: Array<number>;
 }
 
 interface Patient {
@@ -410,6 +413,29 @@ export default function AssignProtocolToPatientPage() {
                           <UsersIcon className="h-4 w-4" />
                           <span className="font-medium">{assignedPatients.length} paciente(s) ativo(s)</span>
                         </span>
+                        {protocol.isRecurring && (
+                          <span className="flex items-center gap-2">
+                            <ArrowPathIcon className="h-4 w-4" />
+                            <span className="font-medium">
+                              {protocol.recurringInterval === 'DAILY' && 'Daily'}
+                              {protocol.recurringInterval === 'WEEKLY' && (
+                                <>
+                                  Weekly on{' '}
+                                  {protocol.recurringDays
+                                    .sort((a, b) => a - b)
+                                    .map((day) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day - 1])
+                                    .join(', ')}
+                                </>
+                              )}
+                              {protocol.recurringInterval === 'MONTHLY' && (
+                                <>
+                                  Monthly on day{protocol.recurringDays.length > 1 ? 's' : ''}{' '}
+                                  {protocol.recurringDays.sort((a, b) => a - b).join(', ')}
+                                </>
+                              )}
+                            </span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -89,14 +89,8 @@ function ResetPasswordForm() {
         const data = await response.json();
         setSuccess(true);
         setTimeout(() => {
-          // Redirect with clinic and doctor info
-          const params = new URLSearchParams({
-            clinicName: data.clinicName || 'Your Healthcare Provider',
-            clinicSlug: data.clinicSlug || '',
-            doctorName: data.doctorName || '',
-            googleReviewLink: data.googleReviewLink || ''
-          });
-          router.push(`/auth/review-request?${params.toString()}`);
+          // Redirect to standard login
+          router.push('/auth/signin');
         }, 3000);
       } else {
         const error = await response.json();

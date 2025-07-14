@@ -33,7 +33,6 @@ export async function GET(
         patientRelationships: {
           some: {
             doctorId: session.user.id,
-            isActive: true
           }
         }
       },
@@ -46,13 +45,13 @@ export async function GET(
         referralCode: true,
         patientRelationships: {
           where: {
-            doctorId: session.user.id,
-            isActive: true
+            doctorId: session.user.id
           },
           select: {
             id: true,
             isPrimary: true,
-            speciality: true
+            speciality: true,
+            isActive: true
           }
         },
         assignedProtocols: {
@@ -82,11 +81,10 @@ export async function GET(
             createdAt: 'desc'
           }
         },
-        // Include onboarding responses
         onboardingResponses: {
           where: {
             template: {
-              doctorId: session.user.id // Only include responses from templates created by the current doctor
+              doctorId: session.user.id
             }
           },
           select: {
@@ -131,13 +129,13 @@ export async function GET(
     });
 
     if (!patient) {
-      return NextResponse.json({ error: 'Paciente não encontrado ou não pertence a este médico' }, { status: 404 });
+      return NextResponse.json({ error: 'Client not found or you do not have permission to access it' }, { status: 404 });
     }
 
     return NextResponse.json(patient);
   } catch (error) {
     console.error('Error fetching patient:', String(error));
-    return NextResponse.json({ error: 'Erro ao buscar paciente' }, { status: 500 });
+    return NextResponse.json({ error: 'Error fetching client data' }, { status: 500 });
   }
 }
 
@@ -168,7 +166,12 @@ export async function DELETE(
       where: {
         id: id,
         role: 'PATIENT',
-        doctorId: session.user.id
+        patientRelationships: {
+          some: {
+            doctorId: session.user.id,
+            isActive: true
+          }
+        }
       }
     });
 
@@ -176,9 +179,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Paciente não encontrado ou não pertence a este médico' }, { status: 404 });
     }
 
-    // Excluir o paciente (o Prisma irá automaticamente excluir registros relacionados devido ao onDelete: Cascade)
-    await prisma.user.delete({
-      where: { id: id }
+    // Excluir o paciente usando transação para limpar todos os relacionamentos
+    await prisma.$transaction(async (tx) => {
+      // Primeiro, excluir todos os relacionamentos do paciente
+      await tx.doctorPatientRelationship.deleteMany({
+        where: { patientId: id }
+      });
+
+      // Depois, excluir o paciente
+      await tx.user.delete({
+        where: { id: id }
+      });
     });
 
     return NextResponse.json({ 

@@ -38,6 +38,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { cn } from "@/lib/utils";
 
 interface ProtocolDayEditorProps {
   days: any[];
@@ -54,6 +55,8 @@ interface ProtocolDayEditorProps {
   removeDay: (dayNumber: number) => void;
   duplicateDay: (dayNumber: number) => void;
   updateDay: (dayNumber: number, field: string, value: string) => void;
+  protocol: any;
+  setProtocol: (protocol: any) => void;
 }
 
 // Simple Task Component
@@ -630,7 +633,9 @@ export function ProtocolDayEditor({
   addDay,
   removeDay,
   duplicateDay,
-  updateDay
+  updateDay,
+  protocol,
+  setProtocol
 }: ProtocolDayEditorProps) {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 

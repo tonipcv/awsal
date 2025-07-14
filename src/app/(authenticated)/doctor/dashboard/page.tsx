@@ -12,7 +12,8 @@ import {
   ClockIcon,
   CheckCircleIcon,
   UserPlusIcon,
-  CalendarDaysIcon
+  CalendarDaysIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -104,7 +105,7 @@ export default function DoctorDashboard() {
           totalPatients,
           activeProtocols,
           totalProtocols,
-          completedToday: 0 // TODO: Implement daily completion statistics
+          completedToday: 0
         });
 
       } catch (error) {
@@ -235,6 +236,190 @@ export default function DoctorDashboard() {
     );
   }
 
+  // Show onboarding if no protocols exist
+  if (!isLoading && protocols.length === 0) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Welcome to CXLUS
+                </h1>
+                <p className="text-gray-600 font-medium">
+                  Let's set up your first protocol to get started
+                </p>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-50 rounded-xl">
+                      <DocumentTextIcon className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Protocols</p>
+                      <h3 className="text-2xl font-bold text-gray-900">0</h3>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-indigo-50 rounded-xl">
+                      <UsersIcon className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Patients</p>
+                      <h3 className="text-2xl font-bold text-gray-900">0</h3>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-50 rounded-xl">
+                      <CheckCircleIcon className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Active</p>
+                      <h3 className="text-2xl font-bold text-gray-900">0</h3>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-purple-50 rounded-xl">
+                      <ClockIcon className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Completed</p>
+                      <h3 className="text-2xl font-bold text-gray-900">0</h3>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Main Content */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Quick Start Card */}
+              <Card className="bg-white border border-gray-200 shadow-lg rounded-2xl col-span-2">
+                <CardHeader className="p-6 pb-0">
+                  <CardTitle className="text-xl font-semibold text-gray-900">
+                    Quick Start Guide
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-white rounded-xl">
+                          <DocumentTextIcon className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900">Create Your First Protocol</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Start by creating your first protocol template with customized sessions and tasks.
+                      </p>
+                      <Button
+                        onClick={() => router.push('/doctor/onboarding')}
+                        className="w-full bg-white text-blue-600 hover:bg-blue-50 border border-blue-200"
+                      >
+                        Create Your First Protocol
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-white rounded-xl">
+                          <UserPlusIcon className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900">Add Patients</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4">
+                        After creating a protocol, you can start adding patients and assigning protocols.
+                      </p>
+                      <Button
+                        disabled
+                        className="w-full bg-white text-gray-400 border border-gray-200 cursor-not-allowed"
+                      >
+                        Add Patient
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-white rounded-xl">
+                          <CalendarDaysIcon className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <h3 className="font-semibold text-gray-900">Track Progress</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Monitor patient progress and manage their treatment protocols effectively.
+                      </p>
+                      <Button
+                        disabled
+                        className="w-full bg-white text-gray-400 border border-gray-200 cursor-not-allowed"
+                      >
+                        View Progress
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Help Section */}
+            <div className="mt-8">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 shadow-lg rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-gray-900">Need Help?</h3>
+                      <p className="text-sm text-gray-600">
+                        Check out our documentation or contact support for assistance
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <Link 
+                        href="/help"
+                        className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        Documentation
+                      </Link>
+                      <Link
+                        href="/contact"
+                        className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50"
+                      >
+                        Contact Support
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="lg:ml-64">
@@ -243,7 +428,7 @@ export default function DoctorDashboard() {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-large font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 Dashboard
               </h1>
               <p className="text-gray-600 font-medium">
@@ -253,13 +438,23 @@ export default function DoctorDashboard() {
             
             <div className="flex gap-3">
               <Button 
-                asChild
+                onClick={() => {
+                  // Intelligent routing based on current state
+                  if (stats.totalPatients === 0 && stats.totalProtocols === 0) {
+                    // First time user - go to protocol onboarding first
+                    router.push('/doctor/onboarding');
+                  } else if (stats.totalPatients === 0 && stats.totalProtocols > 0) {
+                    // Has protocols but no patients - use smart patient onboarding
+                    router.push('/doctor/patients/onboarding');
+                  } else {
+                    // Regular add patient flow
+                    router.push('/doctor/patients/smart-add');
+                  }
+                }}
                 className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
               >
-                <Link href="/doctor/patients">
-                  <UserPlusIcon className="h-4 w-4 mr-2" />
-                  New Client
-                </Link>
+                <UserPlusIcon className="h-4 w-4 mr-2" />
+                New Client
               </Button>
               <Button 
                 asChild
@@ -349,7 +544,7 @@ export default function DoctorDashboard() {
                     <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4 font-medium">No clients registered</p>
                     <Button className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm" asChild>
-                      <Link href="/doctor/patients">Add first client</Link>
+                      <Link href="/doctor/patients/smart-add">Add first client</Link>
                     </Button>
                   </div>
                 ) : (
@@ -454,12 +649,16 @@ export default function DoctorDashboard() {
                 <Button 
                   variant="outline" 
                   className="h-24 flex-col gap-3 border-gray-300 bg-white text-gray-700 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 rounded-2xl shadow-md font-semibold"
-                  asChild
+                  onClick={() => {
+                    if (stats.totalPatients === 0 && stats.totalProtocols > 0) {
+                      router.push('/doctor/patients/onboarding');
+                    } else {
+                      router.push('/doctor/patients/smart-add');
+                    }
+                  }}
                 >
-                  <Link href="/doctor/patients">
-                    <UserPlusIcon className="h-8 w-8" />
-                    <span className="text-sm">Add Client</span>
-                  </Link>
+                  <UserPlusIcon className="h-8 w-8" />
+                  <span className="text-sm">Add Client</span>
                 </Button>
                 
                 <Button 

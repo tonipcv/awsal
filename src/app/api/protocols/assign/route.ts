@@ -44,12 +44,16 @@ export async function POST(request: Request) {
       where: {
         id: patientId,
         role: 'PATIENT',
-        doctorId: session.user.id
+        patientRelationships: {
+          some: {
+            doctorId: session.user.id
+          }
+        }
       }
     });
 
     if (!patient) {
-      return NextResponse.json({ error: 'Paciente não encontrado ou não pertence a este médico' }, { status: 404 });
+      return NextResponse.json({ error: 'Client not found or does not belong to you' }, { status: 404 });
     }
 
     // Verificar se já existe uma atribuição (independente do status)
@@ -234,7 +238,6 @@ export async function GET(request: Request) {
               name: true,
               description: true,
               duration: true,
-              consultation_date: true,
               showDoctorInfo: true,
               modalTitle: true,
               modalVideoUrl: true,
@@ -279,7 +282,19 @@ export async function GET(request: Request) {
       });
     } else {
       // Paciente vê apenas seus próprios protocolos
-      if (!user.doctorId) {
+      // Buscar relacionamento ativo com médico
+      const doctorRelationship = await prisma.doctorPatientRelationship.findFirst({
+        where: {
+          patientId: session.user.id,
+          isActive: true,
+          isPrimary: true
+        },
+        select: {
+          doctorId: true
+        }
+      });
+
+      if (!doctorRelationship) {
         return NextResponse.json({ error: 'Paciente não possui médico associado' }, { status: 400 });
       }
 
@@ -313,7 +328,7 @@ export async function GET(request: Request) {
       } else {
         // Filtro original: apenas protocolos do médico do paciente
         whereClause.protocol = {
-          doctorId: user.doctorId
+          doctorId: doctorRelationship.doctorId
         };
       }
 
@@ -326,7 +341,6 @@ export async function GET(request: Request) {
               name: true,
               description: true,
               duration: true,
-              consultation_date: true,
               showDoctorInfo: true,
               modalTitle: true,
               modalVideoUrl: true,
@@ -433,7 +447,8 @@ export async function GET(request: Request) {
             })),
             // Remove the flattened tasks array to avoid duplication
             tasks: []
-          }))
+          })),
+          duration: assignment.protocol.days.length
         }
       };
     }));

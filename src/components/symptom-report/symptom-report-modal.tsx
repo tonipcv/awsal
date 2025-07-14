@@ -10,11 +10,14 @@ import {
   PaperAirplaneIcon,
   CheckCircleIcon,
   MicrophoneIcon,
-  PencilIcon
+  PencilIcon,
+  PhotoIcon,
+  XCircleIcon
 } from '@heroicons/react/24/outline';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import AudioRecorder from '@/components/audio-recorder/audio-recorder';
+import Image from 'next/image';
 
 interface SymptomReportModalProps {
   isOpen: boolean;
@@ -39,6 +42,41 @@ export default function SymptomReportModal({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [inputMethod, setInputMethod] = useState<'text' | 'audio'>('text');
+  const [images, setImages] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    // Validar cada arquivo
+    const validFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setError('Only image files are allowed');
+        continue;
+      }
+      
+      // Validar tamanho (20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        setError('Image size must be less than 20MB');
+        continue;
+      }
+      
+      validFiles.push(file);
+    }
+
+    setImages(prev => [...prev, ...validFiles]);
+    // Limpar input para permitir selecionar o mesmo arquivo novamente
+    event.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     if (!symptoms.trim()) {
@@ -79,6 +117,25 @@ export default function SymptomReportModal({
         throw new Error(errorData.error || 'Error creating report');
       }
 
+      const report = await reportResponse.json();
+
+      // Upload images if any
+      if (images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const formData = new FormData();
+          formData.append('file', images[i]);
+
+          const uploadResponse = await fetch(`/api/symptom-reports/${report.id}/attachments`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error('Error uploading image');
+          }
+        }
+      }
+
       // Show success state
       setSuccess(true);
       
@@ -90,6 +147,8 @@ export default function SymptomReportModal({
         setCustomTime('');
         setSuccess(false);
         setInputMethod('text');
+        setImages([]);
+        setUploadProgress({});
         onSuccess?.();
         onClose();
       }, 2000);
@@ -367,6 +426,54 @@ export default function SymptomReportModal({
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Image Upload Section */}
+                <div>
+                  <label className="block text-sm font-medium text-white mb-3">
+                    Add Images (Optional)
+                  </label>
+                  <div className="space-y-4">
+                    {/* Image Preview Grid */}
+                    {images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden bg-gray-800">
+                              <img
+                                src={URL.createObjectURL(image)}
+                                alt={`Symptom image ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors"
+                            >
+                              <XCircleIcon className="h-5 w-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <div className="flex items-center justify-center">
+                      <label className="cursor-pointer group">
+                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors">
+                          <PhotoIcon className="h-5 w-5" />
+                          <span className="font-medium">Add Images</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
 

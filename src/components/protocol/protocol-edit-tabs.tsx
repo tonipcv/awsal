@@ -8,24 +8,24 @@ import { Button } from "@/components/ui/button";
 import { 
   InformationCircleIcon,
   CalendarDaysIcon,
-  DocumentTextIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
+import ProtocolCoursesManager from '@/components/protocol/protocol-courses-manager';
 
 interface ProtocolEditTabsProps {
   protocol: any;
   setProtocol: (protocol: any) => void;
-  availableProducts: any[];
-  availableProductsToAdd: any[];
-  addProduct: (productId: string) => void;
-  removeProduct: (protocolProductId: string) => void;
-  updateProtocolProduct: (protocolProductId: string, field: string, value: any) => void;
-  protocolId?: string;
+  availableCourses: any[];
+  addCourse: (courseId: string) => void;
+  removeCourse: (protocolCourseId: string) => void;
+  updateCourse: (protocolCourseId: string, field: string, value: any) => void;
+  reorderCourses: (courses: any[]) => void;
+  protocolId: string;
   children: {
     basicInfo: React.ReactNode;
     modalConfig: React.ReactNode;
-    products: React.ReactNode;
     days: React.ReactNode;
   };
 }
@@ -33,63 +33,55 @@ interface ProtocolEditTabsProps {
 export function ProtocolEditTabs({ 
   protocol, 
   setProtocol, 
-  availableProducts,
-  availableProductsToAdd,
-  addProduct,
-  removeProduct,
-  updateProtocolProduct,
+  availableCourses,
+  addCourse,
+  removeCourse,
+  updateCourse,
+  reorderCourses,
   protocolId,
   children 
 }: ProtocolEditTabsProps) {
   const [activeTab, setActiveTab] = useState('basic');
 
-  // Check if modal content is configured
-  const hasModalContent = protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription;
-  const isModalEnabled = !!(protocol.modalTitle || protocol.modalVideoUrl || protocol.modalDescription);
-
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100 rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-4 gap-4">
           <TabsTrigger 
             value="basic" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <InformationCircleIcon className="h-4 w-4" />
-            Basic
+            <span>Information</span>
           </TabsTrigger>
           <TabsTrigger 
             value="days" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <CalendarDaysIcon className="h-4 w-4" />
-            Schedule
-            <Badge variant="secondary" className="bg-[#5154e7] text-white text-xs">
+            <span>Tasks</span>
+            <Badge variant="secondary" className="bg-[#51e790] text-black text-xs">
               {protocol.days.length}
             </Badge>
           </TabsTrigger>
           <TabsTrigger 
-            value="modal" 
+            value="courses" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
-            <DocumentTextIcon className="h-4 w-4" />
-            Modal
-            {isModalEnabled ? (
-              <Badge variant="secondary" className="bg-green-600 text-white text-xs">
-                ✓
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="bg-gray-400 text-white text-xs">
-                Disabled
+            <AcademicCapIcon className="h-4 w-4" />
+            <span>Training</span>
+            {protocol.courses?.length > 0 && (
+              <Badge variant="secondary" className="bg-[#5154e7] text-white text-xs">
+                {protocol.courses.length}
               </Badge>
             )}
           </TabsTrigger>
           <TabsTrigger 
-            value="checkin" 
+            value="settings" 
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
           >
             <Cog6ToothIcon className="h-4 w-4" />
-            Check-in
+            <span>Check-in</span>
           </TabsTrigger>
         </TabsList>
       </div>
@@ -102,11 +94,18 @@ export function ProtocolEditTabs({
         {children.days}
       </TabsContent>
 
-      <TabsContent value="modal">
-        {children.modalConfig}
+      <TabsContent value="courses">
+        <ProtocolCoursesManager
+          protocolCourses={protocol.courses || []}
+          availableCourses={availableCourses}
+          onAddCourse={addCourse}
+          onRemoveCourse={removeCourse}
+          onUpdateCourse={updateCourse}
+          onReorderCourses={reorderCourses}
+        />
       </TabsContent>
 
-      <TabsContent value="checkin">
+      <TabsContent value="settings">
         {protocolId ? (
           <CheckinQuestionsManager protocolId={protocolId} />
         ) : (
@@ -114,8 +113,8 @@ export function ProtocolEditTabs({
             <CardContent className="p-8">
               <div className="text-center">
                 <Cog6ToothIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Protocol ID Required</h3>
-                <p className="text-gray-600">Save the protocol first to configure check-in questions.</p>
+                <h3 className="text-xl font-medium text-gray-900 mb-3">Protocol ID Required</h3>
+                <p className="text-gray-600">Save the protocol first to configure settings.</p>
               </div>
             </CardContent>
           </Card>

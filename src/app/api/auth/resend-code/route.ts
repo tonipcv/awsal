@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
+import { createVerificationEmail } from "@/email-templates/auth/verification";
 
 if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD || !process.env.SMTP_FROM) {
   throw new Error('Missing SMTP configuration environment variables');
@@ -22,36 +23,31 @@ export async function POST(req: Request) {
 
     if (!email) {
       return NextResponse.json(
-        { message: "Email é obrigatório" },
+        { message: "Email is required" },
         { status: 400 }
       );
     }
 
-    // Find unverified user
-    const user = await prisma.user.findFirst({
-      where: {
-        email,
-        emailVerified: null
-      }
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email }
     });
 
     if (!user) {
       return NextResponse.json(
-        { message: "Usuário não encontrado ou já verificado" },
-        { status: 400 }
+        { message: "User not found" },
+        { status: 404 }
       );
     }
 
-    // Delete any existing verification token
-    await prisma.verificationToken.deleteMany({
-      where: {
-        identifier: email
-      }
-    });
-
-    // Generate new verification code
+    // Generate new verification code (6 digits)
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const codeExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    const codeExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    // Delete any existing tokens
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: email }
+    });
 
     // Create new verification token
     await prisma.verificationToken.create({
@@ -62,29 +58,27 @@ export async function POST(req: Request) {
       }
     });
 
-    console.log('Sending new verification code to:', email);
     // Send new verification email
     try {
       await transporter.verify();
       console.log('SMTP connection verified');
 
+      const html = createVerificationEmail({
+        name: user.name || 'User',
+        code: verificationCode,
+        expiryHours: 1
+      });
+
       await transporter.sendMail({
         from: {
-          name: 'CXLUS',
+          name: 'Cxlus',
           address: process.env.SMTP_FROM as string
         },
         to: email,
-        subject: 'Novo código de verificação',
-        html: `
-          <h1>Novo código de verificação</h1>
-          <p>Conforme solicitado, aqui está seu novo código de verificação:</p>
-          <div style="background-color: #f4f4f4; padding: 12px; text-align: center; font-size: 24px; letter-spacing: 4px; margin: 20px 0;">
-            <strong>${verificationCode}</strong>
-          </div>
-          <p>Este código é válido por 1 hora.</p>
-          <p>Se você não solicitou este código, ignore este email.</p>
-        `
+        subject: '[Cxlus] Verify Your Email',
+        html
       });
+
       console.log('New verification code sent successfully');
     } catch (emailError) {
       console.error('Email sending error:', emailError);
@@ -92,13 +86,13 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { message: "Novo código enviado com sucesso" },
+      { message: "New code sent successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Resend code error:", error);
+    console.error('Error resending code:', error);
     return NextResponse.json(
-      { message: "Erro ao reenviar código" },
+      { message: "Error sending new code" },
       { status: 500 }
     );
   }

@@ -39,12 +39,8 @@ function ReviewRequestForm() {
   };
 
   const handleSkip = () => {
-    // Redirect to clinic-specific login if slug exists, otherwise generic login
-    if (clinicSlug) {
-      router.push(`/login/${clinicSlug}`);
-    } else {
-      router.push('/auth/signin');
-    }
+    // Always redirect to standard login
+    router.push('/auth/signin');
   };
 
   if (isLoading) {

@@ -81,8 +81,18 @@ export async function GET(request: NextRequest) {
     console.log('Assignments:', assignments.map(a => ({
       id: a.protocol.id,
       name: a.protocol.name,
-      consultation_date: a.protocol.consultation_date,
-      preConsultationTemplateId: a.preConsultationTemplateId
+      description: a.protocol.description,
+      duration: a.protocol.duration,
+      showDoctorInfo: a.protocol.showDoctorInfo,
+      modalTitle: a.protocol.modalTitle,
+      modalVideoUrl: a.protocol.modalVideoUrl,
+      modalDescription: a.protocol.modalDescription,
+      modalButtonText: a.protocol.modalButtonText,
+      modalButtonUrl: a.protocol.modalButtonUrl,
+      coverImage: a.protocol.coverImage,
+      onboardingTemplateId: a.protocol.onboardingTemplateId,
+      days: a.protocol.days,
+      doctor: a.protocol.doctor
     })));
 
     return NextResponse.json(assignments);

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { createDoctorInvitationEmail } from '@/email-templates/doctor/invitation';
 
 // Configuração do transporter de email
 if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD || !process.env.SMTP_FROM) {
@@ -203,62 +204,22 @@ export async function POST(request: NextRequest) {
       await transporter.verify();
       console.log('SMTP connection verified');
 
+      const emailHtml = createDoctorInvitationEmail({
+        name,
+        inviteUrl,
+        subscriptionType,
+        trialDays,
+        clinicName: 'CXLUS'
+      });
+
       await transporter.sendMail({
         from: {
           name: 'CXLUS',
           address: process.env.SMTP_FROM as string
         },
         to: email,
-        subject: 'Invitation to CXLUS - Set your password',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #1e293b; text-align: center; margin-bottom: 30px;">Welcome to CXLUS!</h1>
-            
-            <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-              Hello <strong>${name}</strong>,
-            </p>
-            
-            <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-              You have been invited to join the CXLUS platform as a doctor. To start using the platform, you need to set your password.
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${inviteUrl}" 
-                 style="display: inline-block; padding: 15px 30px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-                Set Password and Access
-              </a>
-            </div>
-            
-            <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #059669; margin: 0 0 10px 0;">🎉 ${subscriptionType === 'TRIAL' ? 'Your Free Trial' : 'Your Active Subscription'}</h3>
-              <p style="color: #475569; margin: 0; font-size: 14px;">
-                Your account is already configured with the Basic plan ${subscriptionType === 'TRIAL' ? 'in trial period' : 'active'} which includes:
-              </p>
-              <ul style="color: #475569; font-size: 14px; margin: 10px 0;">
-                <li>Up to 50 patients</li>
-                <li>Up to 10 protocols</li>
-                <li>Up to 5 courses</li>
-                <li>Up to 30 products</li>
-                ${subscriptionType === 'TRIAL' ? `<li>${trialDays} days free trial</li>` : '<li>Active subscription immediately</li>'}
-              </ul>
-            </div>
-            
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-              <strong>Important:</strong> This link is valid for 7 days. If you don't set your password within this period, you'll need to request a new invite.
-            </p>
-            
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6;">
-              If you didn't request this invite, you can safely ignore this email.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-            
-            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
-              CXLUS - Medical Platform<br>
-              This is an automated email, please do not reply.
-            </p>
-          </div>
-        `
+        subject: '[Cxlus] Convite - Configure sua senha',
+        html: emailHtml
       });
       console.log('Invite email sent successfully to:', email);
     } catch (emailError) {

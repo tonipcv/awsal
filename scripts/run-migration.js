@@ -1,32 +1,48 @@
-const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
+const { Pool } = require('pg');
+const fs = require('fs').promises;
 const path = require('path');
 
+// Configuração do banco de dados
+const pool = new Pool({
+  connectionString: "postgres://postgres:5fc578abcbdf1f226aab@dpbdp1.easypanel.host:3245/servidor?sslmode=disable"
+});
+
 async function runMigration() {
-  const prisma = new PrismaClient();
-
   try {
-    // Add each column separately
-    const alterCommands = [
-      'ALTER TABLE onboarding_templates ADD COLUMN IF NOT EXISTS welcome_video_url TEXT;',
-      'ALTER TABLE onboarding_templates ADD COLUMN IF NOT EXISTS welcome_button_text TEXT;',
-      'ALTER TABLE onboarding_templates ADD COLUMN IF NOT EXISTS success_video_url TEXT;',
-      'ALTER TABLE onboarding_templates ADD COLUMN IF NOT EXISTS success_button_text TEXT;',
-      'ALTER TABLE onboarding_templates ADD COLUMN IF NOT EXISTS success_button_url TEXT;'
-    ];
+    // Lê o arquivo SQL
+    const sqlPath = path.join(__dirname, '..', 'migrations', 'protocol_relationships.sql');
+    const sqlContent = await fs.readFile(sqlPath, 'utf8');
 
-    for (const command of alterCommands) {
-      await prisma.$executeRawUnsafe(command);
-      console.log('Executed:', command);
+    // Inicia uma transação
+    const client = await pool.connect();
+    
+    try {
+      console.log('Iniciando migração...');
+      await client.query('BEGIN');
+
+      // Executa o SQL
+      await client.query(sqlContent);
+
+      // Commit da transação
+      await client.query('COMMIT');
+      console.log('Migração concluída com sucesso!');
+    } catch (error) {
+      // Rollback em caso de erro
+      await client.query('ROLLBACK');
+      console.error('Erro durante a migração:', error);
+      throw error;
+    } finally {
+      // Libera o cliente
+      client.release();
     }
-
-    console.log('Migration completed successfully!');
   } catch (error) {
-    console.error('Error running migration:', error);
+    console.error('Erro ao executar migração:', error);
     process.exit(1);
   } finally {
-    await prisma.$disconnect();
+    // Fecha a pool de conexões
+    await pool.end();
   }
 }
 
+// Executa a migração
 runMigration(); 

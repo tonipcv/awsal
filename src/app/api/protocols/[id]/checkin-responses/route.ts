@@ -109,15 +109,17 @@ export async function POST(
     const body = await request.json();
     const { responses } = submitResponseSchema.parse(body);
 
+    // Get today's date in local timezone
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayString = today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD
+    const todayDate = new Date(todayString);
 
     // Verificar se já respondeu hoje
     const existingResponses = await prisma.dailyCheckinResponse.findMany({
       where: {
         userId: session.user.id,
         protocolId,
-        date: today
+        date: todayDate
       }
     });
 
@@ -144,7 +146,7 @@ export async function POST(
                 userId: session.user.id,
                 questionId: response.questionId,
                 protocolId,
-                date: today,
+                date: todayDate,
                 answer: response.answer
               },
               include: { question: true }
@@ -162,7 +164,7 @@ export async function POST(
               userId: session.user.id,
               questionId: response.questionId,
               protocolId,
-              date: today,
+              date: todayDate,
               answer: response.answer
             },
             include: {

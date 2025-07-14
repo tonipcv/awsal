@@ -8,10 +8,8 @@ const updateQuestionSchema = z.object({
   question: z.string().min(1, 'Pergunta é obrigatória').optional(),
   type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO']).optional(),
   options: z.string().optional(),
-  isRequired: z.boolean().optional(),
   order: z.number().optional(),
-  isActive: z.boolean().optional(),
-});
+}).strict();
 
 // PUT - Atualizar pergunta
 export async function PUT(
@@ -41,12 +39,26 @@ export async function PUT(
     const body = await request.json();
     const validatedData = updateQuestionSchema.parse(body);
 
+    // Buscar a questão atual para manter os campos não atualizados
+    const currentQuestion = await prisma.dailyCheckinQuestion.findUnique({
+      where: {
+        id: questionId,
+      }
+    });
+
+    if (!currentQuestion) {
+      return NextResponse.json({ error: 'Pergunta não encontrada' }, { status: 404 });
+    }
+
     const question = await prisma.dailyCheckinQuestion.update({
       where: {
         id: questionId,
         protocolId
       },
-      data: validatedData
+      data: {
+        ...currentQuestion,
+        ...validatedData,
+      }
     });
 
     return NextResponse.json({ question });

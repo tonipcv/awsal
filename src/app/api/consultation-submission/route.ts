@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
+import { createConsultationRequestEmail } from '@/email-templates/notifications/consultation-request';
+import { createConsultationConfirmationEmail } from '@/email-templates/patient/consultation-confirmation';
 
 // Configurar transporter de email
 const transporter = nodemailer.createTransport({
@@ -42,7 +44,22 @@ export async function POST(request: Request) {
         isActive: true
       },
       include: {
-        doctor: true
+        doctor: {
+          include: {
+            clinicMemberships: {
+              where: { isActive: true },
+              include: {
+                clinic: {
+                  select: {
+                    name: true,
+                    logo: true
+                  }
+                }
+              },
+              take: 1
+            }
+          }
+        }
       }
     });
 
@@ -72,10 +89,10 @@ export async function POST(request: Request) {
           name,
           email,
           whatsapp,
-          age: age || null,
-          specialty: specialty || null,
-          message: message || null,
-          referralCode: referralCode || null,
+          age: age || undefined,
+          specialty: specialty || undefined,
+          message: message || undefined,
+          referralCode: referralCode || undefined,
           ipAddress,
           userAgent
         },
@@ -83,66 +100,54 @@ export async function POST(request: Request) {
       }
     });
 
+    const clinicName = form.doctor.clinicMemberships?.[0]?.clinic?.name || form.doctor.name || 'CXLUS';
+    const clinicLogo = form.doctor.clinicMemberships?.[0]?.clinic?.logo || undefined;
+    const doctorName = form.doctor.name || '';
+
     // Enviar email para o médico
     try {
-      const doctorEmailSubject = `Nova solicitação de consulta - ${name}`;
-      const doctorEmailBody = `
-        <h2>Nova Solicitação de Consulta</h2>
-        <p>Você recebeu uma nova solicitação de consulta através do seu formulário online.</p>
-        
-        <h3>Dados do Paciente:</h3>
-        <ul>
-          <li><strong>Nome:</strong> ${name}</li>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>WhatsApp:</strong> ${whatsapp}</li>
-          ${age ? `<li><strong>Idade:</strong> ${age} anos</li>` : ''}
-          ${specialty ? `<li><strong>Especialidade:</strong> ${specialty}</li>` : ''}
-          ${message ? `<li><strong>Mensagem:</strong> ${message}</li>` : ''}
-          ${referralCode ? `<li><strong>Indicado por:</strong> ${referrer?.name || 'Código: ' + referralCode}</li>` : ''}
-        </ul>
-        
-        <p>Entre em contato com o paciente o mais breve possível para agendar a consulta.</p>
-        
-        <p><strong>Data da solicitação:</strong> ${new Date().toLocaleString('pt-BR')}</p>
-      `;
+      const doctorEmailHtml = createConsultationRequestEmail({
+        patientName: name,
+        patientEmail: email,
+        patientPhone: whatsapp,
+        patientAge: age?.toString() || undefined,
+        specialty: specialty || undefined,
+        message: message || undefined,
+        referrerName: referrer?.name || undefined,
+        referralCode: referralCode || undefined,
+        clinicName,
+        clinicLogo,
+        doctorName
+      });
 
       await transporter.sendMail({
         from: process.env.SMTP_USER,
         to: form.doctor.email!,
-        subject: doctorEmailSubject,
-        html: doctorEmailBody
+        subject: `[Cxlus] New Consultation Request - ${name}`,
+        html: doctorEmailHtml
       });
     } catch (emailError) {
       console.error('Erro ao enviar email para o médico:', emailError);
     }
 
-    // Enviar resposta automática se configurada (usando thankYouMessage)
+    // Enviar resposta automática se configurada
     if (form.thankYouMessage) {
       try {
-        const patientEmailSubject = `Confirmação de solicitação de consulta - ${form.doctor.name}`;
-        const patientEmailBody = `
-          <h2>Obrigado por sua solicitação!</h2>
-          <p>Olá ${name},</p>
-          
-          <p>${form.thankYouMessage}</p>
-          
-          <h3>Resumo da sua solicitação:</h3>
-          <ul>
-            <li><strong>Médico:</strong> ${form.doctor.name}</li>
-            <li><strong>Data da solicitação:</strong> ${new Date().toLocaleString('pt-BR')}</li>
-            ${specialty ? `<li><strong>Especialidade:</strong> ${specialty}</li>` : ''}
-          </ul>
-          
-          <p>Em breve entraremos em contato através do WhatsApp: ${whatsapp}</p>
-          
-          <p>Atenciosamente,<br>Equipe ${form.doctor.name}</p>
-        `;
+        const patientEmailHtml = createConsultationConfirmationEmail({
+          patientName: name,
+          doctorName,
+          specialty: specialty || undefined,
+          whatsapp,
+          message: form.thankYouMessage,
+          clinicName,
+          clinicLogo
+        });
 
         await transporter.sendMail({
           from: process.env.SMTP_USER,
           to: email,
-          subject: patientEmailSubject,
-          html: patientEmailBody
+          subject: `[Cxlus] Consultation Request Confirmation - ${form.doctor.name}`,
+          html: patientEmailHtml
         });
       } catch (emailError) {
         console.error('Erro ao enviar resposta automática:', emailError);

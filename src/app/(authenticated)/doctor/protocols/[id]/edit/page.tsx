@@ -31,7 +31,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
-import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
 
 interface ProtocolTask {
   id: string;
@@ -90,6 +89,14 @@ interface ProtocolProduct {
   product: Product;
 }
 
+interface ProtocolCourse {
+  id: string;
+  courseId: string;
+  orderIndex: number;
+  isRequired: boolean;
+  course: Course;
+}
+
 interface ProtocolForm {
   name: string;
   duration: number;
@@ -104,8 +111,27 @@ interface ProtocolForm {
   coverImage: string;
   days: ProtocolDay[];
   products: ProtocolProduct[];
-  consultation_date?: string | null;
+  courses: ProtocolCourse[];
+  isRecurring: boolean;
+  recurringInterval: string;
+  recurringDays: number[];
+  availableFrom: string | null;
+  availableUntil: string | null;
   onboardingTemplateId?: string | null;
+}
+
+interface Course {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  doctorId?: string;
+  _count?: {
+    protocolCourses: number;
+  };
 }
 
 export default function EditProtocolPage() {
@@ -125,6 +151,7 @@ export default function EditProtocolPage() {
   const [aiSuccessMessage, setAiSuccessMessage] = useState('');
   const [showDuplicateSuccessAlert, setShowDuplicateSuccessAlert] = useState(false);
   const [availableOnboardingTemplates, setAvailableOnboardingTemplates] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
   const [protocol, setProtocol] = useState<ProtocolForm>({
     name: '',
     duration: 7,
@@ -139,7 +166,12 @@ export default function EditProtocolPage() {
     coverImage: '',
     days: [],
     products: [],
-    consultation_date: undefined,
+    courses: [],
+    isRecurring: false,
+    recurringInterval: 'DAILY',
+    recurringDays: [],
+    availableFrom: null,
+    availableUntil: null,
     onboardingTemplateId: null
   });
 
@@ -150,6 +182,23 @@ export default function EditProtocolPage() {
       loadAvailableOnboardingTemplates();
     }
   }, [params.id]);
+
+  // Load available courses
+  useEffect(() => {
+    const loadAvailableCourses = async () => {
+      try {
+        const response = await fetch('/api/courses');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableCourses(data);
+        }
+      } catch (error) {
+        console.error('Error loading available courses:', error);
+      }
+    };
+
+    loadAvailableCourses();
+  }, []);
 
   const loadAvailableOnboardingTemplates = async () => {
     try {
@@ -207,10 +256,23 @@ export default function EditProtocolPage() {
           console.log('⚠️ Products API failed, continuing without products');
         }
         
+        // Load protocol courses
+        const coursesResponse = await fetch(`/api/protocols/${protocolId}/courses`);
+        console.log('📡 Courses API response status:', coursesResponse.status);
+        console.log('📡 Courses API response ok:', coursesResponse.ok);
+
+        let protocolCourses = [];
+        if (coursesResponse.ok) {
+          protocolCourses = await coursesResponse.json();
+          console.log('✅ Protocol courses loaded:', protocolCourses.length);
+        } else {
+          console.log('⚠️ Courses API failed, continuing without courses');
+        }
+        
         console.log('🔄 Setting protocol state...');
         setProtocol({
           name: data.name,
-          duration: data.days?.length || 0,
+          duration: data.days.length,
           description: data.description || '',
           isTemplate: data.isTemplate,
           showDoctorInfo: data.showDoctorInfo || false,
@@ -257,7 +319,12 @@ export default function EditProtocolPage() {
             })) || []
           })),
           products: protocolProducts,
-          consultation_date: data.consultation_date || undefined,
+          courses: protocolCourses,
+          isRecurring: data.isRecurring || false,
+          recurringInterval: data.recurringInterval || 'DAILY',
+          recurringDays: data.recurringDays || [],
+          availableFrom: data.availableFrom || null,
+          availableUntil: data.availableUntil || null,
           onboardingTemplateId: data.onboardingTemplateId || null
         });
         
@@ -586,6 +653,90 @@ export default function EditProtocolPage() {
     });
   }, []);
 
+  const addCourse = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/protocols/${params.id}/courses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ courseId })
+      });
+
+      if (response.ok) {
+        const newProtocolCourse = await response.json();
+        setProtocol(prev => ({
+          ...prev,
+          courses: [...(prev.courses || []), newProtocolCourse]
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding course:', error);
+    }
+  };
+
+  const removeCourse = async (protocolCourseId: string) => {
+    try {
+      const response = await fetch(`/api/protocols/${params.id}/courses/${protocolCourseId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setProtocol(prev => ({
+          ...prev,
+          courses: prev.courses.filter(pc => pc.id !== protocolCourseId)
+        }));
+      }
+    } catch (error) {
+      console.error('Error removing course:', error);
+    }
+  };
+
+  const updateCourse = async (protocolCourseId: string, field: string, value: any) => {
+    try {
+      const updatedCourse = protocol.courses.find(pc => pc.id === protocolCourseId);
+      if (!updatedCourse) return;
+
+      const updatedCourses = protocol.courses.map(pc =>
+        pc.id === protocolCourseId ? { ...pc, [field]: value } : pc
+      );
+
+      setProtocol(prev => ({
+        ...prev,
+        courses: updatedCourses
+      }));
+
+      await fetch(`/api/protocols/${params.id}/courses`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ courses: updatedCourses })
+      });
+    } catch (error) {
+      console.error('Error updating course:', error);
+    }
+  };
+
+  const reorderCourses = async (courses: ProtocolCourse[]) => {
+    try {
+      setProtocol(prev => ({
+        ...prev,
+        courses
+      }));
+
+      await fetch(`/api/protocols/${params.id}/courses`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ courses })
+      });
+    } catch (error) {
+      console.error('Error reordering courses:', error);
+    }
+  };
+
   const saveProtocol = async () => {
     try {
       setIsLoading(true);
@@ -634,14 +785,18 @@ export default function EditProtocolPage() {
           modalButtonText: protocol.modalButtonText,
           modalButtonUrl: protocol.modalButtonUrl,
           coverImage: protocol.coverImage,
-          consultation_date: protocol.consultation_date,
+          isRecurring: protocol.isRecurring,
+          recurringInterval: protocol.recurringInterval,
+          recurringDays: protocol.recurringDays,
+          availableFrom: protocol.availableFrom,
+          availableUntil: protocol.availableUntil,
           onboardingTemplateId: protocol.onboardingTemplateId,
           days: protocol.days.map(day => ({
             dayNumber: day.dayNumber,
             title: day.title || `Day ${day.dayNumber}`,
             sessions: day.sessions.map((session, sessionIndex) => ({
-              name: session.name,
-              order: sessionIndex,
+              title: session.name,
+              sessionNumber: sessionIndex + 1,
               tasks: session.tasks.filter(task => task.title.trim()).map((task, index) => ({
                 title: task.title,
                 order: index,
@@ -693,6 +848,36 @@ export default function EditProtocolPage() {
           const errorText = await productsResponse.text();
           console.error('❌ Error response:', errorText);
           setErrorMessage('Error saving protocol products');
+          setShowErrorAlert(true);
+          setTimeout(() => setShowErrorAlert(false), 5000);
+        }
+
+        // Save courses
+        const coursesResponse = await fetch(`/api/protocols/${params.id}/courses`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courses: protocol.courses.map(pc => ({
+              courseId: pc.courseId,
+              orderIndex: pc.orderIndex,
+              isRequired: pc.isRequired
+            }))
+          }),
+        });
+
+        console.log('📡 Save courses API response status:', coursesResponse.status);
+        console.log('📡 Save courses API response ok:', coursesResponse.ok);
+
+        if (coursesResponse.ok) {
+          console.log('✅ Courses saved successfully');
+          // No specific alert for courses, as they are part of the main protocol
+        } else {
+          console.error('❌ Failed to save courses:', coursesResponse.status, coursesResponse.statusText);
+          const errorText = await coursesResponse.text();
+          console.error('❌ Error response:', errorText);
+          setErrorMessage('Error saving protocol courses');
           setShowErrorAlert(true);
           setTimeout(() => setShowErrorAlert(false), 5000);
         }
@@ -763,7 +948,12 @@ export default function EditProtocolPage() {
       id: `temp-day-${Date.now()}`,
       dayNumber: newDayNumber,
       title: `Day ${newDayNumber}`,
-      sessions: [],
+      sessions: [{
+        id: `temp-session-${Date.now()}`,
+        name: 'Main Session',
+        order: 0,
+        tasks: []
+      }],
       tasks: []
     };
 
@@ -1112,7 +1302,7 @@ export default function EditProtocolPage() {
               </Link>
             </Button>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Edit Protocol
               </h1>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-2 font-medium">
@@ -1240,10 +1430,15 @@ export default function EditProtocolPage() {
             protocol={protocol}
             setProtocol={setProtocol}
             availableProducts={availableProducts}
+            availableCourses={availableCourses}
             availableProductsToAdd={availableProductsToAdd}
             addProduct={addProduct}
             removeProduct={removeProduct}
             updateProtocolProduct={updateProtocolProduct}
+            addCourse={addCourse}
+            removeCourse={removeCourse}
+            updateCourse={updateCourse}
+            reorderCourses={reorderCourses}
             protocolId={params.id as string}
           >
             {{
@@ -1297,11 +1492,44 @@ export default function EditProtocolPage() {
                           </div>
                         </div>
 
-                        <ConsultationDatePicker
-                          consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
-                          onDateChange={(date) => updateProtocolField('consultation_date', date?.toISOString() || null)}
-                        />
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="isRecurring"
+                              checked={protocol.isRecurring}
+                              onChange={(e) => updateProtocolField('isRecurring', e.target.checked)}
+                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
+                            />
+                            <Label htmlFor="isRecurring" className="text-gray-900 font-medium">
+                              Recurring Protocol
+                            </Label>
+                          </div>
 
+                          {protocol.isRecurring && (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="recurringInterval" className="text-gray-900 font-semibold">Recurrence Interval</Label>
+                                <Select
+                                  value={protocol.recurringInterval}
+                                  onValueChange={(value) => updateProtocolField('recurringInterval', value)}
+                                >
+                                  <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="DAILY">Daily</SelectItem>
+                                    <SelectItem value="WEEKLY">Weekly</SelectItem>
+                                    <SelectItem value="MONTHLY">Monthly</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="onboardingTemplate" className="text-gray-900 font-semibold">Onboarding Template</Label>
                           <Select
@@ -1309,10 +1537,10 @@ export default function EditProtocolPage() {
                             onValueChange={(value) => updateProtocolField('onboardingTemplateId', value === 'none' ? null : value)}
                           >
                             <SelectTrigger className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12">
-                              <SelectValue placeholder="Select an onboarding template..." />
+                              <SelectValue placeholder="Select a template..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="none">No template</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {availableOnboardingTemplates.map((template) => (
                                 <SelectItem key={template.id} value={template.id}>
                                   {template.name}
@@ -1320,58 +1548,65 @@ export default function EditProtocolPage() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <p className="text-xs text-gray-500">
-                            Select a template that patients will need to fill out before their consultation.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="isTemplate"
-                              checked={protocol.isTemplate}
-                              onChange={(e) => updateProtocolField('isTemplate', e.target.checked)}
-                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                            />
-                            <Label htmlFor="isTemplate" className="text-gray-900 font-medium">
-                              Save as template
-                            </Label>
-                          </div>
-
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              id="showDoctorInfo"
-                              checked={protocol.showDoctorInfo}
-                              onChange={(e) => updateProtocolField('showDoctorInfo', e.target.checked)}
-                              className="rounded border-gray-300 text-[#5154e7] focus:ring-[#5154e7]"
-                            />
-                            <Label htmlFor="showDoctorInfo" className="text-gray-900 font-medium">
-                              Show responsible doctor
-                            </Label>
-                            <span className="text-xs text-gray-500">
-                              (Shows your photo and name on patient screen)
-                            </span>
-                          </div>
                         </div>
 
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                          <div className="flex items-start gap-3">
-                            <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-900 mb-1">
-                                Day Management
-                              </p>
-                              <p className="text-xs text-blue-700">
-                                The protocol duration is automatically determined by the days you add in the "Schedule" tab. 
-                                Currently: <strong>{protocol.days.length} {protocol.days.length === 1 ? 'day' : 'days'}</strong>
-                              </p>
+                        {protocol.isRecurring && protocol.recurringInterval !== 'DAILY' && (
+                          <div className="space-y-2">
+                            <Label className="text-gray-900 font-semibold">
+                              {protocol.recurringInterval === 'WEEKLY' ? 'Days of Week' : 'Days of Month'}
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                              {protocol.recurringInterval === 'WEEKLY' ? (
+                                // Days of week selection
+                                ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, index) => (
+                                  <Button
+                                    key={index}
+                                    type="button"
+                                    variant={protocol.recurringDays.includes(index + 1) ? 'default' : 'outline'}
+                                    className={cn(
+                                      "rounded-xl h-10 px-4",
+                                      protocol.recurringDays.includes(index + 1) 
+                                        ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" 
+                                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    )}
+                                    onClick={() => {
+                                      const dayNumber = index + 1;
+                                      const newDays = protocol.recurringDays.includes(dayNumber)
+                                        ? protocol.recurringDays.filter(d => d !== dayNumber)
+                                        : [...protocol.recurringDays, dayNumber].sort((a, b) => a - b);
+                                      updateProtocolField('recurringDays', newDays);
+                                    }}
+                                  >
+                                    {day.slice(0, 3)}
+                                  </Button>
+                                ))
+                              ) : (
+                                // Days of month selection
+                                Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                  <Button
+                                    key={day}
+                                    type="button"
+                                    variant={protocol.recurringDays.includes(day) ? 'default' : 'outline'}
+                                    className={cn(
+                                      "rounded-xl h-10 w-10 p-0",
+                                      protocol.recurringDays.includes(day) 
+                                        ? "bg-[#5154e7] text-white hover:bg-[#4145d1]" 
+                                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    )}
+                                    onClick={() => {
+                                      const newDays = protocol.recurringDays.includes(day)
+                                        ? protocol.recurringDays.filter(d => d !== day)
+                                        : [...protocol.recurringDays, day].sort((a, b) => a - b);
+                                      updateProtocolField('recurringDays', newDays);
+                                    }}
+                                  >
+                                    {day}
+                                  </Button>
+                                ))
+                              )}
                             </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -1641,6 +1876,8 @@ export default function EditProtocolPage() {
                   removeDay={removeDay}
                   duplicateDay={duplicateDay}
                   updateDay={updateDay}
+                  protocol={protocol}
+                  setProtocol={setProtocol}
                 />
               )
             }}

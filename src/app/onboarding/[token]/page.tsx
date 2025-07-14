@@ -385,7 +385,19 @@ export default function OnboardingPage() {
                     {template.successButtonText && template.successButtonUrl && (
                       <div className="mt-6">
                         <Button
-                          onClick={() => window.location.href = template.successButtonUrl!}
+                          onClick={() => {
+                            try {
+                              if (!template.successButtonUrl) {
+                                throw new Error('No URL provided');
+                              }
+                              // Validate URL
+                              const url = new URL(template.successButtonUrl);
+                              window.location.href = url.toString();
+                            } catch (error) {
+                              console.error('Invalid success button URL:', error);
+                              toast.error("Invalid redirect URL");
+                            }
+                          }}
                           className="h-12 px-6 bg-turquoise hover:bg-turquoise/90 text-black shadow-lg shadow-turquoise/25 hover:shadow-turquoise/40 hover:scale-[1.02] rounded-xl font-semibold transition-all duration-200"
                         >
                           {template.successButtonText}

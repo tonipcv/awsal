@@ -276,8 +276,15 @@ export default function TemplatePage() {
 
       const data = await response.json();
       console.log("Success response:", data);
-      const link = `${window.location.origin}/onboarding/${data.token}`;
-      setShareLink(link);
+      try {
+        const baseUrl = window.location.origin;
+        const path = `/onboarding/${data.token}`;
+        const url = new URL(path, baseUrl);
+        setShareLink(url.toString());
+      } catch (error) {
+        console.error("Error constructing share link:", error);
+        toast.error("Error generating share link");
+      }
     } catch (error) {
       console.error("Error generating link:", error);
       toast.error(error instanceof Error ? error.message : "Error generating link");

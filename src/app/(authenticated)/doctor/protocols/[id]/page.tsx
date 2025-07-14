@@ -16,7 +16,8 @@ import {
   ShoppingBagIcon,
   LinkIcon,
   ChartBarIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -24,7 +25,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
 import CheckinResponsesDashboard from '@/components/checkin/checkin-responses-dashboard';
-import { ConsultationDatePicker } from '@/components/ConsultationDatePicker';
+import { toast } from 'react-hot-toast';
 
 interface ProtocolTask {
   id: string;
@@ -81,19 +82,29 @@ interface ProtocolProduct {
 interface Protocol {
   id: string;
   name: string;
-  duration: number;
   description?: string;
-  isTemplate: boolean;
-  createdAt: Date;
-  consultation_date?: string | null;
+  duration?: number;
+  showDoctorInfo?: boolean;
+  modalTitle?: string;
+  modalVideoUrl?: string;
+  modalDescription?: string;
+  modalButtonText?: string;
+  modalButtonUrl?: string;
+  coverImage?: string;
+  onboardingTemplateId?: string;
   days: ProtocolDay[];
+  doctor: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string;
+  };
+  isTemplate: boolean;
+  isRecurring: boolean;
+  recurringInterval: string;
+  recurringDays: number[];
   assignments: Assignment[];
   products?: ProtocolProduct[];
-  doctor?: {
-    id: string;
-    name?: string;
-    email?: string;
-  };
 }
 
 export default function ProtocolDetailPage() {
@@ -102,36 +113,28 @@ export default function ProtocolDetailPage() {
   const [protocol, setProtocol] = useState<Protocol | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'checkin-questions' | 'checkin-responses'>('overview');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (params.id) {
-      loadProtocol(params.id as string);
+      loadProtocol();
     }
   }, [params.id]);
 
-  const loadProtocol = async (protocolId: string) => {
+  const loadProtocol = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/protocols/${protocolId}`);
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Carregar produtos do protocolo
-        const productsResponse = await fetch(`/api/protocols/${protocolId}/products`);
-        let protocolProducts = [];
-        if (productsResponse.ok) {
-          protocolProducts = await productsResponse.json();
-        }
-        
-        setProtocol({
-          ...data,
-          products: protocolProducts
-        });
-      } else {
-        router.push('/doctor/protocols');
+      const response = await fetch(`/api/protocols/${params.id}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load protocol');
       }
+      
+      setProtocol(data);
     } catch (error) {
       console.error('Error loading protocol:', error);
+      toast.error('Failed to load protocol');
       router.push('/doctor/protocols');
     } finally {
       setIsLoading(false);
@@ -179,134 +182,47 @@ export default function ProtocolDetailPage() {
     }
   };
 
-  if (isLoading) {
+  const handleUpdateProtocol = async (updatedProtocol: any) => {
+    try {
+      setIsUpdating(true);
+      const response = await fetch(`/api/protocols/${(protocol as Protocol).id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: updatedProtocol.name,
+          description: updatedProtocol.description,
+          duration: updatedProtocol.duration,
+          showDoctorInfo: updatedProtocol.showDoctorInfo,
+          modalTitle: updatedProtocol.modalTitle,
+          modalVideoUrl: updatedProtocol.modalVideoUrl,
+          modalDescription: updatedProtocol.modalDescription,
+          modalButtonText: updatedProtocol.modalButtonText,
+          modalButtonUrl: updatedProtocol.modalButtonUrl,
+          coverImage: updatedProtocol.coverImage,
+          onboardingTemplateId: updatedProtocol.onboardingTemplateId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update protocol');
+      }
+
+      loadProtocol();
+      toast.success('Protocol updated successfully');
+    } catch (error) {
+      console.error('Error updating protocol:', error);
+      toast.error('Failed to update protocol');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (isLoading || !protocol) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="lg:ml-64">
-          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8 space-y-8">
-            
-            {/* Header Skeleton */}
-            <div className="flex items-center gap-6">
-              <div className="h-10 w-20 bg-gray-200 rounded-xl animate-pulse"></div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-8 w-64 bg-gray-200 rounded-lg animate-pulse"></div>
-                  <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
-                </div>
-                <div className="h-5 w-96 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-              <div className="h-12 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-8">
-              
-              {/* Sidebar Skeleton */}
-              <div className="lg:col-span-1 space-y-8">
-                
-                {/* Stats Card Skeleton */}
-                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                  <div className="h-6 w-24 bg-gray-200 rounded animate-pulse mb-6"></div>
-                  <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center gap-4">
-                        <div className="h-11 w-11 bg-gray-200 rounded-xl animate-pulse"></div>
-                        <div className="flex-1">
-                          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mb-2"></div>
-                          <div className="h-6 w-12 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Products Card Skeleton */}
-                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                    <div className="h-6 w-8 bg-gray-200 rounded-full animate-pulse"></div>
-                  </div>
-                  <div className="space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse flex-shrink-0"></div>
-                          <div className="flex-1">
-                            <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
-                            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
-                            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Patients Card Skeleton */}
-                <div className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-10 w-24 bg-gray-200 rounded-xl animate-pulse"></div>
-                  </div>
-                  <div className="space-y-4">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-                        <div className="flex-1">
-                          <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-1"></div>
-                          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Protocol Days Skeleton */}
-              <div className="lg:col-span-2">
-                <div className="space-y-6">
-                  {[1, 2, 3].map((day) => (
-                    <div key={day} className="bg-white border-gray-200 shadow-lg rounded-2xl p-6">
-                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mb-6"></div>
-                      <div className="space-y-4">
-                        {[1, 2].map((task) => (
-                          <div key={task} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <div className="h-5 w-48 bg-gray-200 rounded animate-pulse mb-3"></div>
-                            <div className="space-y-2">
-                              <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-                              <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!protocol) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="lg:ml-64">
-          <div className="container mx-auto p-6 lg:p-8 pt-[88px] lg:pt-8 pb-24 lg:pb-8">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Protocol not found</h2>
-                <p className="text-gray-600 mb-6">The protocol you're looking for doesn't exist or you don't have permission to access it.</p>
-                <Link href="/doctor/protocols">Back to protocols</Link>
-              </div>
-            </div>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7]" />
           </div>
         </div>
       </div>
@@ -434,10 +350,35 @@ export default function ProtocolDetailPage() {
                       </div>
                     </div>
                     
-                    <ConsultationDatePicker
-                      consultationDate={protocol.consultation_date ? new Date(protocol.consultation_date) : null}
-                      onDateChange={handleConsultationDateChange}
-                    />
+                    {/* Recurring Configuration */}
+                    {protocol.isRecurring && (
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-purple-100 rounded-xl">
+                          <ArrowPathIcon className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 font-medium">Recurrence</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {protocol.recurringInterval === 'DAILY' && 'Daily'}
+                            {protocol.recurringInterval === 'WEEKLY' && (
+                              <>
+                                Weekly on{' '}
+                                {protocol.recurringDays
+                                  .sort((a, b) => a - b)
+                                  .map((day) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day - 1])
+                                  .join(', ')}
+                              </>
+                            )}
+                            {protocol.recurringInterval === 'MONTHLY' && (
+                              <>
+                                Monthly on day{protocol.recurringDays.length > 1 ? 's' : ''}{' '}
+                                {protocol.recurringDays.sort((a, b) => a - b).join(', ')}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

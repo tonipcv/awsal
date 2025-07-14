@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -71,9 +72,18 @@ export default function Home() {
 
   if (status === 'loading' || isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101010' }}>
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-teal-400/30 border-t-teal-400"></div>
+          <div className="relative w-12 h-12 mx-auto mb-6">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#5154e7]/30 border-t-[#5154e7]"></div>
         </div>
       </div>
     );

@@ -13,25 +13,38 @@ export async function GET(request: NextRequest) {
 
     console.log('Fetching doctor info for user:', session.user.id);
 
-    // First, get the user's direct doctor relationship
+    // Get the user's data with their relationships
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true
-          }
+        patientRelationships: {
+          where: {
+            isActive: true,
+            isPrimary: true
+          },
+          include: {
+            doctor: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+              }
+            }
+          },
+          take: 1
         }
       }
     });
 
     console.log('User data:', { 
       userId: user?.id, 
-      doctorId: user?.doctorId, 
-      doctorName: user?.doctor?.name 
+      role: user?.role,
+      relationships: user?.patientRelationships.map(rel => ({
+        doctorId: rel.doctorId,
+        doctorName: rel.doctor.name,
+        isPrimary: rel.isPrimary
+      }))
     });
 
     // Function to get clinic logo for a doctor
@@ -66,18 +79,44 @@ export async function GET(request: NextRequest) {
       return { logo: null, clinicName: null };
     };
 
-    // If user has a direct doctor relationship, use that
-    if (user?.doctor) {
-      console.log('Using direct doctor relationship:', user.doctor);
-      const clinicInfo = await getClinicLogo(user.doctor.id);
+    // If the user IS a doctor, return their own info
+    if (user?.role === 'DOCTOR') {
+      console.log('User is a doctor, returning their own info');
+      const clinicInfo = await getClinicLogo(user.id);
       
       const response = NextResponse.json({
         success: true,
         doctor: {
-          id: user.doctor.id,
-          name: user.doctor.name,
-          email: user.doctor.email,
-          image: user.doctor.image,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          clinicLogo: clinicInfo.logo,
+          clinicName: clinicInfo.clinicName
+        }
+      });
+      
+      // Add cache-busting headers
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      
+      return response;
+    }
+
+    // For patients, get their primary doctor from relationships
+    const primaryRelationship = user?.patientRelationships[0];
+    if (primaryRelationship?.doctor) {
+      console.log('Using primary doctor relationship:', primaryRelationship.doctor);
+      const clinicInfo = await getClinicLogo(primaryRelationship.doctor.id);
+      
+      const response = NextResponse.json({
+        success: true,
+        doctor: {
+          id: primaryRelationship.doctor.id,
+          name: primaryRelationship.doctor.name,
+          email: primaryRelationship.doctor.email,
+          image: primaryRelationship.doctor.image,
           clinicLogo: clinicInfo.logo,
           clinicName: clinicInfo.clinicName
         }
@@ -163,9 +202,8 @@ export async function GET(request: NextRequest) {
     response.headers.set('Expires', '0');
     
     return response;
-
   } catch (error) {
-    console.error('Error fetching doctor info:', error);
+    console.error('Error fetching doctor info:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

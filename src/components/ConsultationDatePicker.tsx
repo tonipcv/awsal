@@ -17,7 +17,7 @@ export function ConsultationDatePicker({ consultationDate, onDateChange, disable
     <div className="space-y-2">
       <Label className="text-gray-900 font-semibold flex items-center gap-2">
         <CalendarDaysIcon className="h-4 w-4" />
-        Data da Consulta
+        Data de início
       </Label>
       <div className="flex items-center gap-2">
         <Input

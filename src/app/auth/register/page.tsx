@@ -105,12 +105,19 @@ export default function Register() {
               <div className="absolute inset-0 bg-gradient-to-r from-turquoise/0 via-turquoise/10 to-turquoise/0 opacity-0 group-hover:opacity-100 transition-all duration-700" />
             </Button>
 
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <Link 
                 href="/auth/signin" 
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
+                className="text-sm text-zinc-400 hover:text-white transition-colors block"
               >
                 Already have an account? Sign in
+              </Link>
+              <div className="border-t border-white/10 my-4"></div>
+              <Link 
+                href="/auth/register-doctor" 
+                className="text-sm text-turquoise hover:text-turquoise/80 transition-colors block"
+              >
+                Are you a doctor? Register here →
               </Link>
             </div>
           </form>

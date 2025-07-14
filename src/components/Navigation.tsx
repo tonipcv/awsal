@@ -197,12 +197,6 @@ export default function Navigation() {
           description: 'My medical protocols'
         },
         {
-          href: '/patient/courses',
-          label: 'Courses',
-          icon: BookOpenIcon,
-          description: 'My courses'
-        },
-        {
           href: '/patient/ai-chat',
           label: 'AI Assistant',
           icon: Bot,
@@ -226,7 +220,7 @@ export default function Navigation() {
   // Navegação para médicos - memoizada para evitar re-renderizações
   const doctorNavSections: NavSection[] = useMemo(() => [
     {
-      title: "Overview",
+      title: "Main",
       items: [
         {
           href: '/doctor/dashboard',
@@ -235,56 +229,39 @@ export default function Navigation() {
           description: 'Overview'
         },
         {
-          href: '/doctor/intelligence',
-          label: 'Intelligence',
-          icon: SparklesIcon,
-          description: 'Real-time patient insights and churn prevention'
-        }
-      ]
-    },
-    {
-      title: "Patient Management",
-      items: [
-        {
-          href: '/clinic',
-          label: 'My Clinic',
-          icon: BuildingOfficeIcon,
-          description: 'Manage clinic and team'
-        },
-        {
           href: '/doctor/patients',
           label: 'Clients',
           icon: UsersIcon,
           description: 'Manage clients'
         },
         {
-          href: '/doctor/onboarding',
-          label: 'Onboarding',
+          href: '/doctor/protocols',
+          label: 'Protocols',
           icon: DocumentTextIcon,
-          description: 'Manage onboarding forms'
-        },
+          description: 'Create and manage protocols'
+        }
+      ]
+    },
+    {
+      title: "Clinic",
+      items: [
         {
-          href: '/doctor/notifications',
-          label: 'Notifications',
-          icon: BellIcon,
-          description: 'Send notifications to patients'
-        },
+          href: '/clinic',
+          label: 'My Team',
+          icon: BuildingOfficeIcon,
+          description: 'Manage clinic and team'
+        }
+      ]
+    },
+    {
+      title: "Other",
+      items: [
+
         {
           href: '/doctor/symptom-reports',
           label: 'Symptom Reports',
           icon: ExclamationTriangleIcon,
           description: 'Review patient symptom reports'
-        }
-      ]
-    },
-    {
-      title: "Content & AI",
-      items: [
-        {
-          href: '/doctor/protocols',
-          label: 'Protocols',
-          icon: DocumentTextIcon,
-          description: 'Create and manage protocols'
         },
         {
           href: '/doctor/ai-assistant',
@@ -292,23 +269,6 @@ export default function Navigation() {
           icon: Bot,
           description: 'Configure AI assistant and FAQs'
         },
-        {
-          href: '/doctor/products',
-          label: 'Products',
-          icon: CheckCircleIcon,
-          description: 'Manage recommended products'
-        },
-        {
-          href: '/doctor/courses',
-          label: 'Courses',
-          icon: BookOpenIcon,
-          description: 'Create and manage courses'
-        }
-      ]
-    },
-    {
-      title: "Business",
-      items: [
         {
           href: '/doctor/referrals',
           label: 'Referrals',
@@ -320,12 +280,6 @@ export default function Navigation() {
           label: 'Rewards',
           icon: GiftIcon,
           description: 'Configure rewards'
-        },
-        {
-          href: '/doctor/refer-clinic',
-          label: 'Refer Clinic',
-          icon: BuildingOfficeIcon,
-          description: 'Refer clinics and earn rewards'
         }
       ]
     }
@@ -380,7 +334,7 @@ export default function Navigation() {
   const isDoctorPage = pathname?.startsWith('/doctor') || pathname?.startsWith('/clinic');
   const isAdminPage = pathname?.startsWith('/admin');
   const isProtocolsPage = pathname === '/patient/protocols';
-  const isChecklistPage = pathname?.startsWith('/patient/checklist');
+  const isChecklistPage = pathname?.includes('/patient/checklist/');
   const isSpecificCoursePage = pathname?.match(/^\/patient\/courses\/[^\/]+/) && pathname !== '/patient/courses';
   const isDoctorInfoPage = pathname === '/doctor-info';
   const isAIChatPage = pathname === '/patient/ai-chat';
@@ -618,39 +572,24 @@ export default function Navigation() {
         )}>
           <div className="py-4 px-4 flex justify-between items-center">
             {(effectiveRole === 'PATIENT' || isDoctorInfoPage) ? (
-              // Patient Header - Show clinic logo, and doctor info when available
+              // Patient Header - Show only our logo
               <>
                 <div className="flex items-center gap-3">
-                  {doctorInfo ? (
-                    <Link href="/doctor-info" className="flex items-center">
-                      <div className="h-8 w-12 flex items-center justify-center">
-                        <ClinicLogo doctor={doctorInfo} />
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="relative w-6 h-6">
-                      <Image
-                        src="/logo.png"
-                        alt="Logo"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  )}
+                  <div className="relative w-6 h-6">
+                    <Image
+                      src="/logo.png"
+                      alt="Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center">
-                  {doctorInfo && (
-                    <Link href="/doctor-info">
-                      <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-                      <div className="flex flex-col text-right">
-                        <span className="text-xs text-gray-400">{doctorInfo.name}</span>
-                      </div>
-                      <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600">
-                        <DoctorAvatar doctor={doctorInfo} />
-                      </div>
+                  <Link href={getProfileUrl()}>
+                    <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600">
+                      <UserAvatar />
                     </div>
-                    </Link>
-                  )}
+                  </Link>
                 </div>
               </>
             ) : (
@@ -680,7 +619,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile Navigation Bar - Different styles for patients vs doctors/admins */}
-        {(effectiveRole === 'PATIENT' || isDoctorInfoPage) && !isChecklistPage && !isSpecificCoursePage && !isAIChatPage ? (
+        {(effectiveRole === 'PATIENT' || isDoctorInfoPage) && !isChecklistPage && !isSpecificCoursePage && !isAIChatPage && !isProtocolsPage ? (
           // Patient Bottom Navigation - App Style (Mobile Only)
           <nav className="fixed bottom-0 left-0 right-0 z-40">
             <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
@@ -697,7 +636,7 @@ export default function Navigation() {
                           "w-full flex items-center justify-center rounded-full transition-all duration-300",
                           item.href === '/patient/ai-chat' ? "h-12" : "h-10",
                           pathname === item.href 
-                            ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                            ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-105" 
                             : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                         )}
                       >
@@ -726,7 +665,7 @@ export default function Navigation() {
                       className={cn(
                         "w-full h-10 flex items-center justify-center rounded-full transition-all duration-300",
                         (pathname === '/patient/profile' || pathname === '/doctor/profile')
-                          ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-110" 
+                          ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-105" 
                           : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
                       )}
                     >
@@ -858,118 +797,74 @@ export default function Navigation() {
         ) : null}
       </div>
 
-      {/* Desktop Navigation for Patients - Sidebar Style */}
+      {/* Desktop Navigation for Patients - Top Header + Bottom Navigation */}
       {(effectiveRole === 'PATIENT' || isDoctorInfoPage) && (
         <>
-          {/* Desktop Sidebar for Patients */}
-          <nav className="fixed left-0 top-0 bottom-0 w-64 border-r backdrop-blur hidden lg:block z-40 border-gray-800 bg-[#111111]/95">
-            <div className="flex flex-col h-full">
-              {/* Logo Section */}
-              <div className="p-6 border-b border-gray-800">
-                <Link href="/" className="flex items-center justify-center">
-                  {doctorInfo?.clinicLogo ? (
-                    <div className="relative w-20 h-12">
-                      <Image
-                        src={doctorInfo.clinicLogo}
-                        alt={doctorInfo.clinicName || 'Clinic Logo'}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative w-8 h-8">
-                      <Image
-                        src="/logo.png"
-                        alt="Logo"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  )}
-                </Link>
+          {/* Desktop Top Header for Patients */}
+          <div className="fixed top-0 left-0 right-0 border-b backdrop-blur z-40 border-gray-800 bg-[#111111]/95 hidden lg:block">
+            <div className="py-4 px-6 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="relative w-8 h-8">
+                  <Image
+                    src="/logo.png"
+                    alt="Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
               </div>
-
-              {/* Navigation Sections */}
-              <div className="flex-1 py-6 px-4 overflow-y-auto">
-                <nav className="space-y-8">
-                  {patientNavSections.map((section) => (
-                    <div key={section.title} className="space-y-2">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider px-3 text-gray-500">
-                        {section.title}
-                      </h3>
-                      <div className="space-y-1">
-                        {section.items.map((item) => (
-                          <Link key={item.href} href={item.href} className="block">
-                            <Button
-                              variant="ghost"
-                              className={cn(
-                                "w-full h-12 flex items-center justify-start gap-3 px-3 rounded-lg font-medium transition-all duration-200",
-                                "text-white/70 hover:bg-white/5 hover:text-white",
-                                pathname === item.href 
-                                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-400" 
-                                  : ""
-                              )}
-                            >
-                              <item.icon className="h-5 w-5 stroke-current flex-shrink-0" />
-                              <span className="text-sm truncate">{item.label}</span>
-                            </Button>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </nav>
-              </div>
-
-              {/* User Profile Section */}
-              <div className="p-4 border-t border-gray-800">
+              <div className="flex items-center">
                 <Link href={getProfileUrl()}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer hover:bg-gray-800/50">
-                    <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700">
-                      {session?.user?.image ? (
-                        <div className="relative w-full h-full rounded-full overflow-hidden">
-                          <Image
-                            src={session.user.image}
-                            alt="Profile"
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <UserCircleIcon className="h-5 w-5 text-gray-300" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
-                        {session?.user?.name || 'User'}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {session?.user?.email}
-                      </p>
-                    </div>
+                  <div className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-700 border border-gray-600 hover:bg-gray-600 transition-colors">
+                    <UserAvatar />
                   </div>
                 </Link>
               </div>
+            </div>
+          </div>
 
-              {/* Powered by Section */}
-              <div className="p-4 border-t border-gray-800/50">
-                <div className="flex items-center justify-center gap-2 opacity-60">
-                  <span className="text-xs text-gray-500">Powered by</span>
-                  <div className="relative w-4 h-4">
-                    <Image
-                      src="/logo.png"
-                      alt="Boop Logo"
-                      fill
-                      className="object-contain"
-                    />
+          {/* Desktop Bottom Navigation for Patients - Hidden on checklist pages */}
+          {!isChecklistPage && !isProtocolsPage && (
+            <nav className="fixed bottom-0 left-0 right-0 z-40 hidden lg:block">
+              <div className="bg-[#111111]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl">
+                <div className="px-8 py-4">
+                  <div className="flex items-center justify-center gap-8 max-w-2xl mx-auto">
+                    {patientNavSections.flatMap(section => section.items).map((item) => (
+                      <Link key={item.href} href={item.href} className="flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "flex flex-col items-center justify-center gap-2 h-16 w-20 rounded-xl transition-all duration-300",
+                            item.href === '/patient/ai-chat' ? "w-24" : "",
+                            pathname === item.href 
+                              ? "bg-gradient-to-t from-blue-500 to-blue-600 text-white shadow-lg scale-105" 
+                              : "text-gray-400 hover:bg-gray-800 hover:text-white hover:scale-105"
+                          )}
+                        >
+                          {item.href === '/patient/ai-chat' ? (
+                            <div className="relative w-8 h-8">
+                              <Image
+                                src="/logo.png"
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <item.icon className={cn(
+                              "h-6 w-6 stroke-current transition-all duration-300",
+                              pathname === item.href ? "drop-shadow-sm" : ""
+                            )} />
+                          )}
+                          <span className="text-xs font-medium">{item.label}</span>
+                        </Button>
+                      </Link>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          </nav>
-
-          {/* Desktop Header for Patients - Simplified */}
-          {/* Removed unnecessary desktop header that was creating gray area */}
+            </nav>
+          )}
         </>
       )}
     </>
@@ -980,6 +875,12 @@ export default function Navigation() {
 export function PageWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   const { data: session } = useSession();
   const { userRole, isLoadingRole } = useUserRole();
+  const pathname = usePathname();
+
+  // Detectar se está em páginas específicas
+  const isDoctorPage = pathname?.startsWith('/doctor') || pathname?.startsWith('/clinic');
+  const isAdminPage = pathname?.startsWith('/admin');
+  const isDoctorInfoPage = pathname === '/doctor-info';
 
   // Usar fallback para paciente se ainda estiver carregando
   const effectiveRole = userRole || 'PATIENT';
@@ -987,13 +888,14 @@ export function PageWrapper({ children, className }: { children: React.ReactNode
   return (
     <div className={cn(
       "min-h-screen",
-      "lg:ml-64", // Add sidebar margin for all users on desktop (both patients and doctors/admins have sidebar)
+      // Only add sidebar margin for doctors/admins on desktop
+      ((effectiveRole === 'DOCTOR' || effectiveRole === 'SUPER_ADMIN') && !isDoctorInfoPage) ? "lg:ml-64" : "",
       className
     )}>
       <div className={cn(
         "p-4 lg:pl-6 lg:pr-4",
-        effectiveRole === 'PATIENT' 
-          ? "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Patients: mobile header only, no desktop header
+        effectiveRole === 'PATIENT' || isDoctorInfoPage
+          ? "pt-[88px] pb-24 lg:pt-20 lg:pb-24" // Patients: mobile header + desktop header, bottom navigation
           : "pt-[88px] pb-24 lg:pt-6 lg:pb-4" // Doctors/Admins: mobile header, no desktop header
       )}>
         {children}

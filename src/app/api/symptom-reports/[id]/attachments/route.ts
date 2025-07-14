@@ -5,6 +5,47 @@ import { prisma } from '@/lib/prisma';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { NextRequest } from 'next/server';
+import sharp from 'sharp';
+
+// Função auxiliar para processar a imagem
+async function processImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
+  let sharpInstance = sharp(buffer);
+
+  // Converter HEIC para JPEG se necessário
+  if (mimeType === 'image/heic' || mimeType === 'image/heif') {
+    sharpInstance = sharpInstance.toFormat('jpeg', { quality: 85 });
+    mimeType = 'image/jpeg';
+  } else {
+    // Para outros formatos, apenas otimizar
+    switch (mimeType) {
+      case 'image/jpeg':
+      case 'image/jpg':
+        sharpInstance = sharpInstance.jpeg({ quality: 85 });
+        break;
+      case 'image/png':
+        sharpInstance = sharpInstance.png({ quality: 85 });
+        break;
+      case 'image/webp':
+        sharpInstance = sharpInstance.webp({ quality: 85 });
+        break;
+      default:
+        // Para outros formatos, converter para JPEG
+        sharpInstance = sharpInstance.jpeg({ quality: 85 });
+        mimeType = 'image/jpeg';
+    }
+  }
+
+  // Redimensionar se a imagem for muito grande
+  const metadata = await sharpInstance.metadata();
+  if (metadata.width && metadata.width > 2048) {
+    sharpInstance = sharpInstance.resize(2048, null, {
+      withoutEnlargement: true,
+      fit: 'inside'
+    });
+  }
+
+  return sharpInstance.toBuffer();
+}
 
 // POST /api/symptom-reports/[id]/attachments - Upload attachment
 export async function POST(
@@ -43,19 +84,28 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Validate file type (images only for now)
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // Validate file type (images only)
+    const allowedTypes = [
+      'image/jpeg', 
+      'image/jpg', 
+      'image/png', 
+      'image/gif', 
+      'image/webp',
+      'image/heic',
+      'image/heif'
+    ];
+    
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
         error: 'Tipo de arquivo não permitido. Apenas imagens são aceitas.' 
       }, { status: 400 });
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validate file size (max 20MB antes do processamento)
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
       return NextResponse.json({ 
-        error: 'Arquivo muito grande. Tamanho máximo: 10MB' 
+        error: 'Arquivo muito grande. Tamanho máximo: 20MB' 
       }, { status: 400 });
     }
 
@@ -70,31 +120,45 @@ export async function POST(
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const fileExtension = file.name.split('.').pop() || 'jpg';
+    const fileExtension = file.type === 'image/heic' || file.type === 'image/heif' ? 'jpg' : (file.name.split('.').pop() || 'jpg');
     const fileName = `${timestamp}-${randomString}.${fileExtension}`;
     const filePath = join(uploadsDir, fileName);
 
-    // Save file
+    // Process and save image
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    
+    try {
+      // Processar imagem
+      const processedBuffer = await processImage(buffer, file.type);
+      
+      // Salvar arquivo processado
+      await writeFile(filePath, processedBuffer);
 
-    // Create attachment record
-    const attachment = await prisma.symptomReportAttachment.create({
-      data: {
-        symptomReportId: reportId,
-        fileName: fileName,
-        originalName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        fileUrl: `/uploads/symptom-reports/${fileName}`
-      }
-    });
+      // Create attachment record
+      const attachment = await prisma.symptomReportAttachment.create({
+        data: {
+          symptomReportId: reportId,
+          fileName: fileName,
+          originalName: file.name,
+          fileSize: processedBuffer.length,
+          mimeType: file.type === 'image/heic' || file.type === 'image/heif' ? 'image/jpeg' : file.type,
+          fileUrl: `/uploads/symptom-reports/${fileName}`
+        }
+      });
 
-    return NextResponse.json({
-      success: true,
-      attachment
-    }, { status: 201 });
+      return NextResponse.json({
+        success: true,
+        attachment
+      }, { status: 201 });
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+      return NextResponse.json({ 
+        error: 'Erro ao processar imagem',
+        details: error instanceof Error ? error.message : String(error)
+      }, { status: 500 });
+    }
 
   } catch (error) {
     console.error('Error uploading attachment:', error);

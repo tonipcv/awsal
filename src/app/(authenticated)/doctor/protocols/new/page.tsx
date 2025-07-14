@@ -940,6 +940,8 @@ export default function NewProtocolPage() {
                   removeDay={removeDay}
                   duplicateDay={duplicateDay}
                   updateDay={updateDay}
+                  protocol={protocol}
+                  setProtocol={setProtocol}
                 />
               )
             }}

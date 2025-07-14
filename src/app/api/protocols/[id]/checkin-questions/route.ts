@@ -11,9 +11,8 @@ const createQuestionSchema = z.object({
   question: z.string().min(1, 'Pergunta é obrigatória'),
   type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO']),
   options: z.string().optional(),
-  isRequired: z.boolean().default(true),
   order: z.number().default(0),
-});
+}).strict();
 
 // GET - Listar perguntas do protocolo
 export async function GET(
@@ -107,7 +106,9 @@ export async function POST(
       data: {
         ...validatedData,
         protocolId,
-        id: `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        id: `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        isActive: true,
+        isRequired: true,
       }
     });
 
