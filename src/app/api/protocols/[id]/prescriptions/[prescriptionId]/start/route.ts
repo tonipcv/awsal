@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { verifyMobileAuth } from '@/lib/mobile-auth';
+import { addDays } from 'date-fns';
 
 // POST /api/protocols/[id]/prescriptions/[prescriptionId]/start
 export async function POST(
@@ -27,20 +28,48 @@ export async function POST(
 
     const { id: protocolId, prescriptionId } = params;
 
-    // Find the prescription
-    const prescription = await prisma.protocolPrescription.findUnique({
+    // First, get the protocol assignment
+    const assignment = await prisma.userProtocol.findUnique({
       where: {
         id: prescriptionId,
-        protocolId: protocolId,
-        userId: userId
+        userId: userId,
+        protocolId: protocolId
+      },
+      include: {
+        protocol: true
       }
     });
 
-    if (!prescription) {
-      return NextResponse.json({ error: 'Prescrição não encontrada' }, { status: 404 });
+    if (!assignment) {
+      return NextResponse.json({ error: 'Atribuição de protocolo não encontrada' }, { status: 404 });
     }
 
-    // Check if protocol has already been started
+    // Check if there's already a prescription
+    let prescription = await prisma.protocolPrescription.findFirst({
+      where: {
+        protocolId,
+        userId
+      }
+    });
+
+    // If no prescription exists, create one
+    if (!prescription) {
+      const startDate = new Date();
+      const endDate = addDays(startDate, assignment.protocol.duration || 30);
+
+      prescription = await prisma.protocolPrescription.create({
+        data: {
+          protocolId,
+          userId,
+          prescribedBy: assignment.protocol.doctorId,
+          plannedStartDate: startDate,
+          plannedEndDate: endDate,
+          status: 'PRESCRIBED'
+        }
+      });
+    }
+
+    // Check if prescription has already been started
     if (prescription.actualStartDate) {
       return NextResponse.json({ 
         error: 'Protocolo já foi iniciado',
@@ -51,7 +80,7 @@ export async function POST(
 
     // Update prescription with start date
     const updatedPrescription = await prisma.protocolPrescription.update({
-      where: { id: prescriptionId },
+      where: { id: prescription.id },
       data: {
         status: 'ACTIVE',
         actualStartDate: new Date(),
