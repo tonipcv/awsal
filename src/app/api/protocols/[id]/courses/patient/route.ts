@@ -85,28 +85,41 @@ export async function GET(
     });
 
     // Buscar progresso do paciente nos cursos
-    const userCourses = await prisma.userCourse.findMany({
+    const userLessons = await prisma.userLesson.findMany({
       where: {
         userId: userId,
-        courseId: {
-          in: protocolCourses.map(pc => pc.courseId)
+        lesson: {
+          module: {
+            courseId: {
+              in: protocolCourses.map(pc => pc.courseId)
+            }
+          }
         }
-      },
-      include: {
-        userLessons: true
       }
     });
 
     // Criar mapa de progresso dos cursos
-    const courseProgress = new Map(
-      userCourses.map(uc => [
-        uc.courseId,
-        {
-          isEnrolled: true,
-          completedLessons: uc.userLessons.filter(ul => ul.completedAt).length
+    const courseProgress = new Map();
+    for (const lesson of userLessons) {
+      const module = await prisma.module.findUnique({
+        where: { id: lesson.moduleId },
+        select: { courseId: true }
+      });
+      if (module) {
+        const courseId = module.courseId;
+        if (!courseProgress.has(courseId)) {
+          courseProgress.set(courseId, {
+            isEnrolled: true,
+            completedLessons: 0
+          });
         }
-      ])
-    );
+        if (lesson.completedAt) {
+          const progress = courseProgress.get(courseId);
+          progress.completedLessons++;
+          courseProgress.set(courseId, progress);
+        }
+      }
+    }
 
     // Transformar dados para o formato esperado pelo frontend
     const transformedCourses = protocolCourses.map(pc => {
