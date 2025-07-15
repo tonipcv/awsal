@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,13 +35,13 @@ export function ProtocolDatePicker({ label, date, onDateChange, disabled }: Prot
             disabled={disabled}
             className="text-gray-500 hover:text-gray-700"
           >
-            Limpar
+            Clear
           </Button>
         )}
       </div>
       {date && (
         <p className="text-sm text-gray-500">
-          {format(date, "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+          {format(date, "EEEE, MMMM d, yyyy 'at' h:mm a", { locale: enUS })}
         </p>
       )}
     </div>

@@ -30,6 +30,7 @@ interface ProtocolEditTabsProps {
     basicInfo: React.ReactNode;
     modalConfig: React.ReactNode;
     days: React.ReactNode;
+    products?: React.ReactNode;
   };
 }
 
@@ -93,18 +94,18 @@ export function ProtocolEditTabs({
         {children.basicInfo}
         <Card className="bg-white border-gray-200 shadow-lg rounded-2xl mt-6">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">Configurações de Prescrição</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900">Prescription Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ProtocolDatePicker
-                label="Disponível a partir de"
+                label="Available from"
                 date={protocol.availableFrom ? new Date(protocol.availableFrom) : null}
                 onDateChange={(date) => setProtocol({ ...protocol, availableFrom: date?.toISOString() })}
               />
               
               <ProtocolDatePicker
-                label="Disponível até"
+                label="Available until"
                 date={protocol.availableUntil ? new Date(protocol.availableUntil) : null}
                 onDateChange={(date) => setProtocol({ ...protocol, availableUntil: date?.toISOString() })}
               />

@@ -354,7 +354,7 @@ export default function EditCoursePage() {
       setIsUploadingImage(true);
       
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('file', file); // Changed from 'image' to 'file'
 
       const response = await fetch('/api/upload-image', {
         method: 'POST',

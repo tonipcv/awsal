@@ -6,6 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -22,19 +27,27 @@ import {
   BellIcon,
   HeartIcon,
   PhotoIcon,
-  MicrophoneIcon
+  MicrophoneIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AudioRecorder from '@/components/audio-recorder/audio-recorder';
 import VoiceNoteModal from '@/components/voice-note/voice-note-modal';
 import VoiceNoteList from '@/components/voice-note/voice-note-list';
 import PatientDocuments from '@/components/patient/patient-documents';
+import { toast } from 'react-hot-toast';
+
+enum PrescriptionStatus {
+  PRESCRIBED = 'PRESCRIBED',
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED'
+}
 
 interface ProtocolAssignment {
   id: string;
@@ -103,9 +116,31 @@ interface Patient {
   emailVerified?: Date;
   image?: string;
   referralCode?: string;
-  assignedProtocols: ProtocolAssignment[];
+  patientPrescriptions?: Array<{
+    id: string;
+    protocolId: string;
+    protocol: {
+      id: string;
+      name: string;
+      duration: number;
+      description?: string;
+    };
+    plannedStartDate: Date;
+    plannedEndDate: Date;
+    status: PrescriptionStatus;
+  }>;
   assignedCourses?: CourseAssignment[];
   onboardingResponses: OnboardingResponse[];
+  birthDate?: string;
+  gender?: string;
+  phone?: string;
+  address?: string;
+  emergencyContact?: string;
+  emergencyPhone?: string;
+  medicalHistory?: string;
+  allergies?: string;
+  medications?: string;
+  notes?: string;
 }
 
 interface SymptomReport {
@@ -163,6 +198,20 @@ interface VoiceNote {
   } | null;
 }
 
+interface ProtocolPrescription {
+  id: string;
+  protocolId: string;
+  plannedStartDate: Date;
+  plannedEndDate: Date;
+  status: 'PRESCRIBED' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'ABANDONED';
+  protocol: {
+    id: string;
+    name: string;
+    duration: number;
+    description?: string;
+  };
+}
+
 export default function PatientDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -185,6 +234,22 @@ export default function PatientDetailPage() {
   const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
   const [isProcessingVoiceNote, setIsProcessingVoiceNote] = useState(false);
   const [isLoadingVoiceNotes, setIsLoadingVoiceNotes] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    birthDate: '',
+    gender: '',
+    address: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+    medicalHistory: '',
+    allergies: '',
+    medications: '',
+    notes: ''
+  });
 
   useEffect(() => {
     if (params.id) {
@@ -328,7 +393,15 @@ export default function PatientDetailPage() {
 
     try {
       setIsAssigning(true);
-      const response = await fetch(`/api/protocols/assignments`, {
+      const protocol = availableProtocols.find(p => p.id === selectedProtocolId);
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + (protocol?.duration || 30));
+      endDate.setHours(0, 0, 0, 0);
+
+      const response = await fetch(`/api/protocols/prescriptions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -336,18 +409,24 @@ export default function PatientDetailPage() {
         body: JSON.stringify({
           protocolId: selectedProtocolId,
           userId: params.id,
-          startDate: new Date().toISOString(),
+          plannedStartDate: startDate.toISOString(),
+          plannedEndDate: endDate.toISOString(),
+          status: 'PRESCRIBED'
         }),
       });
 
       if (response.ok) {
-        // Refresh patient data to show new protocol
         await loadPatient(params.id as string);
         setShowProtocolModal(false);
         setSelectedProtocolId('');
+        toast.success('Protocol assigned successfully');
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to assign protocol');
       }
     } catch (error) {
       console.error('Error assigning protocol:', error);
+      toast.error('Failed to assign protocol');
     } finally {
       setIsAssigning(false);
     }
@@ -454,15 +533,15 @@ export default function PatientDetailPage() {
   };
 
   const getActiveProtocols = () => {
-    return patient?.assignedProtocols.filter(p => p.status === 'ACTIVE') || [];
+    return patient?.patientPrescriptions?.filter(p => p.status === 'ACTIVE') || [];
   };
 
   const getCompletedProtocols = () => {
-    return patient?.assignedProtocols.filter(p => p.status === 'INACTIVE') || [];
+    return patient?.patientPrescriptions?.filter(p => p.status === 'COMPLETED') || [];
   };
 
   const getUnavailableProtocols = () => {
-    return patient?.assignedProtocols.filter(p => p.status === 'UNAVAILABLE') || [];
+    return patient?.patientPrescriptions?.filter(p => p.status === 'PRESCRIBED') || [];
   };
 
   const getActiveCourses = () => {
@@ -510,20 +589,29 @@ export default function PatientDetailPage() {
     }
   };
 
-  const calculateProgress = (assignment: ProtocolAssignment) => {
-    const startDate = new Date(assignment.startDate);
-    const endDate = new Date(assignment.endDate);
+  const formatDate = (date: string | Date | null | undefined) => {
+    if (!date) return '';
+    // Use UTC to ensure consistent formatting between server and client
+    const d = new Date(date);
+    return format(d, 'MMM d, yyyy', { locale: enUS });
+  };
+
+  const calculateProgress = (prescription: ProtocolPrescription) => {
+    if (!prescription.plannedStartDate || !prescription.plannedEndDate) return 0;
+    
+    const startDate = new Date(prescription.plannedStartDate);
+    const endDate = new Date(prescription.plannedEndDate);
     const currentDate = new Date();
     
-    const totalDuration = endDate.getTime() - startDate.getTime();
-    const elapsed = currentDate.getTime() - startDate.getTime();
+    // Ensure all dates are in UTC
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    currentDate.setHours(0, 0, 0, 0);
     
-    const progress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
+    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysElapsed = Math.ceil((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    return {
-      progress: Math.round(progress),
-      daysRemaining: Math.max(Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)), 0)
-    };
+    return Math.min(Math.max(Math.round((daysElapsed / totalDays) * 100), 0), 100);
   };
 
   const getStatusBadge = (status: string) => {
@@ -544,6 +632,69 @@ export default function PatientDetailPage() {
       navigator.clipboard.writeText(patient.referralCode);
       alert('Referral code copied to clipboard!');
     }
+  };
+
+  const openEditModal = () => {
+    setEditForm({
+      name: patient?.name || '',
+      email: patient?.email || '',
+      phone: patient?.phone || '',
+      birthDate: patient?.birthDate ? format(new Date(patient.birthDate), 'yyyy-MM-dd') : '',
+      gender: patient?.gender || '',
+      address: patient?.address || '',
+      emergencyContact: patient?.emergencyContact || '',
+      emergencyPhone: patient?.emergencyPhone || '',
+      medicalHistory: patient?.medicalHistory || '',
+      allergies: patient?.allergies || '',
+      medications: patient?.medications || '',
+      notes: patient?.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePatient = async () => {
+    if (!editForm.name?.trim() || !editForm.email?.trim()) {
+      toast.error('Nome e email são obrigatórios');
+      return;
+    }
+
+    try {
+      setIsEditing(true);
+      
+      const response = await fetch(`/api/patients/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editForm)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao atualizar paciente');
+      }
+
+      // Atualizar o estado local com os dados atualizados
+      setPatient(data);
+      setShowEditModal(false);
+      toast.success('Paciente atualizado com sucesso');
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao atualizar paciente');
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const getAvailableProtocolsForPatient = (allProtocols: Protocol[], patient: Patient | null) => {
+    if (!allProtocols || !patient) return [];
+    
+    const prescribedProtocolIds = new Set(
+      patient.patientPrescriptions?.map(p => p.protocolId) || []
+    );
+    
+    return allProtocols.filter(p => !prescribedProtocolIds.has(p.id));
   };
 
   if (isLoading) {
@@ -587,10 +738,10 @@ export default function PatientDetailPage() {
 
   const activeProtocols = getActiveProtocols();
   const completedProtocols = getCompletedProtocols();
-  const totalProtocols = patient.assignedProtocols.length;
+  const totalProtocols = patient?.patientPrescriptions?.length || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/30">
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           {/* Top Navigation */}
@@ -638,22 +789,23 @@ export default function PatientDetailPage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add Protocol</DialogTitle>
+                    <DialogDescription>
+                      Select a protocol to assign to this patient
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Select Protocol</label>
+                      <Label>Select Protocol</Label>
                       <Select value={selectedProtocolId} onValueChange={setSelectedProtocolId}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a protocol..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableProtocols
-                            .filter(p => !patient?.assignedProtocols.some(a => a.protocol.id === p.id))
-                            .map(protocol => (
-                              <SelectItem key={protocol.id} value={protocol.id}>
-                                {protocol.name}
-                              </SelectItem>
-                            ))}
+                          {getAvailableProtocolsForPatient(availableProtocols, patient).map(protocol => (
+                            <SelectItem key={protocol.id} value={protocol.id}>
+                              {protocol.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -667,7 +819,7 @@ export default function PatientDetailPage() {
                           </p>
                         )}
                         <p className="text-sm text-gray-600">
-                          Duration: {availableProtocols.find(p => p.id === selectedProtocolId)?.duration} days
+                          Duration: {availableProtocols.find(p => p.id === selectedProtocolId)?.duration || 30} days
                         </p>
                       </div>
                     )}
@@ -688,253 +840,258 @@ export default function PatientDetailPage() {
           </div>
 
           {/* Main Content */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* Left Column - Patient Info */}
-            <div className="col-span-12 lg:col-span-4 space-y-6">
-              {/* Patient Card */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle>Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center text-center mb-4">
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white mb-2">
-                      {getPatientInitials(patient.name)}
-                    </div>
-                    <h2 className="text-lg font-semibold text-gray-900">{patient.name || 'Name not provided'}</h2>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                      <EnvelopeIcon className="h-3 w-3" />
-                      {patient.email}
-                    </div>
-                    {patient.emailVerified ? (
-                      <Badge variant="default" className="mt-1 bg-green-100 text-green-700 hover:bg-green-200 text-xs">
-                        <ShieldCheckIcon className="h-3 w-3 mr-1" />
-                        Verified Account
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="mt-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs">
-                        <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
-                        Pending Verification
-                      </Badge>
-                    )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Patient Information Card */}
+            <Card className="lg:col-span-2 bg-white border-gray-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xl font-bold">Patient Information</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openEditModal()}
+                >
+                  <PencilIcon className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center text-center mb-4">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white mb-2">
+                    {getPatientInitials(patient.name)}
                   </div>
-
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-xs font-medium text-gray-600">Active Protocols</p>
-                      <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-xs font-medium text-gray-600">Total Protocols</p>
-                      <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
-                    </div>
+                  <h2 className="text-lg font-semibold text-gray-900">{patient.name || 'Name not provided'}</h2>
+                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                    <EnvelopeIcon className="h-3 w-3" />
+                    {patient.email}
                   </div>
-                </CardContent>
-              </Card>
+                  {patient.emailVerified ? (
+                    <Badge variant="default" className="mt-1 bg-green-100 text-green-700 hover:bg-green-200 text-xs">
+                      <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                      Verified Account
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="mt-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs">
+                      <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                      Pending Verification
+                    </Badge>
+                  )}
+                </div>
 
-              {/* Quick Stats */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle>Protocol Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <p className="text-xs font-medium text-gray-600">Active Protocols</p>
+                    <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg text-center">
+                    <p className="text-xs font-medium text-gray-600">Total Protocols</p>
+                    <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle>Protocol Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DocumentTextIcon className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">Active Protocols</span>
+                    </div>
+                    <span className="text-sm font-semibold">{activeProtocols.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircleIcon className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">Completed</span>
+                    </div>
+                    <span className="text-sm font-semibold">{completedProtocols.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ChartBarIcon className="h-5 w-5 text-gray-500" />
+                      <span className="text-sm font-medium">Overall Progress</span>
+                    </div>
+                    <span className="text-sm font-semibold">
+                      {totalProtocols > 0 ? Math.round((completedProtocols.length / totalProtocols) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Voice Notes Card */}
+            <VoiceNoteList 
+              voiceNotes={voiceNotes.map(note => ({
+                ...note,
+                createdAt: new Date(note.createdAt)
+              }))} 
+              onRefresh={() => {
+                const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
+                if (patientId) {
+                  loadVoiceNotes(patientId);
+                }
+              }}
+            />
+
+            {/* Add Documents Section */}
+            <PatientDocuments patientId={params.id as string} />
+
+          </div>
+
+          {/* Right Column - Protocol Details */}
+          <div className="col-span-12 lg:col-span-8 space-y-6">
+            {/* Active Protocols */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Protocols</CardTitle>
+                <CardDescription>Currently active treatment protocols</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <DocumentTextIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm font-medium">Active Protocols</span>
-                      </div>
-                      <span className="text-sm font-semibold">{activeProtocols.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm font-medium">Completed</span>
-                      </div>
-                      <span className="text-sm font-semibold">{completedProtocols.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <ChartBarIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm font-medium">Overall Progress</span>
-                      </div>
-                      <span className="text-sm font-semibold">
-                        {Math.round((completedProtocols.length / totalProtocols) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Voice Notes Card */}
-              <VoiceNoteList 
-                voiceNotes={voiceNotes.map(note => ({
-                  ...note,
-                  createdAt: new Date(note.createdAt)
-                }))} 
-                onRefresh={() => {
-                  const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
-                  if (patientId) {
-                    loadVoiceNotes(patientId);
-                  }
-                }}
-              />
-
-              {/* Add Documents Section */}
-              <PatientDocuments patientId={params.id as string} />
-
-            </div>
-
-            {/* Right Column - Protocol Details */}
-            <div className="col-span-12 lg:col-span-8 space-y-6">
-              {/* Active Protocols */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Protocols</CardTitle>
-                  <CardDescription>Currently active treatment protocols</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
-                      {activeProtocols.map((assignment) => {
-                        const progress = calculateProgress(assignment);
-                        return (
-                          <Card key={assignment.id} className="bg-white">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between mb-4">
-                                <div>
-                                  <h3 className="font-semibold text-gray-900">{assignment.protocol.name}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                    <CalendarDaysIcon className="h-4 w-4" />
-                                    Started {format(new Date(assignment.startDate), 'MMM d, yyyy')}
-                                  </div>
-                                </div>
-                                <Button variant="outline" size="sm" asChild>
-                                  <Link href={`/doctor/protocols/${assignment.protocol.id}`}>
-                                    <EyeIcon className="h-4 w-4 mr-2" />
-                                    View Details
-                                  </Link>
-                                </Button>
-                              </div>
-
-                              {/* Progress Bar */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-600">Progress</span>
-                                  <span className="font-medium text-violet-600">{progress.progress}%</span>
-                                </div>
-                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-violet-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${progress.progress}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Daily Check-in & Symptoms */}
-                              <div className="grid grid-cols-2 gap-4 mt-4">
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
-                                  </div>
-                                  <p className="text-xs text-gray-500">
-                                    {dailyCheckins.find(checkin => 
-                                      format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                                    ) 
-                                      ? 'Completed today'
-                                      : 'Not completed today'
-                                    }
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <HeartIcon className="h-4 w-4 text-red-600" />
-                                    <span className="text-sm font-medium text-gray-700">Symptoms</span>
-                                  </div>
-                                  <p className="text-xs text-gray-500">
-                                    {symptomReports.filter(report => {
-                                      const reportDate = new Date(report.reportTime);
-                                      const weekAgo = new Date();
-                                      weekAgo.setDate(weekAgo.getDate() - 7);
-                                      return reportDate >= weekAgo;
-                                    }).length} reports this week
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              {/* Recent Symptom Reports */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Symptom Reports</CardTitle>
-                  <CardDescription>Latest patient symptoms and observations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[300px] pr-4">
-                    <div className="space-y-4">
-                      {symptomReports.map((report) => (
-                        <Card key={report.id} className="bg-white">
+                    {activeProtocols.map((prescription) => {
+                      const progress = calculateProgress(prescription);
+                      return (
+                        <Card key={prescription.id} className="bg-white">
                           <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <HeartIcon className="h-4 w-4 text-red-600" />
-                                <span className="font-medium text-gray-900">{report.title}</span>
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">{prescription.protocol.name}</h3>
+                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                  <CalendarDaysIcon className="h-4 w-4" />
+                                  Started {formatDate(prescription.plannedStartDate)}
+                                </div>
                               </div>
-                              <Badge 
-                                variant="outline" 
-                                className={cn(
-                                  "bg-yellow-50 text-yellow-700",
-                                  report.severity <= 3 && "bg-green-50 text-green-700",
-                                  report.severity >= 7 && "bg-red-50 text-red-700"
-                                )}
-                              >
-                                Severity: {report.severity}/10
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-3">
-                              {report.symptoms.length > 100 
-                                ? `${report.symptoms.substring(0, 100)}...` 
-                                : report.symptoms
-                              }
-                            </p>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-500">
-                                <ClockIcon className="h-4 w-4 inline mr-1" />
-                                {formatDistanceToNow(new Date(report.reportTime), { addSuffix: true })}
-                              </span>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => {
-                                  setSelectedReport(report);
-                                  setShowReportModal(true);
-                                }}
-                              >
-                                View Details
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/doctor/protocols/${prescription.protocol.id}`}>
+                                  <EyeIcon className="h-4 w-4 mr-2" />
+                                  View Details
+                                </Link>
                               </Button>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-gray-600">Progress</span>
+                                <span className="text-sm font-medium text-gray-900">{progress}%</span>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full">
+                                <div 
+                                  className="h-full bg-violet-500 rounded-full transition-all duration-300" 
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Daily Check-in & Symptoms */}
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                                  <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  {dailyCheckins.find(checkin => 
+                                    format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                                  ) 
+                                    ? 'Completed today'
+                                    : 'Not completed today'
+                                  }
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <HeartIcon className="h-4 w-4 text-red-600" />
+                                  <span className="text-sm font-medium text-gray-700">Symptoms</span>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  {symptomReports.filter(report => {
+                                    const reportDate = new Date(report.reportTime);
+                                    const weekAgo = new Date();
+                                    weekAgo.setDate(weekAgo.getDate() - 7);
+                                    return reportDate >= weekAgo;
+                                  }).length} reports this week
+                                </p>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                      {symptomReports.length === 0 && (
-                        <div className="text-center py-6">
-                          <HeartIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-600">No symptom reports yet</p>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Recent Symptom Reports */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Symptom Reports</CardTitle>
+                <CardDescription>Latest patient symptoms and observations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px] pr-4">
+                  <div className="space-y-4">
+                    {symptomReports.map((report) => (
+                      <Card key={report.id} className="bg-white">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <HeartIcon className="h-4 w-4 text-red-600" />
+                              <span className="font-medium text-gray-900">{report.title}</span>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "bg-yellow-50 text-yellow-700",
+                                report.severity <= 3 && "bg-green-50 text-green-700",
+                                report.severity >= 7 && "bg-red-50 text-red-700"
+                              )}
+                            >
+                              Severity: {report.severity}/10
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {report.symptoms.length > 100 
+                              ? `${report.symptoms.substring(0, 100)}...` 
+                              : report.symptoms
+                            }
+                          </p>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500">
+                              <ClockIcon className="h-4 w-4 inline mr-1" />
+                              {formatDistanceToNow(new Date(report.reportTime), { addSuffix: true })}
+                            </span>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setSelectedReport(report);
+                                setShowReportModal(true);
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {symptomReports.length === 0 && (
+                      <div className="text-center py-6">
+                        <HeartIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600">No symptom reports yet</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -1035,6 +1192,160 @@ export default function PatientDetailPage() {
           }
         }}
       />
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Patient Information</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Patient name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="patient@example.com"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="Phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthDate">Birth Date</Label>
+                <Input
+                  id="birthDate"
+                  type="date"
+                  value={editForm.birthDate}
+                  onChange={(e) => setEditForm({ ...editForm, birthDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select
+                  value={editForm.gender}
+                  onValueChange={(value) => setEditForm({ ...editForm, gender: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  placeholder="Address"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                <Input
+                  id="emergencyContact"
+                  value={editForm.emergencyContact}
+                  onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+                  placeholder="Emergency contact name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emergencyPhone">Emergency Phone</Label>
+                <Input
+                  id="emergencyPhone"
+                  value={editForm.emergencyPhone}
+                  onChange={(e) => setEditForm({ ...editForm, emergencyPhone: e.target.value })}
+                  placeholder="Emergency phone number"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="medicalHistory">Medical History</Label>
+              <Textarea
+                id="medicalHistory"
+                value={editForm.medicalHistory}
+                onChange={(e) => setEditForm({ ...editForm, medicalHistory: e.target.value })}
+                placeholder="Medical history"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="allergies">Allergies</Label>
+              <Textarea
+                id="allergies"
+                value={editForm.allergies}
+                onChange={(e) => setEditForm({ ...editForm, allergies: e.target.value })}
+                placeholder="Allergies"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="medications">Medications</Label>
+              <Textarea
+                id="medications"
+                value={editForm.medications}
+                onChange={(e) => setEditForm({ ...editForm, medications: e.target.value })}
+                placeholder="Current medications"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                placeholder="Additional notes"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdatePatient}
+              disabled={isEditing}
+            >
+              {isEditing ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

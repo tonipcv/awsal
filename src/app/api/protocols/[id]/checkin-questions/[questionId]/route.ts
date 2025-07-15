@@ -5,11 +5,15 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateQuestionSchema = z.object({
-  question: z.string().min(1, 'Pergunta é obrigatória').optional(),
-  type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO']).optional(),
+  question: z.string().min(1, 'A pergunta é obrigatória').optional(),
+  type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO'], {
+    errorMap: () => ({ message: 'Tipo de pergunta inválido. Use: MULTIPLE_CHOICE, SCALE, TEXT ou YES_NO' })
+  }).optional(),
   options: z.string().optional(),
   order: z.number().optional(),
-}).strict();
+}).strict({
+  message: 'Campos não reconhecidos foram enviados'
+});
 
 // PUT - Atualizar pergunta
 export async function PUT(
@@ -50,27 +54,30 @@ export async function PUT(
       return NextResponse.json({ error: 'Pergunta não encontrada' }, { status: 404 });
     }
 
+    if (currentQuestion.protocolId !== protocolId) {
+      return NextResponse.json({ error: 'Pergunta não pertence a este protocolo' }, { status: 403 });
+    }
+
     const question = await prisma.dailyCheckinQuestion.update({
       where: {
         id: questionId,
         protocolId
       },
       data: {
-        ...currentQuestion,
         ...validatedData,
       }
     });
 
     return NextResponse.json({ question });
 
-  } catch (error: any) {
+  } catch (error) {
+    console.error('Erro ao atualizar pergunta:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 });
     }
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Pergunta não encontrada' }, { status: 404 });
     }
-    console.error('Erro ao atualizar pergunta:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
@@ -100,6 +107,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Protocolo não encontrado ou sem permissão' }, { status: 404 });
     }
 
+    // Verificar se a questão existe e pertence ao protocolo
+    const question = await prisma.dailyCheckinQuestion.findFirst({
+      where: {
+        id: questionId,
+        protocolId
+      }
+    });
+
+    if (!question) {
+      return NextResponse.json({ error: 'Pergunta não encontrada' }, { status: 404 });
+    }
+
     // Soft delete - marcar como inativo
     await prisma.dailyCheckinQuestion.update({
       where: {
@@ -109,13 +128,13 @@ export async function DELETE(
       data: { isActive: false }
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Pergunta removida com sucesso' });
 
   } catch (error: any) {
+    console.error('Erro ao deletar pergunta:', error);
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Pergunta não encontrada' }, { status: 404 });
     }
-    console.error('Erro ao deletar pergunta:', error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 } 

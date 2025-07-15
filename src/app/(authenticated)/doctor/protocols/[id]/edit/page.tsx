@@ -32,6 +32,7 @@ import Image from 'next/image';
 import { ProtocolEditTabs } from '@/components/protocol/protocol-edit-tabs';
 import { ProtocolDayEditor } from '@/components/protocol/protocol-day-editor';
 import { ProtocolImagePicker } from '@/components/protocol/protocol-image-picker';
+import { toast } from 'sonner';
 
 interface ProtocolTask {
   id: string;
@@ -130,6 +131,7 @@ interface Course {
   createdAt?: string;
   updatedAt?: string;
   doctorId?: string;
+  isPublished?: boolean; // Added for course publishing status
   _count?: {
     protocolCourses: number;
   };
@@ -656,12 +658,23 @@ export default function EditProtocolPage() {
 
   const addCourse = async (courseId: string) => {
     try {
+      // First, check if the course exists
+      const course = availableCourses.find(c => c.id === courseId);
+      if (!course) {
+        toast.error('Course not found');
+        return;
+      }
+
       const response = await fetch(`/api/protocols/${params.id}/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ courseId })
+        body: JSON.stringify({
+          courseId,
+          orderIndex: protocol.courses.length,
+          isRequired: true
+        })
       });
 
       if (response.ok) {
@@ -670,9 +683,14 @@ export default function EditProtocolPage() {
           ...prev,
           courses: [...(prev.courses || []), newProtocolCourse]
         }));
+        toast.success('Course added successfully');
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Error adding course');
       }
     } catch (error) {
       console.error('Error adding course:', error);
+      toast.error('Failed to add course. Please try again.');
     }
   };
 

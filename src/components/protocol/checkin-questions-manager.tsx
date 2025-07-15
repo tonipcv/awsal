@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface CheckinQuestion {
   id: string;
@@ -28,6 +30,18 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingValues, setEditingValues] = useState<Record<string, Record<string, any>>>({});
+  const [focusNewQuestion, setFocusNewQuestion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (focusNewQuestion) {
+      const inputElement = document.querySelector(`input[data-question-id="${focusNewQuestion}"]`) as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+        inputElement.select();
+        setFocusNewQuestion(null);
+      }
+    }
+  }, [focusNewQuestion]);
 
   const fetchQuestions = async () => {
     try {
@@ -73,7 +87,7 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: '',
+          question: 'Nova pergunta',
           type: 'TEXT',
           order: questions.length,
         }),
@@ -82,7 +96,10 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add question');
+        const errorMessage = data.details 
+          ? `Dados inválidos: ${data.details.map((e: any) => e.message).join(', ')}` 
+          : data.error || 'Falha ao adicionar questão';
+        throw new Error(errorMessage);
       }
 
       setQuestions([...questions, data.question]);
@@ -94,9 +111,10 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
           options: data.question.options || '',
         }
       }));
+      setFocusNewQuestion(data.question.id);
     } catch (error: any) {
       console.error('Error adding question:', error);
-      setError('Failed to add question. Please try again.');
+      setError(error.message || 'Falha ao adicionar questão. Por favor, tente novamente.');
     }
   };
 
@@ -127,7 +145,10 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update question');
+        const errorMessage = data.details 
+          ? `Dados inválidos: ${data.details.map((e: any) => e.message).join(', ')}` 
+          : data.error || 'Falha ao atualizar questão';
+        throw new Error(errorMessage);
       }
 
       setQuestions(questions.map(q => 
@@ -135,7 +156,20 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
       ));
     } catch (error: any) {
       console.error('Error updating question:', error);
-      setError('Failed to update question. Please try again.');
+      setError(error.message || 'Falha ao atualizar questão. Por favor, tente novamente.');
+      
+      // Reverter as alterações locais em caso de erro
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        setEditingValues(prev => ({
+          ...prev,
+          [questionId]: {
+            question: question.question,
+            type: question.type,
+            options: question.options || '',
+          }
+        }));
+      }
     }
   };
 
@@ -146,21 +180,25 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        setQuestions(questions.filter(q => q.id !== questionId));
-        // Remove from editing values
-        setEditingValues(prev => {
-          const newValues = { ...prev };
-          delete newValues[questionId];
-          return newValues;
-        });
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to remove question');
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.details 
+          ? `Dados inválidos: ${data.details.map((e: any) => e.message).join(', ')}` 
+          : data.error || 'Falha ao remover questão';
+        throw new Error(errorMessage);
       }
+
+      setQuestions(questions.filter(q => q.id !== questionId));
+      // Remove from editing values
+      setEditingValues(prev => {
+        const newValues = { ...prev };
+        delete newValues[questionId];
+        return newValues;
+      });
     } catch (error: any) {
       console.error('Error removing question:', error);
-      setError('Failed to remove question. Please try again.');
+      setError(error.message || 'Falha ao remover questão. Por favor, tente novamente.');
     }
   };
 
@@ -293,22 +331,19 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
 
   if (error) {
     return (
-      <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-        <CardContent className="p-8">
-          <div className="text-center">
-            <div className="h-12 w-12 text-red-500 mx-auto mb-4">⚠️</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error</h3>
-            <p className="text-gray-600">{error}</p>
-            <Button 
-              onClick={fetchQuestions}
-              className="mt-4"
-              variant="outline"
-            >
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive" className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erro</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+        <Button 
+          onClick={fetchQuestions}
+          className="mt-4"
+          variant="outline"
+          size="sm"
+        >
+          Tentar Novamente
+        </Button>
+      </Alert>
     );
   }
 
@@ -364,6 +399,7 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
                                     onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
                                     onBlur={() => saveQuestion(question.id)}
                                     className="mt-1"
+                                    data-question-id={question.id}
                                   />
                                 </div>
 

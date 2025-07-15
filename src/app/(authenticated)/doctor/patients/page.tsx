@@ -185,27 +185,12 @@ export default function PatientsPage() {
   };
 
   const openEditModal = (patient: Patient) => {
-    setPatientToEdit(patient);
-    setNewPatient({
-      name: patient.name || '',
-      email: patient.email || '',
-      phone: patient.phone || '',
-      birthDate: patient.birthDate || '',
-      gender: patient.gender || '',
-      address: patient.address || '',
-      emergencyContact: patient.emergencyContact || '',
-      emergencyPhone: patient.emergencyPhone || '',
-      medicalHistory: patient.medicalHistory || '',
-      allergies: patient.allergies || '',
-      medications: patient.medications || '',
-      notes: patient.notes || ''
-    });
-    setShowEditPatient(true);
+    router.push(`/doctor/patients/${patient.id}`);
   };
 
   const updatePatient = async () => {
     if (!newPatient.name.trim() || !newPatient.email.trim() || !patientToEdit) {
-      alert('Nome e email são obrigatórios');
+      toast.error('Nome e email são obrigatórios');
       return;
     }
 
@@ -219,16 +204,16 @@ export default function PatientsPage() {
       };
 
       // Add optional fields only if filled
-      if (newPatient.phone.trim()) patientData.phone = newPatient.phone.trim();
+      if (newPatient.phone?.trim()) patientData.phone = newPatient.phone.trim();
       if (newPatient.birthDate) patientData.birthDate = newPatient.birthDate;
       if (newPatient.gender) patientData.gender = newPatient.gender;
-      if (newPatient.address.trim()) patientData.address = newPatient.address.trim();
-      if (newPatient.emergencyContact.trim()) patientData.emergencyContact = newPatient.emergencyContact.trim();
-      if (newPatient.emergencyPhone.trim()) patientData.emergencyPhone = newPatient.emergencyPhone.trim();
-      if (newPatient.medicalHistory.trim()) patientData.medicalHistory = newPatient.medicalHistory.trim();
-      if (newPatient.allergies.trim()) patientData.allergies = newPatient.allergies.trim();
-      if (newPatient.medications.trim()) patientData.medications = newPatient.medications.trim();
-      if (newPatient.notes.trim()) patientData.notes = newPatient.notes.trim();
+      if (newPatient.address?.trim()) patientData.address = newPatient.address.trim();
+      if (newPatient.emergencyContact?.trim()) patientData.emergencyContact = newPatient.emergencyContact.trim();
+      if (newPatient.emergencyPhone?.trim()) patientData.emergencyPhone = newPatient.emergencyPhone.trim();
+      if (newPatient.medicalHistory?.trim()) patientData.medicalHistory = newPatient.medicalHistory.trim();
+      if (newPatient.allergies?.trim()) patientData.allergies = newPatient.allergies.trim();
+      if (newPatient.medications?.trim()) patientData.medications = newPatient.medications.trim();
+      if (newPatient.notes?.trim()) patientData.notes = newPatient.notes.trim();
 
       const response = await fetch(`/api/patients/${patientToEdit.id}`, {
         method: 'PUT',
@@ -238,20 +223,21 @@ export default function PatientsPage() {
         body: JSON.stringify(patientData)
       });
 
-      if (response.ok) {
-        // Reload clients list
-        await loadPatients();
-        resetForm();
-        setShowEditPatient(false);
-        setPatientToEdit(null);
-        alert('Cliente atualizado com sucesso!');
-      } else {
-        const error = await response.json();
-        alert(`Erro ao atualizar cliente: ${error.error || 'Erro ao atualizar cliente'}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao atualizar cliente');
       }
-    } catch (error) {
-      console.error('Error updating client:', error);
-      alert('Erro ao atualizar cliente');
+
+      // Reload clients list
+      await loadPatients();
+      resetForm();
+      setShowEditPatient(false);
+      setPatientToEdit(null);
+      toast.success('Cliente atualizado com sucesso!');
+    } catch (error: any) {
+      console.error('Error updating patient:', error);
+      toast.error(error.message || 'Erro ao atualizar cliente');
     } finally {
       setIsEditingPatient(false);
     }
@@ -709,6 +695,165 @@ export default function PatientsPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Patient Modal */}
+      {showEditPatient && (
+        <Dialog open={showEditPatient} onOpenChange={setShowEditPatient}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Client</DialogTitle>
+              <DialogDescription>
+                Update client information. Required fields are marked with *.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    value={newPatient.name}
+                    onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                    placeholder="Full name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newPatient.email}
+                    onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                    placeholder="Email address"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                    placeholder="Phone number"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Birth Date</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={newPatient.birthDate}
+                    onChange={(e) => setNewPatient({ ...newPatient, birthDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  value={newPatient.address}
+                  onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+                  placeholder="Full address"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                  <Input
+                    id="emergencyContact"
+                    value={newPatient.emergencyContact}
+                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContact: e.target.value })}
+                    placeholder="Contact name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyPhone">Emergency Phone</Label>
+                  <Input
+                    id="emergencyPhone"
+                    value={newPatient.emergencyPhone}
+                    onChange={(e) => setNewPatient({ ...newPatient, emergencyPhone: e.target.value })}
+                    placeholder="Emergency phone number"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medicalHistory">Medical History</Label>
+                <Textarea
+                  id="medicalHistory"
+                  value={newPatient.medicalHistory}
+                  onChange={(e) => setNewPatient({ ...newPatient, medicalHistory: e.target.value })}
+                  placeholder="Relevant medical history"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="allergies">Allergies</Label>
+                  <Input
+                    id="allergies"
+                    value={newPatient.allergies}
+                    onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
+                    placeholder="Known allergies"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="medications">Medications</Label>
+                  <Input
+                    id="medications"
+                    value={newPatient.medications}
+                    onChange={(e) => setNewPatient({ ...newPatient, medications: e.target.value })}
+                    placeholder="Current medications"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={newPatient.notes}
+                  onChange={(e) => setNewPatient({ ...newPatient, notes: e.target.value })}
+                  placeholder="Additional notes"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEditPatient(false);
+                  resetForm();
+                }}
+                disabled={isEditingPatient}
+                className="mt-3 sm:mt-0"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={updatePatient}
+                disabled={isEditingPatient}
+                className="bg-[#5154e7] hover:bg-[#4145d1] text-white"
+              >
+                {isEditingPatient ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && patientToDelete && (

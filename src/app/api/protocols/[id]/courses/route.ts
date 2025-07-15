@@ -116,22 +116,19 @@ export async function POST(
     const course = await prisma.course.findFirst({
       where: {
         id: courseId,
-        doctorId: session.user.id,
-        isPublished: true
+        doctorId: session.user.id
       }
     });
 
     if (!course) {
-      return NextResponse.json({ error: 'Curso não encontrado ou não publicado' }, { status: 404 });
+      return NextResponse.json({ error: 'Curso não encontrado' }, { status: 404 });
     }
 
     // Verificar se a associação já existe
-    const existingAssociation = await prisma.protocolCourse.findUnique({
+    const existingAssociation = await prisma.protocolCourse.findFirst({
       where: {
-        protocolId_courseId: {
-          protocolId: protocolId,
-          courseId: courseId
-        }
+        protocolId,
+        courseId
       }
     });
 

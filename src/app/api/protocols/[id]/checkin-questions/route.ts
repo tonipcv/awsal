@@ -8,11 +8,15 @@ import { z } from 'zod';
 const prisma = new PrismaClient();
 
 const createQuestionSchema = z.object({
-  question: z.string().min(1, 'Pergunta é obrigatória'),
-  type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO']),
+  question: z.string().min(1, 'A pergunta é obrigatória'),
+  type: z.enum(['MULTIPLE_CHOICE', 'SCALE', 'TEXT', 'YES_NO'], {
+    errorMap: () => ({ message: 'Tipo de pergunta inválido. Use: MULTIPLE_CHOICE, SCALE, TEXT ou YES_NO' })
+  }),
   options: z.string().optional(),
   order: z.number().default(0),
-}).strict();
+}).strict({
+  message: 'Campos não reconhecidos foram enviados'
+});
 
 // GET - Listar perguntas do protocolo
 export async function GET(
