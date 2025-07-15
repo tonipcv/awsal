@@ -189,13 +189,13 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
         throw new Error(errorMessage);
       }
 
-      setQuestions(questions.filter(q => q.id !== questionId));
-      // Remove from editing values
-      setEditingValues(prev => {
-        const newValues = { ...prev };
-        delete newValues[questionId];
-        return newValues;
-      });
+        setQuestions(questions.filter(q => q.id !== questionId));
+        // Remove from editing values
+        setEditingValues(prev => {
+          const newValues = { ...prev };
+          delete newValues[questionId];
+          return newValues;
+        });
     } catch (error: any) {
       console.error('Error removing question:', error);
       setError(error.message || 'Falha ao remover questão. Por favor, tente novamente.');
@@ -335,14 +335,14 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Erro</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
-        <Button 
-          onClick={fetchQuestions}
-          className="mt-4"
-          variant="outline"
+            <Button 
+              onClick={fetchQuestions}
+              className="mt-4"
+              variant="outline"
           size="sm"
-        >
+            >
           Tentar Novamente
-        </Button>
+            </Button>
       </Alert>
     );
   }

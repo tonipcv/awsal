@@ -229,11 +229,11 @@ export default function PatientsPage() {
         throw new Error(data.error || 'Erro ao atualizar cliente');
       }
 
-      // Reload clients list
-      await loadPatients();
-      resetForm();
-      setShowEditPatient(false);
-      setPatientToEdit(null);
+        // Reload clients list
+        await loadPatients();
+        resetForm();
+        setShowEditPatient(false);
+        setPatientToEdit(null);
       toast.success('Cliente atualizado com sucesso!');
     } catch (error: any) {
       console.error('Error updating patient:', error);

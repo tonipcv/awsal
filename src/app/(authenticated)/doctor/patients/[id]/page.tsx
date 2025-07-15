@@ -802,10 +802,10 @@ export default function PatientDetailPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {getAvailableProtocolsForPatient(availableProtocols, patient).map(protocol => (
-                            <SelectItem key={protocol.id} value={protocol.id}>
-                              {protocol.name}
-                            </SelectItem>
-                          ))}
+                              <SelectItem key={protocol.id} value={protocol.id}>
+                                {protocol.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -853,245 +853,245 @@ export default function PatientDetailPage() {
                   <PencilIcon className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center text-center mb-4">
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white mb-2">
-                    {getPatientInitials(patient.name)}
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">{patient.name || 'Name not provided'}</h2>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                    <EnvelopeIcon className="h-3 w-3" />
-                    {patient.email}
-                  </div>
-                  {patient.emailVerified ? (
-                    <Badge variant="default" className="mt-1 bg-green-100 text-green-700 hover:bg-green-200 text-xs">
-                      <ShieldCheckIcon className="h-3 w-3 mr-1" />
-                      Verified Account
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="mt-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs">
-                      <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
-                      Pending Verification
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="bg-gray-50 p-3 rounded-lg text-center">
-                    <p className="text-xs font-medium text-gray-600">Active Protocols</p>
-                    <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg text-center">
-                    <p className="text-xs font-medium text-gray-600">Total Protocols</p>
-                    <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle>Protocol Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DocumentTextIcon className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">Active Protocols</span>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center text-center mb-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white mb-2">
+                      {getPatientInitials(patient.name)}
                     </div>
-                    <span className="text-sm font-semibold">{activeProtocols.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircleIcon className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">Completed</span>
+                    <h2 className="text-lg font-semibold text-gray-900">{patient.name || 'Name not provided'}</h2>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                      <EnvelopeIcon className="h-3 w-3" />
+                      {patient.email}
                     </div>
-                    <span className="text-sm font-semibold">{completedProtocols.length}</span>
+                    {patient.emailVerified ? (
+                      <Badge variant="default" className="mt-1 bg-green-100 text-green-700 hover:bg-green-200 text-xs">
+                        <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                        Verified Account
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="mt-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs">
+                        <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+                        Pending Verification
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ChartBarIcon className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm font-medium">Overall Progress</span>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-xs font-medium text-gray-600">Active Protocols</p>
+                      <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
                     </div>
-                    <span className="text-sm font-semibold">
-                      {totalProtocols > 0 ? Math.round((completedProtocols.length / totalProtocols) * 100) : 0}%
-                    </span>
+                    <div className="bg-gray-50 p-3 rounded-lg text-center">
+                      <p className="text-xs font-medium text-gray-600">Total Protocols</p>
+                      <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Voice Notes Card */}
-            <VoiceNoteList 
-              voiceNotes={voiceNotes.map(note => ({
-                ...note,
-                createdAt: new Date(note.createdAt)
-              }))} 
-              onRefresh={() => {
-                const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
-                if (patientId) {
-                  loadVoiceNotes(patientId);
-                }
-              }}
-            />
-
-            {/* Add Documents Section */}
-            <PatientDocuments patientId={params.id as string} />
-
-          </div>
-
-          {/* Right Column - Protocol Details */}
-          <div className="col-span-12 lg:col-span-8 space-y-6">
-            {/* Active Protocols */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Protocols</CardTitle>
-                <CardDescription>Currently active treatment protocols</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px] pr-4">
+              {/* Quick Stats */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>Protocol Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DocumentTextIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Active Protocols</span>
+                      </div>
+                      <span className="text-sm font-semibold">{activeProtocols.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircleIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Completed</span>
+                      </div>
+                      <span className="text-sm font-semibold">{completedProtocols.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ChartBarIcon className="h-5 w-5 text-gray-500" />
+                        <span className="text-sm font-medium">Overall Progress</span>
+                      </div>
+                      <span className="text-sm font-semibold">
+                      {totalProtocols > 0 ? Math.round((completedProtocols.length / totalProtocols) * 100) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Voice Notes Card */}
+              <VoiceNoteList 
+                voiceNotes={voiceNotes.map(note => ({
+                  ...note,
+                  createdAt: new Date(note.createdAt)
+                }))} 
+                onRefresh={() => {
+                  const patientId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
+                  if (patientId) {
+                    loadVoiceNotes(patientId);
+                  }
+                }}
+              />
+
+              {/* Add Documents Section */}
+              <PatientDocuments patientId={params.id as string} />
+
+            </div>
+
+            {/* Right Column - Protocol Details */}
+            <div className="col-span-12 lg:col-span-8 space-y-6">
+              {/* Active Protocols */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Protocols</CardTitle>
+                  <CardDescription>Currently active treatment protocols</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
                     {activeProtocols.map((prescription) => {
                       const progress = calculateProgress(prescription);
-                      return (
+                        return (
                         <Card key={prescription.id} className="bg-white">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <div>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
                                 <h3 className="font-semibold text-gray-900">{prescription.protocol.name}</h3>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                  <CalendarDaysIcon className="h-4 w-4" />
+                                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                    <CalendarDaysIcon className="h-4 w-4" />
                                   Started {formatDate(prescription.plannedStartDate)}
+                                  </div>
                                 </div>
-                              </div>
-                              <Button variant="outline" size="sm" asChild>
+                                <Button variant="outline" size="sm" asChild>
                                 <Link href={`/doctor/protocols/${prescription.protocol.id}`}>
-                                  <EyeIcon className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Link>
-                              </Button>
-                            </div>
+                                    <EyeIcon className="h-4 w-4 mr-2" />
+                                    View Details
+                                  </Link>
+                                </Button>
+                              </div>
 
-                            {/* Progress Bar */}
+                              {/* Progress Bar */}
                             <div className="mt-4">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm text-gray-600">Progress</span>
                                 <span className="text-sm font-medium text-gray-900">{progress}%</span>
-                              </div>
+                                </div>
                               <div className="h-2 bg-gray-100 rounded-full">
-                                <div 
+                                  <div 
                                   className="h-full bg-violet-500 rounded-full transition-all duration-300" 
                                   style={{ width: `${progress}%` }}
-                                />
+                                  />
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Daily Check-in & Symptoms */}
-                            <div className="grid grid-cols-2 gap-4 mt-4">
-                              <div className="p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                                  <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
+                              {/* Daily Check-in & Symptoms */}
+                              <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    {dailyCheckins.find(checkin => 
+                                      format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+                                    ) 
+                                      ? 'Completed today'
+                                      : 'Not completed today'
+                                    }
+                                  </p>
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                  {dailyCheckins.find(checkin => 
-                                    format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                                  ) 
-                                    ? 'Completed today'
-                                    : 'Not completed today'
-                                  }
-                                </p>
-                              </div>
-                              <div className="p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <HeartIcon className="h-4 w-4 text-red-600" />
-                                  <span className="text-sm font-medium text-gray-700">Symptoms</span>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <HeartIcon className="h-4 w-4 text-red-600" />
+                                    <span className="text-sm font-medium text-gray-700">Symptoms</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500">
+                                    {symptomReports.filter(report => {
+                                      const reportDate = new Date(report.reportTime);
+                                      const weekAgo = new Date();
+                                      weekAgo.setDate(weekAgo.getDate() - 7);
+                                      return reportDate >= weekAgo;
+                                    }).length} reports this week
+                                  </p>
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                  {symptomReports.filter(report => {
-                                    const reportDate = new Date(report.reportTime);
-                                    const weekAgo = new Date();
-                                    weekAgo.setDate(weekAgo.getDate() - 7);
-                                    return reportDate >= weekAgo;
-                                  }).length} reports this week
-                                </p>
                               </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Recent Symptom Reports */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Symptom Reports</CardTitle>
+                  <CardDescription>Latest patient symptoms and observations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-4">
+                      {symptomReports.map((report) => (
+                        <Card key={report.id} className="bg-white">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <HeartIcon className="h-4 w-4 text-red-600" />
+                                <span className="font-medium text-gray-900">{report.title}</span>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "bg-yellow-50 text-yellow-700",
+                                  report.severity <= 3 && "bg-green-50 text-green-700",
+                                  report.severity >= 7 && "bg-red-50 text-red-700"
+                                )}
+                              >
+                                Severity: {report.severity}/10
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              {report.symptoms.length > 100 
+                                ? `${report.symptoms.substring(0, 100)}...` 
+                                : report.symptoms
+                              }
+                            </p>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-500">
+                                <ClockIcon className="h-4 w-4 inline mr-1" />
+                                {formatDistanceToNow(new Date(report.reportTime), { addSuffix: true })}
+                              </span>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  setSelectedReport(report);
+                                  setShowReportModal(true);
+                                }}
+                              >
+                                View Details
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            {/* Recent Symptom Reports */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Symptom Reports</CardTitle>
-                <CardDescription>Latest patient symptoms and observations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[300px] pr-4">
-                  <div className="space-y-4">
-                    {symptomReports.map((report) => (
-                      <Card key={report.id} className="bg-white">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <HeartIcon className="h-4 w-4 text-red-600" />
-                              <span className="font-medium text-gray-900">{report.title}</span>
-                            </div>
-                            <Badge 
-                              variant="outline" 
-                              className={cn(
-                                "bg-yellow-50 text-yellow-700",
-                                report.severity <= 3 && "bg-green-50 text-green-700",
-                                report.severity >= 7 && "bg-red-50 text-red-700"
-                              )}
-                            >
-                              Severity: {report.severity}/10
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-3">
-                            {report.symptoms.length > 100 
-                              ? `${report.symptoms.substring(0, 100)}...` 
-                              : report.symptoms
-                            }
-                          </p>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">
-                              <ClockIcon className="h-4 w-4 inline mr-1" />
-                              {formatDistanceToNow(new Date(report.reportTime), { addSuffix: true })}
-                            </span>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                setSelectedReport(report);
-                                setShowReportModal(true);
-                              }}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    {symptomReports.length === 0 && (
-                      <div className="text-center py-6">
-                        <HeartIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600">No symptom reports yet</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                      ))}
+                      {symptomReports.length === 0 && (
+                        <div className="text-center py-6">
+                          <HeartIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-600">No symptom reports yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
           </div>
         </div>
       </div>

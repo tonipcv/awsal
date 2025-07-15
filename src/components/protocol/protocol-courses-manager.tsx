@@ -64,19 +64,19 @@ export default function ProtocolCoursesManager({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-medium leading-none">Protocol Courses</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage the courses that will be part of this protocol
-          </p>
-        </div>
-        <Link href="/doctor/courses/create" target="_blank" rel="noopener noreferrer">
-          <Button>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Course
-          </Button>
-        </Link>
-      </div>
+              <div>
+                <h3 className="text-lg font-medium leading-none">Protocol Courses</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Manage the courses that will be part of this protocol
+                </p>
+              </div>
+              <Link href="/doctor/courses/create" target="_blank" rel="noopener noreferrer">
+                <Button>
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  New Course
+                </Button>
+              </Link>
+            </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Available Courses */}
@@ -148,18 +148,18 @@ export default function ProtocolCoursesManager({
                       </p>
                     ) : (
                       protocolCourses.map((protocolCourse, index) => (
-                        <Draggable
-                          key={protocolCourse.id}
-                          draggableId={protocolCourse.id}
-                          index={index}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
+                      <Draggable
+                        key={protocolCourse.id}
+                        draggableId={protocolCourse.id}
+                        index={index}
+                      >
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
                               className="flex items-start justify-between p-4 bg-white rounded-lg border group hover:border-primary/50 transition-colors"
-                            >
+                          >
                               <div className="flex-1 min-w-0">
                                 <h5 className="text-sm font-medium truncate">
                                   {protocolCourse.course.title}
@@ -171,41 +171,41 @@ export default function ProtocolCoursesManager({
                                 )}
                                 <div className="flex items-center gap-4 mt-3">
                                   <div className="flex items-center gap-2">
-                                    <Switch
-                                      checked={protocolCourse.isRequired}
-                                      onCheckedChange={(checked) =>
-                                        onUpdateCourse(protocolCourse.id, 'isRequired', checked)
-                                      }
-                                    />
-                                    <span className="text-sm text-muted-foreground">
-                                      {protocolCourse.isRequired ? 'Required' : 'Optional'}
-                                    </span>
-                                  </div>
+                                <Switch
+                                  checked={protocolCourse.isRequired}
+                                  onCheckedChange={(checked) =>
+                                    onUpdateCourse(protocolCourse.id, 'isRequired', checked)
+                                  }
+                                />
+                                <span className="text-sm text-muted-foreground">
+                                  {protocolCourse.isRequired ? 'Required' : 'Optional'}
+                                </span>
+                              </div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Link
+                              <Link
                                   href={`/doctor/courses/${protocolCourse.courseId}/edit`}
-                                  className="text-blue-600 hover:text-blue-800"
+                                className="text-blue-600 hover:text-blue-800"
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                >
+                              >
                                   <Button variant="ghost" size="icon" title="Edit Course">
-                                    <AcademicCapIcon className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => onRemoveCourse(protocolCourse.id)}
-                                  title="Remove from Protocol"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
+                                  <AcademicCapIcon className="h-4 w-4" />
                                 </Button>
-                              </div>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onRemoveCourse(protocolCourse.id)}
+                                  title="Remove from Protocol"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </Button>
                             </div>
-                          )}
-                        </Draggable>
+                          </div>
+                        )}
+                      </Draggable>
                       ))
                     )}
                     {provided.placeholder}
