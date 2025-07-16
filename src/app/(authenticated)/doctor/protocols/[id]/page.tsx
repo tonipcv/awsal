@@ -17,7 +17,8 @@ import {
   LinkIcon,
   ChartBarIcon,
   Cog6ToothIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -26,25 +27,32 @@ import { cn } from '@/lib/utils';
 import CheckinQuestionsManager from '@/components/protocol/checkin-questions-manager';
 import CheckinResponsesDashboard from '@/components/checkin/checkin-responses-dashboard';
 import { toast } from 'react-hot-toast';
+import { ProtocolTaskModal } from '@/components/protocol/protocol-task-modal';
 
 interface ProtocolTask {
   id: string;
   title: string;
   description?: string;
   order: number;
+  hasMoreInfo?: boolean;
+  videoUrl?: string;
+  fullExplanation?: string;
+  modalTitle?: string;
+  modalButtonText?: string;
+  modalButtonUrl?: string;
 }
 
 interface ProtocolDay {
   id: string;
   dayNumber: number;
-  tasks: ProtocolTask[];
-  sessions?: ProtocolSession[];
+  title: string;
+  sessions: ProtocolSession[];
 }
 
 interface ProtocolSession {
   id: string;
   title: string;
-  tasks?: ProtocolTask[];
+  tasks: ProtocolTask[];
 }
 
 interface Assignment {
@@ -114,6 +122,13 @@ export default function ProtocolDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'checkin-questions' | 'checkin-responses'>('overview');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<{
+    task: ProtocolTask;
+    dayNumber: number;
+    sessionTitle?: string;
+  } | null>(null);
+  const [expandedDayId, setExpandedDayId] = useState<string | null>(null);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -219,10 +234,67 @@ export default function ProtocolDetailPage() {
 
   if (isLoading || !protocol) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5154e7]" />
+      <div className="min-h-screen bg-white">
+        <div className="lg:ml-64">
+          <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
+            {/* Header Skeleton */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-gray-200 rounded-xl animate-pulse"></div>
+                  <div className="h-8 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+                </div>
+                <div className="h-5 bg-gray-100 rounded-lg w-64 animate-pulse"></div>
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded-xl w-32 animate-pulse"></div>
+              </div>
+            </div>
+
+            {/* Tabs Skeleton */}
+            <div className="border-b border-gray-200 mb-8">
+              <div className="flex space-x-8">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 bg-gray-200 rounded-lg w-32 animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-1 space-y-8">
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                        <div className="h-6 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="lg:col-span-2 space-y-8">
+                <div className="space-y-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
+                      <div className="space-y-4">
+                        <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+                          <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -281,7 +353,7 @@ export default function ProtocolDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <CalendarDaysIcon className="w-4 h-4" />
-                  Visão Geral
+                  Overview
                 </div>
               </button>
               
@@ -296,7 +368,7 @@ export default function ProtocolDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <Cog6ToothIcon className="w-4 h-4" />
-                  Perguntas Check-in
+                  Check-in Questions
                 </div>
               </button>
               
@@ -311,7 +383,7 @@ export default function ProtocolDetailPage() {
               >
                 <div className="flex items-center gap-2">
                   <ChartBarIcon className="w-4 h-4" />
-                  Respostas Check-in
+                  Check-in Responses
                 </div>
               </button>
             </nav>
@@ -353,28 +425,13 @@ export default function ProtocolDetailPage() {
                     {/* Recurring Configuration */}
                     {protocol.isRecurring && (
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-purple-100 rounded-xl">
-                          <ArrowPathIcon className="h-5 w-5 text-purple-600" />
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                          <ArrowPathIcon className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 font-medium">Recurrence</p>
+                          <p className="text-sm text-gray-600 font-medium">Recurring</p>
                           <p className="text-lg font-bold text-gray-900">
-                            {protocol.recurringInterval === 'DAILY' && 'Daily'}
-                            {protocol.recurringInterval === 'WEEKLY' && (
-                              <>
-                                Weekly on{' '}
-                                {protocol.recurringDays
-                                  .sort((a, b) => a - b)
-                                  .map((day) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day - 1])
-                                  .join(', ')}
-                              </>
-                            )}
-                            {protocol.recurringInterval === 'MONTHLY' && (
-                              <>
-                                Monthly on day{protocol.recurringDays.length > 1 ? 's' : ''}{' '}
-                                {protocol.recurringDays.sort((a, b) => a - b).join(', ')}
-                              </>
-                            )}
+                            {protocol.recurringInterval === 'DAILY' ? 'Daily' : 'Weekly'}
                           </p>
                         </div>
                       </div>
@@ -382,135 +439,19 @@ export default function ProtocolDetailPage() {
                   </CardContent>
                 </Card>
 
-                {/* Protocol Products */}
+                {/* Active Patients */}
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
-                        <ShoppingBagIcon className="h-5 w-5" />
-                        Recommended Products
+                        <UsersIcon className="h-5 w-5" />
+                        Active Patients
                       </CardTitle>
-                      {protocol.products && protocol.products.length > 0 && (
+                      {activeAssignments.length > 0 && (
                         <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
-                          {protocol.products.length}
+                          {activeAssignments.length}
                         </Badge>
                       )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {!protocol.products || protocol.products.length === 0 ? (
-                      <div className="text-center py-8">
-                        <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 font-medium">
-                          No products configured
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {protocol.products
-                          .sort((a, b) => a.order - b.order)
-                          .map((protocolProduct) => (
-                            <div key={protocolProduct.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                              <div className="flex items-start gap-4">
-                                {/* Product Image */}
-                                <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                  {protocolProduct.product.imageUrl ? (
-                                    <img 
-                                      src={protocolProduct.product.imageUrl} 
-                                      alt={protocolProduct.product.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <ShoppingBagIcon className="h-5 w-5 text-gray-400" />
-                                  )}
-                                </div>
-
-                                {/* Product Info */}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-bold text-gray-900 truncate">
-                                        {protocolProduct.product.name}
-                                      </h4>
-                                      {protocolProduct.product.brand && (
-                                        <p className="text-sm text-[#5154e7] font-semibold">{protocolProduct.product.brand}</p>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Price and Required Badge */}
-                                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                      {(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice) && (
-                                        <div className="text-right">
-                                          {protocolProduct.product.discountPrice && protocolProduct.product.originalPrice ? (
-                                            <>
-                                              <div className="text-sm font-bold text-[#5154e7]">
-                                                {formatPrice(protocolProduct.product.discountPrice)}
-                                              </div>
-                                              <div className="text-sm text-gray-400 line-through">
-                                                {formatPrice(protocolProduct.product.originalPrice)}
-                                              </div>
-                                            </>
-                                          ) : (
-                                            <div className="text-sm font-bold text-gray-900">
-                                              {formatPrice(protocolProduct.product.originalPrice || protocolProduct.product.discountPrice)}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                      
-                                      {protocolProduct.isRequired && (
-                                        <Badge variant="destructive" className="bg-red-100 text-red-700 border-red-200 font-semibold">
-                                          Required
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Notes */}
-                                  {protocolProduct.notes && (
-                                    <p className="text-sm text-gray-600 mt-3 font-medium">{protocolProduct.notes}</p>
-                                  )}
-
-                                  {/* Purchase Link */}
-                                  {protocolProduct.product.purchaseUrl && (
-                                    <div className="mt-3">
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline" 
-                                        className="h-8 text-sm border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-semibold"
-                                        asChild
-                                      >
-                                        <a 
-                                          href={protocolProduct.product.purchaseUrl} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                        >
-                                          <LinkIcon className="h-4 w-4 mr-2" />
-                                          Buy
-                                        </a>
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Assigned Patients */}
-                <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-bold text-gray-900">Active Patients</CardTitle>
-                      <Button size="sm" variant="outline" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold">
-                        <Link href={`/doctor/protocols/${protocol.id}/assign`}>
-                          <UserPlusIcon className="h-4 w-4 mr-2" />
-                          Assign
-                        </Link>
-                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -520,116 +461,143 @@ export default function ProtocolDetailPage() {
                         <p className="text-gray-600 font-medium">
                           No active patients
                         </p>
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="mt-4 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl"
+                        >
+                          <Link href={`/doctor/protocols/${protocol.id}/assign`}>
+                            <UserPlusIcon className="h-4 w-4 mr-2" />
+                            Assign to Patient
+                          </Link>
+                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {activeAssignments.map((assignment) => (
-                          <div key={assignment.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                            <div className="h-10 w-10 rounded-full bg-[#5154e7] flex items-center justify-center text-sm font-bold text-white">
+                          <div key={assignment.id} className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-900">
                               {getPatientInitials(assignment.user.name)}
                             </div>
-                            <div className="flex-1">
-                              <p className="font-bold text-gray-900">{assignment.user.name || 'No name'}</p>
-                              <p className="text-sm text-gray-600 font-medium">
-                                Started on {format(new Date(assignment.startDate), 'dd/MM/yyyy', { locale: ptBR })}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {assignment.user.name || assignment.user.email}
                               </p>
                             </div>
                           </div>
                         ))}
+
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="w-full mt-4 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl"
+                        >
+                          <Link href={`/doctor/protocols/${protocol.id}/assign`}>
+                            <UserPlusIcon className="h-4 w-4 mr-2" />
+                            Assign to More Patients
+                          </Link>
+                        </Button>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Protocol Days */}
-              <div className="lg:col-span-2">
+              {/* Right Column - Protocol Days */}
+              <div className="lg:col-span-2 space-y-6">
                 <div className="space-y-6">
-                  {protocol.days.length === 0 ? (
-                    <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                      <CardContent className="p-8">
-                        <div className="text-center">
-                          <CalendarDaysIcon className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">This protocol doesn't have any configured days or tasks yet.</h3>
-                          <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
-                            <Link href={`/doctor/protocols/${protocol.id}/edit`}>
-                              <PencilIcon className="h-4 w-4 mr-2" />
-                              Edit Protocol
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    protocol.days
-                      .sort((a, b) => a.dayNumber - b.dayNumber)
-                      .map((day) => (
-                        <Card key={day.id} className="bg-white border-gray-200 shadow-lg rounded-2xl">
-                          <CardHeader className="pb-4">
-                            <CardTitle className="text-lg font-bold text-[#5154e7]">
-                              Day {day.dayNumber}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {(!day.tasks || day.tasks.length === 0) && (!day.sessions || day.sessions.length === 0) ? (
-                              <p className="text-gray-600 font-medium text-center py-8">
-                                No tasks configured for this day
+                  {protocol.days.map((day) => (
+                    <Card key={day.id} className="bg-white border-gray-200 shadow-lg rounded-2xl">
+                      <CardContent className="p-6">
+                        <button
+                          onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)}
+                          className="w-full"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900">
+                                {day.title}
+                              </h3>
+                              <p className="text-sm text-gray-600">
+                                {day.sessions.length} sessions • {day.sessions.reduce((total, session) => total + session.tasks.length, 0)} tasks
                               </p>
-                            ) : (
-                              <div className="space-y-4">
-                                {/* Render direct day tasks */}
-                                {day.tasks && day.tasks.length > 0 && (
-                                  <div className="space-y-4">
-                                    <h5 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Day Tasks</h5>
-                                    {day.tasks
-                                      .sort((a, b) => a.order - b.order)
-                                      .map((task) => (
-                                        <div key={task.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                          <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
-                                          {task.description && (
-                                            <p className="text-gray-600 font-medium">{task.description}</p>
+                            </div>
+                            <ChevronDownIcon 
+                              className={cn(
+                                "h-5 w-5 text-gray-400 transition-transform",
+                                expandedDayId === day.id ? "rotate-180" : ""
+                              )}
+                            />
+                          </div>
+                        </button>
+
+                        {/* Show sessions when day is expanded */}
+                        {expandedDayId === day.id && (
+                          <div className="mt-6 space-y-6">
+                            {day.sessions.map((session) => (
+                              <div key={session.id} className="border-t border-gray-100 pt-4">
+                                <button
+                                  onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)}
+                                  className="w-full text-left"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-semibold text-[#5154e7] uppercase tracking-wider">
+                                      {session.title}
+                                    </h4>
+                                    <ChevronDownIcon 
+                                      className={cn(
+                                        "h-4 w-4 text-gray-400 transition-transform",
+                                        expandedSessionId === session.id ? "rotate-180" : ""
+                                      )}
+                                    />
+                                  </div>
+                                </button>
+
+                                {/* Show tasks when session is expanded */}
+                                {expandedSessionId === session.id && (
+                                  <div className="mt-4 space-y-3">
+                                    {session.tasks.map((task) => (
+                                      <button
+                                        key={task.id}
+                                        onClick={() => setSelectedTask({ 
+                                          task, 
+                                          dayNumber: day.dayNumber,
+                                          sessionTitle: session.title
+                                        })}
+                                        className="w-full text-left p-3 bg-blue-50 rounded-xl border border-blue-200 hover:border-[#5154e7]/30 hover:bg-blue-100 transition-colors"
+                                      >
+                                        <div className="flex items-center justify-between gap-3">
+                                          <h4 className="font-medium text-gray-900">{task.title}</h4>
+                                          {(task.hasMoreInfo || task.videoUrl || task.fullExplanation || task.modalButtonUrl) && (
+                                            <Badge className="bg-[#5154e7]/10 text-[#5154e7] border-[#5154e7]/20">
+                                              More Info
+                                            </Badge>
                                           )}
                                         </div>
-                                      ))}
-                                  </div>
-                                )}
-                                
-                                {/* Render sessions and their tasks */}
-                                {day.sessions && day.sessions.length > 0 && (
-                                  <div className="space-y-6">
-                                    {day.sessions.map((session) => (
-                                      <div key={session.id} className="space-y-3">
-                                        <h5 className="text-sm font-semibold text-[#5154e7] uppercase tracking-wider">
-                                          {session.title}
-                                        </h5>
-                                        {session.tasks && session.tasks.length > 0 ? (
-                                          <div className="space-y-3">
-                                            {session.tasks
-                                              .sort((a, b) => a.order - b.order)
-                                              .map((task) => (
-                                                <div key={task.id} className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                                                  <h4 className="font-bold text-gray-900 mb-2">{task.title}</h4>
-                                                  {task.description && (
-                                                    <p className="text-gray-600 font-medium">{task.description}</p>
-                                                  )}
-                                                </div>
-                                              ))}
-                                          </div>
-                                        ) : (
-                                          <p className="text-gray-500 text-sm italic">No tasks in this session</p>
-                                        )}
-                                      </div>
+                                      </button>
                                     ))}
                                   </div>
                                 )}
                               </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))
-                  )}
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
+
+              {/* Task Details Modal */}
+              {selectedTask && (
+                <ProtocolTaskModal
+                  isOpen={!!selectedTask}
+                  onClose={() => setSelectedTask(null)}
+                  task={selectedTask.task}
+                  dayNumber={selectedTask.dayNumber}
+                  sessionTitle={selectedTask.sessionTitle}
+                />
+              )}
             </div>
           )}
 

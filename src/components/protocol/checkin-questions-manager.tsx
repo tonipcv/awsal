@@ -87,7 +87,7 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: 'Nova pergunta',
+          question: 'New Question',
           type: 'TEXT',
           order: questions.length,
         }),

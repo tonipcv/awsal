@@ -30,10 +30,10 @@ interface CheckinResponsesDashboardProps {
 }
 
 const dateRangeOptions = [
-  { label: 'Hoje', value: 'today', days: 0 },
-  { label: 'Últimos 7 dias', value: 'week', days: 7 },
-  { label: 'Últimos 30 dias', value: 'month', days: 30 },
-  { label: 'Esta semana', value: 'thisWeek', days: null },
+  { label: 'Today', value: 'today', days: 0 },
+  { label: 'Last 7 days', value: 'week', days: 7 },
+  { label: 'Last 30 days', value: 'month', days: 30 },
+  { label: 'This week', value: 'thisWeek', days: null },
 ];
 
 export default function CheckinResponsesDashboard({ 
@@ -68,8 +68,8 @@ export default function CheckinResponsesDashboard({
       
       setResponses(flatResponses);
     } catch (error: any) {
-      setError('Erro ao carregar respostas');
-      console.error('Erro ao carregar respostas:', error);
+      setError('Error loading responses');
+      console.error('Error loading responses:', error);
     } finally {
       setIsLoading(false);
     }
@@ -188,23 +188,23 @@ export default function CheckinResponsesDashboard({
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center p-3 bg-turquoise/10 border border-turquoise/20 rounded-lg">
                 <div className="text-2xl font-bold text-turquoise">{average.toFixed(1)}</div>
-                <div className="text-xs text-gray-600">Média</div>
+                <div className="text-xs text-gray-600">Average</div>
               </div>
               <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">{max}</div>
-                <div className="text-xs text-gray-600">Máximo</div>
+                <div className="text-xs text-gray-600">Maximum</div>
               </div>
               <div className="text-center p-3 bg-red-50 border border-red-200 rounded-lg">
                 <div className="text-2xl font-bold text-red-600">{min}</div>
-                <div className="text-xs text-gray-600">Mínimo</div>
+                <div className="text-xs text-gray-600">Minimum</div>
               </div>
             </div>
           </div>
         );
 
       case 'YES_NO':
-        const yesCount = responses.filter(r => r.answer === 'Sim').length;
-        const noCount = responses.filter(r => r.answer === 'Não').length;
+        const yesCount = responses.filter(r => r.answer === 'Yes').length;
+        const noCount = responses.filter(r => r.answer === 'No').length;
         const yesPercentage = responses.length > 0 ? (yesCount / responses.length) * 100 : 0;
 
         return (
@@ -212,7 +212,7 @@ export default function CheckinResponsesDashboard({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-600">Sim</span>
+                  <span className="text-sm text-gray-600">Yes</span>
                   <span className="text-sm font-medium text-gray-900">{yesCount} ({yesPercentage.toFixed(0)}%)</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -226,7 +226,7 @@ export default function CheckinResponsesDashboard({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-600">Não</span>
+                  <span className="text-sm text-gray-600">No</span>
                   <span className="text-sm font-medium text-gray-900">{noCount} ({(100 - yesPercentage).toFixed(0)}%)</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -253,7 +253,7 @@ export default function CheckinResponsesDashboard({
             ))}
             {responses.length > 5 && (
               <div className="text-center text-sm text-gray-500">
-                +{responses.length - 5} respostas adicionais
+                +{responses.length - 5} additional responses
               </div>
             )}
           </div>
@@ -269,7 +269,7 @@ export default function CheckinResponsesDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Respostas do Check-in Diário</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Daily Check-in Responses</h3>
           <p className="text-sm text-gray-600">{protocolName}</p>
         </div>
       </div>
@@ -298,7 +298,7 @@ export default function CheckinResponsesDashboard({
             onChange={(e) => setSelectedPatient(e.target.value)}
             className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:ring-2 focus:ring-turquoise focus:border-turquoise"
           >
-            <option value="all">Todos os pacientes</option>
+            <option value="all">All patients</option>
             {patients.map(patient => (
               <option key={patient.id} value={patient.id}>
                 {patient.name}
@@ -317,7 +317,7 @@ export default function CheckinResponsesDashboard({
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">{stats.totalResponses}</div>
-              <div className="text-sm text-gray-600">Total de Respostas</div>
+              <div className="text-sm text-gray-600">Total Responses</div>
             </div>
           </div>
         </div>
@@ -329,7 +329,7 @@ export default function CheckinResponsesDashboard({
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">{stats.uniquePatients}</div>
-              <div className="text-sm text-gray-600">Pacientes Ativos</div>
+              <div className="text-sm text-gray-600">Active Patients</div>
             </div>
           </div>
         </div>
@@ -341,7 +341,7 @@ export default function CheckinResponsesDashboard({
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">{stats.questionsAnswered}</div>
-              <div className="text-sm text-gray-600">Perguntas Respondidas</div>
+              <div className="text-sm text-gray-600">Questions Answered</div>
             </div>
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function CheckinResponsesDashboard({
             </div>
             <div>
               <div className="text-2xl font-bold text-gray-900">{stats.avgResponsesPerDay.toFixed(1)}</div>
-              <div className="text-sm text-gray-600">Média por Dia</div>
+              <div className="text-sm text-gray-600">Average per Day</div>
             </div>
           </div>
         </div>
@@ -386,11 +386,11 @@ export default function CheckinResponsesDashboard({
                   </h4>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span className="px-2 py-1 bg-gray-100 border border-gray-200 rounded">
-                      {questionData.question.type === 'MULTIPLE_CHOICE' ? 'Múltipla Escolha' :
-                       questionData.question.type === 'SCALE' ? 'Escala' :
-                       questionData.question.type === 'YES_NO' ? 'Sim/Não' : 'Texto Livre'}
+                      {questionData.question.type === 'MULTIPLE_CHOICE' ? 'Multiple Choice' :
+                       questionData.question.type === 'SCALE' ? 'Scale' :
+                       questionData.question.type === 'YES_NO' ? 'Yes/No' : 'Free Text'}
                     </span>
-                    <span>{questionData.responses.length} respostas</span>
+                    <span>{questionData.responses.length} responses</span>
                   </div>
                 </div>
                 
@@ -404,11 +404,11 @@ export default function CheckinResponsesDashboard({
       {!isLoading && Object.keys(responsesByQuestion).length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
           <Eye className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-gray-600 mb-2">Nenhuma resposta encontrada</h4>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No responses found</h4>
           <p className="text-gray-500">
             {selectedPatient === 'all' 
-              ? 'Não há respostas de check-in para o período selecionado'
-              : 'Este paciente não respondeu ao check-in no período selecionado'
+              ? 'No check-in responses for the selected period'
+              : 'This patient has not responded to check-in during the selected period'
             }
           </p>
         </div>

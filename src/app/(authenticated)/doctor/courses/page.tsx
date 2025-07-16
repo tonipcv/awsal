@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Switch } from "@/components/ui/switch";
 
 interface Course {
   id: string;
@@ -22,6 +23,7 @@ interface Course {
   description: string | null;
   coverImage: string | null;
   createdAt: string;
+  isPublished: boolean;
   modules: Array<{
     id: string;
     name: string;
@@ -86,6 +88,29 @@ export default function DoctorCoursesPage() {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+  };
+
+  const handlePublishToggle = async (courseId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/courses/${courseId}/publish`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isPublished: !currentStatus })
+      });
+
+      if (response.ok) {
+        // Reload courses to get updated data
+        loadCourses();
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Error updating course status');
+      }
+    } catch (error) {
+      console.error('Error toggling course status:', error);
+      alert('Error updating course status');
+    }
   };
 
   if (isLoading) {
@@ -216,6 +241,15 @@ export default function DoctorCoursesPage() {
                               {course.description}
                             </p>
                           )}
+                        </div>
+                        <div className="ml-4 flex items-center gap-2">
+                          <Switch
+                            checked={course.isPublished}
+                            onCheckedChange={(checked) => handlePublishToggle(course.id, !checked)}
+                          />
+                          <span className={`text-sm ${course.isPublished ? 'text-green-600' : 'text-gray-600'}`}>
+                            {course.isPublished ? 'Active' : 'Draft'}
+                          </span>
                         </div>
                       </div>
                     </CardHeader>

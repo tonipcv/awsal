@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -41,6 +41,31 @@ export default function ProtocolCoursesManager({
   onUpdateCourse,
   onReorderCourses
 }: ProtocolCoursesManagerProps) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handlePublishToggle = async (courseId: string, currentStatus: boolean) => {
+    try {
+      setIsUpdating(true);
+      const response = await fetch(`/api/courses/${courseId}/publish`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ isPublished: !currentStatus })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error updating course status');
+      }
+    } catch (error) {
+      console.error('Error toggling course status:', error);
+      toast.error('Error updating course status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // Filter out courses that are already assigned
   const availableCoursesToAdd = availableCourses.filter(
     course => !protocolCourses.some(pc => pc.courseId === course.id)
@@ -102,14 +127,17 @@ export default function ProtocolCoursesManager({
                             {course.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            course.isPublished 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {course.isPublished ? 'Published' : 'Draft'}
-                          </span>
+                        <div className="flex items-center gap-4 mt-3">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={course.isPublished}
+                              onCheckedChange={(checked) => handlePublishToggle(course.id, !checked)}
+                              disabled={isUpdating}
+                            />
+                            <span className={`text-sm ${course.isPublished ? 'text-green-600' : 'text-gray-600'}`}>
+                              {course.isPublished ? 'Active' : 'Draft'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

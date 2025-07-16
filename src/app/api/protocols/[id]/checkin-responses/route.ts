@@ -19,14 +19,14 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: protocolId } = await params;
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
-    // Verificar se o usuário tem acesso ao protocolo
+    // Check if user has access to the protocol
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
@@ -38,17 +38,17 @@ export async function GET(
     });
 
     if (!protocol) {
-      return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: 'Protocol not found' }, { status: 404 });
     }
 
-    // Se for médico, pode ver respostas de todos os pacientes
-    // Se for paciente, só pode ver suas próprias respostas
+    // If doctor, can see all patient responses
+    // If patient, can only see their own responses
     const whereClause: any = {
       protocolId,
       date: new Date(date)
     };
 
-    // Verificar se é médico através do protocolo
+    // Check if user is doctor through protocol
     const isDoctor = protocol.doctorId === session.user.id;
     if (!isDoctor) {
       whereClause.userId = session.user.id;
@@ -75,12 +75,12 @@ export async function GET(
     return NextResponse.json({ responses });
 
   } catch (error: any) {
-    console.error('Erro ao buscar respostas:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error fetching responses:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST - Submeter respostas do check-in diário
+// POST - Submit daily check-in responses
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -88,12 +88,12 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id: protocolId } = await params;
 
-    // Verificar se o paciente tem acesso ao protocolo
+    // Check if patient has access to protocol
     const assignment = await prisma.userProtocol.findFirst({
       where: {
         protocolId,
@@ -103,7 +103,7 @@ export async function POST(
     });
 
     if (!assignment) {
-      return NextResponse.json({ error: 'Protocolo não encontrado ou não atribuído' }, { status: 404 });
+      return NextResponse.json({ error: 'Protocol not found or not assigned' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -114,7 +114,7 @@ export async function POST(
     const todayString = today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD
     const todayDate = new Date(todayString);
 
-    // Verificar se já respondeu hoje
+    // Check if already responded today
     const existingResponses = await prisma.dailyCheckinResponse.findMany({
       where: {
         userId: session.user.id,
@@ -125,67 +125,40 @@ export async function POST(
 
     let createdResponses;
 
+    // If already responded today, update responses
     if (existingResponses.length > 0) {
-      // Atualizar respostas existentes
-      createdResponses = await prisma.$transaction(
-        responses.map(response => {
-          const existingResponse = existingResponses.find(er => er.questionId === response.questionId);
-          
-          if (existingResponse) {
-            // Atualizar resposta existente
-            return prisma.dailyCheckinResponse.update({
-              where: { id: existingResponse.id },
-              data: { answer: response.answer },
-              include: { question: true }
-            });
-          } else {
-            // Criar nova resposta (caso tenha sido adicionada uma nova pergunta)
-            return prisma.dailyCheckinResponse.create({
-              data: {
-                id: `response_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                userId: session.user.id,
-                questionId: response.questionId,
-                protocolId,
-                date: todayDate,
-                answer: response.answer
-              },
-              include: { question: true }
-            });
-          }
-        })
-      );
-    } else {
-      // Criar todas as respostas em uma transação (primeira vez)
-      createdResponses = await prisma.$transaction(
-        responses.map(response => 
-          prisma.dailyCheckinResponse.create({
-            data: {
-              id: `response_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              userId: session.user.id,
-              questionId: response.questionId,
-              protocolId,
-              date: todayDate,
-              answer: response.answer
-            },
-            include: {
-              question: true
-            }
-          })
-        )
-      );
+      // Delete existing responses
+      await prisma.dailyCheckinResponse.deleteMany({
+        where: {
+          userId: session.user.id,
+          protocolId,
+          date: todayDate
+        }
+      });
     }
+
+    // Create new responses
+    createdResponses = await prisma.dailyCheckinResponse.createMany({
+      data: responses.map(response => ({
+        userId: session.user.id,
+        protocolId,
+        questionId: response.questionId,
+        answer: response.answer,
+        date: todayDate
+      }))
+    });
 
     return NextResponse.json({ 
       success: true, 
       responses: createdResponses,
-      message: existingResponses.length > 0 ? 'Check-in atualizado com sucesso!' : 'Check-in realizado com sucesso!'
+      message: existingResponses.length > 0 ? 'Check-in updated successfully!' : 'Check-in completed successfully!'
     }, { status: existingResponses.length > 0 ? 200 : 201 });
 
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
     }
-    console.error('Erro ao submeter respostas:', error);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    console.error('Error submitting responses:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

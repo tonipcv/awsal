@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 title: true,
-                duration: true
+                duration: true,
+                isPublished: true
               }
             }
           },
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
       modalDescription: course.modalDescription,
       modalButtonText: course.modalButtonText || 'Saber mais',
       modalButtonUrl: course.modalButtonUrl,
+      isPublished: course.isPublished, // Explicitly include isPublished
       lessons: [], // Remove direct lessons since they don't exist in this structure
       _count: {
         ...course._count,
