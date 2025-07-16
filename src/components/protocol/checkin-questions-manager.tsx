@@ -354,9 +354,9 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-medium leading-none">Check-in Questions</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Configure the questions that patients will answer during their daily check-ins
+                <h3 className="text-lg font-medium text-gray-900">Check-in Questions</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Configure the questions that will be asked during patient check-ins
                 </p>
               </div>
               <Button onClick={addQuestion}>
@@ -365,103 +365,118 @@ export default function CheckinQuestionsManager({ protocolId }: CheckinQuestions
               </Button>
             </div>
 
-            {questions.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📝</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Questions Yet</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Start by adding your first check-in question
-                </p>
-                <Button onClick={addQuestion}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add First Question
-                </Button>
-              </div>
-            ) : (
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="questions">
-                  {(provided) => (
-                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                      {questions.map((question, index) => (
-                        <Draggable key={question.id} draggableId={question.id} index={index}>
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="questions">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-4"
+                  >
+                    {questions.length === 0 ? (
+                      <p className="text-sm text-gray-600">
+                        No questions configured yet. Add your first question to start.
+                      </p>
+                    ) : (
+                      questions.map((question, index) => (
+                        <Draggable
+                          key={question.id}
+                          draggableId={question.id}
+                          index={index}
+                        >
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="p-4 bg-white rounded-lg border"
+                              className="p-4 bg-white rounded-lg border group hover:border-primary/50 transition-colors"
                             >
                               <div className="space-y-4">
                                 <div>
-                                  <Label className="text-sm font-medium">Question</Label>
-                                  <Input
-                                    value={editingValues[question.id]?.question || ''}
-                                    onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
-                                    onBlur={() => saveQuestion(question.id)}
-                                    className="mt-1"
-                                    data-question-id={question.id}
-                                  />
+                                  <Label className="text-gray-900 font-medium">Question</Label>
+                                  <div className="mt-1.5">
+                                    <Input
+                                      data-question-id={question.id}
+                                      value={editingValues[question.id]?.question || ''}
+                                      onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
+                                      onBlur={() => saveQuestion(question.id)}
+                                      className="bg-white text-gray-900"
+                                      placeholder="Enter your question..."
+                                    />
+                                  </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-sm font-medium">Type</Label>
+                                <div className="flex items-start gap-4">
+                                  <div className="flex-1">
+                                    <Label className="text-gray-900 font-medium">Answer Type</Label>
                                     <Select
-                                      value={editingValues[question.id]?.type || 'TEXT'}
+                                      value={editingValues[question.id]?.type || ''}
                                       onValueChange={(value) => {
                                         updateQuestion(question.id, 'type', value);
                                         saveQuestion(question.id);
                                       }}
                                     >
-                                      <SelectTrigger className="mt-1">
+                                      <SelectTrigger className="mt-1.5 bg-white text-gray-900">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="TEXT">Text</SelectItem>
-                                        <SelectItem value="YES_NO">Yes/No</SelectItem>
-                                        <SelectItem value="SCALE">Scale (1-5)</SelectItem>
-                                        <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
+                                        <SelectItem value="TEXT" className="text-gray-900">Text</SelectItem>
+                                        <SelectItem value="NUMBER" className="text-gray-900">Number</SelectItem>
+                                        <SelectItem value="SCALE" className="text-gray-900">Scale (1-5)</SelectItem>
+                                        <SelectItem value="YES_NO" className="text-gray-900">Yes/No</SelectItem>
+                                        <SelectItem value="MULTIPLE_CHOICE" className="text-gray-900">Multiple Choice</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
 
                                   {editingValues[question.id]?.type === 'MULTIPLE_CHOICE' && (
-                                    <div>
-                                      <Label className="text-sm font-medium">Options (comma-separated)</Label>
-                                      <Input
-                                        value={editingValues[question.id]?.options || ''}
-                                        onChange={(e) => updateQuestion(question.id, 'options', e.target.value)}
-                                        onBlur={() => saveQuestion(question.id)}
-                                        placeholder="Option 1, Option 2, Option 3"
-                                        className="mt-1"
-                                      />
+                                    <div className="flex-1">
+                                      <Label className="text-gray-900 font-medium">Options</Label>
+                                      <div className="mt-1.5">
+                                        <Input
+                                          value={editingValues[question.id]?.options || ''}
+                                          onChange={(e) => updateQuestion(question.id, 'options', e.target.value)}
+                                          onBlur={() => saveQuestion(question.id)}
+                                          className="bg-white text-gray-900"
+                                          placeholder="Option 1, Option 2, Option 3"
+                                        />
+                                        <p className="text-xs text-gray-600 mt-1">
+                                          Separate options with commas
+                                        </p>
+                                      </div>
                                     </div>
                                   )}
-                                </div>
 
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-4">
-                                    {/* Removido os switches de Required e Active */}
+                                  <div className="pt-7">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeQuestion(question.id)}
+                                      className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                    </Button>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeQuestion(question.id)}
-                                  >
-                                    <TrashIcon className="h-4 w-4" />
-                                  </Button>
                                 </div>
                               </div>
                             </div>
                           )}
                         </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            )}
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </CardContent>
         </Card>
 

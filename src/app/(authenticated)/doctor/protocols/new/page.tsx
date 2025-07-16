@@ -44,6 +44,7 @@ interface ProtocolSession {
 interface ProtocolDay {
   id: string;
   dayNumber: number;
+  title?: string;
   tasks: ProtocolTask[];
   sessions: ProtocolSession[];
 }
@@ -107,6 +108,7 @@ export default function NewProtocolPage() {
       {
         id: 'day-1',
         dayNumber: 1,
+        title: 'Day 1',
         tasks: [],
         sessions: []
       }
@@ -141,6 +143,7 @@ export default function NewProtocolPage() {
     const newDay: ProtocolDay = {
       id: `day-${newDayNumber}`,
       dayNumber: newDayNumber,
+      title: `Day ${newDayNumber}`,
       tasks: [],
       sessions: []
     };
@@ -194,7 +197,14 @@ export default function NewProtocolPage() {
   }, [protocol.days]);
 
   const updateDay = useCallback((dayNumber: number, field: string, value: string) => {
-    // For new protocols, we don't need to update day fields as they're auto-generated
+    setProtocol(prev => ({
+      ...prev,
+      days: prev.days.map(day => 
+        day.dayNumber === dayNumber 
+          ? { ...day, [field]: value }
+          : day
+      )
+    }));
   }, []);
 
   const addSession = useCallback((dayNumber: number) => {

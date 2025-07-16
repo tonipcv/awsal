@@ -35,7 +35,7 @@ export const viewport = {
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
-  themeColor: '#000000',
+  themeColor: '#ffffff'
 }
 
 export default function RootLayout({
@@ -44,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className="h-full">
+    <html lang="pt-BR" suppressHydrationWarning className="h-full light">
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -77,12 +77,13 @@ export default function RootLayout({
         </noscript>
         {/* End Facebook Pixel Code */}
       </head>
-      <body className={`${inter.className} antialiased h-full`}>
+      <body className={`${inter.className} antialiased h-full bg-white`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
+          forcedTheme="light"
         >
           <NextAuthProvider>
             <UserRoleProvider>

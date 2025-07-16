@@ -540,7 +540,7 @@ function SessionItem({ session, dayNumber, onUpdate, onRemove, addTask, removeTa
             variant="outline"
             size="sm"
             onClick={() => addTask(dayNumber, session.id)}
-            className="w-full h-8 text-sm border-dashed border-blue-300 text-blue-600 hover:bg-blue-50"
+            className="w-full h-8 text-sm border-dashed border-blue-300 text-gray-700 hover:bg-blue-50 hover:text-gray-900"
           >
             <PlusIcon className="h-3 w-3 mr-1" />
             Add Task to Session
@@ -747,7 +747,7 @@ export function ProtocolDayEditor({
                       e.stopPropagation();
                       addSession(day.dayNumber);
                     }}
-                    className="h-7 px-2 text-xs border-gray-300"
+                    className="h-7 px-2 text-xs border-gray-300 text-gray-700 hover:text-gray-900"
                   >
                     <PlusIcon className="h-3 w-3 mr-1" />
                     Session
@@ -759,7 +759,7 @@ export function ProtocolDayEditor({
                       e.stopPropagation();
                       duplicateDay(day.dayNumber);
                     }}
-                    className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-gray-300"
+                    className="h-7 w-7 p-0 text-gray-700 hover:text-gray-900 hover:bg-blue-50 border-gray-300"
                     title="Duplicate this day"
                   >
                     <DocumentDuplicateIcon className="h-3 w-3" />

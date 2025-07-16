@@ -65,8 +65,8 @@ export default function ProtocolCoursesManager({
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-medium leading-none">Protocol Courses</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="text-lg font-medium text-gray-900">Protocol Courses</h3>
+                <p className="text-sm text-gray-600 mt-1">
                   Manage the courses that will be part of this protocol
                 </p>
               </div>
@@ -82,23 +82,23 @@ export default function ProtocolCoursesManager({
         {/* Available Courses */}
         <Card>
           <CardContent className="pt-6">
-            <h4 className="text-sm font-medium mb-4">Available Courses</h4>
+            <h4 className="text-sm font-medium text-gray-900 mb-4">Available Courses</h4>
             <div className="space-y-3">
               {availableCoursesToAdd.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-600">
                   No courses available to add. Create a new course first.
                 </p>
               ) : (
                 availableCoursesToAdd.map(course => (
                   <div
                     key={course.id}
-                    className="p-4 rounded-lg border bg-card hover:border-primary/50 transition-colors"
+                    className="p-4 rounded-lg border bg-white hover:border-primary/50 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h5 className="text-sm font-medium truncate">{course.title}</h5>
+                        <h5 className="text-sm font-medium text-gray-900 truncate">{course.title}</h5>
                         {course.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                             {course.description}
                           </p>
                         )}
@@ -133,7 +133,7 @@ export default function ProtocolCoursesManager({
         {/* Protocol Courses */}
         <Card>
           <CardContent className="pt-6">
-            <h4 className="text-sm font-medium mb-4">Selected Courses</h4>
+            <h4 className="text-sm font-medium text-gray-900 mb-4">Selected Courses</h4>
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="courses">
                 {(provided) => (
@@ -143,7 +143,7 @@ export default function ProtocolCoursesManager({
                     className="space-y-3"
                   >
                     {protocolCourses.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-gray-600">
                         No courses added to this protocol yet. Add courses from the available list.
                       </p>
                     ) : (
@@ -161,11 +161,11 @@ export default function ProtocolCoursesManager({
                               className="flex items-start justify-between p-4 bg-white rounded-lg border group hover:border-primary/50 transition-colors"
                           >
                               <div className="flex-1 min-w-0">
-                                <h5 className="text-sm font-medium truncate">
+                                <h5 className="text-sm font-medium text-gray-900 truncate">
                                   {protocolCourse.course.title}
                                 </h5>
                                 {protocolCourse.course.description && (
-                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                                     {protocolCourse.course.description}
                                   </p>
                                 )}
@@ -177,7 +177,7 @@ export default function ProtocolCoursesManager({
                                     onUpdateCourse(protocolCourse.id, 'isRequired', checked)
                                   }
                                 />
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-sm text-gray-700">
                                   {protocolCourse.isRequired ? 'Required' : 'Optional'}
                                 </span>
                               </div>

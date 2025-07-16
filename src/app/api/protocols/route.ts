@@ -116,9 +116,9 @@ export async function POST(request: Request) {
             title: day.title,
             sessions: {
               create: day.sessions.map((session: any) => ({
-                sessionNumber: session.sessionNumber,
-                title: session.title,
-                description: session.description,
+                sessionNumber: session.order + 1,
+                title: session.name,
+                description: '',
                 tasks: {
                   create: session.tasks.map((task: any) => ({
                     title: task.title,

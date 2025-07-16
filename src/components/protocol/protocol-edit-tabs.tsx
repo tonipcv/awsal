@@ -48,29 +48,29 @@ export function ProtocolEditTabs({
   const [activeTab, setActiveTab] = useState('basic');
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4 mb-6">
-        <TabsList className="grid w-full grid-cols-4 gap-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 pb-4">
+        <TabsList className="grid w-full grid-cols-4 gap-4 bg-gray-100/80 p-1 rounded-xl">
           <TabsTrigger 
             value="basic" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] data-[state=active]:shadow-sm font-semibold text-gray-900 rounded-lg px-4 py-2.5"
           >
             <InformationCircleIcon className="h-4 w-4" />
             <span>Information</span>
           </TabsTrigger>
           <TabsTrigger 
             value="days" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] data-[state=active]:shadow-sm font-semibold text-gray-900 rounded-lg px-4 py-2.5"
           >
             <CalendarDaysIcon className="h-4 w-4" />
             <span>Tasks</span>
-            <Badge variant="secondary" className="bg-[#51e790] text-black text-xs">
+            <Badge variant="secondary" className="bg-[#51e790] text-gray-900 text-xs">
               {protocol.days.length}
             </Badge>
           </TabsTrigger>
           <TabsTrigger 
             value="courses" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] data-[state=active]:shadow-sm font-semibold text-gray-900 rounded-lg px-4 py-2.5"
           >
             <AcademicCapIcon className="h-4 w-4" />
             <span>Training</span>
@@ -82,7 +82,7 @@ export function ProtocolEditTabs({
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 
-            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] font-semibold"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#5154e7] data-[state=active]:shadow-sm font-semibold text-gray-900 rounded-lg px-4 py-2.5"
           >
             <Cog6ToothIcon className="h-4 w-4" />
             <span>Check-in</span>
@@ -90,7 +90,7 @@ export function ProtocolEditTabs({
         </TabsList>
       </div>
 
-      <TabsContent value="basic">
+      <TabsContent value="basic" className="bg-transparent">
         {children.basicInfo}
         <Card className="bg-white border-gray-200 shadow-lg rounded-2xl mt-6">
           <CardHeader>
@@ -114,11 +114,11 @@ export function ProtocolEditTabs({
         </Card>
       </TabsContent>
 
-      <TabsContent value="days">
+      <TabsContent value="days" className="bg-transparent">
         {children.days}
       </TabsContent>
 
-      <TabsContent value="courses">
+      <TabsContent value="courses" className="bg-transparent">
         <ProtocolCoursesManager
           protocolCourses={protocol.courses || []}
           availableCourses={availableCourses}
@@ -129,7 +129,7 @@ export function ProtocolEditTabs({
         />
       </TabsContent>
 
-      <TabsContent value="settings">
+      <TabsContent value="settings" className="bg-transparent">
         {protocolId ? (
           <CheckinQuestionsManager protocolId={protocolId} />
         ) : (
