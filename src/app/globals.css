@@ -103,3 +103,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Estilos para a coluna sticky do "hoje" no checklist */
+.sticky-today {
+  position: sticky !important;
+  left: 192px !important;
+  z-index: 20 !important;
+  background: hsl(var(--background) / 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  border-right: 1px solid hsl(var(--border) / 0.3) !important;
+}
+
+@media (max-width: 1024px) {
+  .sticky-today {
+    left: 144px !important;
+  }
+}

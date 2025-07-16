@@ -1018,6 +1018,38 @@ model VoiceNoteChecklist {
   @@map("voice_note_checklists")
 }
 
+model Habit {
+  id          String        @id @default(cuid())
+  userId      String
+  title       String
+  category    String        @default("personal")
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  progress    HabitProgress[]
+  user        User          @relation("UserHabits", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([isActive])
+  @@map("habits")
+}
+
+model HabitProgress {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      DateTime @db.Date
+  isChecked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([habitId])
+  @@index([date])
+  @@map("habit_progress")
+}
+
 model User {
   id                                                               String                      @id
   email                                                            String                      @unique
@@ -1094,6 +1126,7 @@ model User {
   lessonProgress                                                   UserLesson[]
   doctorVoiceNotes                                                 VoiceNote[]                 @relation("DoctorVoiceNotes")
   patientVoiceNotes                                                VoiceNote[]                 @relation("PatientVoiceNotes")
+  habits                                                           Habit[]                     @relation("UserHabits")
 }
 
 model clinic_subscriptions_old {
