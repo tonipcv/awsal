@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireMobileAuth, unauthorizedResponse } from '@/lib/mobile-auth';
 import { z } from 'zod';
+import { startOfMonth, endOfMonth, parseISO } from 'date-fns';
 
 const createHabitSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -19,6 +20,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
 
+    // Calcular o intervalo de datas do mês
+    let dateFilter = undefined;
+    if (month) {
+      // Converter YYYY-MM para data completa
+      const monthDate = parseISO(`${month}-01`); // Adiciona o dia 01
+      dateFilter = {
+        date: {
+          gte: startOfMonth(monthDate),
+          lt: endOfMonth(monthDate)
+        }
+      };
+    }
+
     // Buscar hábitos do usuário
     const habits = await prisma.habit.findMany({
       where: {
@@ -27,12 +41,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         progress: {
-          where: month ? {
-            date: {
-              gte: new Date(month),
-              lt: new Date(new Date(month).setMonth(new Date(month).getMonth() + 1))
-            }
-          } : undefined,
+          where: dateFilter,
           orderBy: {
             date: 'asc'
           }
@@ -54,10 +63,21 @@ export async function GET(request: NextRequest) {
       }))
     }));
 
+    // Adicionar informações de debug em desenvolvimento
+    const debug = process.env.NODE_ENV === 'development' ? {
+      monthParam: month,
+      dateFilter,
+      progressCounts: habits.map(h => ({
+        habitId: h.id,
+        progressCount: h.progress.length
+      }))
+    } : undefined;
+
     return NextResponse.json({
       success: true,
       habits: formattedHabits,
-      total: formattedHabits.length
+      total: formattedHabits.length,
+      debug
     });
   } catch (error) {
     console.error('Error in GET /api/mobile/habits:', error);
