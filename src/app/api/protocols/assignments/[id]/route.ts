@@ -2,6 +2,127 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { verifyMobileAuth } from '@/lib/mobile-auth';
+import { NextRequest } from 'next/server';
+
+// GET /api/protocols/assignments/[id] - Buscar uma atribuição específica de protocolo
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Tentar autenticação web primeiro, depois mobile
+    let userId: string | null = null;
+    
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id) {
+      userId = session.user.id;
+    } else {
+      // Tentar autenticação mobile
+      const mobileUser = await verifyMobileAuth(request);
+      if (mobileUser?.id) {
+        userId = mobileUser.id;
+      }
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { id } = params;
+
+    // Buscar a atribuição com todos os dados necessários
+    const assignment = await prisma.userProtocol.findFirst({
+      where: {
+        id: id,
+        userId: userId,
+        isActive: true
+      },
+      include: {
+        protocol: {
+          include: {
+            doctor: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true
+              }
+            },
+            days: {
+              include: {
+                sessions: {
+                  include: {
+                    tasks: {
+                      orderBy: {
+                        orderIndex: 'asc'
+                      }
+                    }
+                  },
+                  orderBy: {
+                    sessionNumber: 'asc'
+                  }
+                }
+              },
+              orderBy: {
+                dayNumber: 'asc'
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!assignment) {
+      return NextResponse.json({ error: 'Protocolo não encontrado ou acesso negado' }, { status: 404 });
+    }
+
+    // Buscar prescrição ativa se existir
+    const prescription = await prisma.protocolPrescription.findFirst({
+      where: {
+        protocolId: assignment.protocolId,
+        userId: userId,
+        status: {
+          in: ['PRESCRIBED', 'ACTIVE', 'PAUSED']
+        }
+      },
+      select: {
+        id: true,
+        status: true,
+        actualStartDate: true,
+        currentDay: true,
+        plannedEndDate: true
+      }
+    });
+
+    // Transformar dados para o formato esperado pelo frontend
+    const transformedAssignment = {
+      ...assignment,
+      protocol: {
+        ...assignment.protocol,
+        days: assignment.protocol.days.map(day => ({
+          ...day,
+          sessions: day.sessions.map(session => ({
+            ...session,
+            name: session.title,
+            order: session.sessionNumber - 1,
+            tasks: session.tasks.map(task => ({
+              ...task,
+              order: task.orderIndex
+            }))
+          }))
+        })),
+        duration: assignment.protocol.days.length
+      },
+      prescription
+    };
+
+    return NextResponse.json(transformedAssignment);
+  } catch (error) {
+    console.error('Error fetching protocol assignment:', error);
+    return NextResponse.json({ error: 'Erro ao buscar protocolo' }, { status: 500 });
+  }
+}
 
 // PUT /api/protocols/assignments/[id] - Atualizar status da atribuição de protocolo
 export async function PUT(
