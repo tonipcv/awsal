@@ -137,25 +137,25 @@ export async function POST(request: Request) {
     }
 
     // Verify user has access to this protocol
-    const userProtocol = await prisma.userProtocol.findFirst({
+    const protocolPrescription = await prisma.protocolPrescription.findFirst({
       where: {
-        userId: session.user.id,
-        protocolId: protocolId,
-        isActive: true
+        user_id: session.user.id,
+        protocol_id: protocolId,
+        status: { not: 'ABANDONED' }
       },
       include: {
         protocol: true
       }
     });
 
-    if (!userProtocol) {
+    if (!protocolPrescription) {
       return NextResponse.json({ 
         error: 'Acesso negado a este protocolo' 
       }, { status: 403 });
     }
 
     // Validate day number - handle null duration
-    const protocolDuration = userProtocol.protocol.duration || 30;
+    const protocolDuration = protocolPrescription.protocol.duration || 30;
     if (dayNumber < 1 || dayNumber > protocolDuration) {
       return NextResponse.json({ 
         error: 'Número do dia inválido' 

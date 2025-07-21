@@ -34,53 +34,41 @@ model Session {
 }
 
 model Protocol {
-  id                   String                  @id @default(cuid())
-  name                 String
-  description          String?
-  doctorId             String
-  isActive             Boolean                 @default(true)
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @default(now()) @updatedAt
+  id                     String                  @id @default(cuid())
+  name                   String
+  description           String?
+  doctor_id             String
+  is_active             Boolean                 @default(true)
+  created_at            DateTime                @default(now())
+  updated_at            DateTime                @default(now()) @updatedAt
   duration             Int?                    @default(30)
-  modalTitle           String?
-  modalVideoUrl        String?
-  modalDescription     String?
-  modalButtonText      String?                 @default("Saber mais")
-  modalButtonUrl       String?
-  showDoctorInfo       Boolean?                @default(false)
-  isTemplate           Boolean?                @default(false)
-  coverImage           String?
+  modal_title           String?
+  modal_video_url       String?
+  modal_description     String?
+  modal_button_text     String?                 @default("Saber mais")
+  modal_button_url      String?
+  show_doctor_info      Boolean?                @default(false)
+  is_template           Boolean?                @default(false)
+  cover_image           String?
   consultation_date    DateTime?               @db.Timestamp(6)
-  onboardingTemplateId String?
-  is_recurring         Boolean?                @default(false)
-  recurring_interval   String?                 @default("DAILY") @db.VarChar(10)
-  recurring_days       Int[]                   @default([])
-  available_from       DateTime?               @db.Timestamp(6)
-  available_until      DateTime?               @db.Timestamp(6)
-  isRecurring          Boolean?                @default(false)
-  recurringInterval    String?                 @default("DAILY") @db.VarChar(255)
-  recurringDays        Int[]                   @default([])
-  availableFrom        DateTime?               @db.Timestamptz(6)
-  availableUntil       DateTime?               @db.Timestamptz(6)
+  onboarding_template_id String?
   schedule             Json?                   @default("{}")
-  lastScheduleUpdate   DateTime?               @default(now()) @db.Timestamptz(6)
-  checkinQuestions     DailyCheckinQuestion[]
-  checkinResponses     DailyCheckinResponse[]
+  last_schedule_update DateTime?               @default(now()) @db.Timestamptz(6)
+  checkin_questions     DailyCheckinQuestion[]
+  checkin_responses     DailyCheckinResponse[]
   days                 ProtocolDay[]
-  ProtocolDayProgress  ProtocolDayProgress[]
-  symptomReports       SymptomReport[]
-  assignments          UserProtocol[]
-  defaultFor           DoctorDefaultProtocol[]
+  symptom_reports       SymptomReport[]
+  default_for           DoctorDefaultProtocol[]
   courses              ProtocolCourse[]
   protocol_faqs        ProtocolFAQ[]
   prescriptions        ProtocolPrescription[]
   protocol_products    protocol_products[]
-  doctor               User                    @relation("DoctorProtocols", fields: [doctorId], references: [id])
-  onboardingTemplate   OnboardingTemplate?     @relation(fields: [onboardingTemplateId], references: [id])
+  doctor               User                    @relation("DoctorProtocols", fields: [doctor_id], references: [id])
+  onboarding_template   OnboardingTemplate?     @relation(fields: [onboarding_template_id], references: [id])
   referrals            referrals[]
 
-  @@index([doctorId])
-  @@index([onboardingTemplateId])
+  @@index([doctor_id])
+  @@index([onboarding_template_id])
   @@map("protocols")
 }
 
@@ -126,9 +114,8 @@ model ProtocolTask {
   modalButtonText   String?
   modalButtonUrl    String?
   ProtocolContent   ProtocolContent[]
-  progress          ProtocolDayProgress[]
+  progress          ProtocolTaskProgress[]
   protocolSession   ProtocolSession         @relation(fields: [protocolSessionId], references: [id], onDelete: Cascade)
-  progressV2        ProtocolDayProgressV2[]
 }
 
 model ProtocolContent {
@@ -143,43 +130,42 @@ model ProtocolContent {
 }
 
 model ProtocolPrescription {
-  id                        String                  @id @default(cuid())
-  protocolId                String
-  userId                    String
-  prescribedBy              String
-  prescribedAt              DateTime                @default(now())
-  plannedStartDate          DateTime
-  actualStartDate           DateTime?
-  plannedEndDate            DateTime
-  actualEndDate             DateTime?
-  status                    PrescriptionStatus      @default(PRESCRIBED)
-  currentDay                Int                     @default(1)
-  adherenceRate             Float?
-  lastProgressDate          DateTime?
-  pausedAt                  DateTime?
-  pauseReason               String?
-  abandonedAt               DateTime?
-  abandonReason             String?
-  consultationDate          DateTime?               @db.Timestamptz(6)
-  onboardingLink            String?                 @unique
-  preConsultationTemplateId String?
-  preConsultationStatus     String?
-  createdAt                 DateTime                @default(now())
-  updatedAt                 DateTime                @default(now()) @updatedAt
-  protocol_consultations    protocol_consultations?
-  progressV2                ProtocolDayProgressV2[]
-  doctor                    User                    @relation("DoctorPrescriptions", fields: [prescribedBy], references: [id], onUpdate: NoAction)
-  protocol                  Protocol                @relation(fields: [protocolId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  patient                   User                    @relation("PatientPrescriptions", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                          String                  @id @default(cuid())
+  protocol_id                 String
+  user_id                     String
+  prescribed_by               String
+  prescribed_at               DateTime                @default(now())
+  planned_start_date          DateTime
+  actual_start_date          DateTime?
+  planned_end_date           DateTime
+  actual_end_date            DateTime?
+  status                     PrescriptionStatus      @default(PRESCRIBED)
+  current_day                Int                     @default(1)
+  adherence_rate             Float?
+  last_progress_date         DateTime?
+  paused_at                  DateTime?
+  pause_reason               String?
+  abandoned_at               DateTime?
+  abandon_reason             String?
+  consultation_date          DateTime?               @db.Timestamptz(6)
+  onboarding_link            String?                 @unique
+  pre_consultation_template_id String?
+  pre_consultation_status    String?
+  created_at                 DateTime                @default(now())
+  updated_at                 DateTime                @default(now()) @updatedAt
+  progress                   ProtocolTaskProgress[]
+  doctor                     User                    @relation("DoctorPrescriptions", fields: [prescribed_by], references: [id], onUpdate: NoAction)
+  protocol                   Protocol                @relation(fields: [protocol_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  patient                    User                    @relation("PatientPrescriptions", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([userId, protocolId])
-  @@index([userId])
-  @@index([prescribedBy])
+  @@unique([user_id, protocol_id])
+  @@index([user_id])
+  @@index([prescribed_by])
   @@index([status])
   @@map("protocol_prescriptions")
 }
 
-model ProtocolDayProgressV2 {
+model ProtocolTaskProgress {
   id             String               @id @default(cuid())
   prescriptionId String
   dayNumber      Int
@@ -193,53 +179,11 @@ model ProtocolDayProgressV2 {
   prescription   ProtocolPrescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   protocolTask   ProtocolTask?        @relation(fields: [protocolTaskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([prescriptionId, protocolTaskId, scheduledDate], map: "protocol_day_progress_v2_prescriptionId_protocolTaskId_schedul_")
+  @@unique([prescriptionId, protocolTaskId, scheduledDate], map: "protocol_task_progress_unique")
   @@index([prescriptionId])
   @@index([status])
   @@index([scheduledDate])
-  @@map("protocol_day_progress_v2")
-}
-
-model UserProtocol {
-  id                        String    @id @default(cuid())
-  userId                    String
-  protocolId                String
-  startDate                 DateTime  @default(now())
-  endDate                   DateTime?
-  status                    String    @default("ACTIVE")
-  currentDay                Int       @default(1)
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @default(now()) @updatedAt
-  isActive                  Boolean?  @default(true)
-  consultationDate          DateTime? @db.Timestamptz(6)
-  preConsultationTemplateId String?
-  preConsultationStatus     String?
-  onboardingLink            String?   @unique
-  protocol                  Protocol  @relation(fields: [protocolId], references: [id], onDelete: Cascade)
-  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, protocolId])
-  @@map("UserProtocol")
-}
-
-model ProtocolDayProgress {
-  id             String        @id @default(cuid())
-  userId         String
-  protocolId     String
-  dayNumber      Int
-  completed      Boolean       @default(false)
-  completedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @default(now()) @updatedAt
-  protocolTaskId String?
-  date           DateTime?
-  isCompleted    Boolean?      @default(false)
-  notes          String?
-  protocols      Protocol      @relation(fields: [protocolId], references: [id], onDelete: Cascade)
-  protocolTask   ProtocolTask? @relation(fields: [protocolTaskId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, protocolTaskId, date])
+  @@map("protocol_task_progress")
 }
 
 model VerificationToken {
@@ -361,31 +305,6 @@ model protocol_products {
   @@unique([protocolId, productId])
 }
 
-model SubscriptionPlan {
-  id                       String                     @id @default(cuid())
-  name                     String
-  description              String?
-  price                    Float
-  billingCycle             String                     @default("MONTHLY")
-  maxDoctors               Int                        @default(1)
-  features                 String?
-  isActive                 Boolean                    @default(true)
-  createdAt                DateTime                   @default(now())
-  updatedAt                DateTime                   @default(now()) @updatedAt
-  maxPatients              Int?                       @default(10)
-  maxProtocols             Int?                       @default(5)
-  maxCourses               Int?                       @default(3)
-  maxProducts              Int?                       @default(20)
-  isDefault                Boolean?                   @default(false)
-  trialDays                Int?                       @default(7)
-  clinic_subscriptions_old clinic_subscriptions_old[]
-  doctor_subscriptions_old doctor_subscriptions_old[]
-  subscriptions_old        subscriptions_old[]
-  unified_subscriptions    unified_subscriptions[]
-
-  @@map("subscription_plans")
-}
-
 model SystemMetrics {
   id                  String   @id(map: "SystemMetrics_pkey") @default(cuid())
   date                DateTime @unique(map: "SystemMetrics_date_key")
@@ -425,9 +344,9 @@ model Clinic {
   slug                       String?                     @unique @db.VarChar(255)
   onboardingTemplates        OnboardingTemplate[]
   members                    ClinicMember[]
-  clinic_subscriptions_old   clinic_subscriptions_old?
   owner                      User                        @relation("ClinicOwner", fields: [ownerId], references: [id])
   doctorPatientRelationships DoctorPatientRelationship[]
+  unified_subscriptions      unified_subscriptions[]     @relation("ClinicSubscriptions")
 
   @@index([ownerId])
   @@index([slug])
@@ -687,8 +606,6 @@ model DoctorFAQ {
 
   @@index([doctorId, isActive])
   @@index([category])
-  @@index([doctorId])
-  @@index([isActive])
 }
 
 model PatientAIConversation {
@@ -917,8 +834,6 @@ model DoctorDefaultProtocol {
   @@unique([doctorId, protocolId])
   @@index([doctorId])
   @@index([protocolId])
-  @@index([doctorId], map: "idx_doctor_default_protocols_doctor_id")
-  @@index([protocolId], map: "idx_doctor_default_protocols_protocol_id")
   @@map("doctor_default_protocols")
 }
 
@@ -1051,115 +966,79 @@ model HabitProgress {
 }
 
 model User {
-  id                                                               String                      @id
-  email                                                            String                      @unique
-  name                                                             String?
-  image                                                            String?
-  role                                                             String                      @default("PATIENT")
-  isActive                                                         Boolean                     @default(true)
-  createdAt                                                        DateTime                    @default(now())
-  updatedAt                                                        DateTime                    @default(now())
-  emailVerified                                                    DateTime?
-  password                                                         String?
-  resetToken                                                       String?
-  resetTokenExpiry                                                 DateTime?
-  verificationCode                                                 String?
-  verificationCodeExpiry                                           DateTime?
-  doctorId                                                         String?
-  referralCode                                                     String?                     @unique
-  phone                                                            String?
-  birthDate                                                        DateTime?                   @db.Date
-  gender                                                           String?
-  address                                                          String?
-  emergencyContact                                                 String?
-  emergencyPhone                                                   String?
-  medicalHistory                                                   String?
-  allergies                                                        String?
-  medications                                                      String?
-  notes                                                            String?
-  googleReviewLink                                                 String?
-  aiAssistantSettings                                              AIAssistantSettings?        @relation("DoctorAISettings")
-  accounts                                                         Account[]
-  checkinResponses                                                 DailyCheckinResponse[]
-  doctorFAQs                                                       DoctorFAQ[]                 @relation("DoctorFAQs")
-  onboardingResponses                                              OnboardingResponse[]
-  doctorTemplates                                                  OnboardingTemplate[]        @relation("DoctorTemplates")
-  doctorConversations                                              PatientAIConversation[]     @relation("DoctorConversations")
-  patientConversations                                             PatientAIConversation[]     @relation("PatientConversations")
-  reviewedMessages                                                 PatientAIMessage[]          @relation("MessageReviewer")
-  protocolProgress                                                 ProtocolDayProgress[]
-  sessions                                                         Session[]
-  reviewedSymptomReports                                           SymptomReport[]             @relation("SymptomReportReviewer")
-  symptomReports                                                   SymptomReport[]
-  User                                                             User?                       @relation("UserToUser", fields: [doctorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  other_User                                                       User[]                      @relation("UserToUser")
-  assignedProtocols                                                UserProtocol[]
-  clinicMemberships                                                ClinicMember[]
-  clinic_referrals                                                 ClinicReferral[]
-  ownedClinics                                                     Clinic[]                    @relation("ClinicOwner")
-  consultationForm                                                 ConsultationForm?           @relation("DoctorConsultationForms")
-  consultation_submissions_consultation_submissions_doctorIdToUser ConsultationSubmission[]    @relation("consultation_submissions_doctorIdToUser")
-  convertedConsultations                                           ConsultationSubmission[]    @relation("ConvertedConsultations")
-  createdCourses                                                   Course[]                    @relation("DoctorCourses")
-  defaultProtocols                                                 DoctorDefaultProtocol[]
-  doctorRelationships                                              DoctorPatientRelationship[] @relation("DoctorPatients")
-  patientRelationships                                             DoctorPatientRelationship[] @relation("PatientDoctors")
-  doctor_subscriptions_old                                         doctor_subscriptions_old?
-  leads                                                            leads[]
-  patient_documents_patient_documents_doctor_idToUser              patient_documents[]         @relation("patient_documents_doctor_idToUser")
-  patient_documents_patient_documents_patient_idToUser             patient_documents[]         @relation("patient_documents_patient_idToUser")
-  createdProducts                                                  products[]                  @relation("DoctorProducts")
-  prescribedProtocols                                              ProtocolPrescription[]      @relation("DoctorPrescriptions")
-  patientPrescriptions                                             ProtocolPrescription[]      @relation("PatientPrescriptions")
-  createdProtocols                                                 Protocol[]                  @relation("DoctorProtocols")
-  credits                                                          ReferralCredit[]            @relation("UserCredits")
-  formSettings                                                     ReferralFormSettings?       @relation("DoctorFormSettings")
-  convertedFromLead                                                ReferralLead[]              @relation("ConvertedFromLead")
-  leadsReceived                                                    ReferralLead[]              @relation("DoctorLeads")
-  referral_leads_referral_leads_referrerIdToUser                   ReferralLead[]              @relation("referral_leads_referrerIdToUser")
-  offeredRewards                                                   ReferralReward[]            @relation("DoctorRewards")
-  referrals_referrals_doctorIdToUser                               referrals[]                 @relation("referrals_doctorIdToUser")
-  referrals_referrals_patientIdToUser                              referrals[]                 @relation("referrals_patientIdToUser")
-  redemptions                                                      RewardRedemption[]          @relation("UserRedemptions")
-  subscriptions_old                                                subscriptions_old?
-  assignedCourses                                                  UserCourse[]
-  lessonProgress                                                   UserLesson[]
-  doctorVoiceNotes                                                 VoiceNote[]                 @relation("DoctorVoiceNotes")
-  patientVoiceNotes                                                VoiceNote[]                 @relation("PatientVoiceNotes")
-  habits                                                           Habit[]                     @relation("UserHabits")
-}
-
-model clinic_subscriptions_old {
-  id                 String           @id(map: "clinic_subscriptions_pkey")
-  clinicId           String           @unique(map: "clinic_subscriptions_clinicId_key")
-  planId             String
-  status             String           @default("TRIAL")
-  maxDoctors         Int              @default(1)
-  startDate          DateTime         @default(now())
-  endDate            DateTime?
-  trialEndDate       DateTime?
-  autoRenew          Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @default(now())
-  clinics            Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade, map: "clinic_subscriptions_clinicId_fkey")
-  subscription_plans SubscriptionPlan @relation(fields: [planId], references: [id], map: "clinic_subscriptions_planId_fkey")
-}
-
-model doctor_subscriptions_old {
-  id                 String           @id(map: "DoctorSubscription_pkey")
-  doctorId           String           @unique(map: "DoctorSubscription_userId_key")
-  planId             String
-  status             String           @default("TRIAL")
-  startDate          DateTime         @default(now())
-  endDate            DateTime?
-  trialEndDate       DateTime?
-  autoRenew          Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @default(now())
-  lastPaymentDate    DateTime?        @db.Timestamp(6)
-  nextPaymentDate    DateTime?        @db.Timestamp(6)
-  subscription_plans SubscriptionPlan @relation(fields: [planId], references: [id], map: "DoctorSubscription_planId_fkey")
-  User               User             @relation(fields: [doctorId], references: [id], onDelete: Cascade, map: "DoctorSubscription_userId_fkey")
+  id                       String                      @id
+  email                    String                      @unique
+  name                     String?
+  image                    String?
+  role                     String                      @default("PATIENT")
+  is_active                Boolean                     @default(true)
+  created_at               DateTime                    @default(now())
+  updated_at               DateTime                    @default(now()) @updatedAt
+  email_verified           DateTime?
+  password                 String?
+  reset_token              String?
+  reset_token_expiry       DateTime?
+  verification_code        String?
+  verification_code_expiry DateTime?
+  doctor_id                String?
+  referral_code            String?                     @unique
+  phone                    String?
+  birth_date               DateTime?                   @db.Date
+  gender                   String?
+  address                  String?
+  emergency_contact        String?
+  emergency_phone          String?
+  medical_history          String?
+  allergies                String?
+  medications              String?
+  notes                    String?
+  google_review_link       String?
+  ai_assistant_settings    AIAssistantSettings?        @relation("DoctorAISettings")
+  accounts                 Account[]
+  checkin_responses        DailyCheckinResponse[]
+  doctor_faqs              DoctorFAQ[]                 @relation("DoctorFAQs")
+  onboarding_responses     OnboardingResponse[]
+  doctor_templates         OnboardingTemplate[]        @relation("DoctorTemplates")
+  doctor_conversations     PatientAIConversation[]     @relation("DoctorConversations")
+  patient_conversations    PatientAIConversation[]     @relation("PatientConversations")
+  reviewed_messages        PatientAIMessage[]          @relation("MessageReviewer")
+  sessions                 Session[]
+  reviewed_symptom_reports SymptomReport[]             @relation("SymptomReportReviewer")
+  symptom_reports          SymptomReport[]
+  User                     User?                       @relation("UserToUser", fields: [doctor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  other_users              User[]                      @relation("UserToUser")
+  clinic_memberships       ClinicMember[]
+  clinic_referrals         ClinicReferral[]
+  owned_clinics            Clinic[]                    @relation("ClinicOwner")
+  consultation_form        ConsultationForm?           @relation("DoctorConsultationForms")
+  consultation_submissions ConsultationSubmission[]    @relation("consultation_submissions_doctorIdToUser")
+  converted_consultations  ConsultationSubmission[]    @relation("ConvertedConsultations")
+  created_courses          Course[]                    @relation("DoctorCourses")
+  default_protocols        DoctorDefaultProtocol[]
+  doctor_relationships     DoctorPatientRelationship[] @relation("DoctorPatients")
+  patient_relationships    DoctorPatientRelationship[] @relation("PatientDoctors")
+  leads                    leads[]
+  patient_documents_doctor patient_documents[]         @relation("patient_documents_doctor_idToUser")
+  patient_documents_patient patient_documents[]         @relation("patient_documents_patient_idToUser")
+  created_products         products[]                  @relation("DoctorProducts")
+  prescribed_protocols     ProtocolPrescription[]      @relation("DoctorPrescriptions")
+  patient_prescriptions    ProtocolPrescription[]      @relation("PatientPrescriptions")
+  created_protocols        Protocol[]                  @relation("DoctorProtocols")
+  credits                  ReferralCredit[]            @relation("UserCredits")
+  form_settings           ReferralFormSettings?       @relation("DoctorFormSettings")
+  converted_from_lead     ReferralLead[]              @relation("ConvertedFromLead")
+  leads_received          ReferralLead[]              @relation("DoctorLeads")
+  referral_leads          ReferralLead[]              @relation("referral_leads_referrerIdToUser")
+  offered_rewards         ReferralReward[]            @relation("DoctorRewards")
+  referrals_doctor        referrals[]                 @relation("referrals_doctorIdToUser")
+  referrals_patient       referrals[]                 @relation("referrals_patientIdToUser")
+  redemptions             RewardRedemption[]          @relation("UserRedemptions")
+  assigned_courses        UserCourse[]
+  lesson_progress         UserLesson[]
+  doctor_voice_notes      VoiceNote[]                 @relation("DoctorVoiceNotes")
+  patient_voice_notes     VoiceNote[]                 @relation("PatientVoiceNotes")
+  habits                  Habit[]                     @relation("UserHabits")
+  unified_subscriptions   unified_subscriptions[]     @relation("UserSubscriptions")
 }
 
 model patient_document_metadata {
@@ -1193,56 +1072,6 @@ model patient_documents {
 
   @@index([doctor_id], map: "idx_patient_documents_doctor_id")
   @@index([patient_id], map: "idx_patient_documents_patient_id")
-}
-
-model protocol_consultations {
-  id                           String                @id
-  prescription_id              String?               @unique
-  consultation_date            DateTime?             @db.Timestamptz(6)
-  pre_consultation_template_id String?
-  pre_consultation_status      String?
-  onboarding_link              String?               @unique
-  created_at                   DateTime              @default(now()) @db.Timestamptz(6)
-  updated_at                   DateTime              @default(now()) @db.Timestamptz(6)
-  protocol_prescriptions       ProtocolPrescription? @relation(fields: [prescription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model subscriptions_old {
-  id                 String           @id(map: "subscriptions_pkey")
-  userId             String           @unique(map: "subscriptions_userId_key")
-  planId             String
-  status             String           @default("TRIAL")
-  startDate          DateTime         @default(now())
-  endDate            DateTime?
-  trialEndDate       DateTime?
-  autoRenew          Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @default(now())
-  subscription_plans SubscriptionPlan @relation(fields: [planId], references: [id], map: "subscriptions_planId_fkey")
-  User               User             @relation(fields: [userId], references: [id], onDelete: Cascade, map: "subscriptions_userId_fkey")
-}
-
-model unified_subscriptions {
-  id                 String            @id
-  type               subscription_type
-  subscriber_id      String
-  plan_id            String
-  status             String            @default("TRIAL")
-  start_date         DateTime          @default(now()) @db.Timestamptz(6)
-  end_date           DateTime?         @db.Timestamptz(6)
-  trial_end_date     DateTime?         @db.Timestamptz(6)
-  auto_renew         Boolean           @default(true)
-  max_doctors        Int?
-  last_payment_date  DateTime?         @db.Timestamptz(6)
-  next_payment_date  DateTime?         @db.Timestamptz(6)
-  created_at         DateTime          @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
-  subscription_plans SubscriptionPlan  @relation(fields: [plan_id], references: [id], map: "fk_unified_subscriptions_plan")
-
-  @@unique([subscriber_id, type], map: "idx_unified_subscriptions_subscriber_type")
-  @@index([status], map: "idx_unified_subscriptions_status")
-  @@index([subscriber_id], map: "idx_unified_subscriptions_subscriber")
-  @@index([type], map: "idx_unified_subscriptions_type")
 }
 
 enum PrescriptionStatus {
@@ -1279,6 +1108,53 @@ enum VoiceNoteStatus {
   TRANSCRIBED
   ANALYZED
   ERROR
+}
+
+model SubscriptionPlan {
+  id                    String                  @id @default(cuid())
+  name                  String
+  description           String?
+  price                 Float
+  billingCycle         String                  @default("MONTHLY")
+  maxDoctors           Int                     @default(1)
+  features             String?
+  isActive             Boolean                 @default(true)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @default(now()) @updatedAt
+  maxPatients          Int?                    @default(10)
+  maxProtocols         Int?                    @default(5)
+  maxCourses           Int?                    @default(3)
+  maxProducts          Int?                    @default(20)
+  isDefault            Boolean?                @default(false)
+  trialDays            Int?                    @default(7)
+  unified_subscriptions unified_subscriptions[]
+
+  @@map("subscription_plans")
+}
+
+model unified_subscriptions {
+  id                 String            @id
+  type               subscription_type
+  subscriber_id      String
+  plan_id            String
+  status             String            @default("TRIAL")
+  start_date         DateTime          @default(now()) @db.Timestamptz(6)
+  end_date           DateTime?         @db.Timestamptz(6)
+  trial_end_date     DateTime?         @db.Timestamptz(6)
+  auto_renew         Boolean           @default(true)
+  max_doctors        Int?
+  last_payment_date  DateTime?         @db.Timestamptz(6)
+  next_payment_date  DateTime?         @db.Timestamptz(6)
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  subscription_plans SubscriptionPlan  @relation(fields: [plan_id], references: [id], map: "fk_unified_subscriptions_plan")
+  user               User?             @relation("UserSubscriptions", fields: [subscriber_id], references: [id], onDelete: Cascade, map: "fk_unified_subscriptions_user")
+  clinic             Clinic?           @relation("ClinicSubscriptions", fields: [subscriber_id], references: [id], onDelete: Cascade, map: "fk_unified_subscriptions_clinic")
+
+  @@unique([subscriber_id, type], map: "idx_unified_subscriptions_subscriber_type")
+  @@index([status])
+  @@index([subscriber_id])
+  @@index([type])
 }
 
 enum subscription_type {
