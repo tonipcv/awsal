@@ -249,17 +249,6 @@ export default function Navigation() {
       ]
     },
     {
-      title: "Clinic",
-      items: [
-        {
-          href: '/clinic',
-          label: 'My Team',
-          icon: BuildingOfficeIcon,
-          description: 'Manage clinic and team'
-        }
-      ]
-    },
-    {
       title: "Other",
       items: [
 

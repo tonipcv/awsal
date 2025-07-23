@@ -275,21 +275,21 @@ export default function DoctorReferralsPage() {
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
                 Referrals Management
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-sm text-gray-600">
                 Manage referral leads and track conversions
               </p>
             </div>
             <div className="flex gap-3">
-              <Button asChild className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl h-12 px-6 font-semibold">
+              <Button asChild className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl h-12 px-6 text-sm font-semibold">
                 <Link href="/doctor/pipeline">
                   <ChartBarIcon className="h-4 w-4" />
                   <span>Pipeline</span>
                 </Link>
               </Button>
-              <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 font-semibold">
+              <Button onClick={copyReferralLink} className="flex items-center space-x-2 bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-12 px-6 text-sm font-semibold">
                 <Share2 className="h-4 w-4" />
                 <span>Copy Referral Link</span>
               </Button>
@@ -300,7 +300,7 @@ export default function DoctorReferralsPage() {
           <div className="flex space-x-1 mb-8">
             <button
               onClick={() => setActiveTab('active')}
-              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+              className={`px-6 py-3 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'active'
                   ? 'bg-[#5154e7] text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -310,7 +310,7 @@ export default function DoctorReferralsPage() {
             </button>
             <button
               onClick={() => setActiveTab('rejected')}
-              className={`px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
+              className={`px-6 py-3 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === 'rejected'
                   ? 'bg-[#5154e7] text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -332,8 +332,8 @@ export default function DoctorReferralsPage() {
                           <Clock className="h-6 w-6 text-yellow-600" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-semibold text-gray-600">Pending</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+                          <p className="text-xs font-semibold text-gray-600">Pending</p>
+                          <p className="text-xl font-bold text-gray-900">{stats.pending}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -346,8 +346,8 @@ export default function DoctorReferralsPage() {
                           <UserPlus className="h-6 w-6 text-blue-600" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-semibold text-gray-600">Contacted</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.contacted}</p>
+                          <p className="text-xs font-semibold text-gray-600">Contacted</p>
+                          <p className="text-xl font-bold text-gray-900">{stats.contacted}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -360,8 +360,8 @@ export default function DoctorReferralsPage() {
                           <CheckCircle className="h-6 w-6 text-green-600" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-semibold text-gray-600">Converted</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.converted}</p>
+                          <p className="text-xs font-semibold text-gray-600">Converted</p>
+                          <p className="text-xl font-bold text-gray-900">{stats.converted}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -374,8 +374,8 @@ export default function DoctorReferralsPage() {
                           <TrendingUp className="h-6 w-6 text-purple-600" />
                         </div>
                         <div className="ml-4">
-                          <p className="text-sm font-semibold text-gray-600">Conversion Rate</p>
-                          <p className="text-2xl font-bold text-gray-900">
+                          <p className="text-xs font-semibold text-gray-600">Conversion Rate</p>
+                          <p className="text-xl font-bold text-gray-900">
                             {activeStats.total > 0 ? Math.round((stats.converted / activeStats.total) * 100) : 0}%
                           </p>
                         </div>
@@ -391,8 +391,8 @@ export default function DoctorReferralsPage() {
                         <XCircle className="h-6 w-6 text-red-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-semibold text-gray-600">Rejected</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
+                        <p className="text-xs font-semibold text-gray-600">Rejected</p>
+                        <p className="text-xl font-bold text-gray-900">{stats.rejected}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -404,10 +404,10 @@ export default function DoctorReferralsPage() {
           {/* Referrals Table */}
           <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-bold text-gray-900">
+              <CardTitle className="text-lg font-bold text-gray-900">
                 {activeTab === 'active' ? 'Active Referrals' : 'Rejected Referrals'}
               </CardTitle>
-              <CardDescription className="text-gray-600 font-medium">
+              <CardDescription className="text-sm text-gray-600">
                 {activeTab === 'active' 
                   ? 'Referrals that are pending, contacted, or converted'
                   : 'Referrals that have been rejected'
@@ -418,12 +418,12 @@ export default function DoctorReferralsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-gray-900 font-semibold">Name</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Email</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Referred by</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Status</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Date</TableHead>
-                    <TableHead className="text-gray-900 font-semibold">Actions</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Name</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Email</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Referred by</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Status</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Date</TableHead>
+                    <TableHead className="text-sm font-semibold text-gray-900">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -431,21 +431,21 @@ export default function DoctorReferralsPage() {
                     const StatusIcon = statusConfig[lead.status as keyof typeof statusConfig]?.icon || Clock;
                     return (
                       <TableRow key={lead.id}>
-                        <TableCell className="font-semibold text-gray-900">{lead.name}</TableCell>
-                        <TableCell className="text-gray-700 font-medium">{lead.email}</TableCell>
+                        <TableCell className="text-sm font-semibold text-gray-900">{lead.name}</TableCell>
+                        <TableCell className="text-sm text-gray-700">{lead.email}</TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-semibold text-gray-900">{lead.referrer.name}</p>
-                            <p className="text-sm text-gray-500 font-medium">{lead.referrer.email}</p>
+                            <p className="text-sm font-semibold text-gray-900">{lead.referrer.name}</p>
+                            <p className="text-xs text-gray-500">{lead.referrer.email}</p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${statusConfig[lead.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'} rounded-lg px-3 py-1 font-medium`}>
+                          <Badge className={`${statusConfig[lead.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-800'} rounded-lg px-3 py-1 text-xs font-medium`}>
                             <StatusIcon className="h-3 w-3 mr-1" />
                             {statusConfig[lead.status as keyof typeof statusConfig]?.label || lead.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gray-700 font-medium">
+                        <TableCell className="text-sm text-gray-700">
                           {new Date(lead.createdAt).toLocaleDateString('en-US')}
                         </TableCell>
                         <TableCell>
@@ -455,7 +455,7 @@ export default function DoctorReferralsPage() {
                                 variant="outline" 
                                 size="sm"
                                 onClick={() => openUpdateDialog(lead)}
-                                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-9 px-3 font-semibold"
+                                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-9 px-3 text-xs font-semibold"
                               >
                                 <Edit className="h-4 w-4 mr-1" />
                                 Manage
@@ -463,25 +463,25 @@ export default function DoctorReferralsPage() {
                             </DialogTrigger>
                             <DialogContent className="bg-white rounded-2xl">
                               <DialogHeader>
-                                <DialogTitle className="text-xl font-bold text-gray-900">Manage Referral</DialogTitle>
-                                <DialogDescription className="text-gray-600 font-medium">
+                                <DialogTitle className="text-lg font-bold text-gray-900">Manage Referral</DialogTitle>
+                                <DialogDescription className="text-sm text-gray-600">
                                   Update the status and add notes about this referral
                                 </DialogDescription>
                               </DialogHeader>
                               
                               <div className="space-y-6">
                                 <div>
-                                  <Label className="text-gray-900 font-semibold">Referral Data</Label>
+                                  <Label className="text-sm font-semibold text-gray-900">Referral Data</Label>
                                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mt-2">
-                                    <p className="text-gray-900 font-medium"><strong>Name:</strong> {selectedLead?.name}</p>
-                                    <p className="text-gray-900 font-medium"><strong>Email:</strong> {selectedLead?.email}</p>
-                                    <p className="text-gray-900 font-medium"><strong>Phone:</strong> {selectedLead?.phone || 'Not provided'}</p>
-                                    <p className="text-gray-900 font-medium"><strong>Referred by:</strong> {selectedLead?.referrer.name}</p>
+                                    <p className="text-sm text-gray-900"><strong>Name:</strong> {selectedLead?.name}</p>
+                                    <p className="text-sm text-gray-900"><strong>Email:</strong> {selectedLead?.email}</p>
+                                    <p className="text-sm text-gray-900"><strong>Phone:</strong> {selectedLead?.phone || 'Not provided'}</p>
+                                    <p className="text-sm text-gray-900"><strong>Referred by:</strong> {selectedLead?.referrer.name}</p>
                                   </div>
                                 </div>
 
                                 <div>
-                                  <Label htmlFor="status" className="text-gray-900 font-semibold">Status</Label>
+                                  <Label htmlFor="status" className="text-sm font-semibold text-gray-900">Status</Label>
                                   <Select value={updateForm.status} onValueChange={(value) => setUpdateForm(prev => ({ ...prev, status: value }))}>
                                     <SelectTrigger className="mt-2 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 rounded-xl h-10 font-medium">
                                       <SelectValue placeholder="Select status" />
@@ -496,7 +496,7 @@ export default function DoctorReferralsPage() {
                                 </div>
 
                                 <div>
-                                  <Label htmlFor="notes" className="text-gray-900 font-semibold">Notes</Label>
+                                  <Label htmlFor="notes" className="text-sm font-semibold text-gray-900">Notes</Label>
                                   <Textarea
                                     id="notes"
                                     value={updateForm.notes}

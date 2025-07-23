@@ -187,21 +187,11 @@ export default function ProtocolsPage() {
                 Protocols
               </h1>
               <p className="text-gray-600 font-small">
-                Manage your protocols and templates
+                Manage your protocols
               </p>
             </div>
             
             <div className="flex gap-3">
-              <Button 
-                asChild
-                variant="outline"
-                className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-6 shadow-md font-semibold"
-              >
-                <Link href="/doctor/templates">
-                  <DocumentTextIcon className="h-4 w-4 mr-2" />
-                  Templates
-                </Link>
-              </Button>
               <Button 
                 asChild
                 variant="outline"
@@ -261,17 +251,6 @@ export default function ProtocolsPage() {
                     }
                   >
                     Active
-                  </Button>
-                  <Button
-                    variant={filter === 'templates' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilter('templates')}
-                    className={filter === 'templates' 
-                      ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
-                      : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
-                    }
-                  >
-                    Templates
                   </Button>
                 </div>
               </div>

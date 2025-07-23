@@ -281,10 +281,10 @@ export default function AIAssistantPage() {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 AI Assistant
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-sm text-gray-600 font-medium">
                 Configure your AI assistant and manage frequently asked questions
               </p>
             </div>
@@ -292,7 +292,7 @@ export default function AIAssistantPage() {
               <Link href="/doctor/ai-conversations">
                 <Button 
                   variant="outline"
-                  className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 py-2 font-semibold"
+                  className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 py-2 text-sm font-semibold"
                 >
                   <EyeIcon className="h-4 w-4 mr-2" />
                   View Conversations
@@ -301,8 +301,8 @@ export default function AIAssistantPage() {
               <Badge 
                 variant={settings?.isEnabled ? "default" : "secondary"}
                 className={settings?.isEnabled 
-                  ? "bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-xl font-semibold"
-                  : "bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl font-semibold"
+                  ? "bg-green-100 text-green-700 border border-green-200 px-4 py-2 rounded-xl text-sm font-semibold"
+                  : "bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-semibold"
                 }
               >
                 {settings?.isEnabled ? 'Active' : 'Inactive'}
@@ -340,17 +340,17 @@ export default function AIAssistantPage() {
                 <CardHeader className="border-b border-gray-100 p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div>
-                      <CardTitle className="text-xl font-bold text-gray-900">
+                      <CardTitle className="text-lg font-bold text-gray-900">
                         Frequently Asked Questions
                       </CardTitle>
-                      <CardDescription className="text-gray-600 mt-1 font-medium">
+                      <CardDescription className="text-gray-600 mt-1 text-sm">
                         Manage questions and answers that the AI will use to respond to your patients
                       </CardDescription>
                     </div>
                     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                       <DialogTrigger asChild>
                         <Button 
-                          className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md font-semibold"
+                          className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-6 shadow-md text-sm font-semibold"
                           onClick={() => {
                             setEditingFaq(null);
                             setFaqForm({ question: '', answer: '', category: 'general', priority: 0, tags: '' });
@@ -362,7 +362,7 @@ export default function AIAssistantPage() {
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl rounded-2xl">
                         <DialogHeader>
-                          <DialogTitle className="text-xl font-semibold">
+                          <DialogTitle className="text-lg font-semibold">
                             {editingFaq ? 'Edit FAQ' : 'New FAQ'}
                           </DialogTitle>
                           <DialogDescription>
@@ -371,7 +371,7 @@ export default function AIAssistantPage() {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
-                            <Label htmlFor="question" className="text-sm font-medium text-gray-700">Question</Label>
+                            <Label htmlFor="question" className="text-xs font-medium text-gray-700">Question</Label>
                             <Input
                               id="question"
                               value={faqForm.question}
@@ -381,7 +381,7 @@ export default function AIAssistantPage() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="answer" className="text-sm font-medium text-gray-700">Answer</Label>
+                            <Label htmlFor="answer" className="text-xs font-medium text-gray-700">Answer</Label>
                             <Textarea
                               id="answer"
                               value={faqForm.answer}
@@ -393,7 +393,7 @@ export default function AIAssistantPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
+                              <Label htmlFor="category" className="text-xs font-medium text-gray-700">Category</Label>
                               <Select
                                 value={faqForm.category}
                                 onValueChange={(value) => setFaqForm({ ...faqForm, category: value })}
@@ -411,7 +411,7 @@ export default function AIAssistantPage() {
                               </Select>
                             </div>
                             <div>
-                              <Label htmlFor="priority" className="text-sm font-medium text-gray-700">
+                              <Label htmlFor="priority" className="text-xs font-medium text-gray-700">
                                 Priority: {faqForm.priority}
                               </Label>
                               <Input
@@ -426,7 +426,7 @@ export default function AIAssistantPage() {
                             </div>
                           </div>
                           <div>
-                            <Label htmlFor="tags" className="text-sm font-medium text-gray-700">Tags (comma separated)</Label>
+                            <Label htmlFor="tags" className="text-xs font-medium text-gray-700">Tags (comma separated)</Label>
                             <Input
                               id="tags"
                               value={faqForm.tags}
@@ -440,13 +440,13 @@ export default function AIAssistantPage() {
                           <Button 
                             variant="outline" 
                             onClick={() => setIsDialogOpen(false)}
-                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-semibold"
+                            className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl text-sm font-semibold"
                           >
                             Cancel
                           </Button>
                           <Button 
                             onClick={handleSaveFaq}
-                            className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl font-semibold"
+                            className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl text-sm font-semibold"
                           >
                             {editingFaq ? 'Update' : 'Create'}
                           </Button>
@@ -470,7 +470,7 @@ export default function AIAssistantPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Badge variant="outline" className="border-gray-300 text-gray-700 bg-white px-4 py-2 rounded-xl font-semibold">
+                    <Badge variant="outline" className="border-gray-300 text-gray-700 bg-white px-4 py-2 rounded-xl text-sm font-semibold">
                       {filteredFaqs.length} FAQs
                     </Badge>
                   </div>
@@ -495,8 +495,8 @@ export default function AIAssistantPage() {
                                   onCheckedChange={() => handleToggleFaq(faq.id, faq.isActive)}
                                 />
                               </div>
-                              <h3 className="text-xl font-bold mb-3 text-gray-900">{faq.question}</h3>
-                              <p className="text-gray-600 mb-4 font-medium">{faq.answer}</p>
+                              <h3 className="text-lg font-bold mb-3 text-gray-900">{faq.question}</h3>
+                              <p className="text-gray-600 mb-4 text-sm">{faq.answer}</p>
                               {faq.tags && (
                                 <div className="flex flex-wrap gap-2">
                                   {faq.tags.split(',').map((tag, index) => (
@@ -543,7 +543,7 @@ export default function AIAssistantPage() {
                             </p>
                             <Button 
                               onClick={() => setIsDialogOpen(true)}
-                              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold"
+                              className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md text-sm font-semibold"
                             >
                               <PlusIcon className="h-4 w-4 mr-2" />
                               Create first FAQ
@@ -561,18 +561,18 @@ export default function AIAssistantPage() {
               {settings && (
                 <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                   <CardHeader className="border-b border-gray-100 p-6">
-                    <CardTitle className="text-xl font-bold text-gray-900">
+                    <CardTitle className="text-lg font-bold text-gray-900">
                       Assistant Settings
                     </CardTitle>
-                    <CardDescription className="text-gray-600 mt-1 font-medium">
+                    <CardDescription className="text-gray-600 mt-1 text-sm">
                       Configure how the AI assistant will interact with your patients
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div>
-                        <Label htmlFor="enabled" className="text-sm font-medium text-gray-900">Assistant Active</Label>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <Label htmlFor="enabled" className="text-xs font-medium text-gray-900">Assistant Active</Label>
+                        <p className="text-xs text-gray-600 mt-1">
                           Enable or disable the AI assistant
                         </p>
                       </div>
@@ -587,8 +587,8 @@ export default function AIAssistantPage() {
 
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div>
-                        <Label htmlFor="autoReply" className="text-sm font-medium text-gray-900">Auto Reply</Label>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <Label htmlFor="autoReply" className="text-xs font-medium text-gray-900">Auto Reply</Label>
+                        <p className="text-xs text-gray-600 mt-1">
                           Automatically respond when confidence is high
                         </p>
                       </div>
@@ -602,10 +602,10 @@ export default function AIAssistantPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label className="text-sm font-medium text-gray-900">
+                      <Label className="text-xs font-medium text-gray-900">
                         Confidence Threshold: {settings.confidenceThreshold}
                       </Label>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs text-gray-600">
                         Minimum confidence for automatic response (0-1)
                       </p>
                       <Input
@@ -624,8 +624,8 @@ export default function AIAssistantPage() {
 
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div>
-                        <Label htmlFor="businessHours" className="text-sm font-medium text-gray-900">Business Hours Only</Label>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <Label htmlFor="businessHours" className="text-xs font-medium text-gray-900">Business Hours Only</Label>
+                        <p className="text-xs text-gray-600 mt-1">
                           Respond only during configured hours
                         </p>
                       </div>
@@ -641,7 +641,7 @@ export default function AIAssistantPage() {
                     {settings.businessHoursOnly && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="startTime" className="text-sm font-medium text-gray-700">Start Time</Label>
+                          <Label htmlFor="startTime" className="text-xs font-medium text-gray-700">Start Time</Label>
                           <Input
                             id="startTime"
                             type="time"
@@ -653,7 +653,7 @@ export default function AIAssistantPage() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="endTime" className="text-sm font-medium text-gray-700">End Time</Label>
+                          <Label htmlFor="endTime" className="text-xs font-medium text-gray-700">End Time</Label>
                           <Input
                             id="endTime"
                             type="time"
@@ -668,7 +668,7 @@ export default function AIAssistantPage() {
                     )}
 
                     <div className="space-y-3">
-                      <Label htmlFor="maxMessages" className="text-sm font-medium text-gray-700">Maximum Messages per Day</Label>
+                      <Label htmlFor="maxMessages" className="text-xs font-medium text-gray-700">Maximum Messages per Day</Label>
                       <Input
                         id="maxMessages"
                         type="number"
@@ -683,7 +683,7 @@ export default function AIAssistantPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="welcomeMessage" className="text-sm font-medium text-gray-700">Welcome Message</Label>
+                      <Label htmlFor="welcomeMessage" className="text-xs font-medium text-gray-700">Welcome Message</Label>
                       <Textarea
                         id="welcomeMessage"
                         value={settings.welcomeMessage}
@@ -696,7 +696,7 @@ export default function AIAssistantPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="fallbackMessage" className="text-sm font-medium text-gray-700">Fallback Message</Label>
+                      <Label htmlFor="fallbackMessage" className="text-xs font-medium text-gray-700">Fallback Message</Label>
                       <Textarea
                         id="fallbackMessage"
                         value={settings.fallbackMessage}
@@ -715,20 +715,20 @@ export default function AIAssistantPage() {
             <TabsContent value="analytics">
               <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
                 <CardHeader className="border-b border-gray-100 p-6">
-                  <CardTitle className="text-xl font-bold text-gray-900">
+                  <CardTitle className="text-lg font-bold text-gray-900">
                     Reports and Analytics
                   </CardTitle>
-                  <CardDescription className="text-gray-600 mt-1 font-medium">
+                  <CardDescription className="text-gray-600 mt-1 text-sm">
                     View AI assistant usage statistics
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="text-center py-12">
                     <ChartBarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold mb-2 text-gray-900">
+                    <h3 className="text-base font-bold mb-2 text-gray-900">
                       Reports in Development
                     </h3>
-                    <p className="text-sm text-gray-500 font-medium">
+                    <p className="text-xs text-gray-500">
                       Soon you'll be able to view detailed statistics about assistant usage
                     </p>
                   </div>

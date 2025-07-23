@@ -110,10 +110,10 @@ export default function SmartAddPatientPage() {
               </Link>
             </Button>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-xl font-bold text-gray-900 mb-2">
                 Add New Patient
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-gray-600 font-medium text-sm">
                 Create a new patient and assign protocols
               </p>
             </div>

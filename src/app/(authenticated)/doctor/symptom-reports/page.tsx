@@ -233,10 +233,10 @@ export default function SymptomReportsPage() {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 Symptom Reports
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-sm text-gray-600">
                 Manage your patients' symptom reports
               </p>
             </div>
@@ -252,7 +252,7 @@ export default function SymptomReportsPage() {
                     placeholder="Search reports, patients, or protocols..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 font-medium"
+                    className="pl-10 border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12 text-sm"
                   />
                 </div>
                 
@@ -269,8 +269,8 @@ export default function SymptomReportsPage() {
                       size="sm"
                       onClick={() => setFilter(key as any)}
                       className={filter === key 
-                        ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 font-semibold" 
-                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 font-semibold"
+                        ? "bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl h-10 px-4 text-sm font-semibold" 
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl h-10 px-4 text-sm font-semibold"
                       }
                     >
                       {label}
@@ -287,10 +287,10 @@ export default function SymptomReportsPage() {
               <CardContent className="p-8">
                 <div className="text-center">
                   <ExclamationTriangleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-bold mb-2 text-gray-900">
+                  <h3 className="text-base font-bold mb-2 text-gray-900">
                     {searchTerm ? 'No reports found' : 'No symptom reports'}
                   </h3>
-                  <p className="text-sm text-gray-500 mb-4 font-medium">
+                  <p className="text-xs text-gray-500 mb-4 font-medium">
                     {searchTerm 
                       ? 'Try adjusting your search term or filters'
                       : filter === 'ALL' 
@@ -316,17 +316,17 @@ export default function SymptomReportsPage() {
                             <UserIcon className="h-5 w-5 text-gray-600" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900">
+                            <h3 className="text-lg font-bold text-gray-900">
                               {report.user.name || report.user.email}
                             </h3>
-                            <p className="text-sm text-gray-600 font-medium">
+                            <p className="text-xs text-gray-600">
                               {report.protocol.name} • Day {report.dayNumber}
                             </p>
                           </div>
                         </div>
                         
                         <div className="mb-4">
-                          <p className="text-gray-700 line-clamp-3 font-medium">
+                          <p className="text-gray-700 text-sm line-clamp-3">
                             {report.symptoms}
                           </p>
                         </div>
@@ -351,13 +351,13 @@ export default function SymptomReportsPage() {
                       
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "px-3 py-1 rounded-xl border text-xs font-semibold",
+                          "px-3 py-1 rounded-xl border text-xs font-medium",
                           getSeverityColor(report.severity)
                         )}>
                           Intensity: {report.severity}/10
                         </div>
                         <div className={cn(
-                          "px-3 py-1 rounded-xl border text-xs font-semibold",
+                          "px-3 py-1 rounded-xl border text-xs font-medium",
                           getStatusColor(report.status)
                         )}>
                           {getStatusText(report.status)}
@@ -389,10 +389,10 @@ export default function SymptomReportsPage() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900">
                   Symptom Report
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-xs text-gray-500 mt-1">
                   {selectedReport.user.name || selectedReport.user.email} • {selectedReport.protocol.name}
                 </p>
               </div>
@@ -409,24 +409,24 @@ export default function SymptomReportsPage() {
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs text-gray-700 mb-1">
                     Protocol Day
                   </label>
                   <p className="text-gray-900">Day {selectedReport.dayNumber}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs text-gray-700 mb-1">
                     Intensity
                   </label>
                   <div className={cn(
-                    "inline-flex px-3 py-1 rounded-lg border text-sm font-medium",
+                    "inline-flex px-3 py-1 rounded-lg border text-xs font-medium",
                     getSeverityColor(selectedReport.severity)
                   )}>
                     {selectedReport.severity}/10
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs text-gray-700 mb-1">
                     Date/Time
                   </label>
                   <p className="text-gray-900">
@@ -434,11 +434,11 @@ export default function SymptomReportsPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs text-gray-700 mb-1">
                     Status
                   </label>
                   <div className={cn(
-                    "inline-flex px-3 py-1 rounded-lg border text-sm font-medium",
+                    "inline-flex px-3 py-1 rounded-lg border text-xs font-medium",
                     getStatusColor(selectedReport.status)
                   )}>
                     {getStatusText(selectedReport.status)}
@@ -448,7 +448,7 @@ export default function SymptomReportsPage() {
 
               {/* Symptoms */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs text-gray-700 mb-2">
                   Symptom Description
                 </label>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -461,7 +461,7 @@ export default function SymptomReportsPage() {
               {/* Attachments */}
               {selectedReport.attachments.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-gray-700 mb-2">
                     Attached Photos ({selectedReport.attachments.length})
                   </label>
                   <div className="grid grid-cols-2 gap-4">
@@ -491,7 +491,7 @@ export default function SymptomReportsPage() {
               {/* Review Notes */}
               {selectedReport.doctorNotes && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs text-gray-700 mb-2">
                     Doctor Notes
                   </label>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

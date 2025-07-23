@@ -272,10 +272,10 @@ export default function DoctorRewardsPage() {
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
                 Rewards Management
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-sm text-gray-600">
                 Create and manage rewards for your referral program
               </p>
             </div>
@@ -295,7 +295,9 @@ export default function DoctorRewardsPage() {
                       <div className="p-2 bg-purple-100 rounded-xl">
                         <Gift className="h-5 w-5 text-purple-600" />
                       </div>
-                      <CardTitle className="text-lg font-bold text-gray-900">{reward.title}</CardTitle>
+                      <CardTitle className="text-lg font-bold text-gray-900">
+                        {reward.title}
+                      </CardTitle>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -304,12 +306,14 @@ export default function DoctorRewardsPage() {
                       />
                     </div>
                   </div>
-                  <CardDescription className="text-gray-600 font-medium">{reward.description}</CardDescription>
+                  <CardDescription className="text-sm text-gray-600">
+                    {reward.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-600">Credits required:</span>
+                      <span className="text-xs font-semibold text-gray-600">Credits required:</span>
                       <Badge variant="secondary" className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 rounded-lg px-3 py-1 font-medium">
                         <Star className="h-3 w-3" />
                         <span>{reward.creditsRequired}</span>
@@ -318,25 +322,25 @@ export default function DoctorRewardsPage() {
 
                     {reward.maxRedemptions && (
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-600">Redemption limit:</span>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-xs font-semibold text-gray-600">Redemption limit:</span>
+                        <span className="text-xs font-semibold text-gray-900">
                           {reward.currentRedemptions} / {reward.maxRedemptions}
                         </span>
                       </div>
                     )}
 
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-600">Total redeemed:</span>
+                      <span className="text-xs font-semibold text-gray-600">Total redeemed:</span>
                       <div className="flex items-center space-x-1">
                         <Users className="h-3 w-3 text-gray-500" />
-                        <span className="text-sm font-semibold text-gray-900">{reward.currentRedemptions}</span>
+                        <span className="text-xs font-semibold text-gray-900">{reward.currentRedemptions}</span>
                       </div>
                     </div>
 
                     {reward.maxRedemptions && reward.currentRedemptions >= reward.maxRedemptions && (
                       <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 p-3 rounded-xl border border-orange-200">
                         <AlertTriangle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Limit reached</span>
+                        <span className="text-xs font-medium">Limit reached</span>
                       </div>
                     )}
 

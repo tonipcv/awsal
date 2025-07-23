@@ -574,7 +574,7 @@ export default function PatientsPage() {
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Clients</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Clients</h1>
               <p className="text-sm text-gray-500 mt-1">
                 Manage your clients and their protocols
               </p>
