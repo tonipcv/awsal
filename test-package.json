@@ -1,0 +1,10 @@
+{
+  "name": "test-prescription-api",
+  "version": "1.0.0",
+  "description": "Test script for prescription API",
+  "main": "test-prescription-api.js",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  }
+}

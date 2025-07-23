@@ -37,9 +37,9 @@ export default function SmartAddPatientPage() {
 
   const loadProtocols = async () => {
     try {
-      const response = await fetch('/api/protocols');
+      const response = await fetch('/api/v2/doctor/protocols');
       if (response.ok) {
-        const data = await response.json();
+        const { data } = await response.json();
         setProtocols(data);
       }
     } catch (error) {
@@ -56,7 +56,7 @@ export default function SmartAddPatientPage() {
         protocolIds: selectedProtocols
       };
 
-      const response = await fetch('/api/patients', {
+      const response = await fetch('/api/v2/doctor/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,15 +64,26 @@ export default function SmartAddPatientPage() {
         body: JSON.stringify(patientData),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to create patient');
+        const errorMessage = responseData.error || 'Failed to create patient';
+        console.error('Error creating patient:', {
+          status: response.status,
+          error: errorMessage,
+          details: responseData
+        });
+        throw new Error(errorMessage);
       }
 
       toast.success('Patient created successfully');
       router.push('/doctor/patients');
     } catch (error) {
-      console.error('Error creating patient:', error);
-      toast.error('Error creating patient');
+      console.error('Error creating patient:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: error
+      });
+      toast.error(error instanceof Error ? error.message : 'Error creating patient');
     } finally {
       setIsLoading(false);
     }

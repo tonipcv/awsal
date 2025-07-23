@@ -35,16 +35,20 @@ interface Protocol {
   name: string;
   duration: number;
   description?: string;
-  isTemplate?: boolean;
-  consultation_date?: string | null;
-  days: Array<{
+  isTemplate: boolean;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  createdAt: Date;
+  coverImage?: string;
+  assignments: Array<{
     id: string;
-    dayNumber: number;
-    tasks: Array<{
+    user: {
       id: string;
-      title: string;
-    }>;
+      name?: string;
+      email?: string;
+    };
+    isActive: boolean;
   }>;
+  isRecurring: boolean;
 }
 
 interface Assignment {
@@ -67,7 +71,7 @@ interface Patient {
   id: string;
   name?: string;
   email?: string;
-  assignedProtocols: Assignment[];
+  prescriptions: any[];
 }
 
 interface ProtocolWithAssignment extends Protocol {
@@ -161,7 +165,7 @@ const ProtocolCard = ({
   onTreatmentDatesChange?: (assignmentId: string, startDate: Date, endDate: Date) => void;
 }) => {
   const assignment = protocol.assignment;
-  const totalTasks = protocol.days.reduce((acc, day) => acc + day.tasks.length, 0);
+
   const isAssigned = protocol.assignmentStatus !== 'UNASSIGNED';
   const currentStatus = pendingStatus || assignment?.status || 'UNASSIGNED';
   const statusInfo = getStatusInfo(currentStatus);
@@ -228,10 +232,7 @@ const ProtocolCard = ({
                 <ClockIcon className="h-4 w-4" />
                 {protocol.duration} days
               </span>
-              <span className="flex items-center gap-1.5">
-                <DocumentTextIcon className="h-4 w-4" />
-                {totalTasks} tasks
-              </span>
+
               {assignment && (
                 <span className="flex items-center gap-1.5">
                   <CalendarDaysIcon className="h-4 w-4" />
@@ -283,7 +284,7 @@ const ProtocolCard = ({
             {isAssigned && assignment && (
               <div className="mt-4">
                 <ConsultationDatePicker
-                  consultationDate={pendingConsultationDate !== undefined ? pendingConsultationDate : (protocol.consultation_date ? new Date(protocol.consultation_date) : null)}
+                  consultationDate={pendingConsultationDate !== undefined ? pendingConsultationDate : (assignment?.consultation_date ? new Date(assignment.consultation_date) : null)}
                   onDateChange={(date) => onConsultationDateChange?.(assignment.id, protocol.id, date)}
                   disabled={isLoading}
                 />
@@ -425,7 +426,7 @@ export default function AssignProtocolPage() {
       setError(null);
       
       const [patientResponse, protocolsResponse] = await Promise.all([
-        fetch(`/api/patients/${patientId}`),
+        fetch(`/api/v2/doctor/patients/${patientId}`),
         fetch('/api/protocols')
       ]);
 
@@ -443,7 +444,7 @@ export default function AssignProtocolPage() {
       }
 
       const patientData = await patientResponse.json();
-      setPatient(patientData);
+      setPatient(patientData.data);
 
       if (protocolsResponse.ok) {
         const protocolsData = await protocolsResponse.json();
@@ -465,18 +466,18 @@ export default function AssignProtocolPage() {
       setIsAssigning(protocolId);
       setError(null);
       
-      const response = await fetch('/api/protocols/assign', {
+      const response = await fetch('/api/v2/doctor/prescriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          protocolId,
-          patientId: params.id,
-          startDate: new Date(assignStartDate).toISOString()
+          protocol_id: protocolId,
+          user_id: params.id,
+          planned_start_date: new Date(assignStartDate).toISOString()
         })
       });
 
       if (response.ok) {
-        const existingAssignment = patient?.assignedProtocols.find(a => a.protocolId === protocolId);
+        const existingAssignment = patient?.prescriptions && patient.prescriptions.find((p: any) => p.protocol_id === protocolId);
         const isReactivation = existingAssignment && existingAssignment.status === 'INACTIVE';
         
         setSuccessMessage(isReactivation ? 'Protocol reactivated successfully!' : 'Protocol assigned successfully!');
@@ -607,38 +608,29 @@ export default function AssignProtocolPage() {
     }
   };
 
-  // Process protocols with their assignment status
-  const processedProtocols: ProtocolWithAssignment[] = protocols.map(protocol => {
-    const assignment = patient?.assignedProtocols.find(a => a.protocolId === protocol.id);
-    
-    let assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' | 'SOON' = 'UNASSIGNED';
-    
-    if (assignment) {
-      if (assignment.status === 'UNAVAILABLE') {
+  const processedProtocols: ProtocolWithAssignment[] = React.useMemo(() => {
+    if (!patient || !protocols) {
+      return [];
+    }
+
+    return protocols.map(protocol => {
+      const assignment = patient.prescriptions?.find((p: any) => p.protocol_id === protocol.id);
+      
+      let assignmentStatus: 'UNASSIGNED' | 'ACTIVE' | 'INACTIVE' | 'UNAVAILABLE' | 'SOON' = 'UNASSIGNED';
+      
+      if (assignment) {
+        assignmentStatus = assignment.status;
+      } else if (protocol.isTemplate) {
         assignmentStatus = 'UNAVAILABLE';
-      } else if (assignment.status === 'INACTIVE' || !assignment.isActive) {
-        assignmentStatus = 'INACTIVE';
-      } else if (assignment.status === 'SOON') {
-        assignmentStatus = 'SOON';
-      } else if (assignment.isActive && assignment.status === 'ACTIVE') {
-        assignmentStatus = 'ACTIVE';
       }
 
-      // Atualizar status para SOON se tiver data de consulta futura
-      if (assignment.consultation_date) {
-        const consultationDate = new Date(assignment.consultation_date);
-        if (consultationDate > new Date()) {
-          assignmentStatus = 'SOON';
-        }
-      }
-    }
-    
-    return {
-      ...protocol,
-      assignment,
-      assignmentStatus
-    };
-  });
+      return {
+        ...protocol,
+        assignment,
+        assignmentStatus
+      };
+    });
+  }, [patient, protocols]);
 
   // Filter protocols
   const filteredProtocols = processedProtocols.filter(protocol => 
@@ -650,7 +642,9 @@ export default function AssignProtocolPage() {
   const assignedProtocols = filteredProtocols.filter(p => 
     p.assignmentStatus === 'ACTIVE' || p.assignmentStatus === 'INACTIVE' || p.assignmentStatus === 'UNAVAILABLE' || p.assignmentStatus === 'SOON'
   );
-  const availableProtocols = filteredProtocols.filter(p => p.assignmentStatus === 'UNASSIGNED');
+  const availableProtocols = filteredProtocols.filter(p => 
+    p.assignmentStatus === 'UNASSIGNED' && p.status === 'PUBLISHED' && !p.isTemplate
+  );
 
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 

@@ -42,26 +42,27 @@ interface Patient {
   name?: string;
   email?: string;
   phone?: string;
-  birthDate?: string;
+  birth_date?: string;
   gender?: string;
   address?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  medicalHistory?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  medical_history?: string;
   allergies?: string;
   medications?: string;
   notes?: string;
   image?: string;
-  assignedProtocols: Array<{
+  is_active: boolean;
+  assigned_protocols?: Array<{
     id: string;
     protocol: {
       id: string;
       name: string;
       duration: number;
     };
-    startDate: Date;
-    endDate: Date;
-    isActive: boolean;
+    start_date: Date;
+    end_date: Date;
+    is_active: boolean;
   }>;
 }
 
@@ -69,12 +70,12 @@ interface NewPatientForm {
   name: string;
   email: string;
   phone: string;
-  birthDate: string;
+  birth_date: string;
   gender: string;
   address: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-  medicalHistory: string;
+  emergency_contact: string;
+  emergency_phone: string;
+  medical_history: string;
   allergies: string;
   medications: string;
   notes: string;
@@ -115,12 +116,12 @@ export default function PatientsPage() {
     name: '',
     email: '',
     phone: '',
-    birthDate: '',
+    birth_date: '',
     gender: '',
     address: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    medicalHistory: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    medical_history: '',
     allergies: '',
     medications: '',
     notes: ''
@@ -152,11 +153,36 @@ export default function PatientsPage() {
       console.log('📦 API Response data:', data);
 
       if (response.ok) {
-        setPatients(Array.isArray(data) ? data : []);
-        console.log('✅ Patients loaded:', data.length || 0);
+        // Transform patients data to match expected format
+        const transformedPatients = Array.isArray(data) ? data.map((patient: any) => ({
+          id: patient.id,
+          name: patient.name,
+          email: patient.email,
+          phone: patient.phone,
+          birth_date: patient.birthDate,
+          gender: patient.gender,
+          address: patient.address,
+          emergency_contact: patient.emergencyContact,
+          emergency_phone: patient.emergencyPhone,
+          medical_history: patient.medicalHistory,
+          allergies: patient.allergies,
+          medications: patient.medications,
+          notes: patient.notes,
+          is_active: true,
+          assigned_protocols: patient.assignedProtocols?.map((protocol: any) => ({
+            id: protocol.id,
+            protocol: protocol.protocol,
+            start_date: protocol.startDate,
+            end_date: protocol.endDate,
+            is_active: protocol.isActive
+          })) || []
+        })) : [];
+
+        setPatients(transformedPatients);
+        console.log('✅ Patients loaded:', transformedPatients.length);
       } else {
         console.error('❌ Error loading patients:', data.error);
-        toast.error(`Erro ao carregar pacientes: ${data.error}`);
+        toast.error(data.error || 'Erro ao carregar pacientes');
       }
     } catch (error) {
       console.error('❌ Error in loadPatients:', error);
@@ -171,12 +197,12 @@ export default function PatientsPage() {
       name: '',
       email: '',
       phone: '',
-      birthDate: '',
+      birth_date: '',
       gender: '',
       address: '',
-      emergencyContact: '',
-      emergencyPhone: '',
-      medicalHistory: '',
+      emergency_contact: '',
+      emergency_phone: '',
+      medical_history: '',
       allergies: '',
       medications: '',
       notes: ''
@@ -205,12 +231,12 @@ export default function PatientsPage() {
 
       // Add optional fields only if filled
       if (newPatient.phone?.trim()) patientData.phone = newPatient.phone.trim();
-      if (newPatient.birthDate) patientData.birthDate = newPatient.birthDate;
+      if (newPatient.birth_date) patientData.birthDate = newPatient.birth_date;
       if (newPatient.gender) patientData.gender = newPatient.gender;
       if (newPatient.address?.trim()) patientData.address = newPatient.address.trim();
-      if (newPatient.emergencyContact?.trim()) patientData.emergencyContact = newPatient.emergencyContact.trim();
-      if (newPatient.emergencyPhone?.trim()) patientData.emergencyPhone = newPatient.emergencyPhone.trim();
-      if (newPatient.medicalHistory?.trim()) patientData.medicalHistory = newPatient.medicalHistory.trim();
+      if (newPatient.emergency_contact?.trim()) patientData.emergencyContact = newPatient.emergency_contact.trim();
+      if (newPatient.emergency_phone?.trim()) patientData.emergencyPhone = newPatient.emergency_phone.trim();
+      if (newPatient.medical_history?.trim()) patientData.medicalHistory = newPatient.medical_history.trim();
       if (newPatient.allergies?.trim()) patientData.allergies = newPatient.allergies.trim();
       if (newPatient.medications?.trim()) patientData.medications = newPatient.medications.trim();
       if (newPatient.notes?.trim()) patientData.notes = newPatient.notes.trim();
@@ -229,11 +255,11 @@ export default function PatientsPage() {
         throw new Error(data.error || 'Erro ao atualizar cliente');
       }
 
-        // Reload clients list
-        await loadPatients();
-        resetForm();
-        setShowEditPatient(false);
-        setPatientToEdit(null);
+      // Reload clients list
+      await loadPatients();
+      resetForm();
+      setShowEditPatient(false);
+      setPatientToEdit(null);
       toast.success('Cliente atualizado com sucesso!');
     } catch (error: any) {
       console.error('Error updating patient:', error);
@@ -245,7 +271,7 @@ export default function PatientsPage() {
 
   const addPatient = async () => {
     if (!newPatient.name.trim() || !newPatient.email.trim()) {
-      alert('Nome e email são obrigatórios');
+      toast.error('Nome e email são obrigatórios');
       return;
     }
 
@@ -259,16 +285,16 @@ export default function PatientsPage() {
       };
 
       // Add optional fields only if filled
-      if (newPatient.phone.trim()) patientData.phone = newPatient.phone.trim();
-      if (newPatient.birthDate) patientData.birthDate = newPatient.birthDate;
+      if (newPatient.phone?.trim()) patientData.phone = newPatient.phone.trim();
+      if (newPatient.birth_date) patientData.birthDate = newPatient.birth_date;
       if (newPatient.gender) patientData.gender = newPatient.gender;
-      if (newPatient.address.trim()) patientData.address = newPatient.address.trim();
-      if (newPatient.emergencyContact.trim()) patientData.emergencyContact = newPatient.emergencyContact.trim();
-      if (newPatient.emergencyPhone.trim()) patientData.emergencyPhone = newPatient.emergencyPhone.trim();
-      if (newPatient.medicalHistory.trim()) patientData.medicalHistory = newPatient.medicalHistory.trim();
-      if (newPatient.allergies.trim()) patientData.allergies = newPatient.allergies.trim();
-      if (newPatient.medications.trim()) patientData.medications = newPatient.medications.trim();
-      if (newPatient.notes.trim()) patientData.notes = newPatient.notes.trim();
+      if (newPatient.address?.trim()) patientData.address = newPatient.address.trim();
+      if (newPatient.emergency_contact?.trim()) patientData.emergencyContact = newPatient.emergency_contact.trim();
+      if (newPatient.emergency_phone?.trim()) patientData.emergencyPhone = newPatient.emergency_phone.trim();
+      if (newPatient.medical_history?.trim()) patientData.medicalHistory = newPatient.medical_history.trim();
+      if (newPatient.allergies?.trim()) patientData.allergies = newPatient.allergies.trim();
+      if (newPatient.medications?.trim()) patientData.medications = newPatient.medications.trim();
+      if (newPatient.notes?.trim()) patientData.notes = newPatient.notes.trim();
 
       const response = await fetch('/api/patients', {
         method: 'POST',
@@ -398,7 +424,7 @@ export default function PatientsPage() {
   };
 
   const getActiveProtocol = (patient: Patient) => {
-    return patient.assignedProtocols.find(p => p.isActive);
+    return patient.assigned_protocols?.find((p: any) => p.is_active);
   };
 
   const improveNotesWithAI = async () => {
@@ -612,7 +638,7 @@ export default function PatientsPage() {
               <div className="space-y-4">
                 {currentPatients.map((patient) => {
                   const activeProtocol = getActiveProtocol(patient);
-                  const totalProtocols = patient.assignedProtocols?.length || 0;
+                  const totalProtocols = patient.assigned_protocols?.length || 0;
                   
                   return (
                     <Card key={patient.id} className="bg-white border-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
@@ -624,7 +650,15 @@ export default function PatientsPage() {
                                 <h3 className="text-base font-semibold text-gray-900">
                                   {patient.name || 'Name not provided'}
                                 </h3>
-                                <span className="text-sm text-gray-500">• {patient.email}</span>
+                                <p className="text-sm text-gray-500">
+                                  {patient.assigned_protocols?.length ? (
+                                    <span>
+                                      {patient.assigned_protocols.filter(p => p.is_active).length} protocolos ativos
+                                    </span>
+                                  ) : (
+                                    <span>• {patient.email}</span>
+                                  )}
+                                </p>
                                 {activeProtocol && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 font-medium">
                                     Active
@@ -699,120 +733,54 @@ export default function PatientsPage() {
       {/* Edit Patient Modal */}
       {showEditPatient && (
         <Dialog open={showEditPatient} onOpenChange={setShowEditPatient}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Edit Client</DialogTitle>
-              <DialogDescription>
-                Update client information. Required fields are marked with *.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={newPatient.name}
-                    onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-                    placeholder="Full name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newPatient.email}
-                    onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
-                    placeholder="Email address"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={newPatient.phone}
-                    onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
-                    placeholder="Phone number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate">Birth Date</Label>
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={newPatient.birthDate}
-                    onChange={(e) => setNewPatient({ ...newPatient, birthDate: e.target.value })}
-                  />
-                </div>
-              </div>
-
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Client</DialogTitle>
+            <DialogDescription>
+              Update client information. Required fields are marked with *.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="name">Name *</Label>
                 <Input
-                  id="address"
-                  value={newPatient.address}
-                  onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
-                  placeholder="Full address"
+                  id="name"
+                  value={newPatient.name}
+                  onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                  placeholder="Full name"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="emergencyContact"
-                    value={newPatient.emergencyContact}
-                    onChange={(e) => setNewPatient({ ...newPatient, emergencyContact: e.target.value })}
-                    placeholder="Contact name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">Emergency Phone</Label>
-                  <Input
-                    id="emergencyPhone"
-                    value={newPatient.emergencyPhone}
-                    onChange={(e) => setNewPatient({ ...newPatient, emergencyPhone: e.target.value })}
-                    placeholder="Emergency phone number"
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="medicalHistory">Medical History</Label>
-                <Textarea
-                  id="medicalHistory"
-                  value={newPatient.medicalHistory}
-                  onChange={(e) => setNewPatient({ ...newPatient, medicalHistory: e.target.value })}
-                  placeholder="Relevant medical history"
+                <Label htmlFor="birth_date">Birth Date</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={newPatient.birth_date}
+                  onChange={(e) => setNewPatient({ ...newPatient, birth_date: e.target.value })}
+                  placeholder="Birth date"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="allergies">Allergies</Label>
-                  <Input
-                    id="allergies"
-                    value={newPatient.allergies}
-                    onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
-                    placeholder="Known allergies"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="medications">Medications</Label>
-                  <Input
-                    id="medications"
-                    value={newPatient.medications}
-                    onChange={(e) => setNewPatient({ ...newPatient, medications: e.target.value })}
-                    placeholder="Current medications"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newPatient.email}
+                  onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                  placeholder="Email address"
+                />
               </div>
-
+              <div className="space-y-2">
+                <Label htmlFor="allergies">Allergies</Label>
+                <Input
+                  id="allergies"
+                  value={newPatient.allergies}
+                  onChange={(e) => setNewPatient({ ...newPatient, allergies: e.target.value })}
+                  placeholder="Known allergies"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
@@ -823,6 +791,7 @@ export default function PatientsPage() {
                 />
               </div>
             </div>
+          </div>
 
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
               <Button

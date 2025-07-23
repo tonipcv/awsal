@@ -31,8 +31,8 @@ export async function GET(
       where: {
         id: protocolId,
         OR: [
-          { doctorId: session.user.id },
-          { assignments: { some: { userId: session.user.id } } }
+          { doctor_id: session.user.id },
+          { prescriptions: { some: { user_id: session.user.id } } }
         ]
       }
     });
@@ -49,7 +49,7 @@ export async function GET(
     };
 
     // Check if user is doctor through protocol
-    const isDoctor = protocol.doctorId === session.user.id;
+    const isDoctor = protocol.doctor_id === session.user.id;
     if (!isDoctor) {
       whereClause.userId = session.user.id;
     }
@@ -92,73 +92,82 @@ export async function POST(
     }
 
     const { id: protocolId } = await params;
-
-    // Check if patient has access to protocol
-    const assignment = await prisma.userProtocol.findFirst({
-      where: {
-        protocolId,
-        userId: session.user.id,
-        isActive: true
-      }
-    });
-
-    if (!assignment) {
-      return NextResponse.json({ error: 'Protocol not found or not assigned' }, { status: 404 });
-    }
-
     const body = await request.json();
     const { responses } = submitResponseSchema.parse(body);
 
-    // Get today's date in local timezone
-    const today = new Date();
-    const todayString = today.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD
-    const todayDate = new Date(todayString);
-
-    // Check if already responded today
-    const existingResponses = await prisma.dailyCheckinResponse.findMany({
+    // Check if user has access to the protocol
+    const protocol = await prisma.protocol.findFirst({
       where: {
-        userId: session.user.id,
-        protocolId,
-        date: todayDate
+        id: protocolId,
+        OR: [
+          { doctor_id: session.user.id },
+          { prescriptions: { some: { user_id: session.user.id } } }
+        ]
       }
     });
 
-    let createdResponses;
-
-    // If already responded today, update responses
-    if (existingResponses.length > 0) {
-      // Delete existing responses
-      await prisma.dailyCheckinResponse.deleteMany({
-        where: {
-          userId: session.user.id,
-          protocolId,
-          date: todayDate
-        }
-      });
+    if (!protocol) {
+      return NextResponse.json({ error: 'Protocol not found' }, { status: 404 });
     }
 
-    // Create new responses
-    createdResponses = await prisma.dailyCheckinResponse.createMany({
-      data: responses.map(response => ({
-        userId: session.user.id,
-        protocolId,
-        questionId: response.questionId,
-        answer: response.answer,
-        date: todayDate
-      }))
+    // Check if all questions belong to this protocol
+    const questionIds = responses.map(r => r.questionId);
+    const questions = await prisma.dailyCheckinQuestion.findMany({
+      where: {
+        id: { in: questionIds },
+        protocolId
+      }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      responses: createdResponses,
-      message: existingResponses.length > 0 ? 'Check-in updated successfully!' : 'Check-in completed successfully!'
-    }, { status: existingResponses.length > 0 ? 200 : 201 });
+    if (questions.length !== questionIds.length) {
+      return NextResponse.json({ error: 'One or more questions do not belong to this protocol' }, { status: 400 });
+    }
+
+    // Create responses
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const createdResponses = await Promise.all(
+      responses.map(async (response) => {
+        // Check if response already exists for today
+        const existingResponse = await prisma.dailyCheckinResponse.findFirst({
+          where: {
+            questionId: response.questionId,
+            userId: session.user.id,
+            protocolId,
+            date: today
+          }
+        });
+
+        if (existingResponse) {
+          // Update existing response
+          return prisma.dailyCheckinResponse.update({
+            where: { id: existingResponse.id },
+            data: { answer: response.answer }
+          });
+        } else {
+          // Create new response
+          return prisma.dailyCheckinResponse.create({
+            data: {
+              id: `resp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              questionId: response.questionId,
+              userId: session.user.id,
+              protocolId,
+              date: today,
+              answer: response.answer
+            }
+          });
+        }
+      })
+    );
+
+    return NextResponse.json({ success: true, responses: createdResponses });
 
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data format', details: error.errors }, { status: 400 });
     }
     console.error('Error submitting responses:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

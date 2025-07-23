@@ -92,14 +92,14 @@ interface Protocol {
   name: string;
   description?: string;
   duration?: number;
-  showDoctorInfo?: boolean;
-  modalTitle?: string;
-  modalVideoUrl?: string;
-  modalDescription?: string;
-  modalButtonText?: string;
-  modalButtonUrl?: string;
-  coverImage?: string;
-  onboardingTemplateId?: string;
+  show_doctor_info?: boolean;
+  modal_title?: string;
+  modal_video_url?: string;
+  modal_description?: string;
+  modal_button_text?: string;
+  modal_button_url?: string;
+  cover_image?: string;
+  onboarding_template_id?: string;
   days: ProtocolDay[];
   doctor: {
     id: string;
@@ -107,11 +107,11 @@ interface Protocol {
     email: string;
     image?: string;
   };
-  isTemplate: boolean;
-  isRecurring: boolean;
-  recurringInterval: string;
-  recurringDays: number[];
-  assignments: Assignment[];
+  is_template: boolean;
+  is_recurring: boolean;
+  recurring_interval: string;
+  recurring_days: number[];
+  prescriptions: Assignment[];
   products?: ProtocolProduct[];
 }
 
@@ -157,7 +157,7 @@ export default function ProtocolDetailPage() {
   };
 
   const getActiveAssignments = () => {
-    return protocol?.assignments.filter(a => a.isActive) || [];
+    return protocol?.prescriptions.filter((a: Assignment) => a.isActive) || [];
   };
 
   const getPatientInitials = (name?: string) => {
@@ -207,14 +207,14 @@ export default function ProtocolDetailPage() {
           name: updatedProtocol.name,
           description: updatedProtocol.description,
           duration: updatedProtocol.duration,
-          showDoctorInfo: updatedProtocol.showDoctorInfo,
-          modalTitle: updatedProtocol.modalTitle,
-          modalVideoUrl: updatedProtocol.modalVideoUrl,
-          modalDescription: updatedProtocol.modalDescription,
-          modalButtonText: updatedProtocol.modalButtonText,
-          modalButtonUrl: updatedProtocol.modalButtonUrl,
-          coverImage: updatedProtocol.coverImage,
-          onboardingTemplateId: updatedProtocol.onboardingTemplateId
+          show_doctor_info: updatedProtocol.show_doctor_info,
+          modal_title: updatedProtocol.modal_title,
+          modal_video_url: updatedProtocol.modal_video_url,
+          modal_description: updatedProtocol.modal_description,
+          modal_button_text: updatedProtocol.modal_button_text,
+          modal_button_url: updatedProtocol.modal_button_url,
+          cover_image: updatedProtocol.cover_image,
+          onboarding_template_id: updatedProtocol.onboarding_template_id
         })
       });
 
@@ -321,7 +321,7 @@ export default function ProtocolDetailPage() {
                 <h1 className="text-3xl font-bold text-gray-900">
                   {protocol.name}
                 </h1>
-                {protocol.isTemplate && (
+                {protocol.is_template && (
                   <Badge className="bg-[#5154e7] text-white border-[#5154e7] font-semibold">
                     Template
                   </Badge>
@@ -423,7 +423,7 @@ export default function ProtocolDetailPage() {
                     </div>
                     
                     {/* Recurring Configuration */}
-                    {protocol.isRecurring && (
+                    {protocol.is_recurring && (
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-100 rounded-xl">
                           <ArrowPathIcon className="h-5 w-5 text-blue-600" />
@@ -431,7 +431,7 @@ export default function ProtocolDetailPage() {
                         <div>
                           <p className="text-sm text-gray-600 font-medium">Recurring</p>
                           <p className="text-lg font-bold text-gray-900">
-                            {protocol.recurringInterval === 'DAILY' ? 'Daily' : 'Weekly'}
+                            {protocol.recurring_interval === 'DAILY' ? 'Daily' : 'Weekly'}
                           </p>
                         </div>
                       </div>

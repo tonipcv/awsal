@@ -79,8 +79,16 @@ export default function DoctorDashboard() {
       try {
         setIsLoading(true);
 
-        // Load clients
-        const patientsResponse = await fetch('/api/patients');
+        // Load dashboard summary stats
+        const dashboardResponse = await fetch('/api/v2/doctor/dashboard-summary');
+        if (!dashboardResponse.ok) {
+          console.error('Error loading dashboard stats:', dashboardResponse.status);
+          return;
+        }
+        const dashboardData = await dashboardResponse.json();
+        
+        // Load clients with default parameters
+        const patientsResponse = await fetch('/api/v2/doctor/patients?limit=20&offset=0');
         if (!patientsResponse.ok) {
           console.error('Error loading clients:', patientsResponse.status);
           return;
@@ -89,24 +97,72 @@ export default function DoctorDashboard() {
         
         // Load protocols
         const protocolsResponse = await fetch('/api/protocols');
+        if (!protocolsResponse.ok) {
+          console.error('Error loading protocols:', protocolsResponse.status);
+          return;
+        }
         const protocolsData = await protocolsResponse.json();
 
-        setPatients(Array.isArray(patientsData) ? patientsData : []);
-        setProtocols(Array.isArray(protocolsData) ? protocolsData : []);
+        // Transform patients data to match expected format
+        const transformedPatients = patientsData.patients?.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          email: p.email,
+          image: p.image || null,
+          assignedProtocols: p.activePrescriptions?.map((prescription: any) => ({
+            id: prescription.id,
+            protocol: {
+              id: prescription.protocol.id,
+              name: prescription.protocol.name,
+              duration: 30 // Default duration if not provided
+            },
+            startDate: new Date(),
+            endDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+            isActive: prescription.status === 'ACTIVE'
+          })) || []
+        })) || [];
 
-        // Calculate statistics
-        const totalPatients = patientsData.length || 0;
-        const activeProtocols = patientsData.reduce((acc: number, patient: Patient) => {
-          return acc + patient.assignedProtocols.filter(p => p.isActive).length;
-        }, 0);
-        const totalProtocols = protocolsData.length || 0;
+        // Transform protocols data to match expected format
+        const transformedProtocols = Array.isArray(protocolsData) ? protocolsData.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          duration: p.duration || 30,
+          isTemplate: p.is_template,
+          assignments: p.assignments?.map((assignment: any) => ({
+            id: assignment.id,
+            user: assignment.user,
+            isActive: assignment.isActive
+          })) || []
+        })) : [];
 
-        setStats({
-          totalPatients,
-          activeProtocols,
-          totalProtocols,
-          completedToday: 0
-        });
+        setPatients(transformedPatients);
+        setProtocols(transformedProtocols);
+
+        // Set dashboard statistics from the dashboard endpoint
+        if (dashboardData.success && dashboardData.data) {
+          setStats({
+            totalPatients: dashboardData.data.totalPatients,
+            activeProtocols: dashboardData.data.activeProtocols,
+            totalProtocols: dashboardData.data.totalProtocols,
+            completedToday: dashboardData.data.completedToday
+          });
+        } else {
+          // Fallback to calculated stats if dashboard endpoint fails
+          const totalPatients = transformedPatients.length || 0;
+          const totalProtocols = transformedProtocols.length || 0;
+          const activeProtocols = transformedPatients.reduce(
+            (count: number, patient: Patient) => count + patient.assignedProtocols.filter((p: {isActive: boolean}) => p.isActive).length, 
+            0
+          );
+          
+          setStats({
+            totalPatients,
+            activeProtocols,
+            totalProtocols,
+            completedToday: 0
+          });
+        }
 
       } catch (error) {
         console.error('Error loading dashboard data:', error);

@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         const patient = await prisma.user.findFirst({
           where: {
             id: userId,
-            doctorId: session.user.id
+            doctor_id: session.user.id
           }
         });
 
@@ -48,19 +48,20 @@ export async function GET(request: Request) {
       } else {
         // Get reports from all doctor's patients
         whereClause.protocol = {
-          doctorId: session.user.id
+          doctor_id: session.user.id
         };
       }
-    } else {
-      // Patient sees only their own reports
+    } else if (user.role === 'PATIENT') {
+      // Patient can only see their own reports
       whereClause.userId = session.user.id;
       
       if (protocolId) {
         whereClause.protocolId = protocolId;
       }
+    } else {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    // Add additional filters
     if (status) {
       whereClause.status = status;
     }
@@ -119,74 +120,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    const body = await request.json();
     const { 
       protocolId, 
-      dayNumber, 
       symptoms, 
-      severity, 
-      reportTime, 
-      isNow,
-      title,
-      description 
-    } = await request.json();
+      description, 
+      dayNumber, 
+      reportTime = new Date(),
+      attachments = []
+    } = body;
 
-    if (!protocolId || !dayNumber || !symptoms) {
-      return NextResponse.json({ 
-        error: 'Protocolo, dia e sintomas são obrigatórios' 
-      }, { status: 400 });
+    if (!protocolId || !symptoms) {
+      return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 });
     }
 
-    // Verify user has access to this protocol
-    const protocolPrescription = await prisma.protocolPrescription.findFirst({
+    // Verify user has access to protocol
+    const protocol = await prisma.protocol.findFirst({
       where: {
-        user_id: session.user.id,
-        protocol_id: protocolId,
-        status: { not: 'ABANDONED' }
-      },
-      include: {
-        protocol: true
+        id: protocolId,
+        OR: [
+          { doctor_id: session.user.id },
+          { prescriptions: { some: { user_id: session.user.id } } }
+        ]
       }
     });
 
-    if (!protocolPrescription) {
-      return NextResponse.json({ 
-        error: 'Acesso negado a este protocolo' 
-      }, { status: 403 });
+    if (!protocol) {
+      return NextResponse.json({ error: 'Protocolo não encontrado ou sem permissão' }, { status: 404 });
     }
 
-    // Validate day number - handle null duration
-    const protocolDuration = protocolPrescription.protocol.duration || 30;
-    if (dayNumber < 1 || dayNumber > protocolDuration) {
-      return NextResponse.json({ 
-        error: 'Número do dia inválido' 
-      }, { status: 400 });
-    }
-
-    // Parse report time
-    let finalReportTime: Date;
-    if (isNow) {
-      finalReportTime = new Date();
-    } else {
-      finalReportTime = new Date(reportTime);
-      if (isNaN(finalReportTime.getTime())) {
-        return NextResponse.json({ 
-          error: 'Horário inválido' 
-        }, { status: 400 });
-      }
-    }
-
-    // Create symptom report
-    const symptomReport = await prisma.symptomReport.create({
+    // Create report
+    const report = await prisma.symptomReport.create({
       data: {
+        id: `symrep_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         userId: session.user.id,
-        protocolId: protocolId,
-        dayNumber: dayNumber,
-        title: title || 'Relatório de Sintomas',
-        description: description,
-        symptoms: symptoms,
-        severity: severity || 1,
-        reportTime: finalReportTime,
-        isNow: isNow || true
+        protocolId,
+        symptoms,
+        description,
+        dayNumber: dayNumber ? parseInt(dayNumber.toString()) : null,
+        reportTime: new Date(reportTime),
+        status: 'PENDING',
+        attachments: {
+          create: attachments.map((attachment: any) => ({
+            id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            url: attachment.url,
+            type: attachment.type,
+            name: attachment.name
+          }))
+        }
       },
       include: {
         user: {
@@ -199,19 +180,14 @@ export async function POST(request: Request) {
         protocol: {
           select: {
             id: true,
-            name: true,
-            duration: true
+            name: true
           }
         },
         attachments: true
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      report: symptomReport
-    }, { status: 201 });
-
+    return NextResponse.json(report);
   } catch (error) {
     console.error('Error creating symptom report:', error);
     return NextResponse.json({ 
@@ -219,4 +195,4 @@ export async function POST(request: Request) {
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
-} 
+}

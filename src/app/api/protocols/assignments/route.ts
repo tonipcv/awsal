@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar protocolos atribuídos ao paciente
-    const assignments = await prisma.userProtocol.findMany({
+    const prescriptions = await prisma.protocolPrescription.findMany({
       where: {
-        userId: userId
+        user_id: userId
       },
       include: {
         protocol: {
@@ -56,13 +56,10 @@ export async function GET(request: NextRequest) {
                 sessions: {
                   include: {
                     tasks: {
-                      orderBy: {
-                        orderIndex: 'asc'
+                      include: {
+                        ProtocolContent: true
                       }
                     }
-                  },
-                  orderBy: {
-                    sessionNumber: 'asc'
                   }
                 }
               },
@@ -74,30 +71,35 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
 
-    console.log('Assignments:', assignments.map(a => ({
-      id: a.protocol.id,
-      name: a.protocol.name,
-      description: a.protocol.description,
-      duration: a.protocol.duration,
-      showDoctorInfo: a.protocol.showDoctorInfo,
-      modalTitle: a.protocol.modalTitle,
-      modalVideoUrl: a.protocol.modalVideoUrl,
-      modalDescription: a.protocol.modalDescription,
-      modalButtonText: a.protocol.modalButtonText,
-      modalButtonUrl: a.protocol.modalButtonUrl,
-      coverImage: a.protocol.coverImage,
-      onboardingTemplateId: a.protocol.onboardingTemplateId,
-      days: a.protocol.days,
-      doctor: a.protocol.doctor
-    })));
+    // Transformar dados para o formato esperado pelo frontend
+    const formattedAssignments = prescriptions.map(prescription => {
+      const { protocol, ...prescriptionData } = prescription;
+      
+      return {
+        id: prescription.id,
+        userId: prescription.user_id,
+        protocolId: prescription.protocol_id,
+        status: prescription.status,
+        startDate: prescription.planned_start_date,
+        endDate: prescription.planned_end_date,
+        createdAt: prescription.created_at,
+        updatedAt: prescription.updated_at,
+        currentDay: prescription.current_day,
+        isActive: prescription.status === 'ACTIVE',
+        protocol: {
+          ...protocol,
+          doctor: protocol.doctor
+        }
+      };
+    });
 
-    return NextResponse.json(assignments);
+    return NextResponse.json({ assignments: formattedAssignments });
   } catch (error) {
-    console.error('Error fetching patient protocol assignments:', error);
-    return NextResponse.json({ error: 'Erro ao buscar protocolos do paciente' }, { status: 500 });
+    console.error('Erro ao buscar protocolos:', error);
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
-} 
+}

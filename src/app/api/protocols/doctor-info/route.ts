@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        patientRelationships: {
+        patient_relationships: {
           where: {
             isActive: true,
             isPrimary: true
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     console.log('User data:', { 
       userId: user?.id, 
       role: user?.role,
-      relationships: user?.patientRelationships.map(rel => ({
+      relationships: user?.patient_relationships.map(rel => ({
         doctorId: rel.doctorId,
         doctorName: rel.doctor.name,
         isPrimary: rel.isPrimary
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
 
     // For patients, get their primary doctor from relationships
-    const primaryRelationship = user?.patientRelationships[0];
+    const primaryRelationship = user?.patient_relationships[0];
     if (primaryRelationship?.doctor) {
       console.log('Using primary doctor relationship:', primaryRelationship.doctor);
       const clinicInfo = await getClinicLogo(primaryRelationship.doctor.id);

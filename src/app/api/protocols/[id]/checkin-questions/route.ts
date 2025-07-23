@@ -45,8 +45,8 @@ export async function GET(
       where: {
         id: protocolId,
         OR: [
-          { doctorId: session.user.id },
-          { assignments: { some: { userId: session.user.id } } }
+          { doctor_id: session.user.id },
+          { prescriptions: { some: { user_id: session.user.id } } }
         ]
       }
     });
@@ -95,7 +95,7 @@ export async function POST(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 

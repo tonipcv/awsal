@@ -143,7 +143,16 @@ export default function CheckinResponsesDashboard({
 
     switch (question.type) {
       case 'MULTIPLE_CHOICE':
-        const options = question.options ? JSON.parse(question.options) : [];
+        let options = [];
+        try {
+          options = question.options ? JSON.parse(question.options) : [];
+        } catch (error) {
+          console.error('Error parsing options JSON:', error);
+          // If options is a string but not valid JSON, try to use it as a comma-separated list
+          if (typeof question.options === 'string') {
+            options = question.options.split(',').map((opt: string) => opt.trim()).filter(Boolean);
+          }
+        }
         const optionCounts = options.reduce((acc: Record<string, number>, option: string) => {
           acc[option] = responses.filter(r => r.answer === option).length;
           return acc;

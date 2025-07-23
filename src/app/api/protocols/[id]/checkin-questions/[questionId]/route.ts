@@ -32,7 +32,7 @@ export async function PUT(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -99,7 +99,7 @@ export async function DELETE(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -137,4 +137,4 @@ export async function DELETE(
     }
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
-} 
+}

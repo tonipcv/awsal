@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { EditPrescriptionDialog } from "../../prescriptions/components/edit-prescription-dialog";
 import { 
   ArrowLeftIcon,
   UserIcon,
@@ -215,6 +219,7 @@ interface ProtocolPrescription {
 export default function PatientDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
@@ -227,6 +232,7 @@ export default function PatientDetailPage() {
   const [selectedProtocolId, setSelectedProtocolId] = useState<string>('');
   const [showProtocolModal, setShowProtocolModal] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isLoadingProtocols, setIsLoadingProtocols] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SymptomReport | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isUpdatingReport, setIsUpdatingReport] = useState(false);
@@ -250,33 +256,103 @@ export default function PatientDetailPage() {
     medications: '',
     notes: ''
   });
+  const [prescriptions, setPrescriptions] = useState<ProtocolPrescription[]>([]);
+  const [isLoadingPrescriptions, setIsLoadingPrescriptions] = useState(true);
+  const [selectedPrescription, setSelectedPrescription] = useState<any>(null);
+  const [showEditPrescriptionModal, setShowEditPrescriptionModal] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
-      loadPatient(params.id as string);
+    if (params.id && session) {
+      loadPatientData();
       loadAvailableCourses();
       loadSymptomReports(params.id as string);
       loadDailyCheckins(params.id as string);
-      loadAvailableProtocols();
       loadVoiceNotes(params.id as string);
+      loadPatientPrescriptions(params.id as string);
     }
-  }, [params.id]);
+  }, [params.id, session]);
 
-  const loadPatient = async (patientId: string) => {
+  const loadPatientPrescriptions = async (patientId: string) => {
+    try {
+      setIsLoadingPrescriptions(true);
+      console.log('🔄 Loading prescriptions for patient:', patientId);
+      
+      const response = await fetch(`/api/v2/doctor/prescriptions?patientId=${patientId}`, {
+        method: 'GET',
+        credentials: 'include', // Important for NextAuth cookies
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('📥 Prescriptions API response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Prescriptions API response data:', data);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('❌ Unauthorized access to prescriptions API');
+          toast.error('Não autorizado. Faça login novamente.');
+          return;
+        }
+        throw new Error(data.message || 'Failed to fetch prescriptions');
+      }
+
+      if (data.success) {
+        const prescriptionsData = data.data.map((p: any) => ({
+          id: p.id,
+          protocolId: p.protocol_id,
+          protocol: {
+            id: p.protocol_id,
+            name: p.protocol_name,
+            description: p.protocol_description,
+            duration: 30 // Default duration, could be from protocol data
+          },
+          plannedStartDate: new Date(p.planned_start_date),
+          plannedEndDate: p.planned_end_date ? new Date(p.planned_end_date) : undefined,
+          status: p.status
+        }));
+        
+        console.log('✅ Prescriptions loaded:', prescriptionsData.length);
+        setPrescriptions(prescriptionsData);
+      } else {
+        throw new Error(data.message || 'Failed to fetch prescriptions');
+      }
+    } catch (error) {
+      console.error('❌ Error loading prescriptions:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao carregar prescrições');
+    } finally {
+      setIsLoadingPrescriptions(false);
+    }
+  };
+
+  const loadPatientData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/patients/${patientId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setPatient(data);
-        // Load patient's assigned courses
-        loadPatientCourses(patientId);
+      const response = await fetch(`/api/v2/doctor/patients/${params.id}`);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const patientData = data.data;
+        setPatient({
+          ...patientData,
+          patientPrescriptions: patientData.patient_prescriptions?.map((p: any) => ({
+            id: p.id,
+            protocolId: p.protocol_id,
+            protocol: p.protocol,
+            plannedStartDate: new Date(p.planned_start_date),
+            plannedEndDate: new Date(p.planned_end_date),
+            status: p.status
+          })) || []
+        });
       } else {
-        router.push('/doctor/patients');
+        console.error('Error loading patient:', data.error);
+        toast.error(data.error || 'Error loading patient data');
       }
     } catch (error) {
       console.error('Error loading patient:', error);
-      router.push('/doctor/patients');
+      toast.error('Error loading patient');
     } finally {
       setIsLoading(false);
     }
@@ -363,14 +439,28 @@ export default function PatientDetailPage() {
   };
 
   const loadAvailableProtocols = async () => {
+    setIsLoadingProtocols(true);
     try {
-      const response = await fetch('/api/protocols?status=PUBLISHED');
+      console.log('Iniciando carregamento de protocolos...');
+      const response = await fetch('/api/protocols');
+      
+      console.log('Resposta da API:', response.status, response.statusText);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Protocolos recebidos:', data);
+        console.log('Quantidade de protocolos:', Array.isArray(data) ? data.length : 'Não é um array');
+        
+        // Exibir todos os protocolos sem filtrar por status
         setAvailableProtocols(data);
+      } else {
+        const errorText = await response.text();
+        console.error('Erro na resposta da API:', errorText);
       }
     } catch (error) {
-      console.error('Error loading available protocols:', error);
+      console.error('Erro ao carregar protocolos:', error);
+    } finally {
+      setIsLoadingProtocols(false);
     }
   };
 
@@ -388,45 +478,57 @@ export default function PatientDetailPage() {
     }
   };
 
-  const assignProtocol = async () => {
-    if (!selectedProtocolId) return;
-
+  const assignProtocol = async (formData: FormData) => {
     try {
       setIsAssigning(true);
-      const protocol = availableProtocols.find(p => p.id === selectedProtocolId);
-      const startDate = new Date();
-      startDate.setHours(0, 0, 0, 0);
-      
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + (protocol?.duration || 30));
-      endDate.setHours(0, 0, 0, 0);
 
-      const response = await fetch(`/api/protocols/prescriptions`, {
+      const protocolId = formData.get('protocol_id') as string;
+      const startDate = formData.get('planned_start_date') as string;
+      const consultationDate = formData.get('consultation_date') as string;
+
+      if (!protocolId || !startDate) {
+        toast.error('Protocol and start date are required');
+        return;
+      }
+
+      // Get protocol duration
+      const protocol = availableProtocols.find(p => p.id === protocolId);
+      if (!protocol) {
+        toast.error('Selected protocol not found');
+        return;
+      }
+
+      // Calculate end date based on protocol duration
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + protocol.duration);
+
+      const response = await fetch(`/api/v2/doctor/prescriptions`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          protocolId: selectedProtocolId,
-          userId: params.id,
-          plannedStartDate: startDate.toISOString(),
-          plannedEndDate: endDate.toISOString(),
-          status: 'PRESCRIBED'
-        }),
+          protocol_id: protocolId,
+          user_id: params.id,
+          planned_start_date: new Date(startDate).toISOString(),
+          planned_end_date: endDate.toISOString(),
+          consultation_date: consultationDate ? new Date(consultationDate).toISOString() : null
+        })
       });
 
-      if (response.ok) {
-        await loadPatient(params.id as string);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Protocol prescribed successfully');
+        loadPatientData();
         setShowProtocolModal(false);
-        setSelectedProtocolId('');
-        toast.success('Protocol assigned successfully');
       } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to assign protocol');
+        console.error('Error prescribing protocol:', data.error);
+        toast.error(data.error || 'Error prescribing protocol');
       }
     } catch (error) {
-      console.error('Error assigning protocol:', error);
-      toast.error('Failed to assign protocol');
+      console.error('Error prescribing protocol:', error);
+      toast.error('Failed to prescribe protocol');
     } finally {
       setIsAssigning(false);
     }
@@ -537,11 +639,33 @@ export default function PatientDetailPage() {
   };
 
   const getCompletedProtocols = () => {
-    return patient?.patientPrescriptions?.filter(p => p.status === 'COMPLETED') || [];
+    return prescriptions.filter(p => p.status === 'COMPLETED');
+  };
+  
+  const handleEditPrescription = (prescription: ProtocolPrescription) => {
+    // Convert the ProtocolPrescription to the format expected by EditPrescriptionDialog
+    const formattedPrescription = {
+      id: prescription.id,
+      protocol_id: prescription.protocolId,
+      protocol_name: prescription.protocol.name,
+      user_id: patient?.id || '',
+      user_name: patient?.name || '',
+      user_email: patient?.email || '',
+      prescribed_by: '',
+      prescribed_at: '',
+      planned_start_date: prescription.plannedStartDate.toISOString(),
+      planned_end_date: prescription.plannedEndDate.toISOString(),
+      status: prescription.status,
+      current_day: 0,
+      adherence_rate: 0
+    };
+    
+    setSelectedPrescription(formattedPrescription);
+    setShowEditPrescriptionModal(true);
   };
 
   const getUnavailableProtocols = () => {
-    return patient?.patientPrescriptions?.filter(p => p.status === 'PRESCRIBED') || [];
+    return prescriptions.filter(p => p.status === 'PRESCRIBED');
   };
 
   const getActiveCourses = () => {
@@ -596,7 +720,7 @@ export default function PatientDetailPage() {
     return format(d, 'MMM d, yyyy', { locale: enUS });
   };
 
-  const calculateProgress = (prescription: ProtocolPrescription) => {
+  const getProtocolProgress = (prescription: ProtocolPrescription) => {
     if (!prescription.plannedStartDate || !prescription.plannedEndDate) return 0;
     
     const startDate = new Date(prescription.plannedStartDate);
@@ -618,10 +742,14 @@ export default function PatientDetailPage() {
     switch (status) {
       case 'ACTIVE':
         return <Badge className="bg-green-50 text-green-700 border-green-200 text-xs">Active</Badge>;
-      case 'INACTIVE':
+      case 'COMPLETED':
         return <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs">Completed</Badge>;
-      case 'UNAVAILABLE':
-        return <Badge className="bg-orange-50 text-orange-700 border-orange-200 text-xs">Unavailable</Badge>;
+      case 'PRESCRIBED':
+        return <Badge className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">Prescribed</Badge>;
+      case 'PAUSED':
+        return <Badge className="bg-orange-50 text-orange-700 border-orange-200 text-xs">Paused</Badge>;
+      case 'ABANDONED':
+        return <Badge className="bg-red-50 text-red-700 border-red-200 text-xs">Abandoned</Badge>;
       default:
         return <Badge className="bg-gray-50 text-gray-700 border-gray-200 text-xs">{status}</Badge>;
     }
@@ -661,24 +789,36 @@ export default function PatientDetailPage() {
     try {
       setIsEditing(true);
       
-      const response = await fetch(`/api/patients/${params.id}`, {
-        method: 'PUT',
+      const response = await fetch(`/api/v2/doctor/patients/${params.id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+          birth_date: editForm.birthDate,
+          gender: editForm.gender,
+          address: editForm.address,
+          emergency_contact: editForm.emergencyContact,
+          emergency_phone: editForm.emergencyPhone,
+          medical_history: editForm.medicalHistory,
+          allergies: editForm.allergies,
+          medications: editForm.medications
+        })
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao atualizar paciente');
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro ao atualizar paciente');
       }
 
-      // Atualizar o estado local com os dados atualizados
-      setPatient(data);
+      // Reload patient data to get updated info
+      await loadPatientData();
       setShowEditModal(false);
-      toast.success('Paciente atualizado com sucesso');
+      toast.success(result.message || 'Paciente atualizado com sucesso');
     } catch (error) {
       console.error('Error updating patient:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao atualizar paciente');
@@ -736,9 +876,9 @@ export default function PatientDetailPage() {
     );
   }
 
-  const activeProtocols = getActiveProtocols();
+  const activeProtocols = prescriptions.filter(p => p.status === 'ACTIVE');
   const completedProtocols = getCompletedProtocols();
-  const totalProtocols = patient?.patientPrescriptions?.length || 0;
+  const totalProtocols = prescriptions.length;
 
   return (
     <div className="min-h-screen bg-gray-50/30">
@@ -755,7 +895,7 @@ export default function PatientDetailPage() {
               </Button>
               <div>
                 <h1 className="text-large font-bold text-gray-900">Client Details</h1>
-                <p className="text-sm text-gray-500 mt-1">View and manage patient protocols</p>
+                <p className="text-sm text-gray-500 mt-1">View and manage patient prescriptions</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -779,61 +919,86 @@ export default function PatientDetailPage() {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Dialog open={showProtocolModal} onOpenChange={setShowProtocolModal}>
+              <Dialog open={showProtocolModal} onOpenChange={(open) => {
+                setShowProtocolModal(open);
+                if (open) {
+                  loadAvailableProtocols();
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button variant="default" size="sm">
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Protocol
+                    Prescribe Protocol
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add Protocol</DialogTitle>
+                    <DialogTitle>Prescribe Protocol</DialogTitle>
                     <DialogDescription>
-                      Select a protocol to assign to this patient
+                      Select a protocol to prescribe to this patient
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <form className="space-y-6 py-4" onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.target as HTMLFormElement;
+                    const formData = new FormData(form);
+                    assignProtocol(formData);
+                  }}>
                     <div className="space-y-2">
-                      <Label>Select Protocol</Label>
-                      <Select value={selectedProtocolId} onValueChange={setSelectedProtocolId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a protocol..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getAvailableProtocolsForPatient(availableProtocols, patient).map(protocol => (
-                              <SelectItem key={protocol.id} value={protocol.id}>
-                                {protocol.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="protocol_id">Select Protocol</Label>
+                      <select
+                        id="protocol_id"
+                        name="protocol_id"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        required
+                        disabled={isLoadingProtocols}
+                      >
+                        <option value="">{isLoadingProtocols ? 'Loading protocols...' : 'Choose a protocol...'}</option>
+                        {!isLoadingProtocols && availableProtocols && availableProtocols.length > 0 ? (
+                          availableProtocols.map((protocol: any) => (
+                            <option key={protocol.id} value={protocol.id}>
+                              {protocol.name} ({protocol.duration || '?'} days) {protocol.status && `[${protocol.status}]`}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="" disabled>No protocols available</option>
+                        )}
+                      </select>
                     </div>
 
-                    {selectedProtocolId && (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-gray-700">Protocol Details</h4>
-                        {availableProtocols.find(p => p.id === selectedProtocolId)?.description && (
-                          <p className="text-sm text-gray-600">
-                            {availableProtocols.find(p => p.id === selectedProtocolId)?.description}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600">
-                          Duration: {availableProtocols.find(p => p.id === selectedProtocolId)?.duration || 30} days
-                        </p>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="planned_start_date">Start Date</Label>
+                      <input
+                        type="date"
+                        id="planned_start_date"
+                        name="planned_start_date"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        required
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="consultation_date">Consultation Date</Label>
+                      <input
+                        type="date"
+                        id="consultation_date"
+                        name="consultation_date"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
 
                     <div className="pt-4">
                       <Button 
-                        onClick={assignProtocol}
-                        disabled={!selectedProtocolId || isAssigning}
+                        type="submit"
+                        disabled={isAssigning}
                         className="w-full"
                       >
-                        {isAssigning ? 'Assigning...' : 'Assign Protocol'}
+                        {isAssigning ? 'Prescribing...' : 'Prescribe Protocol'}
                       </Button>
                     </div>
-                  </div>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
@@ -844,7 +1009,7 @@ export default function PatientDetailPage() {
             {/* Patient Information Card */}
             <Card className="lg:col-span-2 bg-white border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xl font-bold">Patient Information</CardTitle>
+                <CardTitle className="text-large font-bold">Patient Information</CardTitle>
                 <Button
                   variant="outline"
                   size="sm"
@@ -879,28 +1044,98 @@ export default function PatientDetailPage() {
 
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-xs font-medium text-gray-600">Active Protocols</p>
+                      <p className="text-xs font-medium text-gray-600">Active Prescriptions</p>
                       <p className="text-lg font-bold text-violet-600 mt-0.5">{activeProtocols.length}</p>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg text-center">
-                      <p className="text-xs font-medium text-gray-600">Total Protocols</p>
+                      <p className="text-xs font-medium text-gray-600">Total Prescriptions</p>
                       <p className="text-lg font-bold text-violet-600 mt-0.5">{totalProtocols}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Protocolos */}
+              <Card className="col-span-12">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-large font-bold">
+                    Protocolos Prescritos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingPrescriptions ? (
+                    <div className="flex justify-center items-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : prescriptions.length > 0 ? (
+                    <div className="relative w-full overflow-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Protocolo</TableHead>
+                            <TableHead>Início Planejado</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Duração</TableHead>
+                            <TableHead>Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {prescriptions.map((prescription) => (
+                            <TableRow key={prescription.id}>
+                              <TableCell className="font-medium">
+                                {prescription.protocol.name}
+                              </TableCell>
+                              <TableCell>
+                                {format(prescription.plannedStartDate, 'dd/MM/yyyy')}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    prescription.status === 'ACTIVE' ? 'default' :
+                                    prescription.status === 'PRESCRIBED' ? 'secondary' :
+                                    prescription.status === 'COMPLETED' ? 'default' :
+                                    prescription.status === 'PAUSED' ? 'outline' : 'destructive'
+                                  }
+                                >
+                                  {prescription.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {prescription.protocol.duration} dias
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditPrescription(prescription)}
+                                >
+                                  <PencilIcon className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-sm text-muted-foreground">
+                      Nenhum protocolo prescrito ainda.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Quick Stats */}
               <Card>
                 <CardHeader className="pb-4">
-                  <CardTitle>Protocol Overview</CardTitle>
+                  <CardTitle>Prescription Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <DocumentTextIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm font-medium">Active Protocols</span>
+                        <span className="text-sm font-medium">Active Prescriptions</span>
                       </div>
                       <span className="text-sm font-semibold">{activeProtocols.length}</span>
                     </div>
@@ -940,95 +1175,19 @@ export default function PatientDetailPage() {
 
               {/* Add Documents Section */}
               <PatientDocuments patientId={params.id as string} />
+              
+              {/* Edit Prescription Modal */}
+              <EditPrescriptionDialog
+                open={showEditPrescriptionModal}
+                onOpenChange={setShowEditPrescriptionModal}
+                prescription={selectedPrescription}
+                onSuccess={() => loadPatientPrescriptions(params.id as string)}
+              />
 
             </div>
 
-            {/* Right Column - Protocol Details */}
+              {/* Right Column - Prescription Details */}
             <div className="col-span-12 lg:col-span-8 space-y-6">
-              {/* Active Protocols */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Protocols</CardTitle>
-                  <CardDescription>Currently active treatment protocols</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
-                    {activeProtocols.map((prescription) => {
-                      const progress = calculateProgress(prescription);
-                        return (
-                        <Card key={prescription.id} className="bg-white">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between mb-4">
-                                <div>
-                                <h3 className="font-semibold text-gray-900">{prescription.protocol.name}</h3>
-                                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                    <CalendarDaysIcon className="h-4 w-4" />
-                                  Started {formatDate(prescription.plannedStartDate)}
-                                  </div>
-                                </div>
-                                <Button variant="outline" size="sm" asChild>
-                                <Link href={`/doctor/protocols/${prescription.protocol.id}`}>
-                                    <EyeIcon className="h-4 w-4 mr-2" />
-                                    View Details
-                                  </Link>
-                                </Button>
-                              </div>
-
-                              {/* Progress Bar */}
-                            <div className="mt-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">Progress</span>
-                                <span className="text-sm font-medium text-gray-900">{progress}%</span>
-                                </div>
-                              <div className="h-2 bg-gray-100 rounded-full">
-                                  <div 
-                                  className="h-full bg-violet-500 rounded-full transition-all duration-300" 
-                                  style={{ width: `${progress}%` }}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Daily Check-in & Symptoms */}
-                              <div className="grid grid-cols-2 gap-4 mt-4">
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                                    <span className="text-sm font-medium text-gray-700">Daily Check-in</span>
-                                  </div>
-                                  <p className="text-xs text-gray-500">
-                                    {dailyCheckins.find(checkin => 
-                                      format(new Date(checkin.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                                    ) 
-                                      ? 'Completed today'
-                                      : 'Not completed today'
-                                    }
-                                  </p>
-                                </div>
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <HeartIcon className="h-4 w-4 text-red-600" />
-                                    <span className="text-sm font-medium text-gray-700">Symptoms</span>
-                                  </div>
-                                  <p className="text-xs text-gray-500">
-                                    {symptomReports.filter(report => {
-                                      const reportDate = new Date(report.reportTime);
-                                      const weekAgo = new Date();
-                                      weekAgo.setDate(weekAgo.getDate() - 7);
-                                      return reportDate >= weekAgo;
-                                    }).length} reports this week
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
               {/* Recent Symptom Reports */}
               <Card>
                 <CardHeader>

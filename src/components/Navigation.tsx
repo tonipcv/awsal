@@ -59,7 +59,7 @@ interface UserRoleContextType {
   isLoadingRole: boolean;
 }
 
-const UserRoleContext = createContext<UserRoleContextType>({
+export const UserRoleContext = createContext<UserRoleContextType>({
   userRole: null,
   isLoadingRole: true
 });
@@ -239,6 +239,12 @@ export default function Navigation() {
           label: 'Protocols',
           icon: DocumentTextIcon,
           description: 'Create and manage protocols'
+        },
+        {
+          href: '/doctor/prescriptions',
+          label: 'Prescriptions',
+          icon: CheckCircleIcon,
+          description: 'Manage prescriptions'
         }
       ]
     },

@@ -31,7 +31,7 @@ export async function GET(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       },
       include: {
         doctor: {
@@ -63,9 +63,12 @@ export async function GET(
             dayNumber: 'asc'
           }
         },
-        assignments: {
+        prescriptions: {
+          where: {
+            status: { in: ['ACTIVE', 'PRESCRIBED'] }
+          },
           include: {
-            user: {
+            patient: {
               select: {
                 id: true,
                 name: true,
@@ -74,10 +77,10 @@ export async function GET(
             }
           },
           orderBy: {
-            createdAt: 'desc'
+            created_at: "desc"
           }
         },
-        onboardingTemplate: {
+        onboarding_template: {
           select: {
             id: true,
             name: true
@@ -208,21 +211,22 @@ export async function PUT(
       data: {
         name: body.name,
         description: body.description,
-        isTemplate: body.isTemplate,
-        showDoctorInfo: body.showDoctorInfo,
-        modalTitle: body.modalTitle,
-        modalVideoUrl: body.modalVideoUrl,
-        modalDescription: body.modalDescription,
-        modalButtonText: body.modalButtonText,
-        modalButtonUrl: body.modalButtonUrl,
-        coverImage: body.coverImage,
+        is_template: body.isTemplate,
+        show_doctor_info: body.showDoctorInfo,
+        modal_title: body.modalTitle,
+        modal_video_url: body.modalVideoUrl,
+        modal_description: body.modalDescription,
+        modal_button_text: body.modalButtonText,
+        modal_button_url: body.modalButtonUrl,
+        cover_image: body.coverImage,
         duration: body.days.length,
-        isRecurring: body.isRecurring,
-        recurringInterval: body.recurringInterval,
-        recurringDays: body.recurringDays,
-        availableFrom: body.availableFrom ? new Date(body.availableFrom) : null,
-        availableUntil: body.availableUntil ? new Date(body.availableUntil) : null,
-        onboardingTemplateId: body.onboardingTemplateId,
+        // Remove fields that don't exist in the schema
+        // isRecurring: body.isRecurring,
+        // recurringInterval: body.recurringInterval,
+        // recurringDays: body.recurringDays,
+        // availableFrom: body.availableFrom ? new Date(body.availableFrom) : null,
+        // availableUntil: body.availableUntil ? new Date(body.availableUntil) : null,
+        onboarding_template_id: body.onboardingTemplateId,
         days: {
           deleteMany: {},
           create: body.days.map((day: ProtocolDay) => ({
@@ -300,12 +304,12 @@ export async function DELETE(
     const existingProtocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       },
       include: {
-        assignments: {
+        prescriptions: {
           where: {
-            isActive: true
+            status: 'ACTIVE'
           }
         }
       }
@@ -315,13 +319,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Protocolo não encontrado' }, { status: 404 });
     }
 
-    // Verificar se há atribuições ativas
-    if (existingProtocol.assignments.length > 0) {
-      const activeAssignments = existingProtocol.assignments;
+    // Verificar se há prescrições ativas
+    if (existingProtocol.prescriptions.length > 0) {
+      const activePrescriptions = existingProtocol.prescriptions;
       const patientNames = await Promise.all(
-        activeAssignments.map(async (assignment) => {
+        activePrescriptions.map(async (prescription) => {
           const user = await prisma.user.findUnique({
-            where: { id: assignment.userId },
+            where: { id: prescription.user_id },
             select: { name: true, email: true }
           });
           return user?.name || user?.email || 'Unknown patient';
@@ -329,8 +333,8 @@ export async function DELETE(
       );
 
       return NextResponse.json({ 
-        error: `Cannot delete protocol with active assignments. This protocol is currently assigned to ${activeAssignments.length} patient(s): ${patientNames.join(', ')}. Please deactivate all assignments first by going to each patient's page and changing the protocol status to INACTIVE or removing the assignment.`,
-        activeAssignments: activeAssignments.length,
+        error: `Cannot delete protocol with active prescriptions. This protocol is currently assigned to ${activePrescriptions.length} patient(s): ${patientNames.join(', ')}. Please deactivate all prescriptions first by going to each patient's page and changing the protocol status to INACTIVE or removing the prescription.`,
+        activePrescriptions: activePrescriptions.length,
         patients: patientNames
       }, { status: 400 });
     }

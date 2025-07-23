@@ -22,7 +22,7 @@ export async function GET() {
 
     const protocols = await prisma.protocol.findMany({
       where: {
-        doctorId: session.user.id
+        doctor_id: session.user.id
       },
       include: {
         days: {
@@ -41,9 +41,12 @@ export async function GET() {
             dayNumber: 'asc'
           }
         },
-        assignments: {
+        prescriptions: {
+          where: {
+            status: { in: ['ACTIVE', 'PRESCRIBED'] }
+          },
           include: {
-            user: {
+            patient: {
               select: {
                 id: true,
                 name: true,
@@ -54,7 +57,7 @@ export async function GET() {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
 
@@ -72,6 +75,14 @@ export async function GET() {
         contents: day.sessions.flatMap(session => 
           session.tasks.flatMap(task => task.ProtocolContent || [])
         )
+      })),
+      // Map prescriptions to assignments format expected by the frontend
+      assignments: protocol.prescriptions.map(prescription => ({
+        id: prescription.id,
+        user: prescription.patient,
+        isActive: prescription.status === 'ACTIVE' || prescription.status === 'PRESCRIBED',
+        startDate: prescription.planned_start_date,
+        endDate: prescription.planned_end_date
       }))
     }));
 
@@ -93,7 +104,7 @@ export async function POST(request: Request) {
 
     // Get request body
     const body = await request.json();
-    const { name, description, coverImage, days } = body;
+    const { name, description, coverImage: cover_image, days } = body;
 
     // Validate required fields
     if (!name) {
@@ -108,8 +119,8 @@ export async function POST(request: Request) {
       data: {
         name,
         description,
-        coverImage,
-        doctorId: session.user.id,
+        cover_image,
+        doctor_id: session.user.id,
         days: {
           create: days.map((day: any) => ({
             dayNumber: day.dayNumber,

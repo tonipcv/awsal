@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       where: {
         id: patientId,
         role: 'PATIENT',
-        patientRelationships: {
+        patient_relationships: {
           some: {
             doctorId: session.user.id
           }
@@ -56,34 +56,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Client not found or does not belong to you' }, { status: 404 });
     }
 
-    // Verificar se já existe uma atribuição (independente do status)
-    const existingAssignment = await prisma.userProtocol.findFirst({
+    // Verificar se já existe uma prescrição (independente do status)
+    const existingPrescription = await prisma.protocolPrescription.findFirst({
       where: {
-        userId: patientId,
-        protocolId: protocolId
+        user_id: patientId,
+        protocol_id: protocolId
       }
     });
 
-    if (existingAssignment) {
-      // Se já existe uma atribuição ativa, retornar erro
-      if (existingAssignment.isActive && existingAssignment.status === 'ACTIVE') {
+    if (existingPrescription) {
+      // Se já existe uma prescrição ativa, retornar erro
+      if (existingPrescription.status === 'ACTIVE') {
         return NextResponse.json({ error: 'Este protocolo já está ativo para este paciente' }, { status: 400 });
       }
       
-      // Se existe mas está inativa, reativar a atribuição existente
+      // Se existe mas está inativa, reativar a prescrição existente
       const start = new Date(startDate);
       const end = addDays(start, (protocol.duration || 30) - 1);
       
-      const updatedAssignment = await prisma.userProtocol.update({
-        where: { id: existingAssignment.id },
+      const updatedPrescription = await prisma.protocolPrescription.update({
+        where: { id: existingPrescription.id },
         data: {
-          startDate: start,
-          endDate: end,
-          isActive: true,
+          planned_start_date: start,
+          planned_end_date: end,
           status: 'ACTIVE'
         },
         include: {
-          user: {
+          patient: {
             select: {
               id: true,
               name: true,
@@ -123,24 +122,25 @@ export async function POST(request: Request) {
         }
       });
       
-      return NextResponse.json(updatedAssignment, { status: 200 });
+      return NextResponse.json(updatedPrescription, { status: 200 });
     }
 
     // Calcular data de fim
     const start = new Date(startDate);
     const end = addDays(start, (protocol.duration || 30) - 1);
 
-    // Criar atribuição
-    const assignment = await prisma.userProtocol.create({
+    // Criar prescrição
+    const prescription = await prisma.protocolPrescription.create({
       data: {
-        userId: patientId,
-        protocolId: protocolId,
-        startDate: start,
-        endDate: end,
-        isActive: true
+        user_id: patientId,
+        protocol_id: protocolId,
+        prescribed_by: session.user.id,
+        planned_start_date: start,
+        planned_end_date: end,
+        status: 'ACTIVE'
       },
       include: {
-        user: {
+        patient: {
           select: {
             id: true,
             name: true,
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(assignment, { status: 201 });
+    return NextResponse.json(prescription, { status: 201 });
   } catch (error) {
     console.error('Error assigning protocol:', String(error));
     return NextResponse.json({ error: 'Erro ao atribuir protocolo' }, { status: 500 });
@@ -219,13 +219,13 @@ export async function GET(request: Request) {
       };
 
       if (patientId) {
-        whereClause.userId = patientId;
+        whereClause.user_id = patientId;
       }
 
-      assignments = await prisma.userProtocol.findMany({
+      assignments = await prisma.protocolPrescription.findMany({
         where: whereClause,
         include: {
-          user: {
+          patient: {
             select: {
               id: true,
               name: true,
@@ -238,14 +238,14 @@ export async function GET(request: Request) {
               name: true,
               description: true,
               duration: true,
-              showDoctorInfo: true,
-              modalTitle: true,
-              modalVideoUrl: true,
-              modalDescription: true,
-              modalButtonText: true,
-              modalButtonUrl: true,
-              coverImage: true,
-              onboardingTemplateId: true,
+              show_doctor_info: true,
+              modal_title: true,
+              modal_video_url: true,
+              modal_description: true,
+              modal_button_text: true,
+              modal_button_url: true,
+              cover_image: true,
+              onboarding_template_id: true,
               days: {
                 include: {
                   sessions: {
@@ -277,7 +277,7 @@ export async function GET(request: Request) {
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         }
       });
     } else {
@@ -332,7 +332,7 @@ export async function GET(request: Request) {
         };
       }
 
-      assignments = await prisma.userProtocol.findMany({
+      assignments = await prisma.protocolPrescription.findMany({
         where: whereClause,
         include: {
           protocol: {
@@ -341,14 +341,14 @@ export async function GET(request: Request) {
               name: true,
               description: true,
               duration: true,
-              showDoctorInfo: true,
-              modalTitle: true,
-              modalVideoUrl: true,
-              modalDescription: true,
-              modalButtonText: true,
-              modalButtonUrl: true,
-              coverImage: true,
-              onboardingTemplateId: true,
+              show_doctor_info: true,
+              modal_title: true,
+              modal_video_url: true,
+              modal_description: true,
+              modal_button_text: true,
+              modal_button_url: true,
+              cover_image: true,
+              onboarding_template_id: true,
               days: {
                 include: {
                   sessions: {
@@ -380,13 +380,13 @@ export async function GET(request: Request) {
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         }
       });
     }
 
     // Transform the data to match the expected structure and load products
-    const transformedAssignments = await Promise.all(assignments.map(async assignment => {
+    const transformedAssignments = await Promise.all(assignments.map(async (assignment: any) => {
       // Get all unique product IDs from tasks
       const productIds = new Set<string>();
       assignment.protocol.days.forEach((day: any) => {
