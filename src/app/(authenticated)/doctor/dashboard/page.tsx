@@ -88,7 +88,7 @@ export default function DoctorDashboard() {
         const dashboardData = await dashboardResponse.json();
         
         // Load clients with default parameters
-        const patientsResponse = await fetch('/api/v2/doctor/patients?limit=20&offset=0');
+        const patientsResponse = await fetch('/api/patients');
         if (!patientsResponse.ok) {
           console.error('Error loading clients:', patientsResponse.status);
           return;
@@ -104,23 +104,19 @@ export default function DoctorDashboard() {
         const protocolsData = await protocolsResponse.json();
 
         // Transform patients data to match expected format
-        const transformedPatients = patientsData.patients?.map((p: any) => ({
+        const transformedPatients = Array.isArray(patientsData) ? patientsData.map((p: any) => ({
           id: p.id,
           name: p.name,
           email: p.email,
           image: p.image || null,
-          assignedProtocols: p.activePrescriptions?.map((prescription: any) => ({
-            id: prescription.id,
-            protocol: {
-              id: prescription.protocol.id,
-              name: prescription.protocol.name,
-              duration: 30 // Default duration if not provided
-            },
-            startDate: new Date(),
-            endDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-            isActive: prescription.status === 'ACTIVE'
+          assignedProtocols: p.assignedProtocols?.map((protocol: any) => ({
+            id: protocol.id,
+            protocol: protocol.protocol,
+            startDate: protocol.startDate ? new Date(protocol.startDate) : new Date(),
+            endDate: protocol.endDate ? new Date(protocol.endDate) : new Date(new Date().setDate(new Date().getDate() + 30)),
+            isActive: protocol.isActive
           })) || []
-        })) || [];
+        })) : [];
 
         // Transform protocols data to match expected format
         const transformedProtocols = Array.isArray(protocolsData) ? protocolsData.map((p: any) => ({
