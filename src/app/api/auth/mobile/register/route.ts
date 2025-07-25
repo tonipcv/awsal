@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,13 +38,16 @@ export async function POST(request: NextRequest) {
     // Criar usuário sem médico (role PATIENT_NOCLINIC)
     const user = await prisma.user.create({
       data: {
+        id: uuidv4(),
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password: hashedPassword,
         phone: phone?.trim() || null,
         role: 'PATIENT_NOCLINIC', // Role específica para pacientes sem clínica
-        doctorId: null, // Sem médico inicialmente
-        isActive: true
+        doctor_id: null, // Sem médico inicialmente
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date()
       },
       select: {
         id: true,
@@ -51,15 +55,15 @@ export async function POST(request: NextRequest) {
         email: true,
         phone: true,
         role: true,
-        doctorId: true,
-        createdAt: true
+        doctor_id: true,
+        created_at: true
       }
     });
 
     // Gerar JWT token
     const token = jwt.sign(
       { 
-        userId: user.id, 
+        user_id: user.id, 
         email: user.email,
         role: user.role
       },
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
         hasClinic: false,
         needsClinic: true,
-        createdAt: user.createdAt
+        createdAt: user.created_at
       },
       token,
       status: 'noclinic' // Indica que precisa ser vinculado a uma clínica
