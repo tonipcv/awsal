@@ -5,7 +5,7 @@ import { Protocol, ProtocolPrescription, User, products } from '@prisma/client';
 
 // Definindo tipos para os dados retornados pelo Prisma
 type ProductItem = {
-  product: products
+  products: products
 };
 
 type ProtocolWithProducts = Protocol & {
@@ -16,30 +16,23 @@ type PrescriptionWithProtocol = ProtocolPrescription & {
   protocol?: ProtocolWithProducts
 };
 
-// GET /api/v2/patients/[patientId]/doctors/[doctorId] - Obter informações do médico e suas prescrições para um paciente específico
+// GET /api/v2/patients/doctors/[doctorId] - Obter informações do médico e suas prescrições para o paciente autenticado
 export async function GET(
   request: NextRequest,
-  { params }: { params: { patientId: string; doctorId: string } }
+  { params }: { params: { doctorId: string } }
 ) {
   try {
-    // Extrair os parâmetros para evitar acesso síncrono
-    const { patientId, doctorId } = params;
+    // Extrair o ID do médico da URL
+    const { doctorId } = params;
     
+    // Verificar autenticação e obter usuário do token JWT
     const user = await requireMobileAuth(request);
     if (!user) {
       return unauthorizedResponse();
     }
 
-    // Verificar se o ID do paciente na rota corresponde ao usuário autenticado
-    if (user.id !== patientId) {
-      return NextResponse.json(
-        { 
-          success: false,
-          message: 'Você não tem permissão para acessar informações de outro paciente' 
-        },
-        { status: 403 }
-      );
-    }
+    // Usar o ID do paciente diretamente do token JWT
+    const patientId = user.id;
 
     // Buscar o médico pelo ID
     const doctor = await prisma.user.findUnique({
@@ -59,7 +52,7 @@ export async function GET(
     if (!doctor) {
       return NextResponse.json(
         { 
-          success: false, 
+          success: false,
           message: 'Médico não encontrado' 
         },
         { status: 404 }
@@ -79,15 +72,12 @@ export async function GET(
           include: {
             protocol_products: {
               include: {
-                product: true
+                products: true
               }
             }
           }
         }
       },
-
-
-
       orderBy: {
         prescribed_at: 'desc'
       }
@@ -115,9 +105,9 @@ export async function GET(
               name: prescription.protocol.name,
               description: prescription.protocol.description,
               products: prescription.protocol.protocol_products?.map((p: ProductItem) => ({
-                id: p.product.id,
-                name: p.product.name,
-                description: p.product.description || '',
+                id: p.products.id,
+                name: p.products.name,
+                description: p.products.description || '',
                 imageUrl: '' // O modelo products não tem a propriedade image_url
               })) || []
             } : null
@@ -128,11 +118,11 @@ export async function GET(
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error in GET /api/v2/patients/[patientId]/doctors/[doctorId]:', error);
+    console.error('Erro ao buscar detalhes do médico e prescrições:', error);
     return NextResponse.json(
       { 
         success: false,
-        message: 'Erro interno do servidor' 
+        message: 'Erro ao buscar detalhes do médico e prescrições' 
       },
       { status: 500 }
     );
