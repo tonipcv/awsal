@@ -1,52 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireMobileAuth, unauthorizedResponse } from '@/lib/mobile-auth';
-import { z } from 'zod';
 
-const deleteAccountSchema = z.object({
-  confirmation: z.literal('DELETE_MY_ACCOUNT', {
-    errorMap: () => ({ message: 'Confirmação obrigatória: "DELETE_MY_ACCOUNT"' })
-  }),
-  password: z.string().min(1, 'Senha é obrigatória para confirmar a exclusão')
-});
-
-// DELETE /api/v2/patients/account - Deletar conta do paciente
+// DELETE /api/v2/patients/account - Deletar conta do paciente (versão simplificada)
 export async function DELETE(request: NextRequest) {
   try {
     const user = await requireMobileAuth(request);
     if (!user) {
       return unauthorizedResponse();
     }
-
-    const body = await request.json();
-    const validatedData = deleteAccountSchema.parse(body);
-
-    // Verificar se a senha está correta
-    const userWithPassword = await prisma.user.findUnique({
+    
+    // Buscar informações do usuário para o log
+    const userInfo = await prisma.user.findUnique({
       where: { id: user.id },
       select: {
         id: true,
-        password: true,
         email: true,
         name: true
       }
     });
 
-    if (!userWithPassword) {
+    if (!userInfo) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
         { status: 404 }
-      );
-    }
-
-    // Verificar senha (assumindo que você tem uma função de verificação de senha)
-    const bcrypt = require('bcryptjs');
-    const isPasswordValid = await bcrypt.compare(validatedData.password, userWithPassword.password);
-    
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Senha incorreta' },
-        { status: 401 }
       );
     }
 
@@ -82,7 +59,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log da exclusão para auditoria
-    console.log(`Account deleted for user: ${user.id} (${userWithPassword.email}) at ${new Date().toISOString()}`);
+    console.log(`Account deleted for user: ${user.id} (${userInfo.email}) at ${new Date().toISOString()}`);
 
     return NextResponse.json({
       success: true,
@@ -91,16 +68,6 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in DELETE /api/v2/patients/account:', error instanceof Error ? error.message : 'Unknown error');
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          error: 'Dados inválidos', 
-          details: error.errors 
-        },
-        { status: 400 }
-      );
-    }
 
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
