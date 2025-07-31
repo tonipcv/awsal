@@ -21,7 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { format, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 
 interface Protocol {
@@ -104,14 +104,14 @@ const PatientCard = ({
               {activeProtocol && (
                 <div className="flex items-center gap-2 mt-2">
                   <CheckIcon className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600 font-semibold">Já atribuído</span>
+                  <span className="text-sm text-green-600 font-semibold">Already assigned</span>
                 </div>
               )}
               {hasActiveProtocol && !activeProtocol && (
                 <div className="flex items-center gap-2 mt-2">
                   <DocumentTextIcon className="h-4 w-4 text-orange-500" />
                   <span className="text-sm text-orange-500 font-medium">
-                    {patient.assignedProtocols.filter(ap => ap.isActive).length} protocolo(s) ativo(s)
+                    {patient.assignedProtocols.filter(ap => ap.isActive).length} active protocol(s)
                   </span>
                 </div>
               )}
@@ -137,12 +137,12 @@ const PatientCard = ({
                   {isAssigning ? (
                     <>
                       <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
-                      <span className="hidden sm:inline">Atribuindo...</span>
+                      <span className="hidden sm:inline">Assigning...</span>
                     </>
                   ) : (
                     <>
                       <PlusIcon className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Atribuir</span>
+                      <span className="hidden sm:inline">Assign</span>
                     </>
                   )}
                 </Button>
@@ -156,11 +156,11 @@ const PatientCard = ({
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
               <span className="flex items-center gap-2">
                 <ClockIcon className="h-4 w-4" />
-                <span className="font-medium">{protocol.duration} dias</span>
+                <span className="font-medium">{protocol.duration} days</span>
               </span>
               <span className="flex items-center gap-2">
                 <CalendarDaysIcon className="h-4 w-4" />
-                <span className="font-medium">Até {format(endDate, 'dd/MM/yyyy', { locale: ptBR })}</span>
+                <span className="font-medium">Until {format(endDate, 'MM/dd/yyyy', { locale: enUS })}</span>
               </span>
             </div>
           </div>
@@ -207,6 +207,8 @@ export default function AssignProtocolToPatientPage() {
       setIsLoading(true);
       setError(null);
       
+      console.log('Loading data for protocol:', protocolId);
+      
       const [protocolResponse, patientsResponse] = await Promise.all([
         fetch(`/api/protocols/${protocolId}`),
         fetch('/api/patients')
@@ -214,13 +216,13 @@ export default function AssignProtocolToPatientPage() {
 
       if (!protocolResponse.ok) {
         if (protocolResponse.status === 404) {
-          setError('Protocolo não encontrado ou você não tem permissão para acessá-lo');
+          setError('Protocol not found or you do not have permission to access it');
         } else if (protocolResponse.status === 401) {
-          setError('Sessão expirada. Faça login novamente');
+          setError('Session expired. Please log in again');
           setTimeout(() => router.push('/auth/signin'), 2000);
           return;
         } else {
-          setError('Erro ao carregar dados do protocolo');
+          setError('Error loading protocol data');
         }
         return;
       }
@@ -230,19 +232,41 @@ export default function AssignProtocolToPatientPage() {
 
       if (patientsResponse.ok) {
         const patientsData = await patientsResponse.json();
-        setPatients(Array.isArray(patientsData) ? patientsData : []);
+        const processedPatients = Array.isArray(patientsData) ? patientsData : [];
+        console.log('Loaded patients data:', processedPatients);
+        
+        // Check if any patients have the current protocol assigned
+        const hasAssigned = processedPatients.some(patient => 
+          patient.assignedProtocols && 
+          patient.assignedProtocols.some((ap: { protocol?: { id: string }; isActive: boolean }) => 
+            ap.protocol?.id === protocolId && ap.isActive
+          )
+        );
+        console.log('Has assigned patients:', hasAssigned);
+        
+        setPatients(processedPatients);
       } else {
-        setError('Erro ao carregar lista de pacientes');
+        setError('Error loading patient list');
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      setError('Erro de conexão. Verifique sua internet e tente novamente');
+      setError('Connection error. Check your internet and try again');
     } finally {
       setIsLoading(false);
     }
   };
 
   const assignProtocol = async (patientId: string) => {
+    // Find the patient in the available patients list
+    const patientToAssign = availablePatients.find(p => p.id === patientId);
+    
+    if (!patientToAssign) {
+      setError('Patient not found in available patients list');
+      return;
+    }
+    
+    // Log for debugging
+    console.log('Assigning protocol to patient:', patientId);
     try {
       setIsAssigning(patientId);
       setError(null);
@@ -257,16 +281,60 @@ export default function AssignProtocolToPatientPage() {
         })
       });
 
+      let assignmentData;
       if (response.ok) {
-        setSuccessMessage('Protocolo atribuído com sucesso!');
-        await loadData(params.id as string);
+        // Get the response data to ensure we have the correct assignment ID
+        try {
+          assignmentData = await response.json();
+          console.log('Assignment response:', assignmentData);
+        } catch (error) {
+          console.error('Error parsing response JSON:', error);
+          // If we can't parse the response, use a temporary ID
+          assignmentData = { id: 'temp-' + Date.now() };
+        }
+        
+        setSuccessMessage('Protocol assigned successfully!');
+        
+        // Update local state to reflect the change immediately
+        // This ensures the UI updates even if loadData is slow
+        const updatedPatient = {
+          ...patientToAssign,
+          assignedProtocols: [
+            ...patientToAssign.assignedProtocols,
+            {
+              id: assignmentData.id || ('temp-' + Date.now()), // Use actual ID from response
+              protocolId: params.id as string, // Keep for compatibility
+              isActive: true,
+              protocol: {
+                id: protocol?.id || '',
+                name: protocol?.name || '',
+                duration: protocol?.duration || 0
+              }
+            }
+          ]
+        };
+        
+        // Log the updated patient for debugging
+        console.log('Updated patient:', updatedPatient);
+        
+        // Update patients list
+        setPatients(prevPatients => {
+          const newPatients = prevPatients.map(p => p.id === patientId ? updatedPatient : p);
+          console.log('New patients list:', newPatients);
+          return newPatients;
+        });
+        
+        // Set a short timeout before reloading data to ensure the backend has processed the change
+        setTimeout(async () => {
+          await loadData(params.id as string);
+        }, 500);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Erro ao atribuir protocolo');
+        setError(errorData.error || 'Error assigning protocol');
       }
     } catch (error) {
       console.error('Error assigning protocol:', error);
-      setError('Erro de conexão. Tente novamente');
+      setError('Connection error. Try again');
     } finally {
       setIsAssigning(null);
     }
@@ -279,11 +347,11 @@ export default function AssignProtocolToPatientPage() {
   );
 
   const availablePatients = filteredPatients.filter(patient => 
-    !patient.assignedProtocols.some(ap => ap.protocolId === protocol?.id && ap.isActive)
+    !patient.assignedProtocols.some(ap => ap.protocol?.id === protocol?.id && ap.isActive)
   );
 
   const assignedPatients = filteredPatients.filter(patient => 
-    patient.assignedProtocols.some(ap => ap.protocolId === protocol?.id && ap.isActive)
+    patient.assignedProtocols.some(ap => ap.protocol?.id === protocol?.id && ap.isActive)
   );
 
   if (isLoading) {
@@ -291,7 +359,7 @@ export default function AssignProtocolToPatientPage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <ArrowPathIcon className="h-8 w-8 text-[#5154e7] animate-spin mx-auto mb-4" />
-          <span className="text-sm text-gray-600 font-medium">Carregando dados...</span>
+          <span className="text-sm text-gray-600 font-medium">Loading data...</span>
         </div>
       </div>
     );
@@ -306,10 +374,10 @@ export default function AssignProtocolToPatientPage() {
           <div className="flex gap-4 justify-center">
             <Button onClick={() => loadData(params.id as string)} className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold">
               <ArrowPathIcon className="h-4 w-4 mr-2" />
-              Tentar Novamente
+              Try Again
             </Button>
             <Button variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl shadow-md font-semibold">
-              <Link href="/doctor/protocols">Voltar aos Protocolos</Link>
+              <Link href="/doctor/protocols">Back to Protocols</Link>
             </Button>
           </div>
         </div>
@@ -328,12 +396,12 @@ export default function AssignProtocolToPatientPage() {
               <Button variant="outline" size="sm" asChild className="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-xl px-4 shadow-md font-semibold">
                 <Link href={`/doctor/protocols/${protocol?.id}`}>
                   <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                  Voltar
+                  Back
                 </Link>
               </Button>
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  Atribuir Protocolo
+                  Assign Protocol
                 </h1>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <span className="flex items-center gap-2">
@@ -341,9 +409,9 @@ export default function AssignProtocolToPatientPage() {
                     <span className="font-medium">{protocol?.name}</span>
                   </span>
                   <span>•</span>
-                  <span className="font-medium">{assignedPatients.length} atribuídos</span>
+                  <span className="font-medium">{assignedPatients.length} assigned</span>
                   <span>•</span>
-                  <span className="font-medium">{availablePatients.length} disponíveis</span>
+                  <span className="font-medium">{availablePatients.length} available</span>
                 </div>
               </div>
             </div>
@@ -403,22 +471,22 @@ export default function AssignProtocolToPatientPage() {
                       <div className="flex flex-wrap gap-6 text-sm text-gray-600">
                         <span className="flex items-center gap-2">
                           <ClockIcon className="h-4 w-4" />
-                          <span className="font-medium">{protocol.duration} dias</span>
+                          <span className="font-medium">{protocol?.duration} days</span>
                         </span>
                         <span className="flex items-center gap-2">
                           <DocumentTextIcon className="h-4 w-4" />
-                          <span className="font-medium">{protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tarefas</span>
+                          <span className="font-medium">{protocol.days.reduce((acc, day) => acc + day.tasks.length, 0)} tasks</span>
                         </span>
                         <span className="flex items-center gap-2">
                           <UsersIcon className="h-4 w-4" />
-                          <span className="font-medium">{assignedPatients.length} paciente(s) ativo(s)</span>
+                          <span className="font-medium">{assignedPatients.length} active patient(s)</span>
                         </span>
                         {protocol.isRecurring && (
                           <span className="flex items-center gap-2">
                             <ArrowPathIcon className="h-4 w-4" />
                             <span className="font-medium">
                               {protocol.recurringInterval === 'DAILY' && 'Daily'}
-                              {protocol.recurringInterval === 'WEEKLY' && (
+                              {protocol.recurringInterval === 'WEEKLY' && protocol.recurringDays && (
                                 <>
                                   Weekly on{' '}
                                   {protocol.recurringDays
@@ -427,7 +495,7 @@ export default function AssignProtocolToPatientPage() {
                                     .join(', ')}
                                 </>
                               )}
-                              {protocol.recurringInterval === 'MONTHLY' && (
+                              {protocol.recurringInterval === 'MONTHLY' && protocol.recurringDays && (
                                 <>
                                   Monthly on day{protocol.recurringDays.length > 1 ? 's' : ''}{' '}
                                   {protocol.recurringDays.sort((a, b) => a - b).join(', ')}
@@ -449,7 +517,7 @@ export default function AssignProtocolToPatientPage() {
                 <div className="relative">
                   <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    placeholder="Buscar pacientes..."
+                    placeholder="Search patients..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-12 h-12 bg-white border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] text-gray-900 placeholder:text-gray-500 text-base rounded-xl font-medium"
@@ -470,13 +538,13 @@ export default function AssignProtocolToPatientPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
                       <PlusIcon className="h-5 w-5 text-[#5154e7]" />
-                      Pacientes Disponíveis
+                      Available Patients
                       <Badge className="bg-[#5154e7]/10 text-[#5154e7] border-[#5154e7]/20 px-3 py-1 rounded-full text-sm font-semibold">
                         {availablePatients.length}
                       </Badge>
                     </CardTitle>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2 font-medium">Pacientes que podem receber este protocolo</p>
+                  <p className="text-sm text-gray-600 mt-2 font-medium">Patients who can receive this protocol</p>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   {availablePatients.length === 0 ? (
@@ -484,28 +552,28 @@ export default function AssignProtocolToPatientPage() {
                       <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-bold mb-2 text-gray-900">
                         {searchTerm 
-                          ? `Nenhum paciente encontrado para "${searchTerm}"` 
+                          ? `No patients found for "${searchTerm}"` 
                           : patients.length === 0
-                            ? 'Nenhum paciente cadastrado ainda'
-                            : 'Todos os pacientes já possuem este protocolo'}
+                            ? 'No patients registered yet'
+                            : 'All patients already have this protocol'}
                       </h3>
                       <p className="text-sm text-gray-500 mb-4 font-medium">
                         {patients.length === 0 
-                          ? 'Cadastre seu primeiro paciente para começar'
+                          ? 'Register your first patient to start'
                           : searchTerm 
-                            ? 'Tente ajustar o termo de busca'
-                            : 'Todos os pacientes já têm este protocolo atribuído'}
+                            ? 'Try adjusting your search term'
+                            : 'All patients already have this protocol assigned'}
                       </p>
                       {patients.length === 0 ? (
                         <Button asChild className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl shadow-md font-semibold" size="sm">
                           <Link href="/doctor/patients">
                             <PlusIcon className="h-4 w-4 mr-2" />
-                            Cadastrar Pacientes
+                            Register Patients
                           </Link>
                         </Button>
                       ) : searchTerm ? (
                         <Button variant="outline" size="sm" onClick={() => setSearchTerm('')} className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl shadow-md font-semibold">
-                          Limpar busca
+                          Clear search
                         </Button>
                       ) : null}
                     </div>
@@ -532,20 +600,20 @@ export default function AssignProtocolToPatientPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-3">
                       <CheckIcon className="h-5 w-5 text-green-600" />
-                      Protocolo Atribuído
+                      Protocol Assigned
                       <Badge className="bg-green-50 text-green-700 border-green-200 px-3 py-1 rounded-full text-sm font-semibold">
                         {assignedPatients.length}
                       </Badge>
                     </CardTitle>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2 font-medium">Pacientes que já possuem este protocolo ativo</p>
+                  <p className="text-sm text-gray-600 mt-2 font-medium">Patients who already have this protocol active</p>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   {assignedPatients.length === 0 ? (
                     <div className="text-center py-12">
                       <CheckIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-bold mb-2 text-gray-900">Nenhum paciente com este protocolo ainda</h3>
-                      <p className="text-sm text-gray-500 font-medium">Atribua este protocolo aos seus pacientes para começar</p>
+                      <h3 className="text-lg font-bold mb-2 text-gray-900">No patients with this protocol yet</h3>
+                      <p className="text-sm text-gray-500 font-medium">Assign this protocol to your patients to start</p>
                     </div>
                   ) : (
                     assignedPatients.map((patient) => (

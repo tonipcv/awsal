@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server';
 // DELETE /api/protocols/[id]/courses/[courseId] - Remover curso do protocolo
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; courseId: string } }
+  { params }: { params: Promise<{ id: string; courseId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,13 +24,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Acesso negado. Apenas médicos podem remover cursos de protocolos.' }, { status: 403 });
     }
 
-    const { id: protocolId, courseId } = params;
+    const resolvedParams = await params;
+    const { id: protocolId, courseId } = resolvedParams;
 
     // Verificar se o protocolo pertence ao médico
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 

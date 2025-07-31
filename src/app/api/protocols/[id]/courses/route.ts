@@ -32,7 +32,7 @@ export async function GET(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -69,7 +69,7 @@ export async function GET(
 
     return NextResponse.json(protocolCourses);
   } catch (error) {
-    console.error('Error fetching protocol courses:', error);
+    console.error('Error fetching protocol courses:', error || 'Unknown error');
     return NextResponse.json({ error: 'Erro ao buscar cursos do protocolo' }, { status: 500 });
   }
 }
@@ -104,7 +104,7 @@ export async function POST(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -151,7 +151,7 @@ export async function POST(
 
     return NextResponse.json(protocolCourse);
   } catch (error) {
-    console.error('Error adding course to protocol:', error);
+    console.error('Error adding course to protocol:', error || 'Unknown error');
     return NextResponse.json({ error: 'Erro ao adicionar curso ao protocolo' }, { status: 500 });
   }
 }
@@ -186,7 +186,7 @@ export async function PUT(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -226,7 +226,7 @@ export async function PUT(
 
     return NextResponse.json(updatedCourses);
   } catch (error) {
-    console.error('Error updating protocol courses:', error);
+    console.error('Error updating protocol courses:', error || 'Unknown error');
     return NextResponse.json({ error: 'Erro ao atualizar cursos do protocolo' }, { status: 500 });
   }
 }
@@ -258,7 +258,7 @@ export async function DELETE(
     const protocol = await prisma.protocol.findFirst({
       where: {
         id: protocolId,
-        doctorId: session.user.id
+        doctor_id: session.user.id
       }
     });
 
@@ -278,7 +278,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Curso removido do protocolo com sucesso' });
   } catch (error) {
-    console.error('Error removing course from protocol:', error);
+    console.error('Error removing course from protocol:', error || 'Unknown error');
     return NextResponse.json({ error: 'Erro ao remover curso do protocolo' }, { status: 500 });
   }
 } 

@@ -148,7 +148,15 @@ export default function SymptomReportsPage() {
                          report.user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.protocol.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filter === 'ALL' || report.status === filter;
+    let matchesFilter = false;
+    if (filter === 'ALL') {
+      matchesFilter = true;
+    } else if (filter === 'REQUIRES_ATTENTION') {
+      // Show reports with status REQUIRES_ATTENTION OR severity > 7
+      matchesFilter = report.status === 'REQUIRES_ATTENTION' || report.severity > 7;
+    } else {
+      matchesFilter = report.status === filter;
+    }
 
     return matchesSearch && matchesFilter;
   });

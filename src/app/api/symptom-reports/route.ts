@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
     if (user.role === 'DOCTOR') {
       // Doctor can see reports from their patients
-      if (userId && protocolId) {
+      if (userId) {
         // Verify patient belongs to doctor
         const patient = await prisma.user.findFirst({
           where: {
@@ -43,8 +43,13 @@ export async function GET(request: Request) {
           return NextResponse.json({ error: 'Paciente não encontrado' }, { status: 404 });
         }
 
+        // Always filter by userId if provided
         whereClause.userId = userId;
-        whereClause.protocolId = protocolId;
+        
+        // Add protocolId filter if provided
+        if (protocolId) {
+          whereClause.protocolId = protocolId;
+        }
       } else {
         // Get reports from all doctor's patients
         whereClause.protocol = {

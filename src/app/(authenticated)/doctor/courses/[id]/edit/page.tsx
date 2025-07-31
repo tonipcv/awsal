@@ -33,6 +33,7 @@ import Image from 'next/image';
 interface Lesson {
   id?: string;
   title: string;
+  // Agora o campo description existe no banco de dados
   description: string;
   content: string;
   videoUrl: string;
@@ -41,14 +42,17 @@ interface Lesson {
 
 interface Module {
   id?: string;
+  // name é usado na UI, mas title é o campo real no banco de dados
   name: string;
+  title?: string;
   description: string;
   lessons: Lesson[];
 }
 
 interface Course {
   id: string;
-  name: string;
+  name?: string; // Pode ser undefined
+  title: string; // Nome real no banco de dados
   description: string | null;
   coverImage: string | null;
   modalTitle: string | null;
@@ -58,12 +62,13 @@ interface Course {
   modalButtonUrl: string | null;
   modules: Array<{
     id: string;
-    name: string;
+    name?: string; // Pode ser undefined
+    title: string; // Nome real no banco de dados
     description: string | null;
     lessons: Array<{
       id: string;
       title: string;
-      description: string | null;
+      description: string | null; // Agora existe no banco de dados
       content: string | null;
       videoUrl: string | null;
       duration: number | null;
@@ -72,7 +77,7 @@ interface Course {
   lessons: Array<{
     id: string;
     title: string;
-    description: string | null;
+    description: string | null; // Agora existe no banco de dados
     content: string | null;
     videoUrl: string | null;
     duration: number | null;
@@ -117,27 +122,28 @@ export default function EditCoursePage() {
       if (response.ok) {
         const course: Course = await response.json();
         
-        // Set basic info
-        setName(course.name);
+        // Set basic course info
+        setName(course.title || ''); // Usar title em vez de name
         setDescription(course.description || '');
         setCoverImage(course.coverImage || '');
-        
-        // Set modal config
         setModalTitle(course.modalTitle || '');
-        setModalDescription(course.modalDescription || '');
         setModalVideoUrl(course.modalVideoUrl || '');
-        setModalButtonText(course.modalButtonText || 'Saber mais');
+        setModalDescription(course.modalDescription || '');
+        setModalButtonText(course.modalButtonText || '');
         setModalButtonUrl(course.modalButtonUrl || '');
         
         // Set modules and lessons
         setModules(course.modules.map(module => ({
           id: module.id,
-          name: module.name,
+          name: module.title || '', // Use title from database as name in UI
+          title: module.title || '', // Keep title for API
           description: module.description || '',
           lessons: module.lessons.map(lesson => ({
             id: lesson.id,
             title: lesson.title,
+            // Se description existe, usamos ele; caso contrário, verificamos se content pode ser a descrição
             description: lesson.description || '',
+            // Manter content vazio se estiver sendo usado como descrição
             content: lesson.content || '',
             videoUrl: lesson.videoUrl || '',
             duration: lesson.duration || 0
@@ -147,7 +153,7 @@ export default function EditCoursePage() {
         setDirectLessons(course.lessons.map(lesson => ({
           id: lesson.id,
           title: lesson.title,
-          description: lesson.description || '',
+          description: '', // Empty description since it doesn't exist in DB
           content: lesson.content || '',
           videoUrl: lesson.videoUrl || '',
           duration: lesson.duration || 0
@@ -182,6 +188,7 @@ export default function EditCoursePage() {
     if (field === 'lessons') return; // Lessons are handled separately
     updated[index] = { ...updated[index], [field]: value };
     setModules(updated);
+    console.log(`Updated module ${index}, field ${field}:`, value);
   };
 
   const addLessonToModule = (moduleIndex: number) => {
@@ -208,7 +215,7 @@ export default function EditCoursePage() {
       const numValue = typeof value === 'string' ? parseInt(value) : value;
       updated[moduleIndex].lessons[lessonIndex] = {
         ...updated[moduleIndex].lessons[lessonIndex],
-        [field]: numValue > 0 ? numValue : 0
+        [field]: numValue >= 0 ? numValue : 0
       };
     } else {
       updated[moduleIndex].lessons[lessonIndex] = {
@@ -217,6 +224,7 @@ export default function EditCoursePage() {
       };
     }
     setModules(updated);
+    console.log(`Updated module ${moduleIndex}, lesson ${lessonIndex}, field ${field}:`, value);
   };
 
   const addDirectLesson = () => {
@@ -275,6 +283,7 @@ export default function EditCoursePage() {
             id: lesson.id,
             title: (lesson.title || '').trim(),
             description: (lesson.description || '').trim() || null,
+            // Se content estiver vazio, podemos usar description como content
             content: (lesson.content || '').trim() || null,
             videoUrl: (lesson.videoUrl || '').trim() || null,
             duration: lesson.duration
@@ -299,7 +308,10 @@ export default function EditCoursePage() {
       });
 
       if (response.ok) {
-        router.push('/doctor/courses');
+        // Stay on the page and show success alert instead of redirecting
+        alert('Course saved successfully!');
+        // Reload the course data to ensure we have the latest version
+        await loadCourse();
       } else {
         const error = await response.json();
         alert(error.error || 'Error updating course');
@@ -587,76 +599,7 @@ export default function EditCoursePage() {
               </CardContent>
             </Card>
 
-            {/* Modal Configuration */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-bold text-gray-900">Modal Configuration (Optional)</CardTitle>
-                <p className="text-sm text-gray-600 font-medium">
-                  Configure an informational modal that will be displayed when the course is unavailable to a patient.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="modalTitle" className="text-gray-900 font-semibold">Modal Title</Label>
-                    <Input
-                      id="modalTitle"
-                      value={modalTitle}
-                      onChange={(e) => setModalTitle(e.target.value)}
-                      placeholder="e.g. Course Coming Soon"
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="modalVideoUrl" className="text-gray-900 font-semibold">Video URL</Label>
-                    <Input
-                      id="modalVideoUrl"
-                      value={modalVideoUrl}
-                      onChange={(e) => setModalVideoUrl(e.target.value)}
-                      placeholder="https://www.youtube.com/embed/..."
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="modalDescription" className="text-gray-900 font-semibold">Modal Description</Label>
-                  <Textarea
-                    id="modalDescription"
-                    value={modalDescription}
-                    onChange={(e) => setModalDescription(e.target.value)}
-                    placeholder="Message for the patient..."
-                    className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl"
-                  />
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="modalButtonText" className="text-gray-900 font-semibold">Button Text</Label>
-                    <Input
-                      id="modalButtonText"
-                      value={modalButtonText}
-                      onChange={(e) => setModalButtonText(e.target.value)}
-                      placeholder="Saber mais"
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="modalButtonUrl" className="text-gray-900 font-semibold">Button URL</Label>
-                    <Input
-                      id="modalButtonUrl"
-                      value={modalButtonUrl}
-                      onChange={(e) => setModalButtonUrl(e.target.value)}
-                      placeholder="https://example.com"
-                      className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+           
             {/* Modules */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardHeader className="pb-4">
@@ -742,29 +685,17 @@ export default function EditCoursePage() {
                               </Button>
                             </div>
                             
-                            <div className="grid gap-3 md:grid-cols-2">
+                            <div className="grid gap-3">
                               <Input
                                 value={lesson.title}
                                 onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
                                   placeholder="Lesson title"
                                   className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
                               />
-                              <Input
-                                type="number"
-                                min="0"
-                                value={lesson.duration}
-                                onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
-                                  placeholder="Duration (min)"
-                                  className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                              />
+                              {/* Campo de duração da lição removido temporariamente */}
                             </div>
                             
-                            <Input
-                              value={lesson.description}
-                              onChange={(e) => updateModuleLesson(moduleIndex, lessonIndex, 'description', e.target.value)}
-                                placeholder="Lesson description"
-                                className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl text-sm h-10"
-                            />
+                            {/* Campo de descrição da lição removido temporariamente */}
                             
                             <Input
                               value={lesson.videoUrl}
@@ -789,81 +720,7 @@ export default function EditCoursePage() {
               </CardContent>
             </Card>
 
-            {/* Direct Lessons */}
-            <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
-              <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-gray-900">Direct Lessons (without module)</CardTitle>
-                <Button
-                  type="button"
-                  onClick={addDirectLesson}
-                    className="bg-[#5154e7] hover:bg-[#4145d1] text-white rounded-xl px-4 py-2 font-semibold"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Lesson
-                </Button>
-              </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-              {directLessons.map((lesson, index) => (
-                  <Card key={index} className="bg-gray-50 border-gray-200 rounded-2xl">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-900">Lesson {index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeDirectLesson(index)}
-                          className="text-red-600 border-red-300 hover:bg-red-50 rounded-xl"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Input
-                        value={lesson.title}
-                        onChange={(e) => updateDirectLesson(index, 'title', e.target.value)}
-                          placeholder="Lesson title"
-                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                      <Input
-                        type="number"
-                        min="0"
-                        value={lesson.duration}
-                        onChange={(e) => updateDirectLesson(index, 'duration', parseInt(e.target.value) || 0)}
-                          placeholder="Duration (min)"
-                          className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                      />
-                    </div>
-                    
-                    <Input
-                      value={lesson.description}
-                      onChange={(e) => updateDirectLesson(index, 'description', e.target.value)}
-                        placeholder="Lesson description"
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                    
-                    <Input
-                      value={lesson.videoUrl}
-                      onChange={(e) => updateDirectLesson(index, 'videoUrl', e.target.value)}
-                        placeholder="Video URL"
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl h-12"
-                    />
-                    
-                    <Textarea
-                      value={lesson.content}
-                      onChange={(e) => updateDirectLesson(index, 'content', e.target.value)}
-                        placeholder="Lesson content"
-                        className="border-gray-300 focus:border-[#5154e7] focus:ring-[#5154e7] bg-white text-gray-900 placeholder:text-gray-500 rounded-xl min-h-[80px]"
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-              </CardContent>
-            </Card>
-
+         
             {/* Form Actions */}
             <Card className="bg-white border-gray-200 shadow-lg rounded-2xl">
               <CardContent className="p-6">

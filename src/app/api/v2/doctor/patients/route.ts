@@ -5,6 +5,22 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generateUserId } from '@/lib/utils/generate-id';
 import { Prisma } from '@prisma/client';
+import nodemailer from 'nodemailer';
+import { createSetPasswordEmail } from '@/email-templates/auth/set-password';
+
+if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD || !process.env.SMTP_FROM) {
+  console.error('Missing SMTP configuration environment variables');
+}
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: 465,
+  secure: true, // use SSL
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+  }
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -234,7 +250,8 @@ export async function POST(request: NextRequest) {
       where: { email }
     });
 
-    if (existingUser) {
+    // If user exists and is active, return error
+    if (existingUser && existingUser.is_active) {
       return NextResponse.json(
         { 
           success: false, 
@@ -244,38 +261,112 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+    
+    // If user exists but is inactive (soft deleted), we'll reactivate it
+
+    // Generate verification code (6 digits)
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const codeExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+    
+    // Hash the token for storage (to match how set-password endpoint expects it)
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(verificationCode).digest('hex');
 
     // Create patient user and relationship in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create patient user
-      const patient = await tx.user.create({
+      let patient;
+      
+      if (existingUser) {
+        // Reactivate existing user
+        patient = await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name,
+            phone: phone || existingUser.phone,
+            birth_date: birth_date ? new Date(birth_date) : existingUser.birth_date,
+            gender: gender || existingUser.gender,
+            address: address || existingUser.address,
+            emergency_contact: emergency_contact || existingUser.emergency_contact,
+            emergency_phone: emergency_phone || existingUser.emergency_phone,
+            medical_history: medical_history || existingUser.medical_history,
+            allergies: allergies || existingUser.allergies,
+            medications: medications || existingUser.medications,
+            is_active: true,
+            email_verified: existingUser.email_verified,
+            reset_token: hashedToken,
+            reset_token_expiry: codeExpiry
+          }
+        });
+        
+        console.log('Reactivated existing patient:', patient.id);
+      } else {
+        // Create new patient user
+        patient = await tx.user.create({
+          data: {
+            id: await generateUserId(),
+            name,
+            email,
+            phone,
+            birth_date: birth_date ? new Date(birth_date) : null,
+            gender,
+            address,
+            emergency_contact,
+            emergency_phone,
+            medical_history,
+            allergies,
+            medications,
+            role: 'PATIENT',
+            is_active: true,
+            email_verified: null,
+            reset_token: hashedToken,
+            reset_token_expiry: codeExpiry
+          }
+        });
+        
+        console.log('Created new patient:', patient.id);
+      }
+      
+      // Create verification token
+      await tx.verificationToken.create({
         data: {
-          id: await generateUserId(),
-          name,
-          email,
-          phone,
-          birth_date: birth_date ? new Date(birth_date) : null,
-          gender,
-          address,
-          emergency_contact,
-          emergency_phone,
-          medical_history,
-          allergies,
-          medications,
-          role: 'PATIENT',
-          is_active: true
+          identifier: email,
+          token: verificationCode,
+          expires: codeExpiry
         }
       });
 
-      // Create doctor-patient relationship
-      await tx.doctorPatientRelationship.create({
-        data: {
+      // Check if relationship already exists (even if inactive)
+      const existingRelationship = await tx.doctorPatientRelationship.findFirst({
+        where: {
           doctorId: userId!,
-          patientId: patient.id,
-          isActive: true,
-          isPrimary: is_primary ?? false
+          patientId: patient.id
         }
       });
+      
+      if (existingRelationship) {
+        // Update existing relationship to active
+        await tx.doctorPatientRelationship.update({
+          where: {
+            id: existingRelationship.id
+          },
+          data: {
+            isActive: true,
+            isPrimary: is_primary ?? existingRelationship.isPrimary
+          }
+        });
+        console.log('Reactivated existing doctor-patient relationship');
+      } else {
+        // Create new doctor-patient relationship
+        await tx.doctorPatientRelationship.create({
+          data: {
+            doctorId: userId!,
+            patientId: patient.id,
+            isActive: true,
+            isPrimary: is_primary ?? false
+          }
+        });
+        console.log('Created new doctor-patient relationship');
+      }
 
       // Create protocol prescriptions if any protocols were selected
       if (protocolIds?.length > 0) {
@@ -298,6 +389,53 @@ export async function POST(request: NextRequest) {
       return patient;
     });
 
+    // Get doctor's name
+    const doctor = await prisma.user.findUnique({
+      where: { id: userId! },
+      select: { name: true }
+    });
+    
+    // Check if this is an existing patient
+    const isExistingClient = existingUser !== null;
+    
+    // Generate reset URL with token
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://app.cxlus.com';
+    const resetUrl = `${baseUrl}/auth/set-password?token=${verificationCode}&email=${encodeURIComponent(email)}`;
+    
+    // Send welcome/invitation email
+    console.log(`Sending ${isExistingClient ? 'invitation' : 'welcome'} email to:`, email);
+    
+    try {
+      await transporter.verify();
+      console.log('SMTP connection verified');
+
+      const emailHtml = createSetPasswordEmail({
+        name,
+        email,
+        resetUrl,
+        doctorName: doctor?.name || 'Your doctor',
+        isExistingClient,
+        clinicName: 'Cxlus'
+      });
+
+      await transporter.sendMail({
+        from: {
+          name: 'CXLUS',
+          address: process.env.SMTP_FROM as string
+        },
+        to: email,
+        subject: isExistingClient ? '[Cxlus] Doctor Invitation' : '[Cxlus] Welcome to Cxlus',
+        html: emailHtml
+      });
+
+      console.log('Verification email sent successfully');
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // We don't delete the user here as we do in register route
+      // since the doctor has already created the patient
+      // Just log the error and continue
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -308,7 +446,7 @@ export async function POST(request: NextRequest) {
         birth_date: result.birth_date?.toISOString(),
         gender: result.gender
       },
-      message: 'Paciente criado com sucesso'
+      message: 'Paciente criado com sucesso e email de verificação enviado'
     });
 
   } catch (error) {

@@ -191,11 +191,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    const patientId = params.id;
+    
     // Check if doctor has access to this patient
     const relationship = await prisma.doctorPatientRelationship.findFirst({
       where: {
         doctorId: doctor.id,
-        patientId: params.id,
+        patientId: patientId,
         isActive: true
       }
     });
@@ -204,10 +206,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Patient not found or access denied' }, { status: 403 });
     }
 
-    // Soft delete by setting is_active to false
-    await prisma.user.update({
-      where: { id: params.id },
-      data: { is_active: false }
+    // Update both the user and the relationship in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Soft delete user by setting is_active to false
+      await tx.user.update({
+        where: { id: patientId },
+        data: { is_active: false }
+      });
+      
+      // Also set the relationship to inactive
+      await tx.doctorPatientRelationship.updateMany({
+        where: {
+          doctorId: doctor.id,
+          patientId: patientId,
+        },
+        data: { isActive: false }
+      });
     });
 
     return NextResponse.json({ message: 'Patient deleted successfully' });

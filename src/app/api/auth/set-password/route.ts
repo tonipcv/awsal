@@ -30,11 +30,14 @@ export async function POST(req: Request) {
     // Find user with valid invite token
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: hashedToken,
-        resetTokenExpiry: {
+        reset_token: hashedToken,
+        reset_token_expiry: {
           gt: new Date()
         },
-        role: 'DOCTOR' // Apenas médicos podem usar este endpoint
+        // Allow both doctors and patients to use this endpoint
+        role: {
+          in: ['DOCTOR', 'PATIENT']
+        }
       }
     });
 
@@ -53,9 +56,9 @@ export async function POST(req: Request) {
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        emailVerified: new Date(), // Verificar email automaticamente
-        resetToken: null,
-        resetTokenExpiry: null
+        email_verified: new Date(), // Verificar email automaticamente
+        reset_token: null,
+        reset_token_expiry: null
       }
     });
 

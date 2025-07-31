@@ -235,6 +235,7 @@ model Module {
 model Lesson {
   id          String       @id(map: "Lesson_pkey") @default(cuid())
   title       String
+  description String?
   content     String?
   videoUrl    String?
   duration    Int?

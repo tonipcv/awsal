@@ -333,11 +333,7 @@ export default function ProtocolsPage() {
                               Recurring
                             </span>
                           )}
-                          {activeAssignments > 0 && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 border border-teal-200 font-semibold">
-                              {activeAssignments} active
-                            </span>
-                          )}
+
                         </div>
                         
                         {protocol.description && (

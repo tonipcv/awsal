@@ -1,59 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
-interface Protocol {
-  id: string;
-  name: string;
-  description?: string;
-  duration?: number;
-}
+// No protocol interface needed anymore
 
 export default function SmartAddPatientPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [protocols, setProtocols] = useState<Protocol[]>([]);
-  const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
   
   const [patient, setPatient] = useState({
     name: '',
     email: '',
   });
 
-  useEffect(() => {
-    loadProtocols();
-  }, []);
-
-  const loadProtocols = async () => {
-    try {
-      const response = await fetch('/api/v2/doctor/protocols');
-      if (response.ok) {
-        const { data } = await response.json();
-        setProtocols(data);
-      }
-    } catch (error) {
-      console.error('Error loading protocols:', error);
-    }
-  };
+  // No protocol loading needed
 
   const handleCreatePatient = async () => {
     try {
       setIsLoading(true);
 
       const patientData = {
-        ...patient,
-        protocolIds: selectedProtocols
+        ...patient
       };
 
       const response = await fetch('/api/v2/doctor/patients', {
@@ -89,13 +66,7 @@ export default function SmartAddPatientPage() {
     }
   };
 
-  const toggleProtocol = (protocolId: string) => {
-    setSelectedProtocols(prev => 
-      prev.includes(protocolId) 
-        ? prev.filter(id => id !== protocolId)
-        : [...prev, protocolId]
-    );
-  };
+  // Protocol selection functionality removed
 
   return (
     <div className="min-h-screen bg-white">
@@ -156,36 +127,7 @@ export default function SmartAddPatientPage() {
                   </div>
                 </div>
 
-                {/* Protocol Selection */}
-                <div className="space-y-4">
-                  <Label className="text-gray-900 font-semibold">Select Protocols</Label>
-                  <div className="grid gap-3">
-                    {protocols.map((protocol) => (
-                      <div
-                        key={protocol.id}
-                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                          selectedProtocols.includes(protocol.id)
-                            ? 'border-[#5154e7] bg-[#5154e7]/5'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => toggleProtocol(protocol.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={selectedProtocols.includes(protocol.id)}
-                            onCheckedChange={() => toggleProtocol(protocol.id)}
-                          />
-                          <div>
-                            <div className="font-medium text-gray-900">{protocol.name}</div>
-                            {protocol.duration && (
-                              <div className="text-sm text-gray-500">{protocol.duration} days</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Protocol Selection removed */}
               </CardContent>
             </Card>
           </div>

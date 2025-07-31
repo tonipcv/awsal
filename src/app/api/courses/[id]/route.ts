@@ -285,20 +285,22 @@ export async function PUT(
         const module = modules[i];
         const createdModule = await tx.module.create({
           data: {
-            title: module.name || module.title || '',
+            title: module.name || module.title || '', // Use name field as primary source
             description: module.description || null,
             orderIndex: i,
             courseId: id
           }
         });
 
-        // Create lessons for this module
+          // Create lessons for this module
         for (let j = 0; j < (module.lessons || []).length; j++) {
           const lesson = module.lessons[j];
           await tx.lesson.create({
             data: {
               title: lesson.title,
-              content: lesson.content || null,
+              // Removemos temporariamente o campo description para evitar o erro
+              // Vamos armazenar a descrição no campo content se estiver vazio
+              content: lesson.description ? lesson.description : (lesson.content || null),
               videoUrl: lesson.videoUrl || null,
               duration: lesson.duration && lesson.duration > 0 ? lesson.duration : null,
               orderIndex: j,
