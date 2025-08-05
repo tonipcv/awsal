@@ -635,95 +635,105 @@ export default function PatientsPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {currentPatients.map((patient) => {
-                  const activeProtocol = getActiveProtocol(patient);
-                  const totalProtocols = patient.assigned_protocols?.length || 0;
-                  
-                  return (
-                    <Card key={patient.id} className="bg-white border-gray-200 shadow-sm rounded-xl hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-base font-semibold text-gray-900">
-                                  {patient.name || 'Name not provided'}
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                  {patient.assigned_protocols?.length ? (
-                                    <span>
-                                      {patient.assigned_protocols.filter(p => p.is_active).length} protocolos ativos
-                                    </span>
-                                  ) : (
-                                    <span>• {patient.email}</span>
-                                  )}
-                                </p>
-                                {activeProtocol && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs bg-teal-100 text-teal-700 font-medium">
-                                    Active
-                                  </span>
+              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+                <table className="min-w-full divide-y divide-gray-300">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Email</th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Protocols</th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                      <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {currentPatients.map((patient) => {
+                      const activeProtocol = getActiveProtocol(patient);
+                      const totalProtocols = patient.assigned_protocols?.length || 0;
+                      const activeProtocolsCount = patient.assigned_protocols?.filter(p => p.is_active).length || 0;
+                      
+                      return (
+                        <tr key={patient.id} className="hover:bg-gray-50">
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {patient.name || 'Name not provided'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {patient.email || '-'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {totalProtocols > 0 ? `${activeProtocolsCount} active / ${totalProtocols} total` : 'No protocols'}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            {activeProtocol ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
+                              >
+                                <Link href={`/doctor/patients/${patient.id}`}>
+                                  <EyeIcon className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditModal(patient)}
+                                className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
+                              >
+                                <PencilIcon className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setPatientToDelete({ id: patient.id, name: patient.name || 'Unnamed Patient' });
+                                  setShowDeleteConfirm(true);
+                                }}
+                                disabled={deletingPatientId === patient.id}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
+                                title="Delete patient"
+                              >
+                                {deletingPatientId === patient.id ? (
+                                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
+                                ) : (
+                                  <TrashIcon className="h-3 w-3" />
                                 )}
-                              </div>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
+                                disabled={sendingEmailId === patient.id}
+                                className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg font-medium h-8 px-2"
+                                title="Send password setup email"
+                              >
+                                {sendingEmailId === patient.id ? (
+                                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
+                                ) : (
+                                  <PaperAirplaneIcon className="h-3 w-3" />
+                                )}
+                              </Button>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              asChild
-                              className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
-                            >
-                              <Link href={`/doctor/patients/${patient.id}`}>
-                                <EyeIcon className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditModal(patient)}
-                              className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg h-8 w-8 p-0"
-                            >
-                              <PencilIcon className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setPatientToDelete({ id: patient.id, name: patient.name || 'Unnamed Patient' });
-                                setShowDeleteConfirm(true);
-                              }}
-                              disabled={deletingPatientId === patient.id}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg h-8 w-8 p-0"
-                              title="Delete patient"
-                            >
-                              {deletingPatientId === patient.id ? (
-                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></span>
-                              ) : (
-                                <TrashIcon className="h-3 w-3" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => sendPasswordResetEmail(patient.id, patient.email || '')}
-                              disabled={sendingEmailId === patient.id}
-                              className="border-blue-300 bg-white text-blue-700 hover:bg-blue-50 hover:border-blue-400 rounded-lg font-medium h-8 px-2"
-                              title="Send password setup email"
-                            >
-                              {sendingEmailId === patient.id ? (
-                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></span>
-                              ) : (
-                                <PaperAirplaneIcon className="h-3 w-3" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </>
           )}

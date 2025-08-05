@@ -197,6 +197,12 @@ export default function Navigation() {
           description: 'My medical protocols'
         },
         {
+          href: '/patient/appointments',
+          label: 'Appointments',
+          icon: CalendarDaysIcon,
+          description: 'Schedule appointments'
+        },
+        {
           href: '/patient/ai-chat',
           label: 'AI Assistant',
           icon: Bot,
@@ -233,6 +239,12 @@ export default function Navigation() {
           label: 'Clients',
           icon: UsersIcon,
           description: 'Manage clients'
+        },
+        {
+          href: '/doctor/calendar',
+          label: 'Calendar',
+          icon: CalendarDaysIcon,
+          description: 'Manage appointments'
         },
         {
           href: '/doctor/protocols',

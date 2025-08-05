@@ -1040,6 +1040,9 @@ model User {
   patient_voice_notes     VoiceNote[]                 @relation("PatientVoiceNotes")
   habits                  Habit[]                     @relation("UserHabits")
   unified_subscriptions   unified_subscriptions[]     @relation("UserSubscriptions")
+  google_calendar         GoogleCalendarCredentials?  @relation("DoctorGoogleCalendar")
+  doctor_appointments     Appointment[]               @relation("DoctorAppointments")
+  patient_appointments    Appointment[]               @relation("PatientAppointments")
 }
 
 model patient_document_metadata {
@@ -1161,4 +1164,45 @@ model unified_subscriptions {
 enum subscription_type {
   DOCTOR
   CLINIC
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model GoogleCalendarCredentials {
+  id                String   @id @default(cuid())
+  doctorId         String   @unique
+  accessToken      String
+  refreshToken     String
+  expiresAt        DateTime
+  calendarId       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  doctor           User     @relation("DoctorGoogleCalendar", fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id            String           @id @default(cuid())
+  patientId     String
+  doctorId      String
+  startTime     DateTime
+  endTime       DateTime
+  status        AppointmentStatus
+  title         String
+  notes         String?
+  googleEventId String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @default(now()) @updatedAt
+  patient       User             @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        User             @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([startTime])
 }

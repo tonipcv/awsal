@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import styles from './bw-theme.module.css';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
@@ -881,7 +882,7 @@ export default function PatientDetailPage() {
   const totalProtocols = prescriptions.length;
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
+    <div className={`min-h-screen bg-gray-50/30 ${styles.blackAndWhiteContainer}`}>
       <div className="lg:ml-64">
         <div className="p-4 pt-[88px] lg:pl-6 lg:pr-4 lg:pt-6 lg:pb-4 pb-24">
           {/* Top Navigation */}
